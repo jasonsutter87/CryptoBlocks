@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Blockly overrides */
+.blocklySvg {
+  background-color: #1e1e2e !important;
+}
+
+.blocklyToolboxDiv {
+  background-color: #181825 !important;
+}
+
+.blocklyTreeRow {
+  padding: 4px 8px !important;
+}
+
+.blocklyTreeLabel {
+  color: #000 !important;
+}
+
+.blocklyFlyoutScrollbar,
+.blocklyMainWorkspaceScrollbar {
+  display: none !important;
+}
