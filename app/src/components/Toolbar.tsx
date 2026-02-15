@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import type { Language } from '../types/block'
 
 interface ToolbarProps {
@@ -8,6 +9,8 @@ interface ToolbarProps {
   showCode: boolean
   onToggleCode: () => void
   onCreateBlock: () => void
+  onExport: () => void
+  onImport: (file: File) => void
 }
 
 export default function Toolbar({
@@ -18,7 +21,19 @@ export default function Toolbar({
   showCode,
   onToggleCode,
   onCreateBlock,
+  onExport,
+  onImport,
 }: ToolbarProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      onImport(file)
+      e.target.value = ''
+    }
+  }
+
   return (
     <header className="flex items-center justify-between px-4 py-2 bg-[#181825] border-b border-[#313244] select-none">
       {/* Logo */}
@@ -38,6 +53,52 @@ export default function Toolbar({
 
       {/* Controls */}
       <div className="flex items-center gap-2">
+        {/* Save (.blocks export) */}
+        <button
+          onClick={onExport}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-[#cdd6f4] hover:bg-[#313244] transition-colors"
+          title="Save project as .blocks file"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+          </svg>
+          Save
+        </button>
+
+        {/* Load (.blocks import) */}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-[#cdd6f4] hover:bg-[#313244] transition-colors"
+          title="Load a .blocks file"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
+          </svg>
+          Load
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".blocks"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+
+        {/* Divider */}
+        <div className="w-px h-6 bg-[#313244]" />
+
         {/* Create Block */}
         <button
           onClick={onCreateBlock}

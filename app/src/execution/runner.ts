@@ -104,6 +104,7 @@ console.log = function() {
     iframe.style.display = 'none'
     iframe.sandbox.add('allow-scripts')
     iframe.sandbox.add('allow-modals')
+    iframe.sandbox.add('allow-same-origin')
     iframe.src = blobUrl
     document.body.appendChild(iframe)
   })

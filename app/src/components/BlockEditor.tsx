@@ -7,12 +7,13 @@ import type { BlockDefinition } from '../types/block'
 interface BlockEditorProps {
   onWorkspaceChange: (workspace: Blockly.WorkspaceSvg) => void
   onEditBlock?: (block: BlockDefinition) => void
+  initialWorkspaceState?: Record<string, unknown> | null
 }
 
 // Register blocks once at module level
 let blocksRegistered = false
 
-export default function BlockEditor({ onWorkspaceChange, onEditBlock }: BlockEditorProps) {
+export default function BlockEditor({ onWorkspaceChange, onEditBlock, initialWorkspaceState }: BlockEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
   const callbackRef = useRef(onWorkspaceChange)
@@ -59,6 +60,15 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock }: BlockEdi
     })
 
     workspaceRef.current = workspace
+
+    // Restore saved workspace state
+    if (initialWorkspaceState) {
+      try {
+        Blockly.serialization.workspaces.load(initialWorkspaceState, workspace)
+      } catch {
+        // corrupted state, start fresh
+      }
+    }
 
     // Register "Edit Block" context menu for user-created blocks
     const editOption: Blockly.ContextMenuRegistry.RegistryItem = {
