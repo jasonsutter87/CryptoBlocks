@@ -231,26 +231,35 @@ Users can publish their own tutorials. Same quality tiers as blocks:
 
 ---
 
-## Tech Stack (Preliminary)
+## Tech Stack
 
-### Frontend
-- **React** (or Solid) — component-based UI
-- **Google Blockly** — visual block editor engine (same core as Scratch)
+### App (Built)
+- **React 19** + **TypeScript** — component-based UI
+- **Vite 7** — dev server + bundler
+- **Tailwind CSS 4** — styling
+- **Google Blockly** (Zelos renderer) — visual block editor engine (same core as Scratch)
 - **Monaco Editor** — code view (same editor as VS Code)
-- **Tailwind** — styling
 
-### Execution
-- **JavaScript** — runs in-browser via sandboxed iframe/Web Worker
-- **Python** — runs in-browser via Pyodide (CPython compiled to WebAssembly)
+### Execution (Built)
+- **JavaScript** — sandboxed iframe (blob URL + `allow-scripts allow-modals allow-same-origin`)
+- **Python** — Pyodide (CPython compiled to WebAssembly, runs entirely in browser)
 - **Dual execution** — same block definition, both languages, user picks which to view/run
+- **Async support** — blocks starting with `async` automatically get `await` in generated code
+- **Live streaming** — output streams to UI in real-time via `postMessage`
 
-### Backend
-- **Node.js or Go** — API server
+### Testing (Built)
+- **Vitest** — 266 unit + smoke tests (jsdom environment)
+- **Playwright** — E2E browser tests (Chromium)
+- **Smoke suite** — validates every block in the registry has valid name, category, color, and implementations
+
+### Auth (Planned)
+- **Clerk** — authentication and user management
+
+### Backend (Planned)
 - **PostgreSQL** — users, blocks, projects, marketplace
 - **S3/R2** — block assets, project snapshots
-- **Auth** — OAuth (GitHub, Google) + email/password
 
-### Desktop App
+### Desktop App (Future)
 - **Tauri** (Rust + web frontend) — lightweight, fast, cross-platform
 - Same UI as web, but local file system access
 - Offline mode — build and run without internet
@@ -369,8 +378,6 @@ These won't ship as-is (they're CTF-specific), but they prove the architecture: 
 - [x] Block shape system (value vs statement blocks)
 - [x] Web/API blocks (HTTP GET/POST, WebSocket, JSON parsing)
 - [x] Testing infrastructure (266 unit tests, smoke tests, Playwright E2E)
-- [ ] User accounts and authentication
-- [ ] Personal workspace with folders
 
 ### Phase 1.5: Challenge Hub — UP NEXT
 > *"Your cousin will only care about this if it's Minecraft or objects based"* — Mom, at dinner
@@ -391,6 +398,8 @@ Gamified coding challenges. Solve them with the fewest blocks possible.
 - [ ] Leaderboard (fewest blocks wins)
 
 ### Phase 2: Share
+- [ ] User accounts and authentication (Clerk)
+- [ ] Personal workspace with folders
 - [ ] Marketplace launch (browse, use, star)
 - [ ] User profiles and public portfolios
 - [ ] Fork and remix with attribution chain
