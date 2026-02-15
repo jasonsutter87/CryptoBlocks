@@ -15,6 +15,8 @@ interface ToolbarProps {
   onImport: (file: File) => void
   onExportHtml: () => void
   onCopyEmbed: () => void
+  ztaSiteId: string
+  onZtaSiteIdChange: (id: string) => void
   mode: AppMode
   onOpenChallenges: () => void
 }
@@ -31,6 +33,8 @@ export default function Toolbar({
   onImport,
   onExportHtml,
   onCopyEmbed,
+  ztaSiteId,
+  onZtaSiteIdChange,
   mode,
   onOpenChallenges,
 }: ToolbarProps) {
@@ -142,7 +146,33 @@ export default function Toolbar({
               </button>
 
               {showShareMenu && (
-                <div className="absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1">
+                <div className="absolute right-0 mt-1 w-64 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1">
+                  {/* ZTA Site ID */}
+                  <div className="px-3 py-2 border-b border-[#45475a]">
+                    <label className="flex items-center gap-1.5 text-xs text-[#6c7086] mb-1">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      ZTA Analytics (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={ztaSiteId}
+                      onChange={(e) => onZtaSiteIdChange(e.target.value)}
+                      placeholder="ZTA Site ID"
+                      className="w-full px-2 py-1 text-xs rounded bg-[#1e1e2e] border border-[#45475a] text-[#cdd6f4] placeholder-[#6c7086] focus:border-[#89b4fa] focus:outline-none"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    {ztaSiteId && (
+                      <div className="flex items-center gap-1 mt-1 text-[10px] text-[#a6e3a1]">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Tracking enabled — exports will include ZTA
+                      </div>
+                    )}
+                  </div>
+
                   <button
                     onClick={() => {
                       onExportHtml()

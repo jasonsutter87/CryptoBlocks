@@ -18,6 +18,7 @@ import {
   downloadHtml,
   copyToClipboard,
 } from './export-html'
+import type { ExportOptions } from './export-html'
 import type { Challenge } from './challenges'
 import { getNextChallenge } from './challenges'
 import { validateOutput, calculateStars, countBlocks } from './challenges/validator'
@@ -46,6 +47,20 @@ export default function App() {
   const [customBlocks, setCustomBlocks] = useState<BlockDefinition[]>([])
   const [initialWorkspaceState, setInitialWorkspaceState] = useState<Record<string, unknown> | null>(null)
   const [restored, setRestored] = useState(false)
+
+  // ZTA analytics site ID (persisted to localStorage)
+  const [ztaSiteId, setZtaSiteId] = useState(() =>
+    localStorage.getItem('cryptoblocks_zta_site_id') || ''
+  )
+
+  const handleZtaSiteIdChange = useCallback((id: string) => {
+    setZtaSiteId(id)
+    if (id) {
+      localStorage.setItem('cryptoblocks_zta_site_id', id)
+    } else {
+      localStorage.removeItem('cryptoblocks_zta_site_id')
+    }
+  }, [])
 
   // Challenge state
   const [mode, setMode] = useState<AppMode>('sandbox')
@@ -283,14 +298,18 @@ export default function App() {
   }, [])
 
   const handleExportHtml = useCallback(() => {
-    const html = generateStandaloneHtml(code, 'CryptoBlocks Project')
+    const opts: ExportOptions = { title: 'CryptoBlocks Project' }
+    if (ztaSiteId) opts.ztaSiteId = ztaSiteId
+    const html = generateStandaloneHtml(code, opts)
     downloadHtml(html)
-  }, [code])
+  }, [code, ztaSiteId])
 
   const handleCopyEmbed = useCallback(async () => {
-    const snippet = generateEmbedSnippet(code)
+    const opts: ExportOptions = {}
+    if (ztaSiteId) opts.ztaSiteId = ztaSiteId
+    const snippet = generateEmbedSnippet(code, opts)
     await copyToClipboard(snippet)
-  }, [code])
+  }, [code, ztaSiteId])
 
   const handleExport = useCallback(() => {
     if (workspaceRef.current) {
@@ -339,6 +358,8 @@ export default function App() {
         onImport={handleImport}
         onExportHtml={handleExportHtml}
         onCopyEmbed={handleCopyEmbed}
+        ztaSiteId={ztaSiteId}
+        onZtaSiteIdChange={handleZtaSiteIdChange}
         mode={mode}
         onOpenChallenges={handleOpenChallenges}
       />
