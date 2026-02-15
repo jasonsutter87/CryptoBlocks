@@ -20,8 +20,7 @@ interface ToolbarProps {
   onOpenChallenges: () => void
 }
 
-// Default black button style — colored on hover
-const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg bg-black text-[#cdd6f4] transition-colors'
+const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
 
 export default function Toolbar({
   language,
@@ -90,7 +89,7 @@ export default function Toolbar({
             {/* Save */}
             <button
               onClick={onExport}
-              className={`${btn} hover:bg-[#313244]`}
+              className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
               title="Save project as .blocks file"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -102,7 +101,7 @@ export default function Toolbar({
             {/* Load */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className={`${btn} hover:bg-[#313244]`}
+              className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
               title="Load a .blocks file"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -122,7 +121,7 @@ export default function Toolbar({
             <div className="relative" ref={shareMenuRef}>
               <button
                 onClick={() => setShowShareMenu((prev) => !prev)}
-                className={`${btn} hover:bg-[#89b4fa] hover:text-[#1e1e2e]`}
+                className={`${btn} bg-[#89b4fa] text-[#1e1e2e] hover:bg-[#89b4fa]/80`}
                 title="Export as HTML or copy embed code"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -173,7 +172,7 @@ export default function Toolbar({
             {/* Create Block */}
             <button
               onClick={onCreateBlock}
-              className={`${btn} hover:bg-[#f9e2af] hover:text-[#1e1e2e]`}
+              className={`${btn} bg-[#f9e2af] text-[#1e1e2e] hover:bg-[#f9e2af]/80`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -184,7 +183,7 @@ export default function Toolbar({
             {/* Clear Workspace */}
             <button
               onClick={onClear}
-              className={`${btn} hover:bg-[#f38ba8] hover:text-[#1e1e2e]`}
+              className={`${btn} bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/80`}
               title="Clear workspace"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -200,8 +199,8 @@ export default function Toolbar({
           onClick={onOpenChallenges}
           className={
             mode === 'challenges'
-              ? `${btn} !bg-[#f9e2af] !text-[#1e1e2e]`
-              : `${btn} hover:bg-[#313244]`
+              ? `${btn} bg-[#f9e2af] text-[#1e1e2e]`
+              : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
           }
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -216,8 +215,8 @@ export default function Toolbar({
             onClick={onToggleCode}
             className={
               showCode
-                ? `${btn} !bg-[#cba6f7] !text-[#1e1e2e]`
-                : `${btn} hover:bg-[#313244]`
+                ? `${btn} bg-[#cba6f7] text-[#1e1e2e]`
+                : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
             }
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -250,7 +249,7 @@ export default function Toolbar({
             ) : (
               <button
                 onClick={onRun}
-                className={`${btn} !bg-black hover:!bg-[#a6e3a1] hover:!text-[#1e1e2e] !font-semibold !px-4`}
+                className={`${btn} bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 font-semibold px-4`}
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <polygon points="5,3 19,12 5,21" />
