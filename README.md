@@ -352,21 +352,43 @@ These won't ship as-is (they're CTF-specific), but they prove the architecture: 
 
 ---
 
-## Roadmap (Rough)
+## Roadmap
 
-### Phase 0: Prototype
-- [ ] Blockly integration with custom block definitions
-- [ ] Dual JS/Python execution in browser
-- [ ] 20 built-in blocks across 4 categories
-- [ ] "View code" toggle on every block
-- [ ] Single-user, no accounts, local only
+### Phase 0: Prototype — DONE
+- [x] Blockly integration with custom block definitions (Zelos renderer)
+- [x] Dual JS/Python execution in browser (sandboxed iframe + Pyodide)
+- [x] 49 blocks across 7 categories (Basics, Math, Text, Logic, Lists, Data, Web)
+- [x] "Peek Code" toggle — Monaco Editor showing generated JS or Python
+- [x] Live output streaming with async/await support
+- [x] Single-user, no accounts, local only
 
-### Phase 1: Create
-- [ ] "Create Block" editor with test requirement
-- [ ] Block definition format finalized
+### Phase 1: Create — DONE
+- [x] "Create Block" editor (define inputs, outputs, implementations)
+- [x] Block definition format finalized (JSON with dual-language implementations)
+- [x] Save/Load .blocks project files
+- [x] Block shape system (value vs statement blocks)
+- [x] Web/API blocks (HTTP GET/POST, WebSocket, JSON parsing)
+- [x] Testing infrastructure (266 unit tests, smoke tests, Playwright E2E)
 - [ ] User accounts and authentication
 - [ ] Personal workspace with folders
-- [ ] Save/load projects
+
+### Phase 1.5: Challenge Hub — UP NEXT
+> *"Your cousin will only care about this if it's Minecraft or objects based"* — Mom, at dinner
+
+Gamified coding challenges. Solve them with the fewest blocks possible.
+
+- [ ] Challenge data model (description, par block count, validator, theme)
+- [ ] Challenge browser/selector UI
+- [ ] Block counter on workspace
+- [ ] Output validator (compare actual vs expected)
+- [ ] Star rating (par, birdie, eagle based on block count)
+- [ ] "Show Solution" after 3 attempts
+- [ ] **Theme packs:**
+  - [ ] **Minecraft Mode** — build mobs, inventory counter, damage calc, crafting recipes
+  - [ ] **Pet Simulator** — name your pet, feed counter, pet battles
+  - [ ] **Secret Agent** — Caesar cipher, secret messages, password generator
+  - [ ] **Speed Run** — Hello World (1 block), countdown, FizzBuzz
+- [ ] Leaderboard (fewest blocks wins)
 
 ### Phase 2: Share
 - [ ] Marketplace launch (browse, use, star)
