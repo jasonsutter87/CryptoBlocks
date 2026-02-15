@@ -1,17 +1,30 @@
 {{ define "main" }}
-<div class="container py-5">
-  <h1>{{ .Title }}</h1>
+<div class="container py-8">
+  <h1 class="text-3xl font-extrabold text-gray-800 mb-2">{{ .Title }}</h1>
+  {{ if .Description }}<p class="text-gray-500 mb-6">{{ .Description }}</p>{{ end }}
   {{ .Content }}
 
   {{ if .Pages }}
-  <ul class="list-unstyled mt-4">
-    {{ range .Pages }}
-    <li class="mb-3">
-      <a href="{{ .Permalink }}">{{ .Title }}</a>
-      {{ if .Description }}<p class="text-muted mb-0">{{ .Description }}</p>{{ end }}
-    </li>
+  <div class="row">
+    {{ range .Pages.ByDate.Reverse }}
+    <div class="col-12 col-md-6 mb-4">
+      <a href="{{ .Permalink }}" class="text-decoration-none block h-full">
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-200 h-full hover:shadow-lg transition-all" style="transition: box-shadow 200ms ease, transform 200ms ease;">
+          {{ if .Params.tags }}
+          <div class="d-flex gap-2 flex-wrap mb-3">
+            {{ range .Params.tags }}
+            <span class="bg-blue-50 text-primary text-xs fw-medium px-2 py-1 rounded">{{ . }}</span>
+            {{ end }}
+          </div>
+          {{ end }}
+          <h2 class="fw-bold text-lg text-gray-800 mb-2">{{ .Title }}</h2>
+          {{ if .Description }}<p class="text-gray-500 text-sm mb-3">{{ .Description }}</p>{{ end }}
+          <time class="text-gray-400 text-xs">{{ .Date.Format "January 2, 2006" }}</time>
+        </div>
+      </a>
+    </div>
     {{ end }}
-  </ul>
+  </div>
   {{ end }}
 </div>
 {{ end }}
