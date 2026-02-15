@@ -294,6 +294,15 @@ export default function App() {
     setShowCreateModal(true)
   }, [])
 
+  const handleClear = useCallback(() => {
+    if (workspaceRef.current) {
+      workspaceRef.current.clear()
+    }
+    setResult(null)
+    setLiveOutput([])
+    setShowOutput(false)
+  }, [])
+
   const closeModal = useCallback(() => {
     setShowCreateModal(false)
     setEditingBlock(null)
@@ -356,6 +365,7 @@ export default function App() {
         onImport={handleImport}
         onExportHtml={handleExportHtml}
         onCopyEmbed={handleCopyEmbed}
+        onClear={handleClear}
         mode={mode}
         onOpenChallenges={handleOpenChallenges}
       />
