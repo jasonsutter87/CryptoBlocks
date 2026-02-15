@@ -1,0 +1,53 @@
+{{/* CryptoBlocks header — bright, kid-friendly, no dark mode */}}
+<div class="container py-4">
+  <nav class="d-flex justify-content-between align-items-center" aria-label="Primary navigation">
+    {{/* Logo */}}
+    <a href="/" class="d-flex align-items-center gap-2 text-decoration-none focus:outline-none focus:ring-2 focus:ring-primary rounded-lg px-1">
+      {{/* Block logo — three overlapping colored squares */}}
+      <div class="d-flex align-items-center" style="gap: -4px;">
+        <div style="width: 20px; height: 20px; background: #3B82F6; border-radius: 4px;"></div>
+        <div style="width: 20px; height: 20px; background: #F59E0B; border-radius: 4px; margin-left: -6px;"></div>
+        <div style="width: 20px; height: 20px; background: #10B981; border-radius: 4px; margin-left: -6px;"></div>
+      </div>
+      <span class="fw-bold text-xl text-gray-800">CryptoBlocks</span>
+    </a>
+
+    {{/* Mobile menu button */}}
+    <button
+      type="button"
+      class="d-md-none text-gray-600 bg-transparent border-0 p-2 focus:outline-none focus:ring-2 focus:ring-primary rounded"
+      aria-label="Toggle navigation menu"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+      onclick="document.getElementById('mobile-menu').classList.toggle('hidden'); this.setAttribute('aria-expanded', this.getAttribute('aria-expanded') === 'true' ? 'false' : 'true');"
+    >
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+    </button>
+
+    {{/* Desktop menu */}}
+    <div class="d-none d-md-flex align-items-center gap-4">
+      <ul class="list-unstyled d-flex gap-4 mb-0">
+        <li><a href="/about" class="text-gray-600 text-decoration-none hover:text-primary fw-medium focus:outline-none focus:ring-2 focus:ring-primary rounded px-2 py-1">About</a></li>
+        <li><a href="/blog" class="text-gray-600 text-decoration-none hover:text-primary fw-medium focus:outline-none focus:ring-2 focus:ring-primary rounded px-2 py-1">Blog</a></li>
+        <li><a href="/learn" class="text-gray-600 text-decoration-none hover:text-primary fw-medium focus:outline-none focus:ring-2 focus:ring-primary rounded px-2 py-1">Learn</a></li>
+      </ul>
+      <a href="{{ .Site.Params.appURL | default "/app" }}" class="bg-primary text-white px-4 py-2 rounded-lg fw-bold text-sm text-decoration-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors">
+        Start Building
+      </a>
+    </div>
+  </nav>
+
+  {{/* Mobile menu (hidden by default) */}}
+  <div id="mobile-menu" class="hidden d-md-none mt-4 pb-4">
+    <ul class="list-unstyled mb-4">
+      <li class="py-2 border-b border-gray-200"><a href="/about" class="text-gray-700 text-decoration-none hover:text-primary fw-medium block py-1">About</a></li>
+      <li class="py-2 border-b border-gray-200"><a href="/blog" class="text-gray-700 text-decoration-none hover:text-primary fw-medium block py-1">Blog</a></li>
+      <li class="py-2 border-b border-gray-200"><a href="/learn" class="text-gray-700 text-decoration-none hover:text-primary fw-medium block py-1">Learn</a></li>
+    </ul>
+    <a href="{{ .Site.Params.appURL | default "/app" }}" class="bg-primary text-white px-4 py-2 rounded-lg fw-bold text-sm text-decoration-none hover:bg-blue-600 block text-center">
+      Start Building
+    </a>
+  </div>
+</div>

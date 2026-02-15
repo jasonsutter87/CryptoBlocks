@@ -4,3 +4,7 @@ dist/
 *.local
 .env
 .env.*
+
+# Hugo
+site/public/
+site/resources/

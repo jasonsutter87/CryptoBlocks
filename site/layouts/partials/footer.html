@@ -1,0 +1,40 @@
+{{/* CryptoBlocks footer — light, friendly */}}
+<div class="container py-5">
+  <div class="row">
+    {{/* Brand + tagline */}}
+    <div class="col-12 col-md-6 mb-4 mb-md-0">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <div style="width: 16px; height: 16px; background: #3B82F6; border-radius: 3px;"></div>
+        <div style="width: 16px; height: 16px; background: #F59E0B; border-radius: 3px; margin-left: -4px;"></div>
+        <div style="width: 16px; height: 16px; background: #10B981; border-radius: 3px; margin-left: -4px;"></div>
+        <span class="fw-bold text-gray-800">CryptoBlocks</span>
+      </div>
+      <p class="text-gray-500 text-sm mb-0">{{ .Site.Params.tagline | default "Snap blocks. See code. Build anything." }}</p>
+    </div>
+
+    {{/* Links */}}
+    <div class="col-12 col-md-3 mb-4 mb-md-0">
+      <h4 class="fw-bold text-sm text-gray-800 mb-3">Product</h4>
+      <ul class="list-unstyled mb-0">
+        <li class="mb-1"><a href="/about" class="text-gray-500 text-decoration-none hover:text-primary text-sm">About</a></li>
+        <li class="mb-1"><a href="/blog" class="text-gray-500 text-decoration-none hover:text-primary text-sm">Blog</a></li>
+        <li class="mb-1"><a href="/learn" class="text-gray-500 text-decoration-none hover:text-primary text-sm">Learn</a></li>
+      </ul>
+    </div>
+
+    {{/* Legal */}}
+    <div class="col-12 col-md-3">
+      <h4 class="fw-bold text-sm text-gray-800 mb-3">Legal</h4>
+      <ul class="list-unstyled mb-0">
+        <li class="mb-1"><a href="/privacy-policy" class="text-gray-500 text-decoration-none hover:text-primary text-sm">Privacy Policy</a></li>
+        <li class="mb-1"><a href="/terms-of-use" class="text-gray-500 text-decoration-none hover:text-primary text-sm">Terms of Use</a></li>
+        <li class="mb-1"><a href="/accessibility-statement" class="text-gray-500 text-decoration-none hover:text-primary text-sm">Accessibility</a></li>
+      </ul>
+    </div>
+  </div>
+
+  {{/* Copyright */}}
+  <div class="border-t border-gray-200 mt-4 pt-4">
+    <p class="text-gray-400 text-sm mb-0 text-center">&copy; {{ now.Year }} {{ .Site.Params.companyName | default "CryptoBlocks" }}. Built for the next generation of builders.</p>
+  </div>
+</div>
