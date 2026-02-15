@@ -1,5 +1,7 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import type { Language } from '../types/block'
+
+type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
 
 interface ToolbarProps {
   language: Language
@@ -11,6 +13,10 @@ interface ToolbarProps {
   onCreateBlock: () => void
   onExport: () => void
   onImport: (file: File) => void
+  onExportHtml: () => void
+  onCopyEmbed: () => void
+  mode: AppMode
+  onOpenChallenges: () => void
 }
 
 export default function Toolbar({
@@ -23,8 +29,27 @@ export default function Toolbar({
   onCreateBlock,
   onExport,
   onImport,
+  onExportHtml,
+  onCopyEmbed,
+  mode,
+  onOpenChallenges,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [showShareMenu, setShowShareMenu] = useState(false)
+  const [embedCopied, setEmbedCopied] = useState(false)
+  const shareMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close share menu on outside click
+  useEffect(() => {
+    if (!showShareMenu) return
+    const handleClick = (e: MouseEvent) => {
+      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+        setShowShareMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showShareMenu])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -33,6 +58,8 @@ export default function Toolbar({
       e.target.value = ''
     }
   }
+
+  const inChallenge = mode === 'active-challenge'
 
   return (
     <header className="flex items-center justify-between px-4 py-2 bg-[#181825] border-b border-[#313244] select-none">
@@ -53,120 +80,196 @@ export default function Toolbar({
 
       {/* Controls */}
       <div className="flex items-center gap-2">
-        {/* Save (.blocks export) */}
-        <button
-          onClick={onExport}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-[#cdd6f4] hover:bg-[#313244] transition-colors"
-          title="Save project as .blocks file"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-          </svg>
-          Save
-        </button>
+        {!inChallenge && (
+          <>
+            {/* Save (.blocks export) */}
+            <button
+              onClick={onExport}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-[#cdd6f4] hover:bg-[#313244] transition-colors"
+              title="Save project as .blocks file"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Save
+            </button>
 
-        {/* Load (.blocks import) */}
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-[#cdd6f4] hover:bg-[#313244] transition-colors"
-          title="Load a .blocks file"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
-          </svg>
-          Load
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".blocks"
-          onChange={handleFileChange}
-          className="hidden"
-        />
+            {/* Load (.blocks import) */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-[#cdd6f4] hover:bg-[#313244] transition-colors"
+              title="Load a .blocks file"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
+              </svg>
+              Load
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".blocks"
+              onChange={handleFileChange}
+              className="hidden"
+            />
 
-        {/* Divider */}
-        <div className="w-px h-6 bg-[#313244]" />
+            {/* Share / Export HTML */}
+            <div className="relative" ref={shareMenuRef}>
+              <button
+                onClick={() => setShowShareMenu((prev) => !prev)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-[#1e1e2e] bg-[#89b4fa] hover:bg-[#89b4fa]/80 transition-colors"
+                title="Export as HTML or copy embed code"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Share
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-        {/* Create Block */}
-        <button
-          onClick={onCreateBlock}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-[#1e1e2e] bg-[#f9e2af] hover:bg-[#f9e2af]/80 transition-colors"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Create Block
-        </button>
+              {showShareMenu && (
+                <div className="absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1">
+                  <button
+                    onClick={() => {
+                      onExportHtml()
+                      setShowShareMenu(false)
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[#cdd6f4] hover:bg-[#45475a] transition-colors text-left"
+                  >
+                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                    Export as HTML
+                    <span className="ml-auto text-xs text-[#6c7086]">.html</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      onCopyEmbed()
+                      setEmbedCopied(true)
+                      setTimeout(() => setEmbedCopied(false), 2000)
+                    }}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[#cdd6f4] hover:bg-[#45475a] transition-colors text-left"
+                  >
+                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    {embedCopied ? 'Copied!' : 'Copy Embed Snippet'}
+                    <span className="ml-auto text-xs text-[#6c7086]">&lt;/&gt;</span>
+                  </button>
+                </div>
+              )}
+            </div>
 
-        {/* Peek toggle */}
+            {/* Divider */}
+            <div className="w-px h-6 bg-[#313244]" />
+
+            {/* Create Block */}
+            <button
+              onClick={onCreateBlock}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-[#1e1e2e] bg-[#f9e2af] hover:bg-[#f9e2af]/80 transition-colors"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Create Block
+            </button>
+          </>
+        )}
+
+        {/* Challenges button */}
         <button
-          onClick={onToggleCode}
+          onClick={onOpenChallenges}
           className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-            showCode
-              ? 'bg-[#cba6f7] text-[#1e1e2e]'
+            mode === 'challenges'
+              ? 'bg-[#f9e2af] text-[#1e1e2e]'
               : 'text-[#cdd6f4] hover:bg-[#313244]'
           }`}
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-            />
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
           </svg>
-          {showCode ? 'Hide Code' : 'Peek Code'}
+          Challenges
         </button>
 
-        {/* Language indicator */}
-        <div className="text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded font-mono">
-          {language === 'javascript' ? 'JS' : 'PY'}
-        </div>
+        {/* Peek toggle */}
+        {mode !== 'challenges' && (
+          <button
+            onClick={onToggleCode}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              showCode
+                ? 'bg-[#cba6f7] text-[#1e1e2e]'
+                : 'text-[#cdd6f4] hover:bg-[#313244]'
+            }`}
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+              />
+            </svg>
+            {showCode ? 'Hide Code' : 'Peek Code'}
+          </button>
+        )}
 
-        {/* Run / Stop */}
-        {isRunning ? (
-          <button
-            onClick={onStop}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/80 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <rect x="6" y="6" width="12" height="12" rx="1" />
-            </svg>
-            Stop
-          </button>
-        ) : (
-          <button
-            onClick={onRun}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <polygon points="5,3 19,12 5,21" />
-            </svg>
-            Run
-          </button>
+        {/* Language indicator */}
+        {mode !== 'challenges' && (
+          <div className="text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded font-mono">
+            {language === 'javascript' ? 'JS' : 'PY'}
+          </div>
+        )}
+
+        {/* Run / Stop — only in sandbox mode */}
+        {mode === 'sandbox' && (
+          <>
+            {isRunning ? (
+              <button
+                onClick={onStop}
+                className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/80 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <rect x="6" y="6" width="12" height="12" rx="1" />
+                </svg>
+                Stop
+              </button>
+            ) : (
+              <button
+                onClick={onRun}
+                className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <polygon points="5,3 19,12 5,21" />
+                </svg>
+                Run
+              </button>
+            )}
+          </>
         )}
       </div>
     </header>
