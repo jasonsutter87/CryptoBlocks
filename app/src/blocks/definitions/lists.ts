@@ -1,0 +1,141 @@
+import type { BlockDefinition } from '../../types/block'
+
+export const listsBlocks: BlockDefinition[] = [
+  {
+    name: 'create_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Create an empty list and store it globally',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name for the list' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function createList(name) {\n  window.__vars = window.__vars || {};\n  window.__vars[name] = [];\n}`,
+      python: `def create_list(name):\n    globals()[name] = []`,
+    },
+    tests: [
+      { input: { name: 'myList' }, expected: {} },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'list_value',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get a list as a value to plug into other blocks',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+    ],
+    outputs: [{ name: 'list', type: 'any' }],
+    implementations: {
+      javascript: `function listValue(name) {\n  window.__vars = window.__vars || {};\n  if (!window.__vars[name]) window.__vars[name] = [];\n  return window.__vars[name];\n}`,
+      python: `def list_value(name):\n    if name not in globals():\n        globals()[name] = []\n    return globals()[name]`,
+    },
+    tests: [
+      { input: { name: 'myList' }, expected: { list: 'any' } },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'add_to_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Add an item to the end of a list',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'item', type: 'any', description: 'Item to add' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function addToList(name, item) {\n  window.__vars = window.__vars || {};\n  if (!window.__vars[name]) window.__vars[name] = [];\n  window.__vars[name].push(item);\n}`,
+      python: `def add_to_list(name, item):\n    if name not in globals():\n        globals()[name] = []\n    globals()[name].append(item)`,
+    },
+    tests: [
+      { input: { name: 'myList', item: 'hello' }, expected: {} },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'get_from_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get an item from a list by position (starts at 0)',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'index', type: 'number', description: 'Position (0 = first)', default: 0 },
+    ],
+    outputs: [{ name: 'item', type: 'any' }],
+    implementations: {
+      javascript: `function getFromList(name, index) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  return list[index];\n}`,
+      python: `def get_from_list(name, index):\n    lst = globals().get(name, [])\n    return lst[index] if index < len(lst) else None`,
+    },
+    tests: [
+      { input: { name: 'myList', index: 0 }, expected: { item: 'any' } },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'list_length',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get the number of items in a list',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+    ],
+    outputs: [{ name: 'length', type: 'number' }],
+    implementations: {
+      javascript: `function listLength(name) {\n  window.__vars = window.__vars || {};\n  return (window.__vars[name] || []).length;\n}`,
+      python: `def list_length(name):\n    return len(globals().get(name, []))`,
+    },
+    tests: [
+      { input: { name: 'myList' }, expected: { length: 0 } },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'remove_from_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Remove an item from a list by position',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'index', type: 'number', description: 'Position to remove (0 = first)', default: 0 },
+    ],
+    outputs: [{ name: 'removed', type: 'any' }],
+    implementations: {
+      javascript: `function removeFromList(name, index) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  return list.splice(index, 1)[0];\n}`,
+      python: `def remove_from_list(name, index):\n    lst = globals().get(name, [])\n    return lst.pop(index) if index < len(lst) else None`,
+    },
+    tests: [
+      { input: { name: 'myList', index: 0 }, expected: { removed: 'any' } },
+    ],
+    color: '#D97706',
+    shape: 'statement',
+  },
+  {
+    name: 'print_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Print all items in a list',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function printList(name) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  console.log(name + ": [" + list.join(", ") + "]");\n}`,
+      python: `def print_list(name):\n    lst = globals().get(name, [])\n    print(f"{name}: {lst}")`,
+    },
+    tests: [
+      { input: { name: 'myList' }, expected: {} },
+    ],
+    color: '#D97706',
+  },
+]

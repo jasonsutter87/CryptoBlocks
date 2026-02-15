@@ -7,6 +7,7 @@ interface ToolbarProps {
   onStop: () => void
   showCode: boolean
   onToggleCode: () => void
+  onCreateBlock: () => void
 }
 
 export default function Toolbar({
@@ -16,6 +17,7 @@ export default function Toolbar({
   onStop,
   showCode,
   onToggleCode,
+  onCreateBlock,
 }: ToolbarProps) {
   return (
     <header className="flex items-center justify-between px-4 py-2 bg-[#181825] border-b border-[#313244] select-none">
@@ -36,6 +38,23 @@ export default function Toolbar({
 
       {/* Controls */}
       <div className="flex items-center gap-2">
+        {/* Create Block */}
+        <button
+          onClick={onCreateBlock}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-[#1e1e2e] bg-[#f9e2af] hover:bg-[#f9e2af]/80 transition-colors"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Create Block
+        </button>
+
         {/* Peek toggle */}
         <button
           onClick={onToggleCode}

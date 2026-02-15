@@ -19,6 +19,23 @@ export const basicsBlocks: BlockDefinition[] = [
     color: '#4C97AF',
   },
   {
+    name: 'do',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Run a value without printing it',
+    category: 'Basics',
+    inputs: [{ name: 'value', type: 'any', description: 'The value to evaluate' }],
+    outputs: [],
+    implementations: {
+      javascript: `function doValue(value) {\n  return value;\n}`,
+      python: `def do_value(value):\n    return value`,
+    },
+    tests: [
+      { input: { value: 42 }, expected: {} },
+    ],
+    color: '#4C97AF',
+  },
+  {
     name: 'ask',
     author: 'CryptoBlocks',
     version: '1.0.0',
@@ -36,10 +53,10 @@ export const basicsBlocks: BlockDefinition[] = [
     color: '#4C97AF',
   },
   {
-    name: 'set_variable',
+    name: 'set_global',
     author: 'CryptoBlocks',
     version: '1.0.0',
-    description: 'Store a value in a named variable',
+    description: 'Store a value that all blocks can access',
     category: 'Basics',
     inputs: [
       { name: 'name', type: 'string', description: 'Variable name' },
@@ -47,25 +64,26 @@ export const basicsBlocks: BlockDefinition[] = [
     ],
     outputs: [{ name: 'value', type: 'any' }],
     implementations: {
-      javascript: `function setVariable(name, value) {\n  window.__vars = window.__vars || {};\n  window.__vars[name] = value;\n  return value;\n}`,
-      python: `def set_variable(name, value):\n    globals()[name] = value\n    return value`,
+      javascript: `function setGlobal(name, value) {\n  window.__vars = window.__vars || {};\n  window.__vars[name] = value;\n  return value;\n}`,
+      python: `def set_global(name, value):\n    globals()[name] = value\n    return value`,
     },
     tests: [
       { input: { name: 'x', value: 42 }, expected: { value: 42 } },
     ],
     color: '#4C97AF',
+    shape: 'statement',
   },
   {
-    name: 'get_variable',
+    name: 'get_global',
     author: 'CryptoBlocks',
     version: '1.0.0',
-    description: 'Get the value of a named variable',
+    description: 'Get a value that was stored with Set Global',
     category: 'Basics',
     inputs: [{ name: 'name', type: 'string', description: 'Variable name' }],
     outputs: [{ name: 'value', type: 'any' }],
     implementations: {
-      javascript: `function getVariable(name) {\n  return (window.__vars || {})[name];\n}`,
-      python: `def get_variable(name):\n    return globals().get(name)`,
+      javascript: `function getGlobal(name) {\n  return (window.__vars || {})[name];\n}`,
+      python: `def get_global(name):\n    return globals().get(name)`,
     },
     tests: [
       { input: { name: 'x' }, expected: { value: 'any' } },
@@ -105,5 +123,6 @@ export const basicsBlocks: BlockDefinition[] = [
       { input: { times: 3 }, expected: { count: 3 } },
     ],
     color: '#4C97AF',
+    shape: 'statement',
   },
 ]

@@ -1,13 +1,15 @@
 import { useState, useCallback, useRef } from 'react'
 import * as Blockly from 'blockly'
-import type { Language } from './types/block'
-import { generateCode } from './blocks/blockly-register'
+import type { Language, BlockDefinition } from './types/block'
+import { generateCode, registerSingleBlock, getToolboxXml } from './blocks/blockly-register'
+import { registry } from './blocks/registry'
 import { executeCode } from './execution/runner'
 import type { ExecutionResult } from './execution/runner'
 import Toolbar from './components/Toolbar'
 import BlockEditor from './components/BlockEditor'
 import CodeView from './components/CodeView'
 import OutputPanel from './components/OutputPanel'
+import CreateBlockModal from './components/CreateBlockModal'
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('javascript')
@@ -17,12 +19,14 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false)
   const [result, setResult] = useState<ExecutionResult | null>(null)
   const [liveOutput, setLiveOutput] = useState<string[]>([])
-  const workspaceRef = useRef<Blockly.Workspace | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [editingBlock, setEditingBlock] = useState<BlockDefinition | null>(null)
+  const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
   const languageRef = useRef(language)
   languageRef.current = language
 
   const handleWorkspaceChange = useCallback(
-    (workspace: Blockly.Workspace) => {
+    (workspace: Blockly.WorkspaceSvg) => {
       workspaceRef.current = workspace
       const generated = generateCode(workspace, languageRef.current)
       setCode(generated)
@@ -60,6 +64,26 @@ export default function App() {
     setIsRunning(false)
   }, [])
 
+  const handleCreateBlock = useCallback((block: BlockDefinition) => {
+    registry.register(block)
+    registerSingleBlock(block)
+    if (workspaceRef.current) {
+      workspaceRef.current.updateToolbox(getToolboxXml())
+    }
+    setShowCreateModal(false)
+    setEditingBlock(null)
+  }, [])
+
+  const handleEditBlock = useCallback((blockDef: BlockDefinition) => {
+    setEditingBlock(blockDef)
+    setShowCreateModal(true)
+  }, [])
+
+  const closeModal = useCallback(() => {
+    setShowCreateModal(false)
+    setEditingBlock(null)
+  }, [])
+
   return (
     <div className="flex flex-col h-full">
       <Toolbar
@@ -69,6 +93,7 @@ export default function App() {
         onStop={handleStop}
         showCode={showCode}
         onToggleCode={() => setShowCode((prev) => !prev)}
+        onCreateBlock={() => setShowCreateModal(true)}
       />
 
       <div className="flex-1 flex min-h-0">
@@ -78,7 +103,10 @@ export default function App() {
             showCode ? 'w-1/2' : 'w-full'
           } h-full transition-all duration-300 border-r border-[#313244]`}
         >
-          <BlockEditor onWorkspaceChange={handleWorkspaceChange} />
+          <BlockEditor
+            onWorkspaceChange={handleWorkspaceChange}
+            onEditBlock={handleEditBlock}
+          />
         </div>
 
         {/* Code View */}
@@ -108,6 +136,14 @@ export default function App() {
           </div>
         )}
       </div>
+
+      {showCreateModal && (
+        <CreateBlockModal
+          onBuild={handleCreateBlock}
+          onClose={closeModal}
+          editBlock={editingBlock}
+        />
+      )}
     </div>
   )
 }

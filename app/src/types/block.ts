@@ -30,6 +30,7 @@ export interface BlockDefinition {
   tests: BlockTest[]
   color: string
   icon?: string
+  shape?: 'value' | 'statement'
 }
 
 export type BlockCategory =
@@ -46,6 +47,7 @@ export type BlockCategory =
   | 'Crypto'
   | 'AI'
   | 'Hardware'
+  | 'My Blocks'
 
 export type Language = 'javascript' | 'python'
 
@@ -63,4 +65,5 @@ export const CATEGORY_COLORS: Record<BlockCategory, string> = {
   Crypto: '#4F46E5',
   AI: '#7C3AED',
   Hardware: '#65A30D',
+  'My Blocks': '#F59E0B',
 }

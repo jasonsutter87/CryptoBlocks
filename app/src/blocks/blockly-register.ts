@@ -50,9 +50,10 @@ export function registerCustomBlocks() {
           if (check) inputObj.setCheck(check)
         }
 
-        // Add output or set as statement
-        if (block.outputs.length > 0) {
-          const outCheck = typeToBlocklyCheck(block.outputs[0].type)
+        // Add output or set as statement based on shape override or outputs
+        const isValue = block.shape === 'value' || (!block.shape && block.outputs.length > 0)
+        if (isValue) {
+          const outCheck = block.outputs.length > 0 ? typeToBlocklyCheck(block.outputs[0].type) : null
           this.setOutput(true, outCheck)
         } else {
           this.setPreviousStatement(true, null)
@@ -60,6 +61,37 @@ export function registerCustomBlocks() {
         }
       },
     }
+  }
+}
+
+export function registerSingleBlock(block: BlockDefinition) {
+  const blockType = `cb_${block.name}`
+
+  Blockly.Blocks[blockType] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(block.color)
+      this.setTooltip(block.description)
+
+      this.appendDummyInput().appendField(
+        block.name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+      )
+
+      for (const input of block.inputs) {
+        const check = typeToBlocklyCheck(input.type)
+        const inputObj = this.appendValueInput(input.name)
+        inputObj.appendField(input.name.replace(/_/g, ' '))
+        if (check) inputObj.setCheck(check)
+      }
+
+      const isValue = block.shape === 'value' || (!block.shape && block.outputs.length > 0)
+      if (isValue) {
+        const outCheck = block.outputs.length > 0 ? typeToBlocklyCheck(block.outputs[0].type) : null
+        this.setOutput(true, outCheck)
+      } else {
+        this.setPreviousStatement(true, null)
+        this.setNextStatement(true, null)
+      }
+    },
   }
 }
 
@@ -188,8 +220,9 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   const isAsync = def.implementations[language].trimStart().startsWith('async ')
   let code = isAsync ? `await ${fnName}(${args.join(', ')})` : `${fnName}(${args.join(', ')})`
 
-  // If this is a statement block (no output), make it a standalone call
-  if (def.outputs.length === 0) {
+  // If this is a statement block, make it a standalone call
+  const isStatement = def.shape === 'statement' || (!def.shape && def.outputs.length === 0)
+  if (isStatement) {
     code += language === 'javascript' ? ';' : ''
   }
 
