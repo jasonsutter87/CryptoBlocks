@@ -18,6 +18,7 @@ import {
   downloadHtml,
   copyToClipboard,
 } from './export-html'
+import { ZTA_SITE_ID } from './export-html'
 import type { ExportOptions } from './export-html'
 import type { Challenge } from './challenges'
 import { getNextChallenge } from './challenges'
@@ -48,9 +49,9 @@ export default function App() {
   const [initialWorkspaceState, setInitialWorkspaceState] = useState<Record<string, unknown> | null>(null)
   const [restored, setRestored] = useState(false)
 
-  // ZTA analytics site ID (persisted to localStorage)
+  // ZTA analytics site ID — defaults from constant, overridable via Share menu
   const [ztaSiteId, setZtaSiteId] = useState(() =>
-    localStorage.getItem('cryptoblocks_zta_site_id') || ''
+    localStorage.getItem('cryptoblocks_zta_site_id') || ZTA_SITE_ID
   )
 
   const handleZtaSiteIdChange = useCallback((id: string) => {
@@ -292,6 +293,23 @@ export default function App() {
     setShowCreateModal(true)
   }, [])
 
+  const handleSaveAsBlock = useCallback((jsCode: string, pyCode: string) => {
+    setEditingBlock({
+      name: '',
+      author: 'User',
+      version: '1.0.0',
+      description: '',
+      category: 'My Blocks',
+      inputs: [],
+      outputs: [],
+      implementations: { javascript: jsCode, python: pyCode },
+      tests: [],
+      color: '#F59E0B',
+      shape: 'statement',
+    })
+    setShowCreateModal(true)
+  }, [])
+
   const closeModal = useCallback(() => {
     setShowCreateModal(false)
     setEditingBlock(null)
@@ -396,6 +414,7 @@ export default function App() {
               <BlockEditor
                 onWorkspaceChange={handleWorkspaceChange}
                 onEditBlock={handleEditBlock}
+                onSaveAsBlock={handleSaveAsBlock}
                 initialWorkspaceState={initialWorkspaceState}
               />
             </div>

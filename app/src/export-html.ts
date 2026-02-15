@@ -1,18 +1,29 @@
 /**
  * Export block programs as standalone HTML files or embeddable script snippets.
- * Optionally includes Zero Trust Analytics (ZTA) for PII-less block tracking.
+ * Includes Zero Trust Analytics (ZTA) for PII-less block tracking by default.
  */
+
+// ── Change this once you create the CryptoBlocks site in ZTA ──
+export const ZTA_SITE_ID = '' // TODO: set your ZTA site ID
+export const ZTA_SCRIPT_URL = 'https://ztas.io/js/analytics.js'
 
 export interface ExportOptions {
   title?: string
-  ztaSiteId?: string
+  /** Override the default ZTA site ID. Set to false to disable tracking. */
+  ztaSiteId?: string | false
   ztaEndpoint?: string
+}
+
+/** Resolve the effective ZTA site ID: explicit option > constant > empty (disabled). */
+function resolveZtaSiteId(options: ExportOptions): string {
+  if (options.ztaSiteId === false) return ''
+  return options.ztaSiteId || ZTA_SITE_ID
 }
 
 /** Generate the ZTA script tag + block lifecycle tracking code. */
 function ztaScriptBlock(siteId: string, endpoint?: string): string {
   const endpointAttr = endpoint ? ` data-endpoint="${escapeHtml(endpoint)}"` : ''
-  return `<script defer src="https://ztas.io/js/analytics.js" data-site-id="${escapeHtml(siteId)}"${endpointAttr}></script>`
+  return `<script defer src="${ZTA_SCRIPT_URL}" data-site-id="${escapeHtml(siteId)}"${endpointAttr}></script>`
 }
 
 /** Generate ZTA tracking calls injected into the block runner. */
@@ -31,7 +42,8 @@ function ztaTrackingCode(siteId: string): string {
 export function generateStandaloneHtml(code: string, options: ExportOptions = {}): string {
   const title = options.title || 'CryptoBlocks Project'
   const encoded = btoa(unescape(encodeURIComponent(code)))
-  const hasZta = !!options.ztaSiteId
+  const ztaId = resolveZtaSiteId(options)
+  const hasZta = !!ztaId
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -39,7 +51,7 @@ export function generateStandaloneHtml(code: string, options: ExportOptions = {}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${escapeHtml(title)}</title>
-${hasZta ? ztaScriptBlock(options.ztaSiteId!, options.ztaEndpoint) : ''}
+${hasZta ? ztaScriptBlock(ztaId, options.ztaEndpoint) : ''}
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -135,7 +147,7 @@ ${hasZta ? ztaScriptBlock(options.ztaSiteId!, options.ztaEndpoint) : ''}
   console.warn = function() { addLine('[warn] ' + Array.prototype.slice.call(arguments).map(_fmt).join(' '), 'warn'); };
   console.error = function() { addLine('[error] ' + Array.prototype.slice.call(arguments).map(_fmt).join(' '), 'error'); };
   console.info = function() { addLine('[info] ' + Array.prototype.slice.call(arguments).map(_fmt).join(' '), 'line'); };
-${hasZta ? ztaTrackingCode(options.ztaSiteId!) : ''}
+${hasZta ? ztaTrackingCode(ztaId) : ''}
 
   var __start = performance.now();
   try {
@@ -162,18 +174,19 @@ ${hasZta ? '    __zta(\'block_error\', { error: e.message });' : ''}
 /** Generate an inline embed snippet the user can paste into any HTML page. */
 export function generateEmbedSnippet(code: string, options: ExportOptions = {}): string {
   const encoded = btoa(unescape(encodeURIComponent(code)))
-  const hasZta = !!options.ztaSiteId
+  const ztaId = resolveZtaSiteId(options)
+  const hasZta = !!ztaId
 
   // ZTA inline helper (minified for embed)
   const ztaInline = hasZta
-    ? `var __zta=function(n,p){if(window.ZTA&&window.ZTA.track){window.ZTA.track(n,Object.assign({category:'cryptoblocks',siteId:'${escapeHtml(options.ztaSiteId!)}'},p||{}))}};__zta('block_load',{url:location.href});`
+    ? `var __zta=function(n,p){if(window.ZTA&&window.ZTA.track){window.ZTA.track(n,Object.assign({category:'cryptoblocks',siteId:'${escapeHtml(ztaId)}'},p||{}))}};__zta('block_load',{url:location.href});`
     : ''
   const ztaRun = hasZta ? `__zta('block_run');` : ''
   const ztaComplete = hasZta ? `__zta('block_complete',{duration:Math.round(performance.now()-__s),lines:__n});` : ''
   const ztaError = hasZta ? `__zta('block_error',{error:e.message});` : ''
 
   const ztaScriptTag = hasZta
-    ? `\n<script defer src="https://ztas.io/js/analytics.js" data-site-id="${escapeHtml(options.ztaSiteId!)}"></script>`
+    ? `\n<script defer src="${ZTA_SCRIPT_URL}" data-site-id="${escapeHtml(ztaId)}"></script>`
     : ''
 
   return `<!-- CryptoBlocks Embed -->${ztaScriptTag}
