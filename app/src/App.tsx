@@ -18,8 +18,6 @@ import {
   downloadHtml,
   copyToClipboard,
 } from './export-html'
-import { ZTA_SITE_ID } from './export-html'
-import type { ExportOptions } from './export-html'
 import type { Challenge } from './challenges'
 import { getNextChallenge } from './challenges'
 import { validateOutput, calculateStars, countBlocks } from './challenges/validator'
@@ -48,20 +46,6 @@ export default function App() {
   const [customBlocks, setCustomBlocks] = useState<BlockDefinition[]>([])
   const [initialWorkspaceState, setInitialWorkspaceState] = useState<Record<string, unknown> | null>(null)
   const [restored, setRestored] = useState(false)
-
-  // ZTA analytics site ID — defaults from constant, overridable via Share menu
-  const [ztaSiteId, setZtaSiteId] = useState(() =>
-    localStorage.getItem('cryptoblocks_zta_site_id') || ZTA_SITE_ID
-  )
-
-  const handleZtaSiteIdChange = useCallback((id: string) => {
-    setZtaSiteId(id)
-    if (id) {
-      localStorage.setItem('cryptoblocks_zta_site_id', id)
-    } else {
-      localStorage.removeItem('cryptoblocks_zta_site_id')
-    }
-  }, [])
 
   // Challenge state
   const [mode, setMode] = useState<AppMode>('sandbox')
@@ -316,18 +300,14 @@ export default function App() {
   }, [])
 
   const handleExportHtml = useCallback(() => {
-    const opts: ExportOptions = { title: 'CryptoBlocks Project' }
-    if (ztaSiteId) opts.ztaSiteId = ztaSiteId
-    const html = generateStandaloneHtml(code, opts)
+    const html = generateStandaloneHtml(code, { title: 'CryptoBlocks Project' })
     downloadHtml(html)
-  }, [code, ztaSiteId])
+  }, [code])
 
   const handleCopyEmbed = useCallback(async () => {
-    const opts: ExportOptions = {}
-    if (ztaSiteId) opts.ztaSiteId = ztaSiteId
-    const snippet = generateEmbedSnippet(code, opts)
+    const snippet = generateEmbedSnippet(code)
     await copyToClipboard(snippet)
-  }, [code, ztaSiteId])
+  }, [code])
 
   const handleExport = useCallback(() => {
     if (workspaceRef.current) {
@@ -376,8 +356,6 @@ export default function App() {
         onImport={handleImport}
         onExportHtml={handleExportHtml}
         onCopyEmbed={handleCopyEmbed}
-        ztaSiteId={ztaSiteId}
-        onZtaSiteIdChange={handleZtaSiteIdChange}
         mode={mode}
         onOpenChallenges={handleOpenChallenges}
       />
