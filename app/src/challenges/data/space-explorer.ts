@@ -20,6 +20,7 @@ export const spaceExplorer: ThemePack = {
         'Drag the green IF block from Logic — it has a "do" slot where you stack blocks inside',
         'Plug Greater Than into the IF condition, then put a Print block with your text inside the "do" body',
       ],
+      solution: 'IF Greater Than(10, 5) → Print → Text "Asteroid detected!"',
       allowedCategories: ['Basics', 'Text', 'Math', 'Logic'],
     },
     {
@@ -35,6 +36,7 @@ export const spaceExplorer: ThemePack = {
         'The REPEAT block is in Logic — set the number to 3',
         'Put a Print block inside the "do" slot with the text "Boosting..."',
       ],
+      solution: 'Repeat(3) → Print → Text "Boosting..."',
       allowedCategories: ['Basics', 'Text', 'Logic'],
     },
     {
@@ -50,6 +52,7 @@ export const spaceExplorer: ThemePack = {
         'Use the IF-ELSE block (it has both "do" and "else" slots)',
         'Greater Than with 8 and 5 for the condition, Print in each body',
       ],
+      solution: 'IF Greater Than(8, 5) → Print "Shields up!" ELSE Print "Dodge!"',
       allowedCategories: ['Basics', 'Text', 'Math', 'Logic'],
     },
     {
@@ -65,6 +68,7 @@ export const spaceExplorer: ThemePack = {
         'Put a REPEAT block INSIDE the IF block\'s "do" slot — blocks can nest!',
         'After the REPEAT (still inside the IF), chain another Print with "WARP!"',
       ],
+      solution: 'IF Greater Than(5, 3) → { Repeat(3) → Print "Engaging...", then Print "WARP!" }',
       allowedCategories: ['Basics', 'Text', 'Math', 'Logic'],
     },
     {
@@ -80,6 +84,7 @@ export const spaceExplorer: ThemePack = {
         'Use a Multiply block to calculate 50 times 8.',
         'Wrap the Multiply block in a Print block.',
       ],
+      solution: 'Print → Multiply(50, 8)',
       allowedCategories: ['Basics', 'Math'],
     },
   ],

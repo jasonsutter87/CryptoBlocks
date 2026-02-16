@@ -19,6 +19,7 @@ export const petSimulator: ThemePack = {
         'Use Join Text to combine "My pet\'s name is " with "Pixel".',
         'Print + Join Text with two text blocks: "My pet\'s name is " and "Pixel".',
       ],
+      solution: 'Print → Join("My pet\'s name is ", "Pixel")',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -33,6 +34,7 @@ export const petSimulator: ThemePack = {
         'Use Set Global to store the hunger value, then print two messages.',
         'Set Global "hunger" to 100. Print "Feeding Pixel..." then Print with Join Text "Hunger: " + Get Global "hunger".',
       ],
+      solution: 'Set Global "hunger" → 100, Print → "Feeding Pixel...", Print → Join("Hunger: ", Get Global "hunger")',
       allowedCategories: ['Basics', 'Text', 'Data'],
     },
     {
@@ -47,6 +49,7 @@ export const petSimulator: ThemePack = {
         'Divide XP by XP-per-level to get the level.',
         'Use Print with a Divide block: 500 / 100 = 5.',
       ],
+      solution: 'Print → Divide(500, 100)',
       allowedCategories: ['Basics', 'Math'],
     },
     {
@@ -61,6 +64,7 @@ export const petSimulator: ThemePack = {
         'You need three Print blocks, one for each stat line.',
         'Use Print with Join Text for each line, combining the label with the value.',
       ],
+      solution: 'Print → Join("Name: ", "Pixel"), Print → Join("Level: ", 5), Print → Join("Hunger: ", 80)',
       allowedCategories: ['Basics', 'Text', 'Math', 'Data'],
     },
     {
@@ -75,6 +79,7 @@ export const petSimulator: ThemePack = {
         'Use an If/Else block with a comparison (greater than or equal).',
         'Compare 12 >= 10. If true, print "EVOLVED!". Else, print the difference using Subtract.',
       ],
+      solution: 'IF Greater Than(12, 10) → Print "EVOLVED!" ELSE Print → Subtract(10, level)',
       allowedCategories: ['Basics', 'Text', 'Math', 'Logic'],
     },
   ],

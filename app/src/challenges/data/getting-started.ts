@@ -19,6 +19,7 @@ export const gettingStarted: ThemePack = {
         'You need two blocks: Print and a text value.',
         'Drag a Print block from Basics, then connect a text block with "Hello World" to it.',
       ],
+      solution: 'Print → Text "Hello World"',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -33,6 +34,7 @@ export const gettingStarted: ThemePack = {
         'You need multiple Print blocks, one for each line.',
         'Use Print with number values for 3, 2, 1, then Print with text "GO!".',
       ],
+      solution: 'Print → 3, Print → 2, Print → 1, Print → Text "GO!"',
       allowedCategories: ['Basics', 'Text', 'Math'],
     },
     {
@@ -47,6 +49,7 @@ export const gettingStarted: ThemePack = {
         'You need a Print block, a multiply block, and number values.',
         'Connect a multiply block to Print. Set the inputs to 7 and 8.',
       ],
+      solution: 'Print → Multiply(7, 8)',
       allowedCategories: ['Basics', 'Math'],
     },
     {
@@ -61,6 +64,7 @@ export const gettingStarted: ThemePack = {
         'Find the Repeat block in Basics — it runs blocks inside it multiple times.',
         'Put a Print block with "CryptoBlocks" text inside a Repeat block set to 2.',
       ],
+      solution: 'Repeat(2) → Print → Text "CryptoBlocks"',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -75,6 +79,7 @@ export const gettingStarted: ThemePack = {
         'Use Set Global to create a variable, then Get Global to read it.',
         'Use Set Global "name" to "Alex", then Print with Join Text connecting "Hello, ", Get Global "name", and "!".',
       ],
+      solution: 'Set Global "name" → "Alex", then Print → Join("Hello, ", Join(Get Global "name", "!"))',
       allowedCategories: ['Basics', 'Text', 'Data'],
     },
   ],

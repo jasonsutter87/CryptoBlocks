@@ -20,6 +20,7 @@ export const treasureHunt: ThemePack = {
         'Use Create List from the Lists category, then Add To List.',
         'Create List "loot", then Add To List "loot" with item "gold coin", then Print List "loot".',
       ],
+      solution: 'Create List "loot", Add To List "loot" → "gold coin", Print List "loot"',
       allowedCategories: ['Basics', 'Lists'],
     },
     {
@@ -35,6 +36,7 @@ export const treasureHunt: ThemePack = {
         'Use Add To List three times — once for each item.',
         'Create List "loot". Add "sword", then "shield", then "potion". Finally Print List "loot".',
       ],
+      solution: 'Create List "loot", Add "sword", Add "shield", Add "potion", Print List "loot"',
       allowedCategories: ['Basics', 'Lists'],
     },
     {
@@ -50,6 +52,7 @@ export const treasureHunt: ThemePack = {
         'List Length returns a number — how many items are in the list.',
         'Create and fill the list, then use Print with List Length "loot" to show "3".',
       ],
+      solution: 'Create List "loot", Add 3 items, Print → List Length "loot"',
       allowedCategories: ['Basics', 'Lists'],
     },
     {
@@ -65,6 +68,7 @@ export const treasureHunt: ThemePack = {
         'Lists start counting at 0! Position 0 is "rock", position 1 is "key".',
         'Create "chest", add the 3 items, then Print( Get From List "chest" at index 1 ).',
       ],
+      solution: 'Create List "chest", Add "rock"/"key"/"dust", Print → Get From List("chest", 1)',
       allowedCategories: ['Basics', 'Lists'],
     },
     {
@@ -80,6 +84,7 @@ export const treasureHunt: ThemePack = {
         'Remove From List removes the item at a specific position.',
         'Create "bag", add 3 items, use Remove From List at index 1, then Print List "bag".',
       ],
+      solution: 'Create List "bag", Add 3 items, Remove From List("bag", 1), Print List "bag"',
       allowedCategories: ['Basics', 'Lists'],
     },
   ],

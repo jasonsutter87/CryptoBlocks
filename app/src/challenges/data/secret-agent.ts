@@ -20,6 +20,7 @@ export const secretAgent: ThemePack = {
         'Find the Uppercase block in the Text category.',
         'Put a text value "attack at dawn" into Uppercase, then wrap it all in a Print block.',
       ],
+      solution: 'Print → Uppercase("attack at dawn")',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -35,6 +36,7 @@ export const secretAgent: ThemePack = {
         'The Lowercase block is the opposite of Uppercase.',
         'Put "DANGER ZONE" into Lowercase, then Print the result.',
       ],
+      solution: 'Print → Lowercase("DANGER ZONE")',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -50,6 +52,7 @@ export const secretAgent: ThemePack = {
         'Replace Text takes 3 inputs: the original text, what to find, and the replacement.',
         'Text: "Say hello to my friend", Find: "hello", Replace with: "goodbye". Wrap in Print.',
       ],
+      solution: 'Print → Replace("Say hello to my friend", "hello", "goodbye")',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -65,6 +68,7 @@ export const secretAgent: ThemePack = {
         'The Reverse Text block flips text backwards.',
         'Put "desserts" into Reverse Text, then Print it. "desserts" backwards is "stressed"!',
       ],
+      solution: 'Print → Reverse("desserts")',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -80,6 +84,7 @@ export const secretAgent: ThemePack = {
         'You need to nest two operations: Reverse Text inside Uppercase.',
         'Print( Uppercase( Reverse Text( "olleh" ) ) ) — reverse first gets "hello", then uppercase makes "HELLO".',
       ],
+      solution: 'Print → Uppercase(Reverse("olleh"))',
       allowedCategories: ['Basics', 'Text'],
     },
   ],

@@ -9,6 +9,7 @@ export interface Challenge {
   expectedOutput: string[]
   par: number
   hints: string[]
+  solution?: string
   allowedCategories?: BlockCategory[]
   starterBlocks?: Record<string, unknown>
 }

@@ -20,6 +20,7 @@ export const gameBuilder: ThemePack = {
         'Create Object makes an empty object. Set Property adds data to it.',
         'Create Object "player", Set Property "player" → "name" → "Hero", then Print( Get Property "player" → "name" ).',
       ],
+      solution: 'Create Object "player", Set Property "name" → "Hero", Print → Get Property("player", "name")',
       allowedCategories: ['Basics', 'Data'],
     },
     {
@@ -35,6 +36,7 @@ export const gameBuilder: ThemePack = {
         'Use Join Text to combine "HP: " with the health value.',
         'Create Object "player", Set Property health to 100, then Print( Join Text "HP: " + Get Property "player" "health" ).',
       ],
+      solution: 'Create Object "player", Set Property "health" → 100, Print → Join("HP: ", Get Property("player", "health"))',
       allowedCategories: ['Basics', 'Text', 'Data'],
     },
     {
@@ -50,6 +52,7 @@ export const gameBuilder: ThemePack = {
         'Use Get Property to read the level, then Greater Than to compare it.',
         'Create player, set level to 15. Then Print( If Then( Greater Than( Get Property level, 10 ), "Boss unlocked!", "Keep grinding" ) ).',
       ],
+      solution: 'Create Object, Set "level" → 15, IF Greater Than(Get Property "level", 10) → Print "Boss unlocked!" ELSE Print "Keep grinding"',
       allowedCategories: ['Basics', 'Text', 'Math', 'Logic', 'Data'],
     },
     {
@@ -65,6 +68,7 @@ export const gameBuilder: ThemePack = {
         'Use Get Property to read the damage value, then Multiply it.',
         'Create "weapon", set damage to 25. Print( Multiply( Get Property "weapon" "damage", 3 ) ).',
       ],
+      solution: 'Create Object "weapon", Set "damage" → 25, Print → Multiply(Get Property("weapon", "damage"), 3)',
       allowedCategories: ['Basics', 'Math', 'Data'],
     },
     {
@@ -80,6 +84,7 @@ export const gameBuilder: ThemePack = {
         'You need multiple Set Property calls, then Join Text to build the output string.',
         'Create "hero", set name to "Knight", set level to 5. Use Join Text to build the string with Get Property for name and Multiply for power (level * 10).',
       ],
+      solution: 'Create Object "hero", Set "name"→"Knight", Set "level"→5, Print → Join(Get Property "name", Join(" - Power: ", Multiply(Get Property "level", 10)))',
       allowedCategories: ['Basics', 'Text', 'Math', 'Data'],
     },
   ],

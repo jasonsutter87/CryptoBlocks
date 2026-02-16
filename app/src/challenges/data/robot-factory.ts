@@ -20,6 +20,7 @@ export const robotFactory: ThemePack = {
         'Find Join Text in the Text category — it sticks two pieces of text together',
         'Put "Robot-" as the first input, "X1" as the second, then wrap it in a Print block',
       ],
+      solution: 'Print → Join("Robot-", "X1")',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -35,6 +36,7 @@ export const robotFactory: ThemePack = {
         'Drag the Multiply block from Math — plug in 4 and 3',
         'Wrap the Multiply block inside a Print block to show the result',
       ],
+      solution: 'Print → Multiply(4, 3)',
       allowedCategories: ['Basics', 'Math'],
     },
     {
@@ -50,6 +52,7 @@ export const robotFactory: ThemePack = {
         'Use IF-ELSE from Logic — it has a "do" and an "else" slot',
         'Greater Than with 9 and 7 for the condition, Print "PASS" in do, Print "FAIL" in else',
       ],
+      solution: 'IF Greater Than(9, 7) → Print "PASS" ELSE Print "FAIL"',
       allowedCategories: ['Basics', 'Text', 'Math', 'Logic'],
     },
     {
@@ -65,6 +68,7 @@ export const robotFactory: ThemePack = {
         'The Repeat block runs everything inside it multiple times — set it to 5.',
         'Put a Print block with "Unit ready" inside the Repeat block.',
       ],
+      solution: 'Repeat(5) → Print → Text "Unit ready"',
       allowedCategories: ['Basics', 'Text', 'Logic'],
     },
     {
@@ -80,6 +84,7 @@ export const robotFactory: ThemePack = {
         'You need to join three pieces of text: "v", the major version, ".", and the minor version.',
         'Use nested Join Text blocks: Join("v", Join(3, Join(".", 12))).',
       ],
+      solution: 'Print → Join("v", Join(3, Join(".", 12)))',
       allowedCategories: ['Basics', 'Text', 'Math'],
     },
   ],

@@ -19,6 +19,7 @@ export const minecraft: ThemePack = {
         'You can use Join Text to combine multiple text pieces together.',
         'Use Print with Join Text blocks to build the full sentence.',
       ],
+      solution: 'Print → Join(Join("3 sticks + 2 diamonds", " = "), "Diamond Pickaxe")',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -33,6 +34,7 @@ export const minecraft: ThemePack = {
         'You need two Print blocks, one after the other.',
         'First Print "Mining...", then Print "Found 5 diamonds!" — just two print statements!',
       ],
+      solution: 'Print → "Mining...", then Print → "Found 5 diamonds!"',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -47,6 +49,7 @@ export const minecraft: ThemePack = {
         'A Repeat block can run the same code multiple times.',
         'Put Print "Placing wall" inside a Repeat block set to 4.',
       ],
+      solution: 'Repeat(4) → Print → Text "Placing wall"',
       allowedCategories: ['Basics', 'Text'],
     },
     {
@@ -61,6 +64,7 @@ export const minecraft: ThemePack = {
         'You need to multiply levels by power per level.',
         'Use Print with a Multiply block: 8 * 3 = 24.',
       ],
+      solution: 'Print → Multiply(8, 3)',
       allowedCategories: ['Basics', 'Math'],
     },
     {
@@ -75,6 +79,7 @@ export const minecraft: ThemePack = {
         'Use an If/Else block with a comparison block.',
         'Compare 3 < 5 using the Less Than block. If true, print "RUN!", else print "Safe".',
       ],
+      solution: 'IF Less Than(3, 5) → Print "RUN!" ELSE Print "Safe"',
       allowedCategories: ['Basics', 'Text', 'Math', 'Logic'],
     },
   ],
