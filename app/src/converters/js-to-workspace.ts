@@ -124,6 +124,9 @@ function convertStatement(
     case 'ForStatement':
       return [convertForStatement(node, warnings, fnMap)]
 
+    case 'WhileStatement':
+      return [convertWhileStatement(node, warnings, fnMap)]
+
     default:
       warnings.push(`Unsupported statement type: ${node.type}`)
       return []
@@ -433,6 +436,22 @@ function convertForStatement(
   return blockWithStatements('cb_repeat', undefined, { TIMES: count }, stmtInputs)
 }
 
+function convertWhileStatement(
+  node: Node,
+  warnings: string[],
+  fnMap: Map<string, string>,
+): ReturnType<typeof block> {
+  // while(condition) { body } → cb_repeat with a large count + cb_if(not condition) break pattern
+  // Simplest mapping: repeat(1000) with if(!condition) break via body
+  // For simple while(i < n) patterns, try to extract the count
+  warnings.push('while loop converted to repeat(1000) — adjust the count if needed')
+
+  const doBody = convertBody(node.body as Node, warnings, fnMap)
+  const stmtInputs: Record<string, ReturnType<typeof block>> = {}
+  if (doBody) stmtInputs.DO = doBody
+  return blockWithStatements('cb_repeat', undefined, { TIMES: numVal(1000) }, stmtInputs)
+}
+
 // ---- Expression Converters ----
 
 function convertExpression(
@@ -624,6 +643,26 @@ function convertCallOrMember(
     return block('cb_power', undefined, { base: a, exponent: b })
   }
 
+  // Math.min(a, b)
+  if (isMathCall(callee, 'min')) {
+    const a = args.length > 0 ? convertExpression(args[0], warnings, fnMap) : numVal(0)
+    const b = args.length > 1 ? convertExpression(args[1], warnings, fnMap) : numVal(0)
+    return block('cb_min', undefined, { a, b })
+  }
+
+  // Math.max(a, b)
+  if (isMathCall(callee, 'max')) {
+    const a = args.length > 0 ? convertExpression(args[0], warnings, fnMap) : numVal(0)
+    const b = args.length > 1 ? convertExpression(args[1], warnings, fnMap) : numVal(0)
+    return block('cb_max', undefined, { a, b })
+  }
+
+  // Math.sqrt(x)
+  if (isMathCall(callee, 'sqrt')) {
+    const val = args.length > 0 ? convertExpression(args[0], warnings, fnMap) : numVal(0)
+    return block('cb_power', undefined, { base: val, exponent: numVal(0.5) })
+  }
+
   // Math.abs(x)
   if (isMathCall(callee, 'abs')) {
     const val = args.length > 0 ? convertExpression(args[0], warnings, fnMap) : numVal(0)
@@ -654,6 +693,27 @@ function convertCallOrMember(
         search,
       })
     }
+    if (propName === 'replace') {
+      const search = args.length > 0 ? convertExpression(args[0], warnings, fnMap) : textVal('')
+      const replacement = args.length > 1 ? convertExpression(args[1], warnings, fnMap) : textVal('')
+      return block('cb_replace_text', undefined, {
+        text: convertExpression(obj, warnings, fnMap),
+        search,
+        replace: replacement,
+      })
+    }
+    if (propName === 'trim') {
+      return block('cb_trim', undefined, { text: convertExpression(obj, warnings, fnMap) })
+    }
+    if (propName === 'slice' || propName === 'substring') {
+      const start = args.length > 0 ? convertExpression(args[0], warnings, fnMap) : numVal(0)
+      const end = args.length > 1 ? convertExpression(args[1], warnings, fnMap) : block('cb_text_length', undefined, { text: convertExpression(obj, warnings, fnMap) })
+      return block('cb_slice_text', undefined, {
+        text: convertExpression(obj, warnings, fnMap),
+        start,
+        end,
+      })
+    }
     if (propName === 'toString') {
       return convertExpression(obj, warnings, fnMap)
     }
@@ -663,6 +723,18 @@ function convertCallOrMember(
       const item = args.length > 0 ? convertExpression(args[0], warnings, fnMap) : textVal('')
       return block('cb_add_to_list', undefined, { name: textVal(listName), item })
     }
+  }
+
+  // alert(msg) → cb_print
+  if (callee.type === 'Identifier' && (callee.name as string) === 'alert') {
+    const val = args.length > 0 ? convertExpression(args[0], warnings, fnMap) : textVal('')
+    return block('cb_print', undefined, { message: val })
+  }
+
+  // prompt(msg) → cb_ask
+  if (callee.type === 'Identifier' && (callee.name as string) === 'prompt') {
+    const val = args.length > 0 ? convertExpression(args[0], warnings, fnMap) : textVal('?')
+    return block('cb_ask', undefined, { question: val })
   }
 
   // Named function call: check function map and registry

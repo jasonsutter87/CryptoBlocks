@@ -382,4 +382,69 @@ arr.forEach(function(i) { console.log(i) })`
       expect(result.warnings.length).toBeGreaterThanOrEqual(2)
     })
   })
+
+  describe('while loops', () => {
+    it('converts while loop → cb_repeat with warning', () => {
+      const result = jsToWorkspace('while (true) { console.log("loop") }')
+      const blk = firstBlock(result)
+      expect(blk.type).toBe('cb_repeat')
+      expect(result.warnings.some((w) => w.includes('while loop'))).toBe(true)
+    })
+  })
+
+  describe('additional Math methods', () => {
+    it('converts Math.min(a, b) → cb_min', () => {
+      const result = jsToWorkspace('console.log(Math.min(3, 7))')
+      const msg = inputBlock(firstBlock(result), 'message')
+      expect(msg.type).toBe('cb_min')
+    })
+
+    it('converts Math.max(a, b) → cb_max', () => {
+      const result = jsToWorkspace('console.log(Math.max(3, 7))')
+      const msg = inputBlock(firstBlock(result), 'message')
+      expect(msg.type).toBe('cb_max')
+    })
+
+    it('converts Math.sqrt(x) → cb_power with 0.5 exponent', () => {
+      const result = jsToWorkspace('console.log(Math.sqrt(9))')
+      const msg = inputBlock(firstBlock(result), 'message')
+      expect(msg.type).toBe('cb_power')
+    })
+  })
+
+  describe('additional string methods', () => {
+    it('converts .replace(a, b) → cb_replace_text', () => {
+      const result = jsToWorkspace('console.log("hello".replace("l", "r"))')
+      const msg = inputBlock(firstBlock(result), 'message')
+      expect(msg.type).toBe('cb_replace_text')
+    })
+
+    it('converts .trim() → cb_trim', () => {
+      const result = jsToWorkspace('console.log(" hi ".trim())')
+      const msg = inputBlock(firstBlock(result), 'message')
+      expect(msg.type).toBe('cb_trim')
+    })
+
+    it('converts .slice(a, b) → cb_slice_text', () => {
+      const result = jsToWorkspace('console.log("hello".slice(1, 3))')
+      const msg = inputBlock(firstBlock(result), 'message')
+      expect(msg.type).toBe('cb_slice_text')
+    })
+  })
+
+  describe('alert and prompt', () => {
+    it('converts alert(msg) → cb_print', () => {
+      const result = jsToWorkspace('alert("Hello!")')
+      const blk = firstBlock(result)
+      expect(blk.type).toBe('cb_print')
+    })
+
+    it('converts prompt(msg) → cb_ask', () => {
+      const result = jsToWorkspace('let name = prompt("Name?")')
+      const blk = firstBlock(result)
+      expect(blk.type).toBe('cb_set_global')
+      const value = inputBlock(blk, 'value')
+      expect(value.type).toBe('cb_ask')
+    })
+  })
 })
