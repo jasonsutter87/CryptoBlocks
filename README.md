@@ -126,9 +126,9 @@ Blocks are organized by category:
 | **Web** | Fetch URL, parse JSON, display image |
 | **Games** | Move sprite, detect collision, score counter |
 | **Sound** | Play tone, record, text-to-speech |
-| **Art** | Draw shape, color picker, animation frame |
-| **Data** | Read CSV, chart it, average, count |
-| **Crypto** | Hash text, encode base64, generate password |
+| **Art** | Draw shape, color picker, animation frame — **Built** |
+| **Data** | Read CSV, chart it, average, count — **Built** |
+| **Crypto** | Hash text, encode base64, generate password — **Built** |
 | **AI** | Classify image, generate text, sentiment |
 | **Hardware** | LED on/off, read sensor, servo move (Raspberry Pi) |
 
@@ -248,7 +248,7 @@ Users can publish their own tutorials. Same quality tiers as blocks:
 - **Live streaming** — output streams to UI in real-time via `postMessage`
 
 ### Testing (Built)
-- **Vitest** — 1,200+ unit + smoke tests (jsdom environment)
+- **Vitest** — 1,592 unit + smoke tests (jsdom environment)
 - **Playwright** — E2E browser tests (Chromium)
 - **Smoke suite** — validates every block in the registry has valid name, category, color, and implementations
 
@@ -366,7 +366,7 @@ These won't ship as-is (they're CTF-specific), but they prove the architecture: 
 ### Phase 0: Prototype — DONE
 - [x] Blockly integration with custom block definitions (Zelos renderer)
 - [x] Dual JS/Python execution in browser (sandboxed iframe + Pyodide)
-- [x] 49 blocks across 7 categories (Basics, Math, Text, Logic, Lists, Data, Web)
+- [x] 67 blocks across 9 categories (Basics, Math, Text, Logic, Lists, Data, Web, Crypto, Art)
 - [x] "Peek Code" toggle — Monaco Editor showing generated JS or Python
 - [x] Live output streaming with async/await support
 - [x] Single-user, no accounts, local only
@@ -406,6 +406,52 @@ Gamified coding challenges. Solve them with the fewest blocks possible.
   - [x] Euler Blocks — 10 Project Euler-style computational puzzles
 - [x] Leaderboard (fewest blocks wins)
 
+### Phase 1.6: Blocksets — DONE
+
+Step-by-step guided tutorials — "LEGO instruction sets" that walk you through building programs block by block.
+
+- [x] Blockset data model (steps with instructions + hints, allowed categories, expected output)
+- [x] Blockset browser with pack cards and progress bars
+- [x] Step-by-step panel with navigation, hints, and solution checking
+- [x] Completion overlay with next-blockset flow
+- [x] **6 Packs (30 blocksets)**:
+  - [x] Basics 101 — First Print, Number Crunch, Variables 101, First Loop, Making Decisions
+  - [x] Loops & Logic — Count to Five, Even or Odd, Fizz Buzz Mini, Find the Max, Nested Loops
+  - [x] Text Tricks — Join Names, Shout It Out, How Long?, Text Search, Mad Libs
+  - [x] List Builder — Shopping List, List Length, Sum a List, Get By Index, Remove Item
+  - [x] Data Structures — First Object, Player Card, Update Score, Has Property, Delete & Print
+  - [x] Creative Coding — Draw a Square, Traffic Light, Hash Your Name, Secret Message, Pixel Art
+- [x] Progress saved to localStorage (per-blockset completion tracking)
+
+### Phase 1.7: Code Golf — DONE
+
+Competitive efficiency puzzles — solve problems with the FEWEST blocks possible. No hints, no solutions.
+
+- [x] Golf problem data model (expected output, par score, efficiency tracking)
+- [x] Golf browser with efficiency badges (green/yellow/red)
+- [x] Problem panel with live block count vs par
+- [x] Completion with efficiency rating (Under Par / On Par / Over Par)
+- [x] Personal best tracking (keeps minimum block count across attempts)
+- [x] **3 Packs (18 problems)**:
+  - [x] Warmup — One Hundred, Triple Echo, Quick Math, ABC, Sum Two, Repeat Five
+  - [x] Brain Teasers — Countdown, Powers of Two, Reverse It, Factorial, FizzBuzz, Biggest of Three
+  - [x] Mind Benders — Fibonacci Ten, Collatz, Triangle, Diamond, Digital Root, Caesar Cipher
+- [x] Stats dashboard (problems solved, average efficiency, under-par count)
+
+### Phase 1.8: Polish & Accessibility — DONE
+
+- [x] **Toolbar consolidation** — 12+ buttons → 4 dropdown menus (File, Build, Share, Learn)
+- [x] **Mobile-responsive layout** — touch-friendly toolbar with overflow menu
+- [x] **Delete custom blocks** — right-click context menu to remove user-created blocks
+- [x] **Code-to-Blocks converter** — paste JavaScript, get blocks on the workspace
+- [x] **Monaco Editor fallback** — graceful degradation for Brave/restricted browsers
+- [x] **ADA/Accessibility fixes**:
+  - [x] Toolbox category label contrast (black text default, white on active)
+  - [x] Dropdown menu dark theme with readable text
+  - [x] Color picker block — luminance-based dynamic text contrast
+  - [x] Input fields and comment text visibility
+  - [x] Flyout background for block visibility
+
 ### Phase 2: Share
 - [ ] User accounts and authentication (Clerk)
 - [ ] Personal workspace with folders
@@ -422,10 +468,10 @@ Gamified coding challenges. Solve them with the fewest blocks possible.
 - [ ] Achievement badges
 
 ### Phase 4: Scale
-- [ ] Desktop app (Tauri)
+- [ ] Desktop app (Tauri — scaffolded, not yet shipped)
 - [ ] Classroom/teacher features
 - [ ] API for embedding
-- [ ] Mobile-friendly web editor
+- [x] Mobile-friendly web editor
 - [ ] Localization (blocks and tutorials in multiple languages)
 
 ---
