@@ -49,7 +49,7 @@ export type BlockCategory =
   | 'Hardware'
   | 'My Blocks'
 
-export type Language = 'javascript' | 'python'
+export type Language = 'javascript' | 'python' | 'html'
 
 export const CATEGORY_COLORS: Record<BlockCategory, string> = {
   Basics: '#4C97AF',

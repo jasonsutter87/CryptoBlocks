@@ -7,6 +7,7 @@ import { logicBlocks } from './definitions/logic'
 import { listsBlocks } from './definitions/lists'
 import { dataBlocks } from './definitions/data'
 import { webBlocks } from './definitions/web'
+import { artBlocks } from './definitions/art'
 
 class BlockRegistry {
   private blocks: Map<string, BlockDefinition> = new Map()
@@ -19,6 +20,7 @@ class BlockRegistry {
     this.registerAll(listsBlocks)
     this.registerAll(dataBlocks)
     this.registerAll(webBlocks)
+    this.registerAll(artBlocks)
   }
 
   register(block: BlockDefinition) {

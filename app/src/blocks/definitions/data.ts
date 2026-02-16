@@ -52,8 +52,8 @@ export const dataBlocks: BlockDefinition[] = [
     ],
     outputs: [],
     implementations: {
-      javascript: `function setProperty(objectName, key, value) {\n  window.__vars = window.__vars || {};\n  if (!window.__vars[objectName]) window.__vars[objectName] = {};\n  window.__vars[objectName][key] = value;\n}`,
-      python: `def set_property(object_name, key, value):\n    if object_name not in globals():\n        globals()[object_name] = {}\n    globals()[object_name][key] = value`,
+      javascript: `function setProperty(objectName, key, value) {\n  if (key === '__proto__' || key === 'constructor' || key === 'prototype') throw new Error('Invalid property name: ' + key);\n  window.__vars = window.__vars || {};\n  if (!window.__vars[objectName]) window.__vars[objectName] = {};\n  window.__vars[objectName][key] = value;\n}`,
+      python: `def set_property(object_name, key, value):\n    if key in ('__proto__', 'constructor', 'prototype', '__class__'):\n        raise ValueError('Invalid property name: ' + key)\n    if object_name not in globals():\n        globals()[object_name] = {}\n    globals()[object_name][key] = value`,
     },
     tests: [
       { input: { object_name: 'player', key: 'name', value: 'Jason' }, expected: {} },
@@ -72,8 +72,8 @@ export const dataBlocks: BlockDefinition[] = [
     ],
     outputs: [{ name: 'value', type: 'any' }],
     implementations: {
-      javascript: `function getProperty(objectName, key) {\n  window.__vars = window.__vars || {};\n  const obj = window.__vars[objectName] || {};\n  return obj[key];\n}`,
-      python: `def get_property(object_name, key):\n    obj = globals().get(object_name, {})\n    return obj.get(key)`,
+      javascript: `function getProperty(objectName, key) {\n  if (key === '__proto__' || key === 'constructor' || key === 'prototype') return undefined;\n  window.__vars = window.__vars || {};\n  const obj = window.__vars[objectName] || {};\n  return Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : undefined;\n}`,
+      python: `def get_property(object_name, key):\n    if key in ('__proto__', 'constructor', 'prototype', '__class__'):\n        return None\n    obj = globals().get(object_name, {})\n    return obj.get(key)`,
     },
     tests: [
       { input: { object_name: 'player', key: 'name' }, expected: { value: 'any' } },
@@ -111,8 +111,8 @@ export const dataBlocks: BlockDefinition[] = [
     ],
     outputs: [{ name: 'exists', type: 'boolean' }],
     implementations: {
-      javascript: `function hasProperty(objectName, key) {\n  window.__vars = window.__vars || {};\n  const obj = window.__vars[objectName] || {};\n  return key in obj;\n}`,
-      python: `def has_property(object_name, key):\n    obj = globals().get(object_name, {})\n    return key in obj`,
+      javascript: `function hasProperty(objectName, key) {\n  if (key === '__proto__' || key === 'constructor' || key === 'prototype') return false;\n  window.__vars = window.__vars || {};\n  const obj = window.__vars[objectName] || {};\n  return Object.prototype.hasOwnProperty.call(obj, key);\n}`,
+      python: `def has_property(object_name, key):\n    if key in ('__proto__', 'constructor', 'prototype', '__class__'):\n        return False\n    obj = globals().get(object_name, {})\n    return key in obj`,
     },
     tests: [
       { input: { object_name: 'player', key: 'name' }, expected: { exists: true } },
@@ -131,8 +131,8 @@ export const dataBlocks: BlockDefinition[] = [
     ],
     outputs: [],
     implementations: {
-      javascript: `function deleteProperty(objectName, key) {\n  window.__vars = window.__vars || {};\n  const obj = window.__vars[objectName] || {};\n  delete obj[key];\n}`,
-      python: `def delete_property(object_name, key):\n    obj = globals().get(object_name, {})\n    obj.pop(key, None)`,
+      javascript: `function deleteProperty(objectName, key) {\n  if (key === '__proto__' || key === 'constructor' || key === 'prototype') return;\n  window.__vars = window.__vars || {};\n  const obj = window.__vars[objectName] || {};\n  delete obj[key];\n}`,
+      python: `def delete_property(object_name, key):\n    if key in ('__proto__', 'constructor', 'prototype', '__class__'):\n        return\n    obj = globals().get(object_name, {})\n    obj.pop(key, None)`,
     },
     tests: [
       { input: { object_name: 'player', key: 'name' }, expected: {} },

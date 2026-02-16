@@ -5,7 +5,7 @@ export const logicBlocks: BlockDefinition[] = [
     name: 'if_then',
     author: 'CryptoBlocks',
     version: '1.0.0',
-    description: 'Do something only if a condition is true',
+    description: 'Pick between two values based on a condition',
     category: 'Logic',
     inputs: [
       { name: 'condition', type: 'boolean', description: 'The condition to check' },

@@ -144,4 +144,25 @@ export const mathBlocks: BlockDefinition[] = [
     ],
     color: '#5B80A5',
   },
+  {
+    name: 'fibonacci',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Generate the first N Fibonacci numbers',
+    category: 'Math',
+    inputs: [
+      { name: 'n', type: 'number', description: 'How many Fibonacci numbers to generate', default: 7 },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function fibonacci(n) {\n  if (n <= 0) return [];\n  if (n === 1) return [0];\n  const result = [0, 1];\n  for (let i = 2; i < n; i++) {\n    result.push(result[i - 1] + result[i - 2]);\n  }\n  return result;\n}`,
+      python: `def fibonacci(n):\n    if n <= 0:\n        return []\n    if n == 1:\n        return [0]\n    result = [0, 1]\n    for i in range(2, n):\n        result.append(result[i - 1] + result[i - 2])\n    return result`,
+    },
+    tests: [
+      { input: { n: 7 }, expected: { result: [0, 1, 1, 2, 3, 5, 8] } },
+      { input: { n: 1 }, expected: { result: [0] } },
+      { input: { n: 0 }, expected: { result: [] } },
+    ],
+    color: '#5B80A5',
+  },
 ]
