@@ -52,6 +52,36 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
     return 'text-[#f38ba8]'
   }
 
+  const getCourseScorecard = (pack: GolfPack) => {
+    if (pack.problems.length < 18) return null
+    const front9 = pack.problems.slice(0, 9)
+    const back9 = pack.problems.slice(9, 18)
+    const calcNine = (holes: GolfProblem[]) => {
+      let par = 0, strokes = 0, completed = 0
+      for (const h of holes) {
+        par += h.par
+        const p = getGolfProgressById(h.id)
+        if (p?.completed) { strokes += p.bestBlockCount; completed++ }
+      }
+      return { par, strokes, completed, total: holes.length }
+    }
+    const f = calcNine(front9)
+    const b = calcNine(back9)
+    const totalPar = f.par + b.par
+    const totalStrokes = f.strokes + b.strokes
+    const totalCompleted = f.completed + b.completed
+    return { front: f, back: b, totalPar, totalStrokes, totalCompleted }
+  }
+
+  const scoreLabel = (strokes: number, par: number, completed: number, total: number) => {
+    if (completed === 0) return { text: '—', color: 'text-[#6c7086]' }
+    if (completed < total) return { text: `${strokes} (${completed}/${total})`, color: 'text-[#f9e2af]' }
+    const diff = strokes - par
+    if (diff < 0) return { text: `${strokes} (${diff})`, color: 'text-[#a6e3a1]' }
+    if (diff === 0) return { text: `${strokes} (E)`, color: 'text-[#89b4fa]' }
+    return { text: `${strokes} (+${diff})`, color: 'text-[#f38ba8]' }
+  }
+
   return (
     <div className="flex-1 overflow-auto bg-[#1e1e2e] p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
@@ -186,12 +216,59 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
 
                 {isExpanded && (
                   <div className="border-t border-[#313244]">
+                    {/* Course Scorecard (18-hole packs only) */}
+                    {(() => {
+                      const sc = getCourseScorecard(pack)
+                      if (!sc) return null
+                      const fScore = scoreLabel(sc.front.strokes, sc.front.par, sc.front.completed, sc.front.total)
+                      const bScore = scoreLabel(sc.back.strokes, sc.back.par, sc.back.completed, sc.back.total)
+                      const tScore = scoreLabel(sc.totalStrokes, sc.totalPar, sc.totalCompleted, 18)
+                      return (
+                        <div className="px-4 py-3 bg-[#181825] border-b border-[#313244]">
+                          <div className="flex items-center justify-between text-xs mb-2">
+                            <span className="text-[#a6adc8] font-semibold uppercase tracking-wide">Course Record</span>
+                            <span className="text-[#6c7086]">Par {sc.totalPar}</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div>
+                              <div className="text-[10px] text-[#6c7086] mb-0.5">Front 9</div>
+                              <div className={`text-sm font-bold ${fScore.color}`}>{fScore.text}</div>
+                              <div className="text-[10px] text-[#6c7086]">Par {sc.front.par}</div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-[#6c7086] mb-0.5">Back 9</div>
+                              <div className={`text-sm font-bold ${bScore.color}`}>{bScore.text}</div>
+                              <div className="text-[10px] text-[#6c7086]">Par {sc.back.par}</div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] text-[#6c7086] mb-0.5">Total</div>
+                              <div className={`text-base font-bold ${tScore.color}`}>{tScore.text}</div>
+                              <div className="text-[10px] text-[#6c7086]">Par {sc.totalPar}</div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Hole-by-hole divider for 18-hole courses */}
+                    {pack.problems.length >= 18 && (
+                      <div className="px-4 py-1.5 bg-[#11111b] text-[10px] text-[#6c7086] font-semibold uppercase tracking-wider">
+                        Front 9
+                      </div>
+                    )}
+
                     {pack.problems.map((problem, i) => {
                       const progress = getGolfProgressById(problem.id)
 
                       return (
+                        <div key={problem.id}>
+                          {/* Back 9 divider for 18-hole courses */}
+                          {i === 9 && pack.problems.length >= 18 && (
+                            <div className="px-4 py-1.5 bg-[#11111b] text-[10px] text-[#6c7086] font-semibold uppercase tracking-wider border-t border-[#313244]">
+                              Back 9
+                            </div>
+                          )}
                         <button
-                          key={problem.id}
                           onClick={() => onSelectProblem(problem)}
                           className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#313244]/50 cursor-pointer ${
                             i < pack.problems.length - 1 ? 'border-b border-[#313244]/50' : ''
@@ -220,6 +297,7 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
                             )}
                           </div>
                         </button>
+                        </div>
                       )
                     })}
                   </div>

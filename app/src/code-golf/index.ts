@@ -2,11 +2,17 @@ import type { GolfPack, GolfProblem } from './types'
 import { warmup } from './data/warmup'
 import { brainTeasers } from './data/brain-teasers'
 import { mindBenders } from './data/mind-benders'
+import { pebbleBeach } from './data/pebble-beach'
+import { augustaNational } from './data/augusta-national'
+import { stAndrews } from './data/st-andrews'
 
 export const allGolfPacks: GolfPack[] = [
   warmup,
   brainTeasers,
   mindBenders,
+  pebbleBeach,
+  augustaNational,
+  stAndrews,
 ]
 
 export function getProblemById(id: string): GolfProblem | null {

@@ -2,18 +2,18 @@ import { describe, it, expect } from 'vitest'
 import { allGolfPacks, getProblemById, getNextProblem, getTotalProblemCount } from '../index'
 
 describe('Code Golf data smoke tests', () => {
-  it('has 3 packs', () => {
-    expect(allGolfPacks).toHaveLength(3)
+  it('has 6 packs', () => {
+    expect(allGolfPacks).toHaveLength(6)
   })
 
-  it('has 18 total problems', () => {
-    expect(getTotalProblemCount()).toBe(18)
+  it('has 72 total problems', () => {
+    expect(getTotalProblemCount()).toBe(72)
   })
 
   for (const pack of allGolfPacks) {
     describe(`pack: ${pack.name}`, () => {
-      it('has 6 problems', () => {
-        expect(pack.problems).toHaveLength(6)
+      it('has at least 6 problems', () => {
+        expect(pack.problems.length).toBeGreaterThanOrEqual(6)
       })
 
       it('has valid pack metadata', () => {
