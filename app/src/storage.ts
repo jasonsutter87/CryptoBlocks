@@ -156,6 +156,34 @@ export function exportBlocksFile(
   URL.revokeObjectURL(url)
 }
 
+// --- GitHub token ---
+
+const GITHUB_TOKEN_KEY = 'cryptoblocks_github_token'
+const GITHUB_USERNAME_KEY = 'cryptoblocks_github_username'
+
+export function saveGitHubToken(token: string) {
+  localStorage.setItem(GITHUB_TOKEN_KEY, token)
+}
+
+export function loadGitHubToken(): string | null {
+  return localStorage.getItem(GITHUB_TOKEN_KEY)
+}
+
+export function clearGitHubToken() {
+  localStorage.removeItem(GITHUB_TOKEN_KEY)
+  localStorage.removeItem(GITHUB_USERNAME_KEY)
+}
+
+export function saveGitHubUsername(username: string) {
+  localStorage.setItem(GITHUB_USERNAME_KEY, username)
+}
+
+export function loadGitHubUsername(): string | null {
+  return localStorage.getItem(GITHUB_USERNAME_KEY)
+}
+
+// --- .blocks file export/import ---
+
 export function importBlocksFile(
   file: File
 ): Promise<{ customBlocks: BlockDefinition[]; workspaceState: Record<string, unknown> }> {

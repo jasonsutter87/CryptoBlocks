@@ -32,6 +32,7 @@ import ChallengePanel from './components/ChallengePanel'
 import ChallengeComplete from './components/ChallengeComplete'
 import ExamplesBrowser from './components/ExamplesBrowser'
 import CodeToBlocksModal from './components/CodeToBlocksModal'
+import PublishModal from './components/PublishModal'
 import type { ConversionResult } from './converters/js-to-workspace'
 import type { Example } from './examples'
 
@@ -48,6 +49,7 @@ export default function App() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
   const [showCodeToBlocks, setShowCodeToBlocks] = useState(false)
+  const [showPublishModal, setShowPublishModal] = useState(false)
   const [editingBlock, setEditingBlock] = useState<BlockDefinition | null>(null)
   const [customBlocks, setCustomBlocks] = useState<BlockDefinition[]>([])
   const [initialWorkspaceState, setInitialWorkspaceState] = useState<Record<string, unknown> | null>(null)
@@ -401,6 +403,13 @@ export default function App() {
     await copyToClipboard(snippet)
   }, [code, language])
 
+  const getPublishHtml = useCallback(() => {
+    const jsCode = language === 'html' && workspaceRef.current
+      ? generateCode(workspaceRef.current, 'javascript')
+      : code
+    return generateStandaloneHtml(jsCode, { title: 'CryptoBlocks Project' })
+  }, [code, language])
+
   const handleExport = useCallback(() => {
     if (workspaceRef.current) {
       exportBlocksFile(customBlocks, workspaceRef.current)
@@ -449,6 +458,7 @@ export default function App() {
         onImport={handleImport}
         onExportHtml={handleExportHtml}
         onCopyEmbed={handleCopyEmbed}
+        onPublish={() => setShowPublishModal(true)}
         onClear={handleClear}
         mode={mode}
         onOpenChallenges={handleOpenChallenges}
@@ -543,6 +553,14 @@ export default function App() {
         <CodeToBlocksModal
           onConvert={handleCodeToBlocks}
           onClose={() => setShowCodeToBlocks(false)}
+        />
+      )}
+
+      {/* Publish to GitHub Modal */}
+      {showPublishModal && (
+        <PublishModal
+          getHtml={getPublishHtml}
+          onClose={() => setShowPublishModal(false)}
         />
       )}
 
