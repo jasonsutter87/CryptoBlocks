@@ -1,0 +1,81 @@
+import type { ThemePack } from '../types'
+
+export const petSimulator: ThemePack = {
+  id: 'pet-simulator',
+  name: 'Pet Simulator',
+  description: 'Code your own virtual pet adventure',
+  icon: '🐾',
+  color: '#f9e2af',
+  challenges: [
+    {
+      id: 'ps-1',
+      title: 'Name Your Pet',
+      description: 'Print "My pet\'s name is Pixel" using join text.',
+      difficulty: 'beginner',
+      theme: 'pet-simulator',
+      expectedOutput: ["My pet's name is Pixel"],
+      par: 3,
+      hints: [
+        'Use Join Text to combine "My pet\'s name is " with "Pixel".',
+        'Print + Join Text with two text blocks: "My pet\'s name is " and "Pixel".',
+      ],
+      allowedCategories: ['Basics', 'Text'],
+    },
+    {
+      id: 'ps-2',
+      title: 'Feed Time',
+      description: 'Set a variable "hunger" to 100, then print "Feeding Pixel..." and then print "Hunger: 100".',
+      difficulty: 'intermediate',
+      theme: 'pet-simulator',
+      expectedOutput: ['Feeding Pixel...', 'Hunger: 100'],
+      par: 5,
+      hints: [
+        'Use Set Global to store the hunger value, then print two messages.',
+        'Set Global "hunger" to 100. Print "Feeding Pixel..." then Print with Join Text "Hunger: " + Get Global "hunger".',
+      ],
+      allowedCategories: ['Basics', 'Text', 'Data'],
+    },
+    {
+      id: 'ps-3',
+      title: 'Level Up',
+      description: 'Your pet has 500 XP. Each level needs 100 XP. Calculate and print the level.',
+      difficulty: 'intermediate',
+      theme: 'pet-simulator',
+      expectedOutput: ['5'],
+      par: 5,
+      hints: [
+        'Divide XP by XP-per-level to get the level.',
+        'Use Print with a Divide block: 500 / 100 = 5.',
+      ],
+      allowedCategories: ['Basics', 'Math'],
+    },
+    {
+      id: 'ps-4',
+      title: 'Pet Stats',
+      description: 'Print your pet stats on 3 lines: "Name: Pixel", "Level: 5", "Hunger: 80".',
+      difficulty: 'intermediate',
+      theme: 'pet-simulator',
+      expectedOutput: ['Name: Pixel', 'Level: 5', 'Hunger: 80'],
+      par: 6,
+      hints: [
+        'You need three Print blocks, one for each stat line.',
+        'Use Print with Join Text for each line, combining the label with the value.',
+      ],
+      allowedCategories: ['Basics', 'Text', 'Math', 'Data'],
+    },
+    {
+      id: 'ps-5',
+      title: 'Evolution',
+      description: 'Your pet is level 12. If level >= 10, print "EVOLVED!" — otherwise print how many levels are needed.',
+      difficulty: 'advanced',
+      theme: 'pet-simulator',
+      expectedOutput: ['EVOLVED!'],
+      par: 7,
+      hints: [
+        'Use an If/Else block with a comparison (greater than or equal).',
+        'Compare 12 >= 10. If true, print "EVOLVED!". Else, print the difference using Subtract.',
+      ],
+      allowedCategories: ['Basics', 'Text', 'Math', 'Logic'],
+    },
+  ],
+}

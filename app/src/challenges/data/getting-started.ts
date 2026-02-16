@@ -1,0 +1,81 @@
+import type { ThemePack } from '../types'
+
+export const gettingStarted: ThemePack = {
+  id: 'getting-started',
+  name: 'Getting Started',
+  description: 'Learn the basics of coding with blocks',
+  icon: '🚀',
+  color: '#89b4fa',
+  challenges: [
+    {
+      id: 'gs-1',
+      title: 'Hello World',
+      description: 'Every coder starts here! Use a Print block and a text block to print "Hello World" to the console.',
+      difficulty: 'beginner',
+      theme: 'getting-started',
+      expectedOutput: ['Hello World'],
+      par: 2,
+      hints: [
+        'You need two blocks: Print and a text value.',
+        'Drag a Print block from Basics, then connect a text block with "Hello World" to it.',
+      ],
+      allowedCategories: ['Basics', 'Text'],
+    },
+    {
+      id: 'gs-2',
+      title: 'Countdown',
+      description: 'Print a countdown: 3, 2, 1, GO! Each on its own line.',
+      difficulty: 'beginner',
+      theme: 'getting-started',
+      expectedOutput: ['3', '2', '1', 'GO!'],
+      par: 5,
+      hints: [
+        'You need multiple Print blocks, one for each line.',
+        'Use Print with number values for 3, 2, 1, then Print with text "GO!".',
+      ],
+      allowedCategories: ['Basics', 'Text', 'Math'],
+    },
+    {
+      id: 'gs-3',
+      title: 'Math Wizard',
+      description: 'What is 7 times 8? Use math blocks to calculate it and print the answer.',
+      difficulty: 'beginner',
+      theme: 'getting-started',
+      expectedOutput: ['56'],
+      par: 3,
+      hints: [
+        'You need a Print block, a multiply block, and number values.',
+        'Connect a multiply block to Print. Set the inputs to 7 and 8.',
+      ],
+      allowedCategories: ['Basics', 'Math'],
+    },
+    {
+      id: 'gs-4',
+      title: 'Say It Twice',
+      description: 'Use a repeat loop to print "CryptoBlocks" exactly 2 times.',
+      difficulty: 'intermediate',
+      theme: 'getting-started',
+      expectedOutput: ['CryptoBlocks', 'CryptoBlocks'],
+      par: 4,
+      hints: [
+        'Find the Repeat block in Basics — it runs blocks inside it multiple times.',
+        'Put a Print block with "CryptoBlocks" text inside a Repeat block set to 2.',
+      ],
+      allowedCategories: ['Basics', 'Text'],
+    },
+    {
+      id: 'gs-5',
+      title: 'Variable Master',
+      description: 'Create a variable called "name" with the value "Alex", then print "Hello, Alex!" using join text.',
+      difficulty: 'intermediate',
+      theme: 'getting-started',
+      expectedOutput: ['Hello, Alex!'],
+      par: 5,
+      hints: [
+        'Use Set Global to create a variable, then Get Global to read it.',
+        'Use Set Global "name" to "Alex", then Print with Join Text connecting "Hello, ", Get Global "name", and "!".',
+      ],
+      allowedCategories: ['Basics', 'Text', 'Data'],
+    },
+  ],
+}

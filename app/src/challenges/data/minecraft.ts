@@ -1,0 +1,81 @@
+import type { ThemePack } from '../types'
+
+export const minecraft: ThemePack = {
+  id: 'minecraft',
+  name: 'Minecraft',
+  description: 'Code your way through the blocky world',
+  icon: '⛏️',
+  color: '#a6e3a1',
+  challenges: [
+    {
+      id: 'mc-1',
+      title: 'Craft a Pickaxe',
+      description: 'Print the crafting recipe: "3 sticks + 2 diamonds = Diamond Pickaxe"',
+      difficulty: 'beginner',
+      theme: 'minecraft',
+      expectedOutput: ['3 sticks + 2 diamonds = Diamond Pickaxe'],
+      par: 4,
+      hints: [
+        'You can use Join Text to combine multiple text pieces together.',
+        'Use Print with Join Text blocks to build the full sentence.',
+      ],
+      allowedCategories: ['Basics', 'Text'],
+    },
+    {
+      id: 'mc-2',
+      title: 'Mine Diamonds',
+      description: 'First print "Mining..." then print "Found 5 diamonds!"',
+      difficulty: 'beginner',
+      theme: 'minecraft',
+      expectedOutput: ['Mining...', 'Found 5 diamonds!'],
+      par: 4,
+      hints: [
+        'You need two Print blocks, one after the other.',
+        'First Print "Mining...", then Print "Found 5 diamonds!" — just two print statements!',
+      ],
+      allowedCategories: ['Basics', 'Text'],
+    },
+    {
+      id: 'mc-3',
+      title: 'Build a House',
+      description: 'Use a loop to print "Placing wall" exactly 4 times — one for each wall of your house.',
+      difficulty: 'intermediate',
+      theme: 'minecraft',
+      expectedOutput: ['Placing wall', 'Placing wall', 'Placing wall', 'Placing wall'],
+      par: 4,
+      hints: [
+        'A Repeat block can run the same code multiple times.',
+        'Put Print "Placing wall" inside a Repeat block set to 4.',
+      ],
+      allowedCategories: ['Basics', 'Text'],
+    },
+    {
+      id: 'mc-4',
+      title: 'Enchantment Table',
+      description: 'An enchantment has 8 levels. Each level gives 3 power. Print the total enchantment power.',
+      difficulty: 'intermediate',
+      theme: 'minecraft',
+      expectedOutput: ['24'],
+      par: 5,
+      hints: [
+        'You need to multiply levels by power per level.',
+        'Use Print with a Multiply block: 8 * 3 = 24.',
+      ],
+      allowedCategories: ['Basics', 'Math'],
+    },
+    {
+      id: 'mc-5',
+      title: 'Creeper Warning',
+      description: 'A creeper is 3 blocks away. If the distance is less than 5, print "RUN!" — otherwise print "Safe".',
+      difficulty: 'advanced',
+      theme: 'minecraft',
+      expectedOutput: ['RUN!'],
+      par: 6,
+      hints: [
+        'Use an If/Else block with a comparison block.',
+        'Compare 3 < 5 using the Less Than block. If true, print "RUN!", else print "Safe".',
+      ],
+      allowedCategories: ['Basics', 'Text', 'Math', 'Logic'],
+    },
+  ],
+}
