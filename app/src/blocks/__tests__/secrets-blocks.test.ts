@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { secretBlocks } from '../definitions/secrets'
 
 describe('Secret Blocks', () => {
-  it('defines exactly 10 blocks', () => {
-    expect(secretBlocks).toHaveLength(10)
+  it('defines exactly 13 blocks', () => {
+    expect(secretBlocks).toHaveLength(13)
   })
 
   it('all blocks belong to the ??? category', () => {
@@ -91,8 +91,23 @@ describe('Secret Blocks', () => {
     expect(block.color).toBe('#FFD700')
   })
 
-  it('most blocks use matrix green color', () => {
-    const greenBlocks = secretBlocks.filter((b) => b.color === '#00ff41')
-    expect(greenBlocks.length).toBe(9) // all except golden_ticket
+  it('rick_roll prints the lyrics', () => {
+    const block = secretBlocks.find((b) => b.name === 'rick_roll')!
+    expect(block.implementations.javascript).toContain('Never gonna give you up')
+    expect(block.author).toBe('Rick Astley')
+    expect(block.color).toBe('#FF0000')
+  })
+
+  it('matrix_rain is async and uses canvas', () => {
+    const block = secretBlocks.find((b) => b.name === 'matrix_rain')!
+    expect(block.implementations.javascript).toContain('async')
+    expect(block.implementations.javascript).toContain('cb-canvas')
+    expect(block.implementations.javascript).toContain('#00ff41')
+  })
+
+  it('sudo_sandwich prints okay', () => {
+    const block = secretBlocks.find((b) => b.name === 'sudo_sandwich')!
+    expect(block.implementations.javascript).toContain('Okay')
+    expect(block.author).toBe('Randall Munroe')
   })
 })

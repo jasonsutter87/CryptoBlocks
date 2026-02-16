@@ -4,7 +4,7 @@ import { registry } from '../registry'
 describe('BlockRegistry', () => {
   it('loads all built-in blocks', () => {
     const all = registry.getAll()
-    expect(all.length).toBeGreaterThanOrEqual(122)
+    expect(all.length).toBeGreaterThanOrEqual(135)
   })
 
   it('retrieves a block by name', () => {
@@ -41,6 +41,7 @@ describe('BlockRegistry', () => {
     expect(categories).toContain('Sound')
     expect(categories).toContain('Games')
     expect(categories).toContain('Hardware')
+    expect(categories).toContain('Turtle')
     expect(categories).toContain('???')
   })
 

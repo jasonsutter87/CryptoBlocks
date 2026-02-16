@@ -206,4 +206,103 @@ return f"{odds}:1 against — {t} materialized {p}"`,
     color: COLOR,
     shape: 'value',
   },
+
+  // 11. Rick Roll — Internet Culture
+  {
+    name: 'rick_roll',
+    author: 'Rick Astley',
+    version: '1987.0.0',
+    description: 'You know the rules and so do I.',
+    category: '???',
+    inputs: [],
+    outputs: [],
+    implementations: {
+      javascript: `function rick_roll() {
+  console.log("\\u{1F3B5} Never gonna give you up");
+  console.log("\\u{1F3B5} Never gonna let you down");
+  console.log("\\u{1F3B5} Never gonna run around and desert you");
+  console.log("\\u{1F3B5} Never gonna make you cry");
+  console.log("\\u{1F3B5} Never gonna say goodbye");
+  console.log("\\u{1F3B5} Never gonna tell a lie and hurt you");
+}`,
+      python: `def rick_roll():
+    print("\\U0001F3B5 Never gonna give you up")
+    print("\\U0001F3B5 Never gonna let you down")
+    print("\\U0001F3B5 Never gonna run around and desert you")
+    print("\\U0001F3B5 Never gonna make you cry")
+    print("\\U0001F3B5 Never gonna say goodbye")
+    print("\\U0001F3B5 Never gonna tell a lie and hurt you")`,
+    },
+    tests: [],
+    color: '#FF0000',
+    shape: 'statement',
+  },
+
+  // 12. Matrix Rain — The Matrix (1999)
+  {
+    name: 'matrix_rain',
+    author: 'Neo',
+    version: '1999.0.0',
+    description: 'See the Matrix. Green falling characters on canvas.',
+    category: '???',
+    inputs: [],
+    outputs: [],
+    implementations: {
+      javascript: `async function matrix_rain() {
+  var canvas = document.getElementById('cb-canvas');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.id = 'cb-canvas';
+    document.body.appendChild(canvas);
+  }
+  canvas.width = 400;
+  canvas.height = 400;
+  var ctx = canvas.getContext('2d');
+  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*";
+  var fontSize = 14;
+  var columns = Math.floor(canvas.width / fontSize);
+  var drops = [];
+  for (var i = 0; i < columns; i++) drops[i] = Math.floor(Math.random() * -20);
+  var frames = 0;
+  return new Promise(function(resolve) {
+    var interval = setInterval(function() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#00ff41";
+      ctx.font = fontSize + "px monospace";
+      for (var i = 0; i < columns; i++) {
+        var ch = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(ch, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+        drops[i]++;
+      }
+      frames++;
+      if (frames > 120) { clearInterval(interval); console.log("Wake up, Neo..."); resolve(); }
+    }, 33);
+  });
+}`,
+      python: 'def matrix_rain():\n    print("[Matrix Rain is only available in JavaScript mode]")',
+    },
+    tests: [],
+    color: COLOR,
+    shape: 'statement',
+  },
+
+  // 13. Sudo Sandwich — xkcd #149
+  {
+    name: 'sudo_sandwich',
+    author: 'Randall Munroe',
+    version: '149.0.0',
+    description: 'sudo make me a sandwich. Okay.',
+    category: '???',
+    inputs: [],
+    outputs: [],
+    implementations: {
+      javascript: 'function sudo_sandwich() {\n  console.log("\\u{1F96A} Okay.");\n}',
+      python: 'def sudo_sandwich():\n    print("\\U0001F96A Okay.")',
+    },
+    tests: [],
+    color: COLOR,
+    shape: 'statement',
+  },
 ]
