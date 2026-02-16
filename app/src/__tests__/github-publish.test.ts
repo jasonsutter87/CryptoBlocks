@@ -17,27 +17,33 @@ beforeEach(() => {
   vi.restoreAllMocks()
 })
 
+const VALID_TOKEN = 'ghp_aBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890'
+
 describe('validateToken', () => {
   it('returns username on 200', async () => {
     globalThis.fetch = mockFetch([{ status: 200, body: { login: 'octocat' } }])
-    const username = await validateToken('ghp_test')
+    const username = await validateToken(VALID_TOKEN)
     expect(username).toBe('octocat')
     expect(fetch).toHaveBeenCalledWith(
       'https://api.github.com/user',
       expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: 'Bearer ghp_test' }),
+        headers: expect.objectContaining({ Authorization: `Bearer ${VALID_TOKEN}` }),
       })
     )
   })
 
+  it('throws on invalid token format', async () => {
+    await expect(validateToken('bad')).rejects.toThrow('Invalid token format')
+  })
+
   it('throws on 401', async () => {
     globalThis.fetch = mockFetch([{ status: 401 }])
-    await expect(validateToken('bad')).rejects.toThrow('Invalid token')
+    await expect(validateToken(VALID_TOKEN)).rejects.toThrow('Invalid token')
   })
 
   it('throws on other errors with status code', async () => {
     globalThis.fetch = mockFetch([{ status: 500 }])
-    await expect(validateToken('tok')).rejects.toThrow('GitHub API error: 500')
+    await expect(validateToken(VALID_TOKEN)).rejects.toThrow('GitHub API error: 500')
   })
 })
 

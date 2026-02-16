@@ -14,6 +14,9 @@ function headers(token: string): Record<string, string> {
 
 /** Validate a PAT by fetching the authenticated user. Returns username or throws. */
 export async function validateToken(token: string): Promise<string> {
+  if (!/^(ghp_|github_pat_)[a-zA-Z0-9_]{20,}$/.test(token)) {
+    throw new Error('Invalid token format. GitHub tokens start with ghp_ or github_pat_')
+  }
   const res = await fetch(`${API}/user`, { headers: headers(token) })
   if (!res.ok) {
     throw new Error(res.status === 401 ? 'Invalid token' : `GitHub API error: ${res.status}`)

@@ -14,7 +14,7 @@ export const webBlocks: BlockDefinition[] = [
     outputs: [{ name: 'data', type: 'any' }],
     implementations: {
       javascript: `async function httpGet(url) {\n  try {\n    const response = await fetch(url);\n    return await response.json();\n  } catch (e) {\n    console.log("HTTP GET error: " + e.message);\n    return null;\n  }\n}`,
-      python: `async def http_get(url):\n    try:\n        from pyodide.http import pyfetch\n        response = await pyfetch(url)\n        return await response.json()\n    except Exception as e:\n        print(f"HTTP GET error: {e}")\n        return None`,
+      python: `async def http_get(url):\n    print("HTTP GET is only available in JavaScript mode.")\n    print("Switch to JavaScript to use web request blocks.")\n    return None`,
     },
     tests: [
       { input: { url: 'https://api.example.com/data' }, expected: { data: 'any' } },
@@ -35,7 +35,7 @@ export const webBlocks: BlockDefinition[] = [
     outputs: [{ name: 'data', type: 'any' }],
     implementations: {
       javascript: `async function httpPost(url, body) {\n  try {\n    const response = await fetch(url, {\n      method: "POST",\n      headers: { "Content-Type": "application/json" },\n      body: body\n    });\n    return await response.json();\n  } catch (e) {\n    console.log("HTTP POST error: " + e.message);\n    return null;\n  }\n}`,
-      python: `async def http_post(url, body):\n    try:\n        from pyodide.http import pyfetch\n        response = await pyfetch(url, method="POST", headers={"Content-Type": "application/json"}, body=body)\n        return await response.json()\n    except Exception as e:\n        print(f"HTTP POST error: {e}")\n        return None`,
+      python: `async def http_post(url, body):\n    print("HTTP POST is only available in JavaScript mode.")\n    print("Switch to JavaScript to use web request blocks.")\n    return None`,
     },
     tests: [
       { input: { url: 'https://api.example.com/data', body: '{"key":"value"}' }, expected: { data: 'any' } },
@@ -98,7 +98,7 @@ export const webBlocks: BlockDefinition[] = [
     outputs: [{ name: 'connection', type: 'any' }],
     implementations: {
       javascript: `async function wsConnect(url) {\n  try {\n    window.__ws = window.__ws || {};\n    const ws = new WebSocket(url);\n    await new Promise(function(resolve, reject) {\n      ws.onopen = resolve;\n      ws.onerror = reject;\n      setTimeout(function() { reject(new Error("Connection timeout")); }, 5000);\n    });\n    ws.__messages = [];\n    ws.onmessage = function(e) { ws.__messages.push(e.data); };\n    window.__ws[url] = ws;\n    return ws;\n  } catch (e) {\n    console.log("WebSocket connect error: " + e.message);\n    return null;\n  }\n}`,
-      python: `async def ws_connect(url):\n    try:\n        from js import WebSocket\n        import asyncio\n        ws = WebSocket.new(url)\n        connected = asyncio.get_event_loop().create_future()\n        ws.onopen = lambda e: connected.set_result(True)\n        ws.onerror = lambda e: connected.set_result(False)\n        await asyncio.wait_for(connected, timeout=5)\n        ws._messages = []\n        ws.onmessage = lambda e: ws._messages.append(e.data)\n        globals()['__ws'] = globals().get('__ws', {})\n        globals()['__ws'][url] = ws\n        return ws\n    except Exception as e:\n        print(f"WebSocket connect error: {e}")\n        return None`,
+      python: `async def ws_connect(url):\n    print("WebSocket is only available in JavaScript mode.")\n    print("Switch to JavaScript to use WebSocket blocks.")\n    return None`,
     },
     tests: [
       { input: { url: 'wss://echo.websocket.org' }, expected: { connection: 'any' } },
