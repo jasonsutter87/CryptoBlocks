@@ -2,11 +2,15 @@ import type { LabPack, LabExercise } from './types'
 import { beginner } from './data/beginner'
 import { intermediate } from './data/intermediate'
 import { advanced } from './data/advanced'
+import { bigO } from './data/big-o'
+import { sorting } from './data/sorting'
 
 export const allLabPacks: LabPack[] = [
   beginner,
   intermediate,
   advanced,
+  bigO,
+  sorting,
 ]
 
 export function getExerciseById(id: string): LabExercise | null {
