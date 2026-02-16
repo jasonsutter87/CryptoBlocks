@@ -54,26 +54,25 @@ export default function Toolbar({
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
-  const [showShareMenu, setShowShareMenu] = useState(false)
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [openMenu, setOpenMenu] = useState<'file' | 'build' | 'share' | 'learn' | 'mobile' | null>(null)
   const [embedCopied, setEmbedCopied] = useState(false)
-  const shareMenuRef = useRef<HTMLDivElement>(null)
-  const mobileMenuRef = useRef<HTMLDivElement>(null)
+  const menuContainerRef = useRef<HTMLDivElement>(null)
 
   // Close menus on outside click
   useEffect(() => {
-    if (!showShareMenu && !showMobileMenu) return
+    if (!openMenu) return
     const handleClick = (e: MouseEvent) => {
-      if (showShareMenu && shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
-        setShowShareMenu(false)
-      }
-      if (showMobileMenu && mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
-        setShowMobileMenu(false)
+      if (menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
+        setOpenMenu(null)
       }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [showShareMenu, showMobileMenu])
+  }, [openMenu])
+
+  const toggleMenu = (menu: typeof openMenu) => {
+    setOpenMenu((prev) => (prev === menu ? null : menu))
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -94,6 +93,13 @@ export default function Toolbar({
   const inChallenge = mode === 'active-challenge' || mode === 'active-blockset' || mode === 'active-golf'
 
   const menuItem = 'flex items-center gap-2 w-full px-3 py-2.5 text-sm text-[#cdd6f4] hover:bg-[#45475a] transition-colors text-left'
+  const menuDropdown = 'absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1'
+  const menuDivider = 'h-px bg-[#45475a] my-1'
+  const chevron = (
+    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  )
 
   return (
     <header className="flex items-center justify-between px-3 md:px-4 py-2 bg-[#181825] border-b border-[#313244] select-none">
@@ -113,84 +119,107 @@ export default function Toolbar({
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-1.5 md:gap-2">
-        {/* === Desktop buttons (hidden on mobile) === */}
+      <div className="flex items-center gap-1.5 md:gap-2" ref={menuContainerRef}>
+        {/* Hidden file inputs */}
+        <input ref={fileInputRef} type="file" accept=".blocks" onChange={handleFileChange} className="hidden" />
+        <input ref={importAsBlockInputRef} type="file" accept=".blocks" onChange={handleImportAsBlockChange} className="hidden" />
+
+        {/* === Desktop dropdowns (hidden on mobile) === */}
         {!inChallenge && (
           <>
-            {/* Save */}
-            <button
-              onClick={onExport}
-              className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
-              title="Save project as .blocks file"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              Save
-            </button>
-
-            {/* Load */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
-              title="Load a .blocks file"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
-              </svg>
-              Load
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".blocks"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-
-            {/* Import as Block */}
-            <button
-              onClick={() => importAsBlockInputRef.current?.click()}
-              className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
-              title="Turn a .blocks file into a reusable block"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-              Import as Block
-            </button>
-            <input
-              ref={importAsBlockInputRef}
-              type="file"
-              accept=".blocks"
-              onChange={handleImportAsBlockChange}
-              className="hidden"
-            />
-
-            {/* Share */}
-            <div className="relative hidden md:block" ref={shareMenuRef}>
+            {/* File dropdown */}
+            <div className="relative hidden md:block">
               <button
-                onClick={() => setShowShareMenu((prev) => !prev)}
+                onClick={() => toggleMenu('file')}
+                className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                File
+                {chevron}
+              </button>
+
+              {openMenu === 'file' && (
+                <div className={menuDropdown}>
+                  <button onClick={() => { onExport(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                    Save .blocks
+                  </button>
+                  <button onClick={() => { fileInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
+                    </svg>
+                    Load .blocks
+                  </button>
+                  <button onClick={() => { importAsBlockInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    Import as Block
+                  </button>
+                  <div className={menuDivider} />
+                  <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#f38ba8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Clear Workspace
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Build dropdown */}
+            <div className="relative hidden md:block">
+              <button
+                onClick={() => toggleMenu('build')}
+                className={`${btn} text-[#f9e2af] hover:bg-[#313244]`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Build
+                {chevron}
+              </button>
+
+              {openMenu === 'build' && (
+                <div className={menuDropdown}>
+                  <button onClick={() => { onCreateBlock(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#f9e2af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Create Block
+                  </button>
+                  <button onClick={() => { onCodeToBlocks(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Code to Blocks
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Share dropdown */}
+            <div className="relative hidden md:block">
+              <button
+                onClick={() => toggleMenu('share')}
                 className={`${btn} bg-[#89b4fa] text-[#1e1e2e] hover:bg-[#89b4fa]/80`}
-                title="Export as HTML or copy embed code"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
                 Share
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
+                {chevron}
               </button>
 
-              {showShareMenu && (
-                <div className="absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1">
+              {openMenu === 'share' && (
+                <div className={menuDropdown}>
                   <button
-                    onClick={() => {
-                      onExportHtml()
-                      setShowShareMenu(false)
-                    }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[#cdd6f4] hover:bg-[#45475a] transition-colors text-left"
+                    onClick={() => { onExportHtml(); setOpenMenu(null) }}
+                    className={menuItem}
                   >
                     <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
@@ -204,7 +233,7 @@ export default function Toolbar({
                       setEmbedCopied(true)
                       setTimeout(() => setEmbedCopied(false), 2000)
                     }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[#cdd6f4] hover:bg-[#45475a] transition-colors text-left"
+                    className={menuItem}
                   >
                     <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -212,13 +241,10 @@ export default function Toolbar({
                     {embedCopied ? 'Copied!' : 'Copy Embed Snippet'}
                     <span className="ml-auto text-xs text-[#6c7086]">&lt;/&gt;</span>
                   </button>
-                  <div className="h-px bg-[#45475a] my-1" />
+                  <div className={menuDivider} />
                   <button
-                    onClick={() => {
-                      onPublish()
-                      setShowShareMenu(false)
-                    }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[#cdd6f4] hover:bg-[#45475a] transition-colors text-left"
+                    onClick={() => { onPublish(); setOpenMenu(null) }}
+                    className={menuItem}
                   >
                     <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -233,103 +259,77 @@ export default function Toolbar({
             {/* Divider */}
             <div className="hidden md:block w-px h-6 bg-[#313244]" />
 
-            {/* Create Block */}
-            <button
-              onClick={onCreateBlock}
-              className={`hidden md:flex ${btn} bg-[#f9e2af] text-[#1e1e2e] hover:bg-[#f9e2af]/80`}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              Create Block
-            </button>
+            {/* Learn dropdown */}
+            <div className="relative hidden md:block">
+              <button
+                onClick={() => toggleMenu('learn')}
+                className={
+                  ['challenges', 'blocksets', 'code-golf'].includes(mode)
+                    ? `${btn} bg-[#f9e2af] text-[#1e1e2e]`
+                    : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
+                }
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                Learn
+                {chevron}
+              </button>
 
-            {/* Code to Blocks */}
-            <button
-              onClick={onCodeToBlocks}
-              className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
-              title="Convert JavaScript code to blocks"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              Code to Blocks
-            </button>
-
-            {/* Clear Workspace */}
-            <button
-              onClick={onClear}
-              className={`hidden md:flex ${btn} bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/80`}
-              title="Clear workspace"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Clear
-            </button>
+              {openMenu === 'learn' && (
+                <div className={menuDropdown}>
+                  <button onClick={() => { onOpenExamples(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    Examples
+                  </button>
+                  <div className={menuDivider} />
+                  <button onClick={() => { onOpenChallenges(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#f9e2af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                    Challenges
+                    {mode === 'challenges' && <span className="ml-auto text-xs text-[#f9e2af] font-bold">Active</span>}
+                  </button>
+                  <button onClick={() => { onOpenBlocksets(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    Blocksets
+                    {mode === 'blocksets' && <span className="ml-auto text-xs text-[#89b4fa] font-bold">Active</span>}
+                  </button>
+                  <button onClick={() => { onOpenGolf(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11m16-11v11" />
+                    </svg>
+                    Code Golf
+                    {mode === 'code-golf' && <span className="ml-auto text-xs text-[#a6e3a1] font-bold">Active</span>}
+                  </button>
+                </div>
+              )}
+            </div>
           </>
         )}
 
-        {/* Examples (desktop) */}
+        {/* Challenges button — always visible on mobile when not in challenge */}
         {!inChallenge && (
           <button
-            onClick={onOpenExamples}
-            className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
-            title="Browse example projects"
+            onClick={onOpenChallenges}
+            className={
+              mode === 'challenges'
+                ? `md:hidden ${btn} bg-[#f9e2af] text-[#1e1e2e]`
+                : `md:hidden ${btn} text-[#cdd6f4] hover:bg-[#313244]`
+            }
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
-            Examples
+            <span className="hidden sm:inline">Challenges</span>
           </button>
         )}
 
-        {/* Challenges (always visible) */}
-        <button
-          onClick={onOpenChallenges}
-          className={
-            mode === 'challenges'
-              ? `${btn} bg-[#f9e2af] text-[#1e1e2e]`
-              : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
-          }
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-          </svg>
-          <span className="hidden sm:inline">Challenges</span>
-        </button>
-
-        {/* Blocksets (desktop visible, mobile in overflow) */}
-        <button
-          onClick={onOpenBlocksets}
-          className={
-            mode === 'blocksets'
-              ? `hidden md:flex ${btn} bg-[#89b4fa] text-[#1e1e2e]`
-              : `hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`
-          }
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          Blocksets
-        </button>
-
-        {/* Code Golf (desktop visible, mobile in overflow) */}
-        <button
-          onClick={onOpenGolf}
-          className={
-            mode === 'code-golf'
-              ? `hidden md:flex ${btn} bg-[#a6e3a1] text-[#1e1e2e]`
-              : `hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`
-          }
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11m16-11v11" />
-          </svg>
-          Code Golf
-        </button>
-
-        {/* Peek / Hide Code (always visible) */}
+        {/* Peek / Hide Code */}
         {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && (
           <button
             onClick={onToggleCode}
@@ -353,7 +353,7 @@ export default function Toolbar({
           </div>
         )}
 
-        {/* Run / Stop (always visible) */}
+        {/* Run / Stop */}
         {mode === 'sandbox' && (
           <>
             {isRunning ? (
@@ -382,9 +382,9 @@ export default function Toolbar({
 
         {/* === Mobile overflow menu === */}
         {!inChallenge && (
-          <div className="relative md:hidden" ref={mobileMenuRef}>
+          <div className="relative md:hidden">
             <button
-              onClick={() => setShowMobileMenu((v) => !v)}
+              onClick={() => toggleMenu('mobile')}
               className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
               aria-label="More options"
             >
@@ -393,72 +393,72 @@ export default function Toolbar({
               </svg>
             </button>
 
-            {showMobileMenu && (
+            {openMenu === 'mobile' && (
               <div className="absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1 max-h-[70vh] overflow-auto">
-                <button onClick={() => { onExport(); setShowMobileMenu(false) }} className={menuItem}>
+                <button onClick={() => { onExport(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
                   </svg>
                   Save .blocks
                 </button>
-                <button onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false) }} className={menuItem}>
+                <button onClick={() => { fileInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
                   </svg>
                   Load .blocks
                 </button>
-                <button onClick={() => { importAsBlockInputRef.current?.click(); setShowMobileMenu(false) }} className={menuItem}>
+                <button onClick={() => { importAsBlockInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
                   Import as Block
                 </button>
-                <div className="h-px bg-[#45475a] my-1" />
-                <button onClick={() => { onCreateBlock(); setShowMobileMenu(false) }} className={menuItem}>
+                <div className={menuDivider} />
+                <button onClick={() => { onCreateBlock(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#f9e2af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                   Create Block
                 </button>
-                <button onClick={() => { onCodeToBlocks(); setShowMobileMenu(false) }} className={menuItem}>
+                <button onClick={() => { onCodeToBlocks(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                   Code to Blocks
                 </button>
-                <button onClick={() => { onOpenExamples(); setShowMobileMenu(false) }} className={menuItem}>
+                <button onClick={() => { onOpenExamples(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                   Examples
                 </button>
-                <button onClick={() => { onOpenBlocksets(); setShowMobileMenu(false) }} className={menuItem}>
+                <button onClick={() => { onOpenBlocksets(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                   Blocksets
                 </button>
-                <button onClick={() => { onOpenGolf(); setShowMobileMenu(false) }} className={menuItem}>
+                <button onClick={() => { onOpenGolf(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11m16-11v11" />
                   </svg>
                   Code Golf
                 </button>
-                <div className="h-px bg-[#45475a] my-1" />
-                <button onClick={() => { onExportHtml(); setShowMobileMenu(false) }} className={menuItem}>
+                <div className={menuDivider} />
+                <button onClick={() => { onExportHtml(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
                   </svg>
                   Export HTML
                 </button>
-                <button onClick={() => { onPublish(); setShowMobileMenu(false) }} className={menuItem}>
+                <button onClick={() => { onPublish(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Publish to GitHub
                 </button>
-                <div className="h-px bg-[#45475a] my-1" />
-                <button onClick={() => { onClear(); setShowMobileMenu(false) }} className={menuItem}>
+                <div className={menuDivider} />
+                <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
                   <svg className="w-4 h-4 text-[#f38ba8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
