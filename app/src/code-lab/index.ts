@@ -4,6 +4,7 @@ import { intermediate } from './data/intermediate'
 import { advanced } from './data/advanced'
 import { bigO } from './data/big-o'
 import { sorting } from './data/sorting'
+import { linkedLists } from './data/linked-lists'
 
 export const allLabPacks: LabPack[] = [
   beginner,
@@ -11,6 +12,7 @@ export const allLabPacks: LabPack[] = [
   advanced,
   bigO,
   sorting,
+  linkedLists,
 ]
 
 export function getExerciseById(id: string): LabExercise | null {

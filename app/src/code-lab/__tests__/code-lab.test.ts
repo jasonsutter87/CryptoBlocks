@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { allLabPacks, getExerciseById, getNextExercise, getTotalExerciseCount } from '../index'
 
 describe('Code Lab data smoke tests', () => {
-  it('has 5 packs', () => {
-    expect(allLabPacks).toHaveLength(5)
+  it('has 6 packs', () => {
+    expect(allLabPacks).toHaveLength(6)
   })
 
-  it('has 25 total exercises', () => {
-    expect(getTotalExerciseCount()).toBe(25)
+  it('has 30 total exercises', () => {
+    expect(getTotalExerciseCount()).toBe(30)
   })
 
   for (const pack of allLabPacks) {
