@@ -44,6 +44,7 @@ export type BlockCategory =
   | 'Sound'
   | 'Art'
   | 'Data'
+  | 'Database'
   | 'Crypto'
   | 'AI'
   | 'Hardware'
@@ -62,6 +63,7 @@ export const CATEGORY_COLORS: Record<BlockCategory, string> = {
   Sound: '#DB2777',
   Art: '#9333EA',
   Data: '#0891B2',
+  Database: '#2563EB',
   Crypto: '#4F46E5',
   AI: '#7C3AED',
   Hardware: '#65A30D',

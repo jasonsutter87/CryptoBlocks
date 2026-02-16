@@ -8,6 +8,7 @@ import { listsBlocks } from './definitions/lists'
 import { dataBlocks } from './definitions/data'
 import { webBlocks } from './definitions/web'
 import { artBlocks } from './definitions/art'
+import { databaseBlocks } from './definitions/database'
 import { cryptoBlocks } from './definitions/crypto'
 
 class BlockRegistry {
@@ -20,6 +21,7 @@ class BlockRegistry {
     this.registerAll(logicBlocks)
     this.registerAll(listsBlocks)
     this.registerAll(dataBlocks)
+    this.registerAll(databaseBlocks)
     this.registerAll(webBlocks)
     this.registerAll(artBlocks)
     this.registerAll(cryptoBlocks)
