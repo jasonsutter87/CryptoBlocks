@@ -39,7 +39,8 @@ body {
   border-color: #45475a !important;
 }
 
-.blocklyDropDownDiv .blocklyMenuItem {
+.blocklyDropDownDiv .blocklyMenuItem,
+.blocklyDropDownDiv .blocklyMenuItemContent {
   color: #cdd6f4 !important;
 }
 
