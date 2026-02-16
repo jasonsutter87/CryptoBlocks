@@ -12,6 +12,14 @@ import { musicFestival } from './data/music-festival'
 import { scienceLab } from './data/science-lab'
 import { startupSim } from './data/startup-sim'
 import { eulerBlocks } from './data/euler-blocks'
+import { webDetective } from './data/web-detective'
+import { arcadeMode } from './data/arcade-mode'
+import { beatLab } from './data/beat-lab'
+import { pixelArt } from './data/pixel-art'
+import { cryptoPuzzles } from './data/crypto-puzzles'
+import { brainTrainer } from './data/brain-trainer'
+import { deviceScan } from './data/device-scan'
+import { dataWizard } from './data/data-wizard'
 
 export const allThemes: ThemePack[] = [
   gettingStarted,
@@ -27,6 +35,14 @@ export const allThemes: ThemePack[] = [
   scienceLab,
   startupSim,
   eulerBlocks,
+  webDetective,
+  arcadeMode,
+  beatLab,
+  pixelArt,
+  cryptoPuzzles,
+  brainTrainer,
+  deviceScan,
+  dataWizard,
 ]
 
 export function getChallengeById(id: string): Challenge | null {
