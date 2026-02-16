@@ -1,5 +1,5 @@
 import type { ThemePack } from '../types'
-import { resetIds, block, blockWithStatements, textVal, numVal, boolVal, workspace } from '../../examples/workspaces'
+import { resetIds, block, workspace } from '../../examples/workspaces'
 
 function trueOrFalse(): Record<string, unknown> {
   resetIds()

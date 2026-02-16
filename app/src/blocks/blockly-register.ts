@@ -41,10 +41,6 @@ function isNativeBlock(type: string): boolean {
   return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type)
 }
 
-function isControlFlowBlock(type: string): boolean {
-  return CONTROL_FLOW_BLOCKS.has(type)
-}
-
 /** Register control flow blocks (IF, IF-ELSE, REPEAT) as native Blockly blocks with statement inputs. */
 function registerControlFlowBlocks() {
   // IF (no else)
@@ -295,7 +291,7 @@ function isLightColor(hex: string): boolean {
 /** Update text fill on the color block's dropdown to contrast against block color. */
 function updateColorBlockText(block: Blockly.Block, hex: string) {
   const textFill = isLightColor(hex) ? '#000' : '#fff'
-  const svgRoot = block.getSvgRoot()
+  const svgRoot = (block as unknown as { getSvgRoot(): SVGGElement | null }).getSvgRoot()
   if (!svgRoot) return
   const texts = svgRoot.querySelectorAll<SVGTextElement>('text.blocklyDropdownText')
   for (const t of texts) {
@@ -486,7 +482,7 @@ export function generateCode(workspace: Blockly.Workspace, language: Language): 
   for (const name of usedBlocks) {
     const def = registry.get(name)
     if (def) {
-      lines.push(def.implementations[language])
+      lines.push(def.implementations[language as 'javascript' | 'python'])
       lines.push('')
     }
   }
@@ -784,7 +780,7 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
     }
   }
 
-  const isAsync = def.implementations[language].trimStart().startsWith('async ')
+  const isAsync = def.implementations[language as 'javascript' | 'python'].trimStart().startsWith('async ')
   let code = isAsync ? `await ${fnName}(${args.join(', ')})` : `${fnName}(${args.join(', ')})`
 
   // If this is a statement block, make it a standalone call
@@ -803,7 +799,7 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
 }
 
 function extractFunctionName(def: BlockDefinition, language: Language): string {
-  const code = def.implementations[language]
+  const code = def.implementations[language as 'javascript' | 'python']
   if (language === 'javascript') {
     const match = code.match(/function\s+(\w+)/)
     return match ? match[1] : def.name
@@ -1197,7 +1193,7 @@ export function generateBlockTreeCode(block: Blockly.Block, language: Language):
   for (const name of usedBlocks) {
     const def = registry.get(name)
     if (def) {
-      lines.push(def.implementations[language])
+      lines.push(def.implementations[language as 'javascript' | 'python'])
       lines.push('')
     }
   }

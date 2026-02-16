@@ -35,7 +35,7 @@ export function jsToWorkspace(code: string): ConversionResult {
   const ast = acorn.parse(code, {
     ecmaVersion: 2020,
     sourceType: 'script',
-  }) as Node
+  }) as unknown as Node
 
   const body = ast.body as Node[]
 
@@ -391,7 +391,7 @@ function convertForStatement(
   // Try to match: for (i = 0; i < n; i++) or for (let i = 0; i < n; i++)
   const init = node.init as Node | null
   const test = node.test as Node | null
-  const update = node.update as Node | null
+  // node.update intentionally unused — we only need init/test for block count
 
   let count: ReturnType<typeof block> | null = null
 

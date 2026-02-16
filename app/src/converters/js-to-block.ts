@@ -57,8 +57,6 @@ export function jsToBlock(jsCode: string, options: ConvertOptions = {}): BlockDe
 
   // Detect if function returns something
   const hasReturn = /\breturn\b/.test(body)
-  const isAsync = cleaned.trimStart().startsWith('async ')
-
   // Extract just the function (strip trailing example code like console.log)
   const fnOnly = extractFunction(cleaned)
 

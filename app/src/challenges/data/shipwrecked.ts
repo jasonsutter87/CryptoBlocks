@@ -1,5 +1,5 @@
 import type { ThemePack } from '../types'
-import { resetIds, block, blockWithStatements, textVal, numVal, workspace } from '../../examples/workspaces'
+import { resetIds, block, workspace } from '../../examples/workspaces'
 
 function messageInABottle(): Record<string, unknown> {
   resetIds()
