@@ -1,5 +1,10 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import * as Blockly from 'blockly'
+
+vi.mock('../crypto-unlock', () => ({
+  getCryptoUnlockState: vi.fn(() => 'unlocked'),
+}))
+
 import {
   registerCustomBlocks,
   registerSingleBlock,

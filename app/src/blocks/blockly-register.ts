@@ -1,6 +1,7 @@
 import * as Blockly from 'blockly'
 import type { BlockDefinition, Language } from '../types/block'
 import { registry } from './registry'
+import { getCryptoUnlockState } from './crypto-unlock'
 
 function typeToBlocklyField(type: string): string {
   switch (type) {
@@ -824,9 +825,30 @@ function htmlToolboxXml(): string {
 
 export function getToolboxXml(): string {
   const categories = registry.getCategories()
+  const cryptoState = getCryptoUnlockState()
   let xml = '<xml>'
 
   for (const cat of categories) {
+    // Progressive unlock for Crypto category
+    if (cat === 'Crypto') {
+      if (cryptoState === 'hidden') continue
+      if (cryptoState === 'disabled') {
+        const color = registry.getCategoryColor(cat)
+        const hue = hexToHue(color)
+        xml += `<category name="${cat}" colour="${hue}" disabled="true">`
+        xml += '<label text="Complete all challenges to unlock!" web-class="crypto-locked-label"></label>'
+        for (const block of registry.getByCategory(cat)) {
+          xml += `<block type="cb_${block.name}">`
+          for (const input of block.inputs) {
+            xml += inputShadowXml(input)
+          }
+          xml += `</block>`
+        }
+        xml += '</category>'
+        continue
+      }
+    }
+
     const blocks = registry.getByCategory(cat)
     const color = registry.getCategoryColor(cat)
     // Convert hex color to Blockly hue (0-360)
@@ -865,10 +887,32 @@ export function getToolboxXml(): string {
 
 export function getFilteredToolboxXml(allowedCategories: string[]): string {
   const categories = registry.getCategories()
+  const cryptoState = getCryptoUnlockState()
   let xml = '<xml>'
 
   for (const cat of categories) {
     if (!allowedCategories.includes(cat)) continue
+
+    // Progressive unlock for Crypto category
+    if (cat === 'Crypto') {
+      if (cryptoState === 'hidden') continue
+      if (cryptoState === 'disabled') {
+        const color = registry.getCategoryColor(cat)
+        const hue = hexToHue(color)
+        xml += `<category name="${cat}" colour="${hue}" disabled="true">`
+        xml += '<label text="Complete all challenges to unlock!" web-class="crypto-locked-label"></label>'
+        for (const block of registry.getByCategory(cat)) {
+          xml += `<block type="cb_${block.name}">`
+          for (const input of block.inputs) {
+            xml += inputShadowXml(input)
+          }
+          xml += `</block>`
+        }
+        xml += '</category>'
+        continue
+      }
+    }
+
     const blocks = registry.getByCategory(cat)
     const color = registry.getCategoryColor(cat)
     const hue = hexToHue(color)

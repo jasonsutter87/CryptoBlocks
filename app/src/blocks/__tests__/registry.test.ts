@@ -4,7 +4,7 @@ import { registry } from '../registry'
 describe('BlockRegistry', () => {
   it('loads all built-in blocks', () => {
     const all = registry.getAll()
-    expect(all.length).toBeGreaterThanOrEqual(49)
+    expect(all.length).toBeGreaterThanOrEqual(62)
   })
 
   it('retrieves a block by name', () => {
@@ -35,6 +35,7 @@ describe('BlockRegistry', () => {
     expect(categories).toContain('Lists')
     expect(categories).toContain('Data')
     expect(categories).toContain('Web')
+    expect(categories).toContain('Crypto')
   })
 
   it('registers a new block', () => {
@@ -93,6 +94,16 @@ describe('BlockRegistry', () => {
     expect(names).toContain('ws_connect')
     expect(names).toContain('ws_send')
     expect(names).toContain('ws_on_message')
+  })
+
+  it('includes Crypto category blocks', () => {
+    const cryptoBlocks = registry.getByCategory('Crypto')
+    expect(cryptoBlocks.length).toBe(13)
+
+    const names = cryptoBlocks.map((b) => b.name)
+    expect(names).toContain('hash_text')
+    expect(names).toContain('encrypt_aes')
+    expect(names).toContain('hmac_sign')
   })
 
   it('returns correct category color', () => {

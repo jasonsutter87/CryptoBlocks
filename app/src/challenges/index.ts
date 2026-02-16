@@ -11,6 +11,7 @@ import { hackerTerminal } from './data/hacker-terminal'
 import { musicFestival } from './data/music-festival'
 import { scienceLab } from './data/science-lab'
 import { startupSim } from './data/startup-sim'
+import { eulerBlocks } from './data/euler-blocks'
 
 export const allThemes: ThemePack[] = [
   gettingStarted,
@@ -25,6 +26,7 @@ export const allThemes: ThemePack[] = [
   musicFestival,
   scienceLab,
   startupSim,
+  eulerBlocks,
 ]
 
 export function getChallengeById(id: string): Challenge | null {

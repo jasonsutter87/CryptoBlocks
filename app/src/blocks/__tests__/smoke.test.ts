@@ -13,7 +13,7 @@ describe('Block smoke tests', () => {
       it('has a valid name', () => {
         expect(block.name).toBeTruthy()
         expect(typeof block.name).toBe('string')
-        expect(block.name).toMatch(/^[a-z_]+$/)
+        expect(block.name).toMatch(/^[a-z][a-z0-9_]*$/)
       })
 
       it('has a valid category', () => {
