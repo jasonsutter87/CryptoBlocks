@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { ThemePack, Challenge } from '../challenges'
 import { allThemes, getTotalChallengeCount } from '../challenges'
-import { getProgressForChallenge, getTotalStars } from '../challenges/progress'
+import { getProgressForChallenge, getTotalStars, loadProgress } from '../challenges/progress'
 
 interface ChallengeBrowserProps {
   onSelectChallenge: (challenge: Challenge) => void
@@ -10,8 +10,14 @@ interface ChallengeBrowserProps {
 
 export default function ChallengeBrowser({ onSelectChallenge, onBackToSandbox }: ChallengeBrowserProps) {
   const [expandedTheme, setExpandedTheme] = useState<string | null>(null)
+  const [showStats, setShowStats] = useState(false)
   const totalStars = getTotalStars()
-  const maxStars = getTotalChallengeCount() * 3
+  const totalChallenges = getTotalChallengeCount()
+  const maxStars = totalChallenges * 3
+  const allProgress = loadProgress()
+  const completedCount = allProgress.filter((p) => p.completed).length
+  const totalAttempts = allProgress.reduce((s, p) => s + p.attempts, 0)
+  const perfectCount = allProgress.filter((p) => p.stars === 3).length
 
   const getThemeProgress = (theme: ThemePack) => {
     let completed = 0
@@ -60,11 +66,16 @@ export default function ChallengeBrowser({ onSelectChallenge, onBackToSandbox }:
             <p className="text-sm text-[#6c7086] mt-1">Solve puzzles, earn stars, level up your skills</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 bg-[#313244] px-3 py-1.5 rounded-lg">
+            <button
+              onClick={() => setShowStats((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
+                showStats ? 'bg-[#f9e2af] text-[#1e1e2e]' : 'bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a]'
+              }`}
+            >
               <span className="text-[#f9e2af]">★</span>
-              <span className="text-sm font-bold text-[#cdd6f4]">{totalStars}</span>
-              <span className="text-xs text-[#6c7086]">/ {maxStars}</span>
-            </div>
+              <span className="text-sm font-bold">{totalStars}</span>
+              <span className="text-xs opacity-70">/ {maxStars}</span>
+            </button>
             <button
               onClick={onBackToSandbox}
               className="text-sm text-[#6c7086] hover:text-[#cdd6f4] transition-colors"
@@ -73,6 +84,75 @@ export default function ChallengeBrowser({ onSelectChallenge, onBackToSandbox }:
             </button>
           </div>
         </div>
+
+        {/* Stats Dashboard */}
+        {showStats && (
+          <div className="mb-6 rounded-xl border border-[#313244] bg-[#181825] p-5">
+            <h3 className="text-sm font-semibold text-[#cdd6f4] mb-4">Your Stats</h3>
+            <div className="grid grid-cols-4 gap-4 mb-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-[#f9e2af]">{totalStars}</div>
+                <div className="text-xs text-[#6c7086]">Stars</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-[#a6e3a1]">{completedCount}</div>
+                <div className="text-xs text-[#6c7086]">Completed</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-[#cba6f7]">{perfectCount}</div>
+                <div className="text-xs text-[#6c7086]">Perfect (3★)</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-[#89b4fa]">{totalAttempts}</div>
+                <div className="text-xs text-[#6c7086]">Attempts</div>
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div className="mb-3">
+              <div className="flex justify-between text-xs text-[#6c7086] mb-1">
+                <span>Overall Progress</span>
+                <span>{completedCount}/{totalChallenges} challenges</span>
+              </div>
+              <div className="w-full h-2 bg-[#45475a] rounded-full">
+                <div
+                  className="h-full bg-[#a6e3a1] rounded-full transition-all"
+                  style={{ width: `${totalChallenges > 0 ? (completedCount / totalChallenges) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Per-theme breakdown */}
+            <div className="space-y-2">
+              {allThemes.map((theme) => {
+                const themeCompleted = getThemeProgress(theme)
+                const themeTotal = theme.challenges.length
+                let themeStars = 0
+                for (const c of theme.challenges) {
+                  const p = getProgressForChallenge(c.id)
+                  if (p) themeStars += p.stars
+                }
+                return (
+                  <div key={theme.id} className="flex items-center gap-2 text-xs">
+                    <span className="w-5 text-center">{theme.icon}</span>
+                    <span className="text-[#cdd6f4] w-28 truncate">{theme.name}</span>
+                    <div className="flex-1 h-1.5 bg-[#45475a] rounded-full">
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                          width: `${(themeCompleted / themeTotal) * 100}%`,
+                          backgroundColor: theme.color,
+                        }}
+                      />
+                    </div>
+                    <span className="text-[#6c7086] w-8 text-right">{themeCompleted}/{themeTotal}</span>
+                    <span className="text-[#f9e2af] w-10 text-right">★{themeStars}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Theme Cards */}
         <div className="space-y-4">

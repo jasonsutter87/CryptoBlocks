@@ -11,6 +11,7 @@ interface ChallengePanelProps {
 
 export default function ChallengePanel({ challenge, blockCount, onCheckSolution, onBack, isRunning }: ChallengePanelProps) {
   const [hintsRevealed, setHintsRevealed] = useState(0)
+  const [showSolution, setShowSolution] = useState(false)
 
   const parDiff = blockCount - challenge.par
   const blockColor =
@@ -60,6 +61,16 @@ export default function ChallengePanel({ challenge, blockCount, onCheckSolution,
             </button>
           )}
 
+          {/* Show Solution — appears after all hints used */}
+          {challenge.solution && hintsRevealed >= challenge.hints.length && !showSolution && (
+            <button
+              onClick={() => setShowSolution(true)}
+              className="text-xs text-[#f38ba8] hover:text-[#f38ba8]/80 transition-colors px-2 py-1"
+            >
+              Show Solution
+            </button>
+          )}
+
           {/* Check Solution */}
           <button
             onClick={onCheckSolution}
@@ -82,6 +93,15 @@ export default function ChallengePanel({ challenge, blockCount, onCheckSolution,
               💡 {hint}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Solution display */}
+      {showSolution && challenge.solution && (
+        <div className="mt-2">
+          <div className="text-xs text-[#f38ba8] bg-[#f38ba8]/10 px-3 py-2 rounded border border-[#f38ba8]/20">
+            <span className="font-semibold">Solution:</span> {challenge.solution}
+          </div>
         </div>
       )}
     </div>
