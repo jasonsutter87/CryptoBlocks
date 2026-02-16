@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import Editor from '@monaco-editor/react'
 import { jsToWorkspace, type ConversionResult } from '../converters/js-to-workspace'
 
@@ -28,6 +28,16 @@ export default function CodeToBlocksModal({ onConvert, onClose }: CodeToBlocksMo
   const [code, setCode] = useState(PLACEHOLDER)
   const [error, setError] = useState<string | null>(null)
   const [warnings, setWarnings] = useState<string[]>([])
+  const [monacoFailed, setMonacoFailed] = useState(false)
+  const mountedRef = useRef(false)
+
+  // Fallback to textarea if Monaco fails to load within 5s
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!mountedRef.current) setMonacoFailed(true)
+    }, 5000)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleConvert = useCallback(() => {
     setError(null)
@@ -69,21 +79,36 @@ export default function CodeToBlocksModal({ onConvert, onClose }: CodeToBlocksMo
 
         {/* Editor */}
         <div className="flex-1 min-h-0 border-b border-[#313244]">
-          <Editor
-            height="400px"
-            defaultLanguage="javascript"
-            value={code}
-            onChange={(val) => setCode(val ?? '')}
-            theme="vs-dark"
-            options={{
-              minimap: { enabled: false },
-              fontSize: 13,
-              lineNumbers: 'on',
-              scrollBeyondLastLine: false,
-              wordWrap: 'on',
-              padding: { top: 12 },
-            }}
-          />
+          {monacoFailed ? (
+            <textarea
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="w-full h-[400px] bg-[#1e1e2e] text-[#cdd6f4] text-[13px] font-mono p-3 resize-none outline-none"
+              spellCheck={false}
+            />
+          ) : (
+            <Editor
+              height="400px"
+              defaultLanguage="javascript"
+              value={code}
+              onChange={(val) => setCode(val ?? '')}
+              theme="vs-dark"
+              loading={
+                <div className="h-[400px] flex items-center justify-center bg-[#1e1e2e] text-[#6c7086] text-sm">
+                  Loading editor...
+                </div>
+              }
+              onMount={() => { mountedRef.current = true }}
+              options={{
+                minimap: { enabled: false },
+                fontSize: 13,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                wordWrap: 'on',
+                padding: { top: 12 },
+              }}
+            />
+          )}
         </div>
 
         {/* Error / Warnings */}
