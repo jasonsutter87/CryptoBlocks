@@ -1,0 +1,165 @@
+import type { Achievement, UnlockedAchievement } from './types'
+import { achievements } from './definitions'
+
+const STORAGE_KEY = 'cb-achievements'
+const LANGUAGES_KEY = 'cb-languages-used'
+const RUNS_KEY = 'cb-total-runs'
+
+export interface AchievementContext {
+  event: 'run' | 'challenge-complete' | 'golf-complete' | 'lab-complete' | 'hacker-mode' | 'custom-block'
+  output?: string[]
+  hasError?: boolean
+  blockCount?: number
+  categoriesUsed?: string[]
+  language?: string
+  challengeStars?: number
+}
+
+export function loadUnlocked(): UnlockedAchievement[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export function isUnlocked(id: string): boolean {
+  const unlocked = loadUnlocked()
+  return unlocked.some((u) => u.achievementId === id)
+}
+
+function saveUnlocked(unlocked: UnlockedAchievement[]): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(unlocked))
+}
+
+function getLanguagesUsed(): string[] {
+  try {
+    const data = localStorage.getItem(LANGUAGES_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+function addLanguageUsed(language: string): void {
+  const languages = getLanguagesUsed()
+  if (!languages.includes(language)) {
+    languages.push(language)
+    localStorage.setItem(LANGUAGES_KEY, JSON.stringify(languages))
+  }
+}
+
+function getTotalRuns(): number {
+  try {
+    const data = localStorage.getItem(RUNS_KEY)
+    return data ? parseInt(data, 10) : 0
+  } catch {
+    return 0
+  }
+}
+
+function incrementTotalRuns(): number {
+  const count = getTotalRuns() + 1
+  localStorage.setItem(RUNS_KEY, count.toString())
+  return count
+}
+
+function checkAchievement(achievement: Achievement, context: AchievementContext): boolean {
+  // Skip if already unlocked
+  if (isUnlocked(achievement.id)) {
+    return false
+  }
+
+  switch (achievement.id) {
+    case 'first-run':
+      return context.event === 'run'
+
+    case 'hello-world':
+      if (!context.output) return false
+      return context.output.some((line) => /hello\s*world/i.test(line))
+
+    case 'polyglot': {
+      const languages = getLanguagesUsed()
+      return languages.includes('javascript') && languages.includes('python')
+    }
+
+    case 'block-party':
+      return (context.blockCount ?? 0) >= 50
+
+    case 'night-owl': {
+      const hour = new Date().getHours()
+      return hour >= 23 || hour < 5
+    }
+
+    case 'speed-demon':
+      return context.event === 'challenge-complete'
+
+    case 'eagle-eye':
+      return context.challengeStars === 3
+
+    case 'easter-egg-hunter':
+      return context.event === 'hacker-mode'
+
+    case 'code-golfer':
+      return context.event === 'golf-complete'
+
+    case 'lab-rat':
+      return context.event === 'lab-complete'
+
+    case 'centurion': {
+      const totalRuns = getTotalRuns()
+      return totalRuns >= 100
+    }
+
+    case 'architect':
+      return context.event === 'custom-block'
+
+    case 'turtle-power':
+      return context.categoriesUsed?.includes('Turtle') ?? false
+
+    case 'mad-scientist':
+      return (context.categoriesUsed?.length ?? 0) >= 5
+
+    case 'the-answer':
+      if (!context.output) return false
+      return context.output.some((line) => line.trim() === '42')
+
+    default:
+      return false
+  }
+}
+
+export function checkAchievements(context: AchievementContext): Achievement[] {
+  // Track language usage
+  if (context.event === 'run' && context.language) {
+    addLanguageUsed(context.language)
+  }
+
+  // Increment total runs counter
+  if (context.event === 'run') {
+    incrementTotalRuns()
+  }
+
+  // Check all achievements
+  const newlyUnlocked: Achievement[] = []
+  const unlocked = loadUnlocked()
+
+  for (const achievement of achievements) {
+    if (checkAchievement(achievement, context)) {
+      const unlockedAchievement: UnlockedAchievement = {
+        achievementId: achievement.id,
+        unlockedAt: Date.now(),
+      }
+      unlocked.push(unlockedAchievement)
+      newlyUnlocked.push(achievement)
+    }
+  }
+
+  // Save updated unlocked list
+  if (newlyUnlocked.length > 0) {
+    saveUnlocked(unlocked)
+  }
+
+  return newlyUnlocked
+}
