@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import * as Blockly from 'blockly'
 import type { Language, BlockDefinition } from './types/block'
-import { generateCode, registerSingleBlock, getToolboxXml, getFilteredToolboxXml } from './blocks/blockly-register'
+import { generateCode, generateHtmlMarkup, registerSingleBlock, getToolboxXml, getFilteredToolboxXml } from './blocks/blockly-register'
 import { registry } from './blocks/registry'
 import { executeCode } from './execution/runner'
 import type { ExecutionResult, ExecutionHandle } from './execution/runner'
@@ -30,6 +30,10 @@ import CreateBlockModal from './components/CreateBlockModal'
 import ChallengeBrowser from './components/ChallengeBrowser'
 import ChallengePanel from './components/ChallengePanel'
 import ChallengeComplete from './components/ChallengeComplete'
+import ExamplesBrowser from './components/ExamplesBrowser'
+import CodeToBlocksModal from './components/CodeToBlocksModal'
+import type { ConversionResult } from './converters/js-to-workspace'
+import type { Example } from './examples'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
 
@@ -42,6 +46,8 @@ export default function App() {
   const [result, setResult] = useState<ExecutionResult | null>(null)
   const [liveOutput, setLiveOutput] = useState<string[]>([])
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showExamples, setShowExamples] = useState(false)
+  const [showCodeToBlocks, setShowCodeToBlocks] = useState(false)
   const [editingBlock, setEditingBlock] = useState<BlockDefinition | null>(null)
   const [customBlocks, setCustomBlocks] = useState<BlockDefinition[]>([])
   const [initialWorkspaceState, setInitialWorkspaceState] = useState<Record<string, unknown> | null>(null)
@@ -84,7 +90,10 @@ export default function App() {
   const handleWorkspaceChange = useCallback(
     (workspace: Blockly.WorkspaceSvg) => {
       workspaceRef.current = workspace
-      const generated = generateCode(workspace, languageRef.current)
+      const lang = languageRef.current
+      const generated = lang === 'html'
+        ? generateHtmlMarkup(workspace)
+        : generateCode(workspace, lang)
       setCode(generated)
       setBlockCount(countBlocks(workspace))
 
@@ -104,7 +113,9 @@ export default function App() {
       setLanguage(lang)
       languageRef.current = lang
       if (workspaceRef.current) {
-        const generated = generateCode(workspaceRef.current, lang)
+        const generated = lang === 'html'
+          ? generateHtmlMarkup(workspaceRef.current)
+          : generateCode(workspaceRef.current, lang)
         setCode(generated)
       }
     },
@@ -117,7 +128,13 @@ export default function App() {
     setResult(null)
     setLiveOutput([])
 
-    const handle = executeCode(code, language, (line) => {
+    // Always execute as JS or Python — HTML peek is display-only
+    const execLang = language === 'html' ? 'javascript' : language
+    const execCode = language === 'html' && workspaceRef.current
+      ? generateCode(workspaceRef.current, 'javascript')
+      : code
+
+    const handle = executeCode(execCode, execLang, (line) => {
       setLiveOutput((prev) => [...prev, line])
     })
     executionHandleRef.current = handle
@@ -143,7 +160,12 @@ export default function App() {
     setResult(null)
     setLiveOutput([])
 
-    const handle = executeCode(code, language, (line) => {
+    const execLang = language === 'html' ? 'javascript' : language
+    const execCode = language === 'html' && workspaceRef.current
+      ? generateCode(workspaceRef.current, 'javascript')
+      : code
+
+    const handle = executeCode(execCode, execLang, (line) => {
       setLiveOutput((prev) => [...prev, line])
     })
     executionHandleRef.current = handle
@@ -254,6 +276,61 @@ export default function App() {
     }
   }, [mode, handleBackToSandbox])
 
+  const handleSelectExample = useCallback((example: Example) => {
+    setShowExamples(false)
+
+    // Ensure we're in sandbox mode
+    if (modeRef.current !== 'sandbox') {
+      setMode('sandbox')
+      setActiveChallenge(null)
+      setShowComplete(false)
+    }
+
+    setTimeout(() => {
+      if (workspaceRef.current) {
+        // Restore full toolbox if coming from challenge mode
+        if (modeRef.current !== 'sandbox') {
+          workspaceRef.current.updateToolbox(getToolboxXml())
+        }
+        workspaceRef.current.clear()
+        Blockly.serialization.workspaces.load(example.workspace, workspaceRef.current)
+      }
+    }, 0)
+  }, [])
+
+  const handleCodeToBlocks = useCallback((result: ConversionResult) => {
+    // Register any new custom blocks
+    for (const blockDef of result.newBlocks) {
+      registry.register(blockDef)
+      registerSingleBlock(blockDef)
+    }
+
+    // Persist new blocks
+    if (result.newBlocks.length > 0) {
+      setCustomBlocks((prev) => {
+        const updated = [...prev]
+        for (const b of result.newBlocks) {
+          const idx = updated.findIndex((x) => x.name === b.name)
+          if (idx >= 0) updated[idx] = b
+          else updated.push(b)
+        }
+        saveCustomBlocksToLocal(updated)
+        return updated
+      })
+    }
+
+    // Update toolbox and load workspace
+    setTimeout(() => {
+      if (workspaceRef.current) {
+        workspaceRef.current.updateToolbox(getToolboxXml())
+        workspaceRef.current.clear()
+        Blockly.serialization.workspaces.load(result.workspace, workspaceRef.current)
+      }
+    }, 0)
+
+    setShowCodeToBlocks(false)
+  }, [])
+
   const handleCreateBlock = useCallback((block: BlockDefinition) => {
     registry.register(block)
     registerSingleBlock(block)
@@ -309,14 +386,20 @@ export default function App() {
   }, [])
 
   const handleExportHtml = useCallback(() => {
-    const html = generateStandaloneHtml(code, { title: 'CryptoBlocks Project' })
+    const jsCode = language === 'html' && workspaceRef.current
+      ? generateCode(workspaceRef.current, 'javascript')
+      : code
+    const html = generateStandaloneHtml(jsCode, { title: 'CryptoBlocks Project' })
     downloadHtml(html)
-  }, [code])
+  }, [code, language])
 
   const handleCopyEmbed = useCallback(async () => {
-    const snippet = generateEmbedSnippet(code)
+    const jsCode = language === 'html' && workspaceRef.current
+      ? generateCode(workspaceRef.current, 'javascript')
+      : code
+    const snippet = generateEmbedSnippet(jsCode)
     await copyToClipboard(snippet)
-  }, [code])
+  }, [code, language])
 
   const handleExport = useCallback(() => {
     if (workspaceRef.current) {
@@ -361,6 +444,7 @@ export default function App() {
         showCode={showCode}
         onToggleCode={() => setShowCode((prev) => !prev)}
         onCreateBlock={() => setShowCreateModal(true)}
+        onCodeToBlocks={() => setShowCodeToBlocks(true)}
         onExport={handleExport}
         onImport={handleImport}
         onExportHtml={handleExportHtml}
@@ -368,6 +452,7 @@ export default function App() {
         onClear={handleClear}
         mode={mode}
         onOpenChallenges={handleOpenChallenges}
+        onOpenExamples={() => setShowExamples(true)}
       />
 
       {/* Challenge Browser Mode */}
@@ -442,6 +527,22 @@ export default function App() {
           onBuild={handleCreateBlock}
           onClose={closeModal}
           editBlock={editingBlock}
+        />
+      )}
+
+      {/* Examples Browser Modal */}
+      {showExamples && (
+        <ExamplesBrowser
+          onSelectExample={handleSelectExample}
+          onClose={() => setShowExamples(false)}
+        />
+      )}
+
+      {/* Code to Blocks Modal */}
+      {showCodeToBlocks && (
+        <CodeToBlocksModal
+          onConvert={handleCodeToBlocks}
+          onClose={() => setShowCodeToBlocks(false)}
         />
       )}
 

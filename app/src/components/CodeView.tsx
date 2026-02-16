@@ -35,12 +35,22 @@ export default function CodeView({ code, language, onLanguageChange }: CodeViewP
         >
           Python
         </button>
+        <button
+          onClick={() => onLanguageChange('html')}
+          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+            language === 'html'
+              ? 'bg-[#f38ba8] text-[#1e1e2e]'
+              : 'text-[#cdd6f4] hover:bg-[#313244]'
+          }`}
+        >
+          HTML
+        </button>
       </div>
 
       {/* Code editor */}
       <div className="flex-1 min-h-0">
         <Editor
-          language={language === 'javascript' ? 'javascript' : 'python'}
+          language={language === 'python' ? 'python' : language === 'html' ? 'html' : 'javascript'}
           value={code}
           theme="vs-dark"
           options={{

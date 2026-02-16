@@ -11,6 +11,7 @@ interface ToolbarProps {
   showCode: boolean
   onToggleCode: () => void
   onCreateBlock: () => void
+  onCodeToBlocks: () => void
   onExport: () => void
   onImport: (file: File) => void
   onExportHtml: () => void
@@ -18,6 +19,7 @@ interface ToolbarProps {
   onClear: () => void
   mode: AppMode
   onOpenChallenges: () => void
+  onOpenExamples: () => void
 }
 
 const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
@@ -30,6 +32,7 @@ export default function Toolbar({
   showCode,
   onToggleCode,
   onCreateBlock,
+  onCodeToBlocks,
   onExport,
   onImport,
   onExportHtml,
@@ -37,6 +40,7 @@ export default function Toolbar({
   onClear,
   mode,
   onOpenChallenges,
+  onOpenExamples,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showShareMenu, setShowShareMenu] = useState(false)
@@ -180,6 +184,18 @@ export default function Toolbar({
               Create Block
             </button>
 
+            {/* Code to Blocks */}
+            <button
+              onClick={onCodeToBlocks}
+              className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+              title="Convert JavaScript code to blocks"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Code to Blocks
+            </button>
+
             {/* Clear Workspace */}
             <button
               onClick={onClear}
@@ -192,6 +208,20 @@ export default function Toolbar({
               Clear
             </button>
           </>
+        )}
+
+        {/* Examples */}
+        {!inChallenge && (
+          <button
+            onClick={onOpenExamples}
+            className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+            title="Browse example projects"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            Examples
+          </button>
         )}
 
         {/* Challenges */}
@@ -229,7 +259,7 @@ export default function Toolbar({
         {/* Language indicator */}
         {mode !== 'challenges' && (
           <div className="text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded font-mono">
-            {language === 'javascript' ? 'JS' : 'PY'}
+            {language === 'javascript' ? 'JS' : language === 'python' ? 'PY' : 'HTML'}
           </div>
         )}
 

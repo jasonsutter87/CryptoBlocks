@@ -1,27 +1,30 @@
 import { useEffect, useRef } from 'react'
 import * as Blockly from 'blockly'
-import { registerCustomBlocks, getToolboxXml } from '../blocks/blockly-register'
+import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode } from '../blocks/blockly-register'
 import { registry } from '../blocks/registry'
 import type { BlockDefinition } from '../types/block'
 
 interface BlockEditorProps {
   onWorkspaceChange: (workspace: Blockly.WorkspaceSvg) => void
   onEditBlock?: (block: BlockDefinition) => void
+  onSaveAsBlock?: (jsCode: string, pyCode: string) => void
   initialWorkspaceState?: Record<string, unknown> | null
 }
 
 // Register blocks once at module level
 let blocksRegistered = false
 
-export default function BlockEditor({ onWorkspaceChange, onEditBlock, initialWorkspaceState }: BlockEditorProps) {
+export default function BlockEditor({ onWorkspaceChange, onEditBlock, onSaveAsBlock, initialWorkspaceState }: BlockEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
   const callbackRef = useRef(onWorkspaceChange)
   const editCallbackRef = useRef(onEditBlock)
+  const saveAsBlockRef = useRef(onSaveAsBlock)
 
   // Keep callback refs up to date without triggering workspace rebuild
   callbackRef.current = onWorkspaceChange
   editCallbackRef.current = onEditBlock
+  saveAsBlockRef.current = onSaveAsBlock
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -96,6 +99,29 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, initialWor
     }
     Blockly.ContextMenuRegistry.registry.register(editOption)
 
+    // Register "Save as Block" context menu for any block
+    const saveAsBlockOption: Blockly.ContextMenuRegistry.RegistryItem = {
+      displayText: 'Save as Block',
+      preconditionFn(scope) {
+        const block = scope.block
+        if (!block) return 'hidden'
+        // Show on any statement block (has previous/next connections)
+        if (block.previousConnection || block.nextConnection) return 'enabled'
+        return 'hidden'
+      },
+      callback(scope) {
+        const block = scope.block
+        if (!block || !saveAsBlockRef.current) return
+        const jsCode = generateBlockTreeCode(block, 'javascript')
+        const pyCode = generateBlockTreeCode(block, 'python')
+        saveAsBlockRef.current(jsCode, pyCode)
+      },
+      scopeType: Blockly.ContextMenuRegistry.ScopeType.BLOCK,
+      id: 'save_as_block',
+      weight: 1,
+    }
+    Blockly.ContextMenuRegistry.registry.register(saveAsBlockOption)
+
     const listener = () => {
       callbackRef.current(workspace)
     }
@@ -105,6 +131,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, initialWor
     return () => {
       workspace.removeChangeListener(listener)
       Blockly.ContextMenuRegistry.registry.unregister('edit_user_block')
+      Blockly.ContextMenuRegistry.registry.unregister('save_as_block')
       workspace.dispose()
       workspaceRef.current = null
     }
