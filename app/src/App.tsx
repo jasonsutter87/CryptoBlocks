@@ -538,12 +538,12 @@ export default function App() {
             />
           )}
 
-          <div className="flex-1 flex min-h-0">
+          <div className="flex-1 flex flex-col md:flex-row min-h-0">
             {/* Block Editor */}
             <div
               className={`${
-                showCode ? 'w-1/2' : 'w-full'
-              } h-full transition-all duration-300 border-r border-[#313244]`}
+                showCode ? 'h-1/2 md:h-full md:w-1/2' : 'h-full w-full'
+              } transition-all duration-300 border-b md:border-b-0 md:border-r border-[#313244]`}
             >
               <BlockEditor
                 onWorkspaceChange={handleWorkspaceChange}
@@ -555,7 +555,7 @@ export default function App() {
 
             {/* Code View */}
             {showCode && (
-              <div className="w-1/2 flex flex-col h-full">
+              <div className="h-1/2 md:h-full md:w-1/2 flex flex-col">
                 <div className={showOutput ? 'h-1/2' : 'h-full'}>
                   <CodeView
                     code={code}

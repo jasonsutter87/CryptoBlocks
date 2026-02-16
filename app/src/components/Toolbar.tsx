@@ -49,20 +49,25 @@ export default function Toolbar({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
   const [showShareMenu, setShowShareMenu] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [embedCopied, setEmbedCopied] = useState(false)
   const shareMenuRef = useRef<HTMLDivElement>(null)
+  const mobileMenuRef = useRef<HTMLDivElement>(null)
 
-  // Close share menu on outside click
+  // Close menus on outside click
   useEffect(() => {
-    if (!showShareMenu) return
+    if (!showShareMenu && !showMobileMenu) return
     const handleClick = (e: MouseEvent) => {
-      if (shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
+      if (showShareMenu && shareMenuRef.current && !shareMenuRef.current.contains(e.target as Node)) {
         setShowShareMenu(false)
+      }
+      if (showMobileMenu && mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+        setShowMobileMenu(false)
       }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [showShareMenu])
+  }, [showShareMenu, showMobileMenu])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -82,31 +87,34 @@ export default function Toolbar({
 
   const inChallenge = mode === 'active-challenge'
 
+  const menuItem = 'flex items-center gap-2 w-full px-3 py-2.5 text-sm text-[#cdd6f4] hover:bg-[#45475a] transition-colors text-left'
+
   return (
-    <header className="flex items-center justify-between px-4 py-2 bg-[#181825] border-b border-[#313244] select-none">
+    <header className="flex items-center justify-between px-3 md:px-4 py-2 bg-[#181825] border-b border-[#313244] select-none">
       {/* Logo */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 md:gap-3 shrink-0">
         <div className="flex items-center gap-1.5">
-          <div className="w-5 h-5 rounded bg-[#89b4fa]" />
-          <div className="w-5 h-5 rounded bg-[#f9e2af] -ml-1.5" />
-          <div className="w-5 h-5 rounded bg-[#a6e3a1] -ml-1.5" />
+          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-[#89b4fa]" />
+          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-[#f9e2af] -ml-1.5" />
+          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-[#a6e3a1] -ml-1.5" />
         </div>
-        <h1 className="text-lg font-bold text-[#cdd6f4] tracking-tight">
+        <h1 className="text-base md:text-lg font-bold text-[#cdd6f4] tracking-tight">
           CryptoBlocks
         </h1>
-        <span className="text-[10px] text-[#6c7086] bg-[#313244] px-1.5 py-0.5 rounded font-mono">
+        <span className="hidden md:inline text-[10px] text-[#6c7086] bg-[#313244] px-1.5 py-0.5 rounded font-mono">
           v0.1
         </span>
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 md:gap-2">
+        {/* === Desktop buttons (hidden on mobile) === */}
         {!inChallenge && (
           <>
             {/* Save */}
             <button
               onClick={onExport}
-              className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+              className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
               title="Save project as .blocks file"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -118,7 +126,7 @@ export default function Toolbar({
             {/* Load */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+              className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
               title="Load a .blocks file"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -137,7 +145,7 @@ export default function Toolbar({
             {/* Import as Block */}
             <button
               onClick={() => importAsBlockInputRef.current?.click()}
-              className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+              className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
               title="Turn a .blocks file into a reusable block"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -154,7 +162,7 @@ export default function Toolbar({
             />
 
             {/* Share */}
-            <div className="relative" ref={shareMenuRef}>
+            <div className="relative hidden md:block" ref={shareMenuRef}>
               <button
                 onClick={() => setShowShareMenu((prev) => !prev)}
                 className={`${btn} bg-[#89b4fa] text-[#1e1e2e] hover:bg-[#89b4fa]/80`}
@@ -217,12 +225,12 @@ export default function Toolbar({
             </div>
 
             {/* Divider */}
-            <div className="w-px h-6 bg-[#313244]" />
+            <div className="hidden md:block w-px h-6 bg-[#313244]" />
 
             {/* Create Block */}
             <button
               onClick={onCreateBlock}
-              className={`${btn} bg-[#f9e2af] text-[#1e1e2e] hover:bg-[#f9e2af]/80`}
+              className={`hidden md:flex ${btn} bg-[#f9e2af] text-[#1e1e2e] hover:bg-[#f9e2af]/80`}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -233,7 +241,7 @@ export default function Toolbar({
             {/* Code to Blocks */}
             <button
               onClick={onCodeToBlocks}
-              className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+              className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
               title="Convert JavaScript code to blocks"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -245,7 +253,7 @@ export default function Toolbar({
             {/* Clear Workspace */}
             <button
               onClick={onClear}
-              className={`${btn} bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/80`}
+              className={`hidden md:flex ${btn} bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/80`}
               title="Clear workspace"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -256,11 +264,11 @@ export default function Toolbar({
           </>
         )}
 
-        {/* Examples */}
+        {/* Examples (desktop) */}
         {!inChallenge && (
           <button
             onClick={onOpenExamples}
-            className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+            className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
             title="Browse example projects"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -270,7 +278,7 @@ export default function Toolbar({
           </button>
         )}
 
-        {/* Challenges */}
+        {/* Challenges (always visible) */}
         <button
           onClick={onOpenChallenges}
           className={
@@ -282,10 +290,10 @@ export default function Toolbar({
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
           </svg>
-          Challenges
+          <span className="hidden sm:inline">Challenges</span>
         </button>
 
-        {/* Peek / Hide Code */}
+        {/* Peek / Hide Code (always visible) */}
         {mode !== 'challenges' && (
           <button
             onClick={onToggleCode}
@@ -298,24 +306,24 @@ export default function Toolbar({
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
             </svg>
-            {showCode ? 'Hide Code' : 'Peek Code'}
+            <span className="hidden sm:inline">{showCode ? 'Hide Code' : 'Peek Code'}</span>
           </button>
         )}
 
-        {/* Language indicator */}
+        {/* Language indicator (desktop) */}
         {mode !== 'challenges' && (
-          <div className="text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded font-mono">
+          <div className="hidden md:block text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded font-mono">
             {language === 'javascript' ? 'JS' : language === 'python' ? 'PY' : 'HTML'}
           </div>
         )}
 
-        {/* Run / Stop */}
+        {/* Run / Stop (always visible) */}
         {mode === 'sandbox' && (
           <>
             {isRunning ? (
               <button
                 onClick={onStop}
-                className="flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/80 transition-colors"
+                className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 text-sm font-semibold rounded-lg bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/80 transition-colors"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <rect x="6" y="6" width="12" height="12" rx="1" />
@@ -325,7 +333,7 @@ export default function Toolbar({
             ) : (
               <button
                 onClick={onRun}
-                className={`${btn} bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 font-semibold px-4`}
+                className={`${btn} bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 font-semibold px-3 md:px-4`}
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                   <polygon points="5,3 19,12 5,21" />
@@ -334,6 +342,83 @@ export default function Toolbar({
               </button>
             )}
           </>
+        )}
+
+        {/* === Mobile overflow menu === */}
+        {!inChallenge && (
+          <div className="relative md:hidden" ref={mobileMenuRef}>
+            <button
+              onClick={() => setShowMobileMenu((v) => !v)}
+              className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+              aria-label="More options"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+              </svg>
+            </button>
+
+            {showMobileMenu && (
+              <div className="absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1 max-h-[70vh] overflow-auto">
+                <button onClick={() => { onExport(); setShowMobileMenu(false) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                  </svg>
+                  Save .blocks
+                </button>
+                <button onClick={() => { fileInputRef.current?.click(); setShowMobileMenu(false) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
+                  </svg>
+                  Load .blocks
+                </button>
+                <button onClick={() => { importAsBlockInputRef.current?.click(); setShowMobileMenu(false) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  Import as Block
+                </button>
+                <div className="h-px bg-[#45475a] my-1" />
+                <button onClick={() => { onCreateBlock(); setShowMobileMenu(false) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#f9e2af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Create Block
+                </button>
+                <button onClick={() => { onCodeToBlocks(); setShowMobileMenu(false) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Code to Blocks
+                </button>
+                <button onClick={() => { onOpenExamples(); setShowMobileMenu(false) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  Examples
+                </button>
+                <div className="h-px bg-[#45475a] my-1" />
+                <button onClick={() => { onExportHtml(); setShowMobileMenu(false) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                  </svg>
+                  Export HTML
+                </button>
+                <button onClick={() => { onPublish(); setShowMobileMenu(false) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Publish to GitHub
+                </button>
+                <div className="h-px bg-[#45475a] my-1" />
+                <button onClick={() => { onClear(); setShowMobileMenu(false) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#f38ba8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Clear Workspace
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </header>

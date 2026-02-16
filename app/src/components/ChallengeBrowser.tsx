@@ -57,15 +57,15 @@ export default function ChallengeBrowser({ onSelectChallenge, onBackToSandbox }:
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-[#1e1e2e] p-6">
+    <div className="flex-1 overflow-auto bg-[#1e1e2e] p-4 md:p-6">
       {/* Header */}
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-[#cdd6f4]">Challenge Hub</h2>
-            <p className="text-sm text-[#6c7086] mt-1">Solve puzzles, earn stars, level up your skills</p>
+            <h2 className="text-xl md:text-2xl font-bold text-[#cdd6f4]">Challenge Hub</h2>
+            <p className="text-xs md:text-sm text-[#6c7086] mt-1">Solve puzzles, earn stars, level up your skills</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => setShowStats((v) => !v)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
@@ -87,9 +87,9 @@ export default function ChallengeBrowser({ onSelectChallenge, onBackToSandbox }:
 
         {/* Stats Dashboard */}
         {showStats && (
-          <div className="mb-6 rounded-xl border border-[#313244] bg-[#181825] p-5">
+          <div className="mb-6 rounded-xl border border-[#313244] bg-[#181825] p-4 md:p-5">
             <h3 className="text-sm font-semibold text-[#cdd6f4] mb-4">Your Stats</h3>
-            <div className="grid grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-[#f9e2af]">{totalStars}</div>
                 <div className="text-xs text-[#6c7086]">Stars</div>
@@ -135,7 +135,7 @@ export default function ChallengeBrowser({ onSelectChallenge, onBackToSandbox }:
                 return (
                   <div key={theme.id} className="flex items-center gap-2 text-xs">
                     <span className="w-5 text-center">{theme.icon}</span>
-                    <span className="text-[#cdd6f4] w-28 truncate">{theme.name}</span>
+                    <span className="text-[#cdd6f4] w-20 md:w-28 truncate">{theme.name}</span>
                     <div className="flex-1 h-1.5 bg-[#45475a] rounded-full">
                       <div
                         className="h-full rounded-full transition-all"
