@@ -1,0 +1,105 @@
+{{ define "main" }}
+  {{/* Hero */}}
+  <section class="bg-white py-8">
+    <div class="container text-center" style="max-width: 720px;">
+      <h1 class="text-4xl lg:text-5xl font-extrabold text-gray-800 mb-3">Challenge Hub</h1>
+      <p class="text-lg text-gray-600 mb-5">
+        65+ coding puzzles across 13 themed packs. Solve challenges, earn stars, and learn real JavaScript and Python along the way.
+      </p>
+      <a href="{{ .Site.Params.appURL | default "/app" }}" class="bg-primary text-white px-6 py-3 rounded-lg fw-bold text-decoration-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors text-lg">
+        Open Challenge Hub
+      </a>
+    </div>
+  </section>
+
+  {{/* How it works */}}
+  <section class="bg-gray-50 py-8">
+    <div class="container">
+      <h2 class="text-2xl font-extrabold text-center text-gray-800 mb-6">How Challenges Work</h2>
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-4 mb-4 mb-md-0">
+          <div class="bg-white rounded-xl p-5 h-full shadow-sm text-center">
+            <div class="text-3xl mb-3">&#127912;</div>
+            <h3 class="fw-bold text-lg text-gray-800 mb-2">Read the Goal</h3>
+            <p class="text-gray-600 mb-0">Each challenge tells you what output to produce. Figure out which blocks to use and how to connect them.</p>
+          </div>
+        </div>
+        <div class="col-12 col-md-4 mb-4 mb-md-0">
+          <div class="bg-white rounded-xl p-5 h-full shadow-sm text-center">
+            <div class="text-3xl mb-3">&#129513;</div>
+            <h3 class="fw-bold text-lg text-gray-800 mb-2">Build &amp; Check</h3>
+            <p class="text-gray-600 mb-0">Snap blocks together and hit Check Solution. If the output matches, you pass. Hints are available if you get stuck.</p>
+          </div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="bg-white rounded-xl p-5 h-full shadow-sm text-center">
+            <div class="text-3xl mb-3">&#11088;</div>
+            <h3 class="fw-bold text-lg text-gray-800 mb-2">Earn Stars</h3>
+            <p class="text-gray-600 mb-0">Each challenge has a par (block count). Match it for 3 stars. Use fewer blocks and challenge yourself.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {{/* Theme packs grid */}}
+  <section class="bg-white py-8">
+    <div class="container">
+      <h2 class="text-2xl font-extrabold text-center text-gray-800 mb-2">13 Theme Packs</h2>
+      <p class="text-center text-gray-500 mb-6">Each pack has 5 challenges that tell a story. Complete them all to unlock the next.</p>
+
+      {{ $themes := slice
+        (dict "icon" "&#127968;" "name" "Getting Started" "color" "#3B82F6" "diff" "Beginner" "count" "5" "desc" "Hello World, counting, math, loops, and variables. Your first 5 programs." "blog" "/blog/challenge-getting-started/")
+        (dict "icon" "&#9935;" "name" "Minecraft" "color" "#22C55E" "diff" "Beginner" "count" "5" "desc" "Build a pickaxe, craft torches, smelt iron, and explore the Nether." "blog" "/blog/challenge-minecraft/")
+        (dict "icon" "&#128054;" "name" "Pet Simulator" "color" "#EC4899" "diff" "Beginner" "count" "5" "desc" "Name your pet, feed it, teach tricks, and watch its happiness grow." "blog" "/blog/challenge-pet-simulator/")
+        (dict "icon" "&#128640;" "name" "Space Explorer" "color" "#6366F1" "diff" "Intermediate" "count" "5" "desc" "Launch rockets, calculate orbits, and explore alien planets." "blog" "/blog/challenge-space-explorer/")
+        (dict "icon" "&#129302;" "name" "Robot Factory" "color" "#F97316" "diff" "Intermediate" "count" "5" "desc" "Program robots, build assembly lines, and automate everything." "blog" "/blog/challenge-robot-factory/")
+        (dict "icon" "&#128373;" "name" "Secret Agent" "color" "#1E293B" "diff" "Intermediate" "count" "5" "desc" "Decode messages, crack ciphers, and complete spy missions." "blog" "/blog/challenge-secret-agent/")
+        (dict "icon" "&#128230;" "name" "Treasure Hunt" "color" "#D97706" "diff" "Intermediate" "count" "5" "desc" "Follow clues, solve riddles, and find the hidden treasure." "blog" "/blog/challenge-treasure-hunt/")
+        (dict "icon" "&#127918;" "name" "Game Builder" "color" "#EF4444" "diff" "Advanced" "count" "5" "desc" "Build game mechanics: scores, levels, enemies, and power-ups." "blog" "/blog/challenge-game-builder/")
+        (dict "icon" "&#128187;" "name" "Hacker Terminal" "color" "#10B981" "diff" "Advanced" "count" "5" "desc" "Parse logs, brute-force passwords, and decode hex strings." "blog" "/blog/challenge-hacker-terminal/")
+        (dict "icon" "&#127926;" "name" "Music Festival" "color" "#8B5CF6" "diff" "Intermediate" "count" "5" "desc" "Create playlists, calculate ticket prices, and manage festivals." "blog" "/blog/challenge-music-festival/")
+        (dict "icon" "&#128300;" "name" "Science Lab" "color" "#0EA5E9" "diff" "Advanced" "count" "5" "desc" "Unit conversions, chemical formulas, and data analysis." "blog" "/blog/challenge-science-lab/")
+        (dict "icon" "&#128188;" "name" "Startup Sim" "color" "#F59E0B" "diff" "Advanced" "count" "5" "desc" "Calculate revenue, track growth, and make business decisions." "blog" "/blog/challenge-startup-sim/")
+        (dict "icon" "&#128290;" "name" "Euler Blocks" "color" "#4F46E5" "diff" "Advanced" "count" "10" "desc" "Computational puzzles inspired by Project Euler. Pure math and logic." "blog" "/blog/challenge-euler-blocks/")
+      }}
+
+      <div class="row">
+        {{ range $themes }}
+          <div class="col-12 col-md-6 col-lg-4 mb-4">
+            <div class="rounded-xl border border-gray-200 overflow-hidden h-full shadow-sm hover:shadow-md transition-shadow">
+              <div class="p-4" style="border-top: 4px solid {{ .color }};">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                  <div class="text-2xl">{{ .icon }}</div>
+                  <div>
+                    <h3 class="fw-bold text-gray-800 mb-0">{{ .name }}</h3>
+                    <div class="d-flex align-items-center gap-2 mt-1">
+                      <span class="text-xs px-2 py-0.5 rounded fw-medium
+                        {{ if eq .diff "Beginner" }}bg-success text-white
+                        {{ else if eq .diff "Intermediate" }}bg-warning text-dark
+                        {{ else }}bg-danger text-white{{ end }}">{{ .diff }}</span>
+                      <span class="text-xs text-gray-500">{{ .count }} challenges</span>
+                    </div>
+                  </div>
+                </div>
+                <p class="text-sm text-gray-600 mb-3">{{ .desc }}</p>
+                <a href="{{ .blog }}" class="text-primary text-sm fw-medium text-decoration-none hover:underline">Read more &rarr;</a>
+              </div>
+            </div>
+          </div>
+        {{ end }}
+      </div>
+    </div>
+  </section>
+
+  {{/* CTA */}}
+  <section class="py-8" style="background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);">
+    <div class="container text-center">
+      <h2 class="text-3xl font-extrabold text-white mb-3">Ready to take on the challenges?</h2>
+      <p class="text-lg text-white opacity-75 mb-5">Start with Getting Started and work your way up. No account needed.</p>
+      <a href="{{ .Site.Params.appURL | default "/app" }}" class="bg-white text-primary px-8 py-3 rounded-lg fw-bold text-lg text-decoration-none hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 transition-colors">
+        Open Challenge Hub
+      </a>
+    </div>
+  </section>
+{{ end }}
