@@ -29,8 +29,30 @@ body {
   color: black !important;
 }
 
-.blocklyTreeRow.blocklyTreeSelected .blocklyToolboxCategoryLabel {
+.blocklyToolboxSelected .blocklyToolboxCategoryLabel {
   color: white !important;
+}
+
+
+.blocklyDropDownDiv {
+  background-color: #313244 !important;
+  border-color: #45475a !important;
+}
+
+.blocklyDropDownDiv .blocklyMenuItem {
+  color: #cdd6f4 !important;
+}
+
+.blocklyDropDownDiv .blocklyMenuItemHighlight {
+  background-color: #45475a !important;
+}
+
+.blocklyHtmlInput {
+  color: black !important;
+}
+
+.blocklyCommentText {
+  color: black !important;
 }
 
 .blocklyFlyoutBackground {

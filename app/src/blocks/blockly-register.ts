@@ -259,16 +259,40 @@ const COLOR_PALETTE: [string, string][] = [
   ['White', '#FFFFFF'],
 ]
 
+/** Compute relative luminance and return true if the color is light. */
+function isLightColor(hex: string): boolean {
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b
+  return luminance > 0.6
+}
+
+/** Update text fill on the color block's dropdown to contrast against block color. */
+function updateColorBlockText(block: Blockly.Block, hex: string) {
+  const textFill = isLightColor(hex) ? '#000' : '#fff'
+  const svgRoot = block.getSvgRoot()
+  if (!svgRoot) return
+  const texts = svgRoot.querySelectorAll<SVGTextElement>('text.blocklyDropdownText')
+  for (const t of texts) {
+    t.style.fill = textFill
+  }
+}
+
 /** Register the color picker value block. */
 function registerColorBlock() {
   Blockly.Blocks['cb_color'] = {
     init: function (this: Blockly.Block) {
       this.setColour(0)
+      const block = this
       const dropdown = new Blockly.FieldDropdown(
         COLOR_PALETTE.map(([name, hex]) => [name, hex]),
         function (this: Blockly.FieldDropdown, newValue: string) {
-          const block = this.getSourceBlock()
-          if (block) block.setColour(newValue)
+          const src = this.getSourceBlock()
+          if (src) {
+            src.setColour(newValue)
+            setTimeout(() => updateColorBlockText(src, newValue), 0)
+          }
           return newValue
         }
       )
@@ -276,7 +300,21 @@ function registerColorBlock() {
       this.setOutput(true, 'String')
       this.setTooltip('Pick a color')
       // Set initial color to match default value
-      this.setColour(COLOR_PALETTE[0][1])
+      const initialColor = COLOR_PALETTE[0][1]
+      this.setColour(initialColor)
+      setTimeout(() => updateColorBlockText(block, initialColor), 0)
+
+      // Re-apply text contrast after workspace loads saved state
+      this.setOnChange(function (this: Blockly.Block) {
+        const val = this.getFieldValue('COLOR')
+        if (val) {
+          this.setColour(val)
+          updateColorBlockText(this, val)
+          // Also defer in case SVG isn't rendered yet
+          const self = this
+          setTimeout(() => updateColorBlockText(self, val), 50)
+        }
+      })
     },
   }
 }
