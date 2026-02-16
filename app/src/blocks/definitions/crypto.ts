@@ -384,4 +384,163 @@ export const cryptoBlocks: BlockDefinition[] = [
     color: '#4F46E5',
     shape: 'value',
   },
+
+  // --- Bitwise Operations ---
+  {
+    name: 'bitwise_and',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Bitwise AND — each bit is 1 only if both input bits are 1',
+    category: 'Crypto',
+    inputs: [
+      { name: 'a', type: 'number', description: 'First number', default: 12 },
+      { name: 'b', type: 'number', description: 'Second number', default: 10 },
+    ],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: 'function bitwise_and(a, b) {\n  return a & b;\n}',
+      python: 'def bitwise_and(a, b):\n    return a & b',
+    },
+    tests: [{ input: { a: 12, b: 10 }, expected: { result: 8 } }],
+    color: '#4F46E5',
+    shape: 'value',
+  },
+  {
+    name: 'bitwise_or',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Bitwise OR — each bit is 1 if either input bit is 1',
+    category: 'Crypto',
+    inputs: [
+      { name: 'a', type: 'number', description: 'First number', default: 12 },
+      { name: 'b', type: 'number', description: 'Second number', default: 10 },
+    ],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: 'function bitwise_or(a, b) {\n  return a | b;\n}',
+      python: 'def bitwise_or(a, b):\n    return a | b',
+    },
+    tests: [{ input: { a: 12, b: 10 }, expected: { result: 14 } }],
+    color: '#4F46E5',
+    shape: 'value',
+  },
+  {
+    name: 'bitwise_xor',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Bitwise XOR — each bit is 1 if the input bits are different. The foundation of all encryption.',
+    category: 'Crypto',
+    inputs: [
+      { name: 'a', type: 'number', description: 'First number', default: 12 },
+      { name: 'b', type: 'number', description: 'Second number', default: 10 },
+    ],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: 'function bitwise_xor(a, b) {\n  return a ^ b;\n}',
+      python: 'def bitwise_xor(a, b):\n    return a ^ b',
+    },
+    tests: [{ input: { a: 12, b: 10 }, expected: { result: 6 } }],
+    color: '#4F46E5',
+    shape: 'value',
+  },
+  {
+    name: 'bitwise_not',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Bitwise NOT — flips every bit (0 becomes 1, 1 becomes 0)',
+    category: 'Crypto',
+    inputs: [
+      { name: 'a', type: 'number', description: 'The number to flip', default: 5 },
+    ],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: 'function bitwise_not(a) {\n  return ~a;\n}',
+      python: 'def bitwise_not(a):\n    return ~a',
+    },
+    tests: [{ input: { a: 5 }, expected: { result: -6 } }],
+    color: '#4F46E5',
+    shape: 'value',
+  },
+  {
+    name: 'bit_shift_left',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Shift bits left — each shift doubles the number',
+    category: 'Crypto',
+    inputs: [
+      { name: 'a', type: 'number', description: 'The number to shift', default: 5 },
+      { name: 'positions', type: 'number', description: 'How many positions to shift', default: 2 },
+    ],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: 'function bit_shift_left(a, positions) {\n  return a << positions;\n}',
+      python: 'def bit_shift_left(a, positions):\n    return a << positions',
+    },
+    tests: [{ input: { a: 5, positions: 2 }, expected: { result: 20 } }],
+    color: '#4F46E5',
+    shape: 'value',
+  },
+  {
+    name: 'bit_shift_right',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Shift bits right — each shift halves the number (rounding down)',
+    category: 'Crypto',
+    inputs: [
+      { name: 'a', type: 'number', description: 'The number to shift', default: 20 },
+      { name: 'positions', type: 'number', description: 'How many positions to shift', default: 2 },
+    ],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: 'function bit_shift_right(a, positions) {\n  return a >> positions;\n}',
+      python: 'def bit_shift_right(a, positions):\n    return a >> positions',
+    },
+    tests: [{ input: { a: 20, positions: 2 }, expected: { result: 5 } }],
+    color: '#4F46E5',
+    shape: 'value',
+  },
+  {
+    name: 'xor_cipher',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'XOR cipher — the simplest encryption. XOR each character with a key. Apply twice to decrypt.',
+    category: 'Crypto',
+    inputs: [
+      { name: 'text', type: 'string', description: 'Text to encrypt or decrypt', default: 'hello' },
+      { name: 'key', type: 'number', description: 'XOR key (0-255)', default: 42 },
+    ],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function xor_cipher(text, key) {
+  var out = "";
+  for (var i = 0; i < text.length; i++) {
+    out += String.fromCharCode(text.charCodeAt(i) ^ (key & 0xFF));
+  }
+  return out;
+}`,
+      python: `def xor_cipher(text, key):
+    return "".join(chr(ord(c) ^ (key & 0xFF)) for c in text)`,
+    },
+    tests: [],
+    color: '#4F46E5',
+    shape: 'value',
+  },
+  {
+    name: 'to_binary',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Show a number as a binary string — see the actual bits',
+    category: 'Crypto',
+    inputs: [
+      { name: 'number', type: 'number', description: 'The number to convert', default: 42 },
+    ],
+    outputs: [{ name: 'binary', type: 'string' }],
+    implementations: {
+      javascript: 'function to_binary(number) {\n  return (number >>> 0).toString(2);\n}',
+      python: 'def to_binary(number):\n    return bin(number)[2:]',
+    },
+    tests: [{ input: { number: 42 }, expected: { binary: '101010' } }],
+    color: '#4F46E5',
+    shape: 'value',
+  },
 ]

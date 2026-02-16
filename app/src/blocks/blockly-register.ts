@@ -32,7 +32,7 @@ const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat'])
 
 // --- HTML/CSS block types (native Blockly, not registry) ---
 const HTML_BLOCKS = new Set([
-  'cb_container', 'cb_row', 'cb_column',
+  'cb_container', 'cb_row', 'cb_column', 'cb_div',
   'cb_heading', 'cb_paragraph', 'cb_image', 'cb_button',
   'cb_set_style', 'cb_set_color', 'cb_set_background', 'cb_set_size',
 ])
@@ -135,6 +135,18 @@ function registerHtmlBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('A flexbox column layout with gap')
+    },
+  }
+
+  Blockly.Blocks['cb_div'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Div')
+      this.appendValueInput('CLASS').setCheck('String').appendField('class')
+      this.appendStatementInput('CHILDREN').appendField('children')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('A div element with a CSS class name')
     },
   }
 
@@ -626,6 +638,15 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
       return code
     }
 
+    case 'cb_div': {
+      const cls = htmlVal(block, 'CLASS', '""', language)
+      const children = generateStatementCode(block, 'CHILDREN', language)
+      let code = `(function() {\n  var __el = document.createElement('div');\n  if (${cls}) __el.className = ${cls};\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
+      if (children) code += `\n${indent(children, language)}`
+      code += `\n  __parentStack.pop();\n})()`
+      return code
+    }
+
     // --- Element blocks ---
     case 'cb_heading': {
       const level = block.getFieldValue('LEVEL') ?? '1'
@@ -819,6 +840,10 @@ function htmlToolboxXml(): string {
 
   xml += '<block type="cb_column">'
   xml += '<value name="GAP"><shadow type="math_number"><field name="NUM">8</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_div">'
+  xml += '<value name="CLASS"><shadow type="text"><field name="TEXT">my-class</field></shadow></value>'
   xml += '</block>'
 
   xml += '<sep gap="12"></sep>'
@@ -1045,6 +1070,14 @@ function generateHtmlMarkupForBlock(block: Blockly.Block): string {
       const gap = getTextValue(block, 'GAP', '8')
       const children = childMarkup('CHILDREN')
       result = `<div style="display: flex; flex-direction: column; gap: ${gap}px;">`
+      if (children) result += '\n' + indentHtml(children) + '\n'
+      result += '</div>'
+      break
+    }
+    case 'cb_div': {
+      const cls = getTextValue(block, 'CLASS', '')
+      const children = childMarkup('CHILDREN')
+      result = cls ? `<div class="${cls}">` : '<div>'
       if (children) result += '\n' + indentHtml(children) + '\n'
       result += '</div>'
       break

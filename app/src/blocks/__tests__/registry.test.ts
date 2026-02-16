@@ -4,7 +4,7 @@ import { registry } from '../registry'
 describe('BlockRegistry', () => {
   it('loads all built-in blocks', () => {
     const all = registry.getAll()
-    expect(all.length).toBeGreaterThanOrEqual(135)
+    expect(all.length).toBeGreaterThanOrEqual(143)
   })
 
   it('retrieves a block by name', () => {
@@ -105,7 +105,7 @@ describe('BlockRegistry', () => {
 
   it('includes Crypto category blocks', () => {
     const cryptoBlocks = registry.getByCategory('Crypto')
-    expect(cryptoBlocks.length).toBe(13)
+    expect(cryptoBlocks.length).toBe(21)
 
     const names = cryptoBlocks.map((b) => b.name)
     expect(names).toContain('hash_text')

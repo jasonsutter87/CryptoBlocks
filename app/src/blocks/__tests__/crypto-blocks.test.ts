@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { cryptoBlocks } from '../definitions/crypto'
 
 describe('Crypto Blocks', () => {
-  it('defines exactly 13 blocks', () => {
-    expect(cryptoBlocks).toHaveLength(13)
+  it('defines exactly 21 blocks', () => {
+    expect(cryptoBlocks).toHaveLength(21)
   })
 
   it('all blocks belong to the Crypto category', () => {
@@ -32,6 +32,14 @@ describe('Crypto Blocks', () => {
     'random_uuid',
     'hmac_sign',
     'hmac_verify',
+    'bitwise_and',
+    'bitwise_or',
+    'bitwise_xor',
+    'bitwise_not',
+    'bit_shift_left',
+    'bit_shift_right',
+    'xor_cipher',
+    'to_binary',
   ]
 
   it('contains all expected block names', () => {
@@ -98,5 +106,42 @@ describe('Crypto Blocks', () => {
 
     const verify = cryptoBlocks.find((b) => b.name === 'hmac_verify')!
     expect(verify.implementations.javascript).toContain('crypto.subtle')
+  })
+
+  it('bitwise blocks use correct operators', () => {
+    const andBlock = cryptoBlocks.find((b) => b.name === 'bitwise_and')!
+    expect(andBlock.implementations.javascript).toContain('&')
+
+    const orBlock = cryptoBlocks.find((b) => b.name === 'bitwise_or')!
+    expect(orBlock.implementations.javascript).toContain('|')
+
+    const xorBlock = cryptoBlocks.find((b) => b.name === 'bitwise_xor')!
+    expect(xorBlock.implementations.javascript).toContain('^')
+
+    const notBlock = cryptoBlocks.find((b) => b.name === 'bitwise_not')!
+    expect(notBlock.implementations.javascript).toContain('~')
+  })
+
+  it('xor_cipher block has both JS and Python implementations', () => {
+    const xorCipher = cryptoBlocks.find((b) => b.name === 'xor_cipher')!
+    expect(xorCipher.implementations.javascript).toContain('charCodeAt')
+    expect(xorCipher.implementations.python).toContain('ord')
+  })
+
+  it('to_binary converts number to binary string', () => {
+    const toBinary = cryptoBlocks.find((b) => b.name === 'to_binary')!
+    expect(toBinary.implementations.javascript).toContain('toString(2)')
+    expect(toBinary.implementations.python).toContain('bin(')
+  })
+
+  it('bitwise blocks are all sync', () => {
+    const bitwiseNames = [
+      'bitwise_and', 'bitwise_or', 'bitwise_xor', 'bitwise_not',
+      'bit_shift_left', 'bit_shift_right', 'xor_cipher', 'to_binary',
+    ]
+    for (const name of bitwiseNames) {
+      const block = cryptoBlocks.find((b) => b.name === name)!
+      expect(block.implementations.javascript).not.toMatch(/^async /)
+    }
   })
 })
