@@ -25,18 +25,16 @@ body {
   padding: 4px 8px !important;
 }
 
-.blocklyTreeLabel,
-.blocklyToolboxCategory > .blocklyTreeRow span,
-.blocklyToolboxDiv span {
-  color: #000 !important;
-}
-
 .blocklyToolboxCategoryLabel {
   color: black !important;
 }
 
+.blocklyTreeRow.blocklyTreeSelected .blocklyToolboxCategoryLabel {
+  color: white !important;
+}
+
 .blocklyFlyoutBackground {
-  fill: #1e1e2e !important;
+  fill: rgba(200, 200, 200, 0.6) !important;
 }
 
 .blocklyFlyoutScrollbar,
