@@ -14,6 +14,7 @@ interface ToolbarProps {
   onCodeToBlocks: () => void
   onExport: () => void
   onImport: (file: File) => void
+  onImportAsBlock: (file: File) => void
   onExportHtml: () => void
   onCopyEmbed: () => void
   onPublish: () => void
@@ -36,6 +37,7 @@ export default function Toolbar({
   onCodeToBlocks,
   onExport,
   onImport,
+  onImportAsBlock,
   onExportHtml,
   onCopyEmbed,
   onPublish,
@@ -45,6 +47,7 @@ export default function Toolbar({
   onOpenExamples,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const importAsBlockInputRef = useRef<HTMLInputElement>(null)
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [embedCopied, setEmbedCopied] = useState(false)
   const shareMenuRef = useRef<HTMLDivElement>(null)
@@ -65,6 +68,14 @@ export default function Toolbar({
     const file = e.target.files?.[0]
     if (file) {
       onImport(file)
+      e.target.value = ''
+    }
+  }
+
+  const handleImportAsBlockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      onImportAsBlock(file)
       e.target.value = ''
     }
   }
@@ -120,6 +131,25 @@ export default function Toolbar({
               type="file"
               accept=".blocks"
               onChange={handleFileChange}
+              className="hidden"
+            />
+
+            {/* Import as Block */}
+            <button
+              onClick={() => importAsBlockInputRef.current?.click()}
+              className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+              title="Turn a .blocks file into a reusable block"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              Import as Block
+            </button>
+            <input
+              ref={importAsBlockInputRef}
+              type="file"
+              accept=".blocks"
+              onChange={handleImportAsBlockChange}
               className="hidden"
             />
 

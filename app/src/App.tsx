@@ -416,6 +416,56 @@ export default function App() {
     }
   }, [customBlocks])
 
+  const handleImportAsBlock = useCallback(async (file: File) => {
+    try {
+      const data = await importBlocksFile(file)
+
+      // Register imported custom blocks so headless workspace can deserialize them
+      for (const block of data.customBlocks) {
+        registry.register(block)
+        registerSingleBlock(block)
+      }
+
+      // Create headless workspace and load state
+      const headless = new Blockly.Workspace()
+      Blockly.serialization.workspaces.load(data.workspaceState, headless)
+
+      // Generate code from the headless workspace
+      const jsCode = generateCode(headless, 'javascript')
+      const pyCode = generateCode(headless, 'python')
+      headless.dispose()
+
+      // Derive function name from filename (strip .blocks, sanitize to snake_case)
+      const baseName = file.name.replace(/\.blocks$/i, '')
+      const funcName = baseName
+        .replace(/[^a-zA-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .toLowerCase() || 'imported_block'
+
+      // Wrap generated code in function definitions
+      const wrappedJs = `function ${funcName}() {\n${jsCode.split('\n').map(l => '  ' + l).join('\n')}\n}`
+      const wrappedPy = `def ${funcName}():\n${pyCode.split('\n').map(l => '    ' + l).join('\n')}`
+
+      // Pre-populate editingBlock and open CreateBlockModal
+      setEditingBlock({
+        name: funcName,
+        author: 'User',
+        version: '1.0.0',
+        description: `Imported from ${file.name}`,
+        category: 'My Blocks',
+        inputs: [],
+        outputs: [],
+        implementations: { javascript: wrappedJs, python: wrappedPy },
+        tests: [],
+        color: '#F59E0B',
+        shape: 'statement',
+      })
+      setShowCreateModal(true)
+    } catch (err) {
+      console.error('Failed to import .blocks file as block:', err)
+    }
+  }, [])
+
   const handleImport = useCallback(async (file: File) => {
     try {
       const data = await importBlocksFile(file)
@@ -456,6 +506,7 @@ export default function App() {
         onCodeToBlocks={() => setShowCodeToBlocks(true)}
         onExport={handleExport}
         onImport={handleImport}
+        onImportAsBlock={handleImportAsBlock}
         onExportHtml={handleExportHtml}
         onCopyEmbed={handleCopyEmbed}
         onPublish={() => setShowPublishModal(true)}
