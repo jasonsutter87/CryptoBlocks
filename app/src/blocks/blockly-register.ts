@@ -993,13 +993,18 @@ export function generateHtmlMarkup(workspace: Blockly.Workspace): string {
   return lines.join('\n')
 }
 
+/** Escape HTML entities to prevent XSS in generated markup. */
+function escapeHtmlAttr(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
 function getTextValue(block: Blockly.Block, inputName: string, fallback: string): string {
   const target = block.getInputTargetBlock(inputName)
-  if (!target) return fallback
-  if (target.type === 'text') return target.getFieldValue('TEXT') ?? fallback
-  if (target.type === 'math_number') return String(target.getFieldValue('NUM') ?? fallback)
-  if (target.type === 'cb_color') return target.getFieldValue('COLOR') ?? fallback
-  return fallback
+  if (!target) return escapeHtmlAttr(fallback)
+  if (target.type === 'text') return escapeHtmlAttr(target.getFieldValue('TEXT') ?? fallback)
+  if (target.type === 'math_number') return escapeHtmlAttr(String(target.getFieldValue('NUM') ?? fallback))
+  if (target.type === 'cb_color') return escapeHtmlAttr(target.getFieldValue('COLOR') ?? fallback)
+  return escapeHtmlAttr(fallback)
 }
 
 function generateHtmlMarkupForBlock(block: Blockly.Block): string {

@@ -153,6 +153,26 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
       return
     }
 
+    // Validate implementations must define a function (same check as file import)
+    const jsTrimmed = jsCode.trim()
+    const pyTrimmed = pyCode.trim()
+    if (jsTrimmed && !/^\s*(async\s+)?function\s+\w+/.test(jsTrimmed)) {
+      setError('JavaScript implementation must start with a function declaration')
+      return
+    }
+    if (pyTrimmed && !/^\s*(async\s+)?def\s+\w+/.test(pyTrimmed)) {
+      setError('Python implementation must start with a def declaration')
+      return
+    }
+    if (jsTrimmed && jsTrimmed.length > 10_000) {
+      setError('JavaScript implementation is too large (max 10,000 characters)')
+      return
+    }
+    if (pyTrimmed && pyTrimmed.length > 10_000) {
+      setError('Python implementation is too large (max 10,000 characters)')
+      return
+    }
+
     // Validate inputs have names
     for (const inp of inputs) {
       if (!inp.name.trim()) {

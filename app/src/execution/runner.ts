@@ -85,8 +85,9 @@ function executeJavaScript(
     }, 30000)
 
     const handler = (event: MessageEvent) => {
-      // Validate message comes from our sandbox iframe
+      // Validate message comes from our sandbox iframe (null origin = sandboxed)
       if (event.source !== iframe?.contentWindow) return
+      if (event.origin !== 'null') return
       const msg = event.data
       if (!msg || typeof msg !== 'object' || msg.__cryptoblocks !== true) return
 
@@ -124,7 +125,7 @@ function executeJavaScript(
 
     // Console overrides locked with Object.defineProperty (CB-R2-006)
     const html = `<!DOCTYPE html><html><head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; connect-src https: wss: http://localhost:* http://127.0.0.1:*; style-src 'unsafe-inline'; img-src data: https: http:; frame-src 'none'; worker-src 'none'; object-src 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; connect-src http://localhost:* http://127.0.0.1:*; style-src 'unsafe-inline'; img-src data:; frame-src 'none'; worker-src 'none'; object-src 'none';">
 <script>
 var _mark = { __cryptoblocks: true };
 var __sendMsg = function(type, data) {
@@ -163,7 +164,6 @@ ${safetyPreamble}
     iframe.style.display = 'none'
     iframe.sandbox.add('allow-scripts')
     iframe.sandbox.add('allow-modals')
-    iframe.sandbox.add('allow-same-origin')
     iframe.src = blobUrl
     document.body.appendChild(iframe)
   })
@@ -220,29 +220,49 @@ function resetPyodideGlobals() {
 const PYTHON_SAFETY_PREAMBLE = `
 import sys as _cb_sys
 import types as _cb_types
+import builtins as _cb_bi
 
 # Block js bridge — replaces real modules with empty stubs
 for _cb_m in ['js', 'pyodide', 'pyodide.ffi', 'pyodide.http', 'pyodide.code']:
     _cb_sys.modules[_cb_m] = _cb_types.ModuleType(_cb_m)
 
-# Block dangerous Python modules
+# Blocklist: dangerous modules + introspection modules that could bypass the guard
+# urllib.parse is whitelisted (safe string manipulation used by crypto blocks)
 _cb_blocked = frozenset({
     'os', 'subprocess', 'socket', 'http', 'http.client', 'http.server',
     'urllib', 'urllib.request', 'ctypes', 'shutil', 'pathlib',
-    'importlib', 'importlib.reload',
+    'importlib', 'importlib.reload', 'importlib._bootstrap',
+    'sys', 'builtins',
+    'code', 'codeop', 'signal', 'gc', 'inspect',
+    '_thread', 'threading', 'multiprocessing',
 })
-_cb_real_import = __import__
+_cb_allowed = frozenset({'urllib.parse'})
 
-def _cb_restricted_import(name, *args, **kwargs):
-    base = name.split('.')[0]
-    if name in _cb_blocked or base in _cb_blocked:
-        raise ImportError("Module '" + name + "' is not available in CryptoBlocks")
-    if name.startswith('pyodide'):
-        raise ImportError("Module '" + name + "' is not available in CryptoBlocks")
-    return _cb_real_import(name, *args, **kwargs)
+# Class-based import guard — no __closure__ to extract (CB-R2-001 hardening)
+# Uses __slots__ with name-mangled attribute to hide the real import reference
+class _CbGuard:
+    __slots__ = ('_CbGuard__f', '_CbGuard__b', '_CbGuard__a')
+    def __init__(self, f, blocked, allowed):
+        object.__setattr__(self, '_CbGuard__f', f)
+        object.__setattr__(self, '_CbGuard__b', blocked)
+        object.__setattr__(self, '_CbGuard__a', allowed)
+    def __setattr__(self, *a):
+        raise AttributeError('read-only')
+    def __delattr__(self, *a):
+        raise AttributeError('read-only')
+    def __dir__(self):
+        return ['__call__']
+    def __call__(self, name, *args, **kwargs):
+        if name in self.__a:
+            return self.__f(name, *args, **kwargs)
+        base = name.split('.')[0]
+        if name in self.__b or base in self.__b:
+            raise ImportError("Module '" + name + "' is not available in CryptoBlocks")
+        if name.startswith('pyodide') or name.startswith('js'):
+            raise ImportError("Module '" + name + "' is not available in CryptoBlocks")
+        return self.__f(name, *args, **kwargs)
 
-import builtins as _cb_bi
-_cb_bi.__import__ = _cb_restricted_import
+_cb_bi.__import__ = _CbGuard(_cb_bi.__import__, _cb_blocked, _cb_allowed)
 
 # Redirect stdout/stderr for capture
 from io import StringIO as _cb_StringIO
@@ -251,8 +271,8 @@ _cb_stderr = _cb_StringIO()
 _cb_sys.stdout = _cb_stdout
 _cb_sys.stderr = _cb_stderr
 
-# Clean up preamble names from user namespace
-del _cb_types, _cb_blocked, _cb_real_import, _cb_bi, _cb_StringIO
+# Clean up ALL preamble names from user namespace
+del _CbGuard, _cb_types, _cb_blocked, _cb_allowed, _cb_bi, _cb_StringIO, _cb_sys, _cb_m
 `
 
 function executePython(

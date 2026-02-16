@@ -50,6 +50,7 @@ export function generateStandaloneHtml(code: string, options: ExportOptions = {}
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: https:; frame-src blob:;">
 <title>${escapeHtml(title)}</title>
 ${hasZta ? ztaScriptBlock(ztaId, options.ztaEndpoint) : ''}
 <style>
@@ -160,22 +161,40 @@ ${hasZta ? ztaScriptBlock(ztaId, options.ztaEndpoint) : ''}
   console.info = function() { addLine('[info] ' + Array.prototype.slice.call(arguments).map(_fmt).join(' '), 'line'); };
 ${hasZta ? ztaTrackingCode(ztaId) : ''}
 
+  // Run user code in a sandboxed iframe for isolation
+  var __code = decodeURIComponent(escape(atob("${encoded}")));
+  var __sandboxHtml = '<!DOCTYPE html><html><head>'
+    + '<meta http-equiv="Content-Security-Policy" content="default-src \\'none\\'; script-src \\'unsafe-inline\\' \\'unsafe-eval\\'; style-src \\'unsafe-inline\\'; img-src data: https:;">'
+    + '<' + 'script>'
+    + 'var _fmt=function(a){return typeof a==="object"?JSON.stringify(a):String(a)};'
+    + 'console.log=function(){parent.postMessage({t:"log",d:Array.prototype.slice.call(arguments).map(_fmt).join(" ")},"*")};'
+    + 'console.warn=function(){parent.postMessage({t:"warn",d:Array.prototype.slice.call(arguments).map(_fmt).join(" ")},"*")};'
+    + 'console.error=function(){parent.postMessage({t:"err",d:Array.prototype.slice.call(arguments).map(_fmt).join(" ")},"*")};'
+    + '(async function(){try{var fn=new Function("return (async function(){\\\\n"+' + JSON.stringify(__code) + '+"\\\\n})()");await fn();parent.postMessage({t:"done"},"*")}catch(e){parent.postMessage({t:"err",d:e.message},"*")}})()'
+    + '</' + 'script></head><body></body></html>';
+  var __blob = new Blob([__sandboxHtml], {type: 'text/html'});
+  var __blobUrl = URL.createObjectURL(__blob);
+  var __iframe = document.createElement('iframe');
+  __iframe.sandbox = 'allow-scripts';
+  __iframe.style.display = 'none';
+  __iframe.src = __blobUrl;
+  document.body.appendChild(__iframe);
+${hasZta ? '  __zta(\'block_run\');' : ''}
   var __start = performance.now();
-  try {
-    var __code = decodeURIComponent(escape(atob("${encoded}")));
-    var __fn = new Function("return (async function() {\\n" + __code + "\\n})()");
-${hasZta ? '    __zta(\'block_run\');' : ''}
-    __fn().then(function() {
+  window.addEventListener('message', function(ev) {
+    if (!ev.data || !ev.data.t) return;
+    if (ev.data.t === 'log') addLine(ev.data.d, 'line');
+    else if (ev.data.t === 'warn') addLine('[warn] ' + ev.data.d, 'warn');
+    else if (ev.data.t === 'err') {
+      addLine('Error: ' + ev.data.d, 'error');
+${hasZta ? '      __zta(\'block_error\', { error: ev.data.d });' : ''}
+    }
+    else if (ev.data.t === 'done') {
       var __dur = Math.round(performance.now() - __start);
 ${hasZta ? '      __zta(\'block_complete\', { duration: __dur, outputLines: __lines });' : ''}
-    }).catch(function(e) {
-      addLine('Error: ' + e.message, 'error');
-${hasZta ? '      __zta(\'block_error\', { error: e.message });' : ''}
-    });
-  } catch(e) {
-    addLine('Error: ' + e.message, 'error');
-${hasZta ? '    __zta(\'block_error\', { error: e.message });' : ''}
-  }
+      URL.revokeObjectURL(__blobUrl);
+    }
+  });
 })();
 </script>
 </body>
