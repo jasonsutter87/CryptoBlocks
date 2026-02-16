@@ -5,6 +5,9 @@ dist/
 .env
 .env.*
 
+# Security reports (may open for audits later)
+security_reports/
+
 # Hugo
 site/public/
 site/resources/
