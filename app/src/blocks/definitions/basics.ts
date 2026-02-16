@@ -107,22 +107,4 @@ export const basicsBlocks: BlockDefinition[] = [
     ],
     color: '#4C97AF',
   },
-  {
-    name: 'repeat',
-    author: 'CryptoBlocks',
-    version: '1.0.0',
-    description: 'Repeat something a number of times',
-    category: 'Basics',
-    inputs: [{ name: 'times', type: 'number', description: 'How many times to repeat', default: 3 }],
-    outputs: [{ name: 'count', type: 'number' }],
-    implementations: {
-      javascript: `function repeat(times, callback) {\n  for (let i = 0; i < times; i++) {\n    callback(i);\n  }\n  return times;\n}`,
-      python: `def repeat(times, callback):\n    for i in range(times):\n        callback(i)\n    return times`,
-    },
-    tests: [
-      { input: { times: 3 }, expected: { count: 3 } },
-    ],
-    color: '#4C97AF',
-    shape: 'statement',
-  },
 ]

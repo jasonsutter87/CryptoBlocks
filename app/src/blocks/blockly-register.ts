@@ -26,11 +26,277 @@ function typeToBlocklyCheck(type: string): string | null {
   }
 }
 
+// --- Control flow block types ---
+const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat'])
+
+// --- HTML/CSS block types (native Blockly, not registry) ---
+const HTML_BLOCKS = new Set([
+  'cb_container', 'cb_row', 'cb_column',
+  'cb_heading', 'cb_paragraph', 'cb_image', 'cb_button',
+  'cb_set_style', 'cb_set_color', 'cb_set_background', 'cb_set_size',
+])
+
+function isNativeBlock(type: string): boolean {
+  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type)
+}
+
+function isControlFlowBlock(type: string): boolean {
+  return CONTROL_FLOW_BLOCKS.has(type)
+}
+
+/** Register control flow blocks (IF, IF-ELSE, REPEAT) as native Blockly blocks with statement inputs. */
+function registerControlFlowBlocks() {
+  // IF (no else)
+  Blockly.Blocks['cb_if'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#059669')
+      this.appendValueInput('CONDITION')
+        .setCheck('Boolean')
+        .appendField('if')
+      this.appendStatementInput('DO')
+        .appendField('do')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Run blocks only if the condition is true')
+    },
+  }
+
+  // IF-ELSE
+  Blockly.Blocks['cb_if_else'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#059669')
+      this.appendValueInput('CONDITION')
+        .setCheck('Boolean')
+        .appendField('if')
+      this.appendStatementInput('DO')
+        .appendField('do')
+      this.appendStatementInput('ELSE')
+        .appendField('else')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Run blocks if condition is true, otherwise run else blocks')
+    },
+  }
+
+  // REPEAT N times
+  Blockly.Blocks['cb_repeat'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#059669')
+      this.appendValueInput('TIMES')
+        .setCheck('Number')
+        .appendField('repeat')
+      this.appendStatementInput('DO')
+        .appendField('do')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Repeat blocks a number of times')
+    },
+  }
+}
+
+const HTML_COLOR = '#e64553'
+
+/** Register HTML structure + CSS style blocks as native Blockly blocks. */
+function registerHtmlBlocks() {
+  // --- Container blocks (with CHILDREN statement input) ---
+
+  Blockly.Blocks['cb_container'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Container')
+      this.appendValueInput('COLOR').setCheck('String').appendField('background')
+      this.appendValueInput('PADDING').setCheck('Number').appendField('padding')
+      this.appendStatementInput('CHILDREN').appendField('children')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('A div container with background color and padding')
+    },
+  }
+
+  Blockly.Blocks['cb_row'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Row')
+      this.appendValueInput('GAP').setCheck('Number').appendField('gap')
+      this.appendStatementInput('CHILDREN').appendField('children')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('A flexbox row layout with gap')
+    },
+  }
+
+  Blockly.Blocks['cb_column'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Column')
+      this.appendValueInput('GAP').setCheck('Number').appendField('gap')
+      this.appendStatementInput('CHILDREN').appendField('children')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('A flexbox column layout with gap')
+    },
+  }
+
+  // --- Element blocks (statement blocks inside containers) ---
+
+  Blockly.Blocks['cb_heading'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput()
+        .appendField('Heading')
+        .appendField(new Blockly.FieldDropdown([
+          ['H1', '1'], ['H2', '2'], ['H3', '3'],
+          ['H4', '4'], ['H5', '5'], ['H6', '6'],
+        ]), 'LEVEL')
+      this.appendValueInput('TEXT').setCheck('String').appendField('text')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('A heading element (H1-H6)')
+    },
+  }
+
+  Blockly.Blocks['cb_paragraph'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Paragraph')
+      this.appendValueInput('TEXT').setCheck('String').appendField('text')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('A paragraph element')
+    },
+  }
+
+  Blockly.Blocks['cb_image'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Image')
+      this.appendValueInput('URL').setCheck('String').appendField('url')
+      this.appendValueInput('WIDTH').setCheck('Number').appendField('width')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('An image element')
+    },
+  }
+
+  Blockly.Blocks['cb_button'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Button')
+      this.appendValueInput('TEXT').setCheck('String').appendField('text')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('A button element')
+    },
+  }
+
+  // --- CSS/Style blocks ---
+
+  Blockly.Blocks['cb_set_style'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Set Style')
+      this.appendValueInput('PROPERTY').setCheck('String').appendField('property')
+      this.appendValueInput('VALUE').setCheck('String').appendField('value')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Set any CSS property on the last created element')
+    },
+  }
+
+  Blockly.Blocks['cb_set_color'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Set Color')
+      this.appendValueInput('COLOR').setCheck('String').appendField('color')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Set text color on the last created element')
+    },
+  }
+
+  Blockly.Blocks['cb_set_background'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Set Background')
+      this.appendValueInput('COLOR').setCheck('String').appendField('color')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Set background color on the last created element')
+    },
+  }
+
+  Blockly.Blocks['cb_set_size'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Set Size')
+      this.appendValueInput('WIDTH').setCheck('Number').appendField('width')
+      this.appendValueInput('HEIGHT').setCheck('Number').appendField('height')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Set width and height on the last created element')
+    },
+  }
+}
+
+// Kid-friendly color palette
+const COLOR_PALETTE: [string, string][] = [
+  ['Red', '#EF4444'],
+  ['Orange', '#F97316'],
+  ['Yellow', '#EAB308'],
+  ['Green', '#22C55E'],
+  ['Blue', '#3B82F6'],
+  ['Purple', '#A855F7'],
+  ['Pink', '#EC4899'],
+  ['Teal', '#14B8A6'],
+  ['Sky', '#38BDF8'],
+  ['Lime', '#84CC16'],
+  ['Coral', '#FB7185'],
+  ['Gold', '#FBBF24'],
+  ['Brown', '#A16207'],
+  ['Gray', '#6B7280'],
+  ['Black', '#000000'],
+  ['White', '#FFFFFF'],
+]
+
+/** Register the color picker value block. */
+function registerColorBlock() {
+  Blockly.Blocks['cb_color'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(0)
+      const dropdown = new Blockly.FieldDropdown(
+        COLOR_PALETTE.map(([name, hex]) => [name, hex]),
+        function (this: Blockly.FieldDropdown, newValue: string) {
+          const block = this.getSourceBlock()
+          if (block) block.setColour(newValue)
+          return newValue
+        }
+      )
+      this.appendDummyInput().appendField(dropdown, 'COLOR')
+      this.setOutput(true, 'String')
+      this.setTooltip('Pick a color')
+      // Set initial color to match default value
+      this.setColour(COLOR_PALETTE[0][1])
+    },
+  }
+}
+
 export function registerCustomBlocks() {
+  // Register control flow blocks first
+  registerControlFlowBlocks()
+
+  // Register HTML/CSS blocks
+  registerHtmlBlocks()
+
+  // Register color picker block
+  registerColorBlock()
+
   const allBlocks = registry.getAll()
 
   for (const block of allBlocks) {
     const blockType = `cb_${block.name}`
+
+    // Don't overwrite native block definitions (control flow, HTML, color)
+    if (isNativeBlock(blockType) || blockType === 'cb_color') continue
 
     Blockly.Blocks[blockType] = {
       init: function (this: Blockly.Block) {
@@ -107,13 +373,17 @@ export function generateCode(workspace: Blockly.Workspace, language: Language): 
     lines.push('')
   }
 
-  // Collect all used block definitions
+  // Collect all used block definitions and detect HTML blocks
   const usedBlocks = new Set<string>()
+  let usesHtml = false
   function collectBlocks(block: Blockly.Block) {
-    if (!isBuiltinBlock(block.type)) {
+    if (HTML_BLOCKS.has(block.type)) usesHtml = true
+    // Skip builtins and native blocks — they don't have registry defs
+    if (!isBuiltinBlock(block.type) && !isNativeBlock(block.type)) {
       const name = block.type.replace('cb_', '')
       usedBlocks.add(name)
     }
+    // Recurse into all inputs (value + statement inputs)
     for (const input of block.inputList) {
       if (input.connection) {
         const connected = input.connection.targetBlock()
@@ -124,6 +394,19 @@ export function generateCode(workspace: Blockly.Workspace, language: Language): 
     if (next) collectBlocks(next)
   }
   topBlocks.forEach(collectBlocks)
+
+  // Add HTML runtime preamble if any HTML blocks are used
+  if (usesHtml && language === 'javascript') {
+    lines.push('// --- HTML Setup ---')
+    lines.push('// Wait for DOM to be ready (script runs in <head>)')
+    lines.push('await new Promise(function(r) { setTimeout(r, 0); });')
+    lines.push('var __page = document.getElementById(\'cb-page\');')
+    lines.push('__page.style.display = \'block\';')
+    lines.push('var __parentStack = [__page];')
+    lines.push('var __currentParent = function() { return __parentStack[__parentStack.length - 1]; };')
+    lines.push('var __lastEl = null;')
+    lines.push('')
+  }
 
   // Add function definitions for used blocks
   if (language === 'javascript') {
@@ -163,13 +446,191 @@ function generateBuiltinCode(block: Blockly.Block, language: Language): string |
     case 'logic_boolean':
       const val = block.getFieldValue('BOOL') === 'TRUE'
       return language === 'javascript' ? String(val) : (val ? 'True' : 'False')
+    case 'cb_color':
+      return JSON.stringify(block.getFieldValue('COLOR') ?? '#EF4444')
     default:
       return null
   }
 }
 
 function isBuiltinBlock(type: string): boolean {
-  return ['text', 'math_number', 'logic_boolean'].includes(type)
+  return ['text', 'math_number', 'logic_boolean', 'cb_color'].includes(type)
+}
+
+/** Indent every line of code by a given amount. */
+function indent(code: string, language: Language): string {
+  const pad = language === 'javascript' ? '  ' : '    '
+  return code.split('\n').map(l => pad + l).join('\n')
+}
+
+/** Generate code for all blocks inside a statement input. */
+function generateStatementCode(block: Blockly.Block, inputName: string, language: Language): string {
+  const first = block.getInputTargetBlock(inputName)
+  if (!first) return ''
+  return generateBlockCode(first, language)
+}
+
+/**
+ * Generate code for control flow blocks (if, if-else, repeat).
+ * These use Blockly statement inputs instead of value-based function calls.
+ * Returns null if the block is not a control flow block.
+ */
+function generateControlFlowCode(block: Blockly.Block, language: Language): string | null {
+  switch (block.type) {
+    case 'cb_if': {
+      const condBlock = block.getInputTargetBlock('CONDITION')
+      const condition = condBlock
+        ? generateBlockCode(condBlock, language)
+        : (language === 'javascript' ? 'false' : 'False')
+      const body = generateStatementCode(block, 'DO', language)
+
+      if (language === 'javascript') {
+        if (!body) return `if (${condition}) {}`
+        return `if (${condition}) {\n${indent(body, language)}\n}`
+      } else {
+        if (!body) return `if ${condition}:\n    pass`
+        return `if ${condition}:\n${indent(body, language)}`
+      }
+    }
+
+    case 'cb_if_else': {
+      const condBlock = block.getInputTargetBlock('CONDITION')
+      const condition = condBlock
+        ? generateBlockCode(condBlock, language)
+        : (language === 'javascript' ? 'false' : 'False')
+      const doBody = generateStatementCode(block, 'DO', language)
+      const elseBody = generateStatementCode(block, 'ELSE', language)
+
+      if (language === 'javascript') {
+        const doPart = doBody ? indent(doBody, language) : '  // ...'
+        const elsePart = elseBody ? indent(elseBody, language) : '  // ...'
+        return `if (${condition}) {\n${doPart}\n} else {\n${elsePart}\n}`
+      } else {
+        const doPart = doBody ? indent(doBody, language) : '    pass'
+        const elsePart = elseBody ? indent(elseBody, language) : '    pass'
+        return `if ${condition}:\n${doPart}\nelse:\n${elsePart}`
+      }
+    }
+
+    case 'cb_repeat': {
+      const timesBlock = block.getInputTargetBlock('TIMES')
+      const times = timesBlock
+        ? generateBlockCode(timesBlock, language)
+        : '0'
+      const body = generateStatementCode(block, 'DO', language)
+
+      if (language === 'javascript') {
+        if (!body) return `for (var __i = 0; __i < ${times}; __i++) {}`
+        return `for (var __i = 0; __i < ${times}; __i++) {\n${indent(body, language)}\n}`
+      } else {
+        if (!body) return `for _ in range(int(${times})):\n    pass`
+        return `for _ in range(int(${times})):\n${indent(body, language)}`
+      }
+    }
+
+    default:
+      return null
+  }
+}
+
+/** Helper to get a value input or a default string for HTML code gen. */
+function htmlVal(block: Blockly.Block, inputName: string, fallback: string, language: Language): string {
+  const target = block.getInputTargetBlock(inputName)
+  return target ? generateBlockCode(target, language) : fallback
+}
+
+/**
+ * Generate code for HTML structure and CSS style blocks.
+ * Returns null if the block is not an HTML/CSS block.
+ */
+function generateHtmlCode(block: Blockly.Block, language: Language): string | null {
+  if (!HTML_BLOCKS.has(block.type)) return null
+
+  // HTML blocks only work in JavaScript
+  if (language !== 'javascript') {
+    const label = block.type.replace('cb_', '').replace(/_/g, ' ')
+    return `# HTML block "${label}" is only available in JavaScript mode`
+  }
+
+  switch (block.type) {
+    // --- Container blocks ---
+    case 'cb_container': {
+      const color = htmlVal(block, 'COLOR', '"transparent"', language)
+      const padding = htmlVal(block, 'PADDING', '8', language)
+      const children = generateStatementCode(block, 'CHILDREN', language)
+      let code = `(function() {\n  var __el = document.createElement('div');\n  __el.style.background = ${color};\n  __el.style.padding = ${padding} + 'px';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
+      if (children) code += `\n${indent(children, language)}`
+      code += `\n  __parentStack.pop();\n})()`
+      return code
+    }
+
+    case 'cb_row': {
+      const gap = htmlVal(block, 'GAP', '8', language)
+      const children = generateStatementCode(block, 'CHILDREN', language)
+      let code = `(function() {\n  var __el = document.createElement('div');\n  __el.style.display = 'flex';\n  __el.style.flexDirection = 'row';\n  __el.style.gap = ${gap} + 'px';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
+      if (children) code += `\n${indent(children, language)}`
+      code += `\n  __parentStack.pop();\n})()`
+      return code
+    }
+
+    case 'cb_column': {
+      const gap = htmlVal(block, 'GAP', '8', language)
+      const children = generateStatementCode(block, 'CHILDREN', language)
+      let code = `(function() {\n  var __el = document.createElement('div');\n  __el.style.display = 'flex';\n  __el.style.flexDirection = 'column';\n  __el.style.gap = ${gap} + 'px';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
+      if (children) code += `\n${indent(children, language)}`
+      code += `\n  __parentStack.pop();\n})()`
+      return code
+    }
+
+    // --- Element blocks ---
+    case 'cb_heading': {
+      const level = block.getFieldValue('LEVEL') ?? '1'
+      const text = htmlVal(block, 'TEXT', '"Heading"', language)
+      return `(function() {\n  var __el = document.createElement('h${level}');\n  __el.textContent = ${text};\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+    }
+
+    case 'cb_paragraph': {
+      const text = htmlVal(block, 'TEXT', '"Paragraph text"', language)
+      return `(function() {\n  var __el = document.createElement('p');\n  __el.textContent = ${text};\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+    }
+
+    case 'cb_image': {
+      const url = htmlVal(block, 'URL', '"https://via.placeholder.com/150"', language)
+      const width = htmlVal(block, 'WIDTH', '150', language)
+      return `(function() {\n  var __el = document.createElement('img');\n  __el.src = ${url};\n  __el.style.width = ${width} + 'px';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+    }
+
+    case 'cb_button': {
+      const text = htmlVal(block, 'TEXT', '"Click me"', language)
+      return `(function() {\n  var __el = document.createElement('button');\n  __el.textContent = ${text};\n  __el.style.padding = '8px 16px';\n  __el.style.cursor = 'pointer';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+    }
+
+    // --- CSS/Style blocks ---
+    case 'cb_set_style': {
+      const prop = htmlVal(block, 'PROPERTY', '"color"', language)
+      const val = htmlVal(block, 'VALUE', '"black"', language)
+      return `if (__lastEl) { __lastEl.style[${prop}] = ${val}; }`
+    }
+
+    case 'cb_set_color': {
+      const color = htmlVal(block, 'COLOR', '"black"', language)
+      return `if (__lastEl) { __lastEl.style.color = ${color}; }`
+    }
+
+    case 'cb_set_background': {
+      const color = htmlVal(block, 'COLOR', '"white"', language)
+      return `if (__lastEl) { __lastEl.style.background = ${color}; }`
+    }
+
+    case 'cb_set_size': {
+      const w = htmlVal(block, 'WIDTH', '100', language)
+      const h = htmlVal(block, 'HEIGHT', '100', language)
+      return `if (__lastEl) { __lastEl.style.width = ${w} + 'px'; __lastEl.style.height = ${h} + 'px'; }`
+    }
+
+    default:
+      return null
+  }
 }
 
 function generateBlockCode(block: Blockly.Block, language: Language): string {
@@ -177,6 +638,29 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   const builtin = generateBuiltinCode(block, language)
   if (builtin !== null) return builtin
 
+  // Handle control flow blocks (if, if-else, repeat)
+  const controlFlow = generateControlFlowCode(block, language)
+  if (controlFlow !== null) {
+    let code = controlFlow
+    const nextBlock = block.getNextBlock()
+    if (nextBlock) {
+      code += '\n' + generateBlockCode(nextBlock, language)
+    }
+    return code
+  }
+
+  // Handle HTML/CSS blocks
+  const htmlCode = generateHtmlCode(block, language)
+  if (htmlCode !== null) {
+    let code = htmlCode
+    const nextBlock = block.getNextBlock()
+    if (nextBlock) {
+      code += '\n' + generateBlockCode(nextBlock, language)
+    }
+    return code
+  }
+
+  // Registry-based blocks
   const name = block.type.replace('cb_', '')
   const def = registry.get(name)
 
@@ -246,6 +730,98 @@ function extractFunctionName(def: BlockDefinition, language: Language): string {
   }
 }
 
+/** Inject control flow blocks into a toolbox category XML string. */
+function controlFlowToolboxXml(cat: string): string {
+  if (cat !== 'Logic') return ''
+  return (
+    '<block type="cb_if"></block>' +
+    '<block type="cb_if_else"></block>' +
+    '<block type="cb_repeat"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>' +
+    '<sep gap="20"></sep>'
+  )
+}
+
+/** Generate shadow XML for a block input. Uses cb_color for color-named inputs. */
+function inputShadowXml(input: { name: string; type: string; default?: string | number | boolean }): string {
+  if (input.default === undefined) return ''
+  const fieldType = typeToBlocklyField(input.type)
+  let shadow = `<value name="${input.name}">`
+  if (input.type === 'string' && input.name.toLowerCase() === 'color') {
+    // Use color picker for inputs named "color"
+    shadow += `<shadow type="cb_color"><field name="COLOR">#EF4444</field></shadow>`
+  } else if (input.type === 'number') {
+    shadow += `<shadow type="math_number"><field name="${fieldType}">${input.default}</field></shadow>`
+  } else if (input.type === 'string') {
+    shadow += `<shadow type="text"><field name="${fieldType}">${input.default}</field></shadow>`
+  }
+  shadow += '</value>'
+  return shadow
+}
+
+/** Generate the HTML toolbox category with structure + CSS blocks. */
+function htmlToolboxXml(): string {
+  const hue = hexToHue(HTML_COLOR)
+  let xml = `<category name="HTML" colour="${hue}">`
+
+  // Structure blocks
+  xml += '<block type="cb_container">'
+  xml += '<value name="COLOR"><shadow type="cb_color"><field name="COLOR">#FFFFFF</field></shadow></value>'
+  xml += '<value name="PADDING"><shadow type="math_number"><field name="NUM">16</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_row">'
+  xml += '<value name="GAP"><shadow type="math_number"><field name="NUM">8</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_column">'
+  xml += '<value name="GAP"><shadow type="math_number"><field name="NUM">8</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<sep gap="12"></sep>'
+
+  // Element blocks
+  xml += '<block type="cb_heading">'
+  xml += '<value name="TEXT"><shadow type="text"><field name="TEXT">Hello World</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_paragraph">'
+  xml += '<value name="TEXT"><shadow type="text"><field name="TEXT">Some text here</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_image">'
+  xml += '<value name="URL"><shadow type="text"><field name="TEXT">https://via.placeholder.com/150</field></shadow></value>'
+  xml += '<value name="WIDTH"><shadow type="math_number"><field name="NUM">150</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_button">'
+  xml += '<value name="TEXT"><shadow type="text"><field name="TEXT">Click me</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<sep gap="12"></sep>'
+
+  // CSS/Style blocks
+  xml += '<block type="cb_set_style">'
+  xml += '<value name="PROPERTY"><shadow type="text"><field name="TEXT">color</field></shadow></value>'
+  xml += '<value name="VALUE"><shadow type="text"><field name="TEXT">red</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_set_color">'
+  xml += '<value name="COLOR"><shadow type="cb_color"><field name="COLOR">#000000</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_set_background">'
+  xml += '<value name="COLOR"><shadow type="cb_color"><field name="COLOR">#3B82F6</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_set_size">'
+  xml += '<value name="WIDTH"><shadow type="math_number"><field name="NUM">200</field></shadow></value>'
+  xml += '<value name="HEIGHT"><shadow type="math_number"><field name="NUM">100</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '</category>'
+  return xml
+}
+
 export function getToolboxXml(): string {
   const categories = registry.getCategories()
   let xml = '<xml>'
@@ -257,20 +833,13 @@ export function getToolboxXml(): string {
     const hue = hexToHue(color)
     xml += `<category name="${cat}" colour="${hue}">`
 
+    // Add control flow blocks at the top of the Logic category
+    xml += controlFlowToolboxXml(cat)
+
     for (const block of blocks) {
       xml += `<block type="cb_${block.name}">`
-      // Add shadow blocks for inputs with defaults
       for (const input of block.inputs) {
-        if (input.default !== undefined) {
-          const fieldType = typeToBlocklyField(input.type)
-          xml += `<value name="${input.name}">`
-          if (input.type === 'number') {
-            xml += `<shadow type="math_number"><field name="${fieldType}">${input.default}</field></shadow>`
-          } else if (input.type === 'string') {
-            xml += `<shadow type="text"><field name="${fieldType}">${input.default}</field></shadow>`
-          }
-          xml += `</value>`
-        }
+        xml += inputShadowXml(input)
       }
       xml += `</block>`
     }
@@ -278,12 +847,59 @@ export function getToolboxXml(): string {
     xml += '</category>'
   }
 
+  // Add HTML category
+  xml += htmlToolboxXml()
+
   // Add built-in Blockly blocks for values
   xml += '<sep></sep>'
   xml += '<category name="Values" colour="230">'
   xml += '<block type="math_number"><field name="NUM">0</field></block>'
   xml += '<block type="text"><field name="TEXT">hello</field></block>'
   xml += '<block type="logic_boolean"><field name="BOOL">TRUE</field></block>'
+  xml += '<block type="cb_color"><field name="COLOR">#EF4444</field></block>'
+  xml += '</category>'
+
+  xml += '</xml>'
+  return xml
+}
+
+export function getFilteredToolboxXml(allowedCategories: string[]): string {
+  const categories = registry.getCategories()
+  let xml = '<xml>'
+
+  for (const cat of categories) {
+    if (!allowedCategories.includes(cat)) continue
+    const blocks = registry.getByCategory(cat)
+    const color = registry.getCategoryColor(cat)
+    const hue = hexToHue(color)
+    xml += `<category name="${cat}" colour="${hue}">`
+
+    // Add control flow blocks at the top of the Logic category
+    xml += controlFlowToolboxXml(cat)
+
+    for (const block of blocks) {
+      xml += `<block type="cb_${block.name}">`
+      for (const input of block.inputs) {
+        xml += inputShadowXml(input)
+      }
+      xml += `</block>`
+    }
+
+    xml += '</category>'
+  }
+
+  // Add HTML category if allowed
+  if (allowedCategories.includes('HTML')) {
+    xml += htmlToolboxXml()
+  }
+
+  // Always include Values category
+  xml += '<sep></sep>'
+  xml += '<category name="Values" colour="230">'
+  xml += '<block type="math_number"><field name="NUM">0</field></block>'
+  xml += '<block type="text"><field name="TEXT">hello</field></block>'
+  xml += '<block type="logic_boolean"><field name="BOOL">TRUE</field></block>'
+  xml += '<block type="cb_color"><field name="COLOR">#EF4444</field></block>'
   xml += '</category>'
 
   xml += '</xml>'
@@ -315,4 +931,164 @@ function hexToHue(hex: string): number {
   }
 
   return Math.round(h * 360)
+}
+
+/**
+ * Generate HTML markup from workspace blocks.
+ * Only renders HTML/CSS blocks; non-HTML blocks are shown as comments.
+ */
+export function generateHtmlMarkup(workspace: Blockly.Workspace): string {
+  const topBlocks = workspace.getTopBlocks(true)
+  const lines: string[] = []
+  lines.push('<!-- Generated by CryptoBlocks -->')
+
+  for (const topBlock of topBlocks) {
+    lines.push(generateHtmlMarkupForBlock(topBlock))
+  }
+
+  return lines.join('\n')
+}
+
+function getTextValue(block: Blockly.Block, inputName: string, fallback: string): string {
+  const target = block.getInputTargetBlock(inputName)
+  if (!target) return fallback
+  if (target.type === 'text') return target.getFieldValue('TEXT') ?? fallback
+  if (target.type === 'math_number') return String(target.getFieldValue('NUM') ?? fallback)
+  if (target.type === 'cb_color') return target.getFieldValue('COLOR') ?? fallback
+  return fallback
+}
+
+function generateHtmlMarkupForBlock(block: Blockly.Block): string {
+  const childMarkup = (inputName: string): string => {
+    const first = block.getInputTargetBlock(inputName)
+    if (!first) return ''
+    return generateHtmlMarkupForBlock(first)
+  }
+
+  const indentHtml = (html: string): string =>
+    html.split('\n').map(l => '  ' + l).join('\n')
+
+  let result = ''
+
+  switch (block.type) {
+    case 'cb_container': {
+      const bg = getTextValue(block, 'COLOR', 'transparent')
+      const pad = getTextValue(block, 'PADDING', '8')
+      const children = childMarkup('CHILDREN')
+      result = `<div style="background: ${bg}; padding: ${pad}px;">`
+      if (children) result += '\n' + indentHtml(children) + '\n'
+      result += '</div>'
+      break
+    }
+    case 'cb_row': {
+      const gap = getTextValue(block, 'GAP', '8')
+      const children = childMarkup('CHILDREN')
+      result = `<div style="display: flex; flex-direction: row; gap: ${gap}px;">`
+      if (children) result += '\n' + indentHtml(children) + '\n'
+      result += '</div>'
+      break
+    }
+    case 'cb_column': {
+      const gap = getTextValue(block, 'GAP', '8')
+      const children = childMarkup('CHILDREN')
+      result = `<div style="display: flex; flex-direction: column; gap: ${gap}px;">`
+      if (children) result += '\n' + indentHtml(children) + '\n'
+      result += '</div>'
+      break
+    }
+    case 'cb_heading': {
+      const level = block.getFieldValue('LEVEL') ?? '1'
+      const text = getTextValue(block, 'TEXT', 'Heading')
+      result = `<h${level}>${text}</h${level}>`
+      break
+    }
+    case 'cb_paragraph': {
+      const text = getTextValue(block, 'TEXT', 'Paragraph text')
+      result = `<p>${text}</p>`
+      break
+    }
+    case 'cb_image': {
+      const url = getTextValue(block, 'URL', '')
+      const width = getTextValue(block, 'WIDTH', '150')
+      result = `<img src="${url}" style="width: ${width}px;" />`
+      break
+    }
+    case 'cb_button': {
+      const text = getTextValue(block, 'TEXT', 'Click me')
+      result = `<button>${text}</button>`
+      break
+    }
+    case 'cb_set_style': {
+      const prop = getTextValue(block, 'PROPERTY', 'color')
+      const val = getTextValue(block, 'VALUE', 'black')
+      result = `<!-- set-style: ${prop}: ${val} -->`
+      break
+    }
+    case 'cb_set_color': {
+      const color = getTextValue(block, 'COLOR', 'black')
+      result = `<!-- set-color: ${color} -->`
+      break
+    }
+    case 'cb_set_background': {
+      const color = getTextValue(block, 'COLOR', 'white')
+      result = `<!-- set-background: ${color} -->`
+      break
+    }
+    case 'cb_set_size': {
+      const w = getTextValue(block, 'WIDTH', '100')
+      const h = getTextValue(block, 'HEIGHT', '100')
+      result = `<!-- set-size: ${w}x${h} -->`
+      break
+    }
+    default: {
+      const name = block.type.replace('cb_', '').replace(/_/g, ' ')
+      result = `<!-- ${name} (non-HTML block) -->`
+    }
+  }
+
+  const next = block.getNextBlock()
+  if (next) {
+    result += '\n' + generateHtmlMarkupForBlock(next)
+  }
+
+  return result
+}
+
+/**
+ * Generate code for a single block tree (block + all children/next).
+ * Used by "Save as Block" to generate the implementation code.
+ */
+export function generateBlockTreeCode(block: Blockly.Block, language: Language): string {
+  const lines: string[] = []
+
+  // Collect used registry blocks
+  const usedBlocks = new Set<string>()
+  function collectUsed(b: Blockly.Block) {
+    if (!isBuiltinBlock(b.type) && !isNativeBlock(b.type)) {
+      usedBlocks.add(b.type.replace('cb_', ''))
+    }
+    for (const input of b.inputList) {
+      if (input.connection) {
+        const connected = input.connection.targetBlock()
+        if (connected) collectUsed(connected)
+      }
+    }
+    const next = b.getNextBlock()
+    if (next) collectUsed(next)
+  }
+  collectUsed(block)
+
+  // Add function definitions
+  for (const name of usedBlocks) {
+    const def = registry.get(name)
+    if (def) {
+      lines.push(def.implementations[language])
+      lines.push('')
+    }
+  }
+
+  // Generate the block code
+  lines.push(generateBlockCode(block, language))
+
+  return lines.join('\n')
 }
