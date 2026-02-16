@@ -369,10 +369,18 @@ export function registerCustomBlocks() {
 
         // Add inputs
         for (const input of block.inputs) {
-          const check = typeToBlocklyCheck(input.type)
-          const inputObj = this.appendValueInput(input.name)
-          inputObj.appendField(input.name.replace(/_/g, ' '))
-          if (check) inputObj.setCheck(check)
+          if (input.choices && input.choices.length > 0) {
+            // Dropdown field — value is built into the block
+            const options: [string, string][] = input.choices.map((c) => [c, c])
+            this.appendDummyInput()
+              .appendField(input.name.replace(/_/g, ' '))
+              .appendField(new Blockly.FieldDropdown(options), input.name)
+          } else {
+            const check = typeToBlocklyCheck(input.type)
+            const inputObj = this.appendValueInput(input.name)
+            inputObj.appendField(input.name.replace(/_/g, ' '))
+            if (check) inputObj.setCheck(check)
+          }
         }
 
         // Add output or set as statement based on shape override or outputs
@@ -402,10 +410,17 @@ export function registerSingleBlock(block: BlockDefinition) {
       )
 
       for (const input of block.inputs) {
-        const check = typeToBlocklyCheck(input.type)
-        const inputObj = this.appendValueInput(input.name)
-        inputObj.appendField(input.name.replace(/_/g, ' '))
-        if (check) inputObj.setCheck(check)
+        if (input.choices && input.choices.length > 0) {
+          const options: [string, string][] = input.choices.map((c) => [c, c])
+          this.appendDummyInput()
+            .appendField(input.name.replace(/_/g, ' '))
+            .appendField(new Blockly.FieldDropdown(options), input.name)
+        } else {
+          const check = typeToBlocklyCheck(input.type)
+          const inputObj = this.appendValueInput(input.name)
+          inputObj.appendField(input.name.replace(/_/g, ' '))
+          if (check) inputObj.setCheck(check)
+        }
       }
 
       const isValue = block.shape === 'value' || (!block.shape && block.outputs.length > 0)
@@ -754,6 +769,13 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   // Build arguments from connected inputs
   const args: string[] = []
   for (const input of def.inputs) {
+    // Dropdown fields — read value directly from the block field
+    if (input.choices && input.choices.length > 0) {
+      const val = block.getFieldValue(input.name) ?? input.choices[0]
+      args.push(`"${val}"`)
+      continue
+    }
+
     const inputBlock = block.getInputTargetBlock(input.name)
     if (inputBlock) {
       args.push(generateBlockCode(inputBlock, language))
@@ -821,7 +843,9 @@ function controlFlowToolboxXml(cat: string): string {
 }
 
 /** Generate shadow XML for a block input. Uses cb_color for color-named inputs. */
-function inputShadowXml(input: { name: string; type: string; default?: string | number | boolean }): string {
+function inputShadowXml(input: { name: string; type: string; default?: string | number | boolean; choices?: string[] }): string {
+  // Dropdown fields don't need shadow blocks — value is built into the block
+  if (input.choices && input.choices.length > 0) return ''
   if (input.default === undefined) return ''
   const fieldType = typeToBlocklyField(input.type)
   let shadow = `<value name="${input.name}">`

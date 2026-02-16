@@ -3,6 +3,7 @@ export interface BlockInput {
   type: 'string' | 'number' | 'boolean' | 'any'
   description: string
   default?: string | number | boolean
+  choices?: string[]
 }
 
 export interface BlockOutput {

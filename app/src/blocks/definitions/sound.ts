@@ -8,7 +8,7 @@ export const soundBlocks: BlockDefinition[] = [
     description: 'Play a synthesized drum sound (kick, snare, hi-hat, clap, tom, cymbal)',
     category: 'Sound',
     inputs: [
-      { name: 'drum_type', type: 'string', description: 'Drum type: kick, snare, hi-hat, clap, tom, cymbal', default: 'kick' },
+      { name: 'drum_type', type: 'string', description: 'Drum type', default: 'kick', choices: ['kick', 'snare', 'hi-hat', 'clap', 'tom', 'cymbal'] },
     ],
     outputs: [],
     implementations: {
@@ -164,7 +164,7 @@ export const soundBlocks: BlockDefinition[] = [
     description: 'Set the oscillator waveform (sine, square, sawtooth, triangle)',
     category: 'Sound',
     inputs: [
-      { name: 'waveform', type: 'string', description: 'Waveform: sine, square, sawtooth, triangle', default: 'sine' },
+      { name: 'waveform', type: 'string', description: 'Waveform type', default: 'sine', choices: ['sine', 'square', 'sawtooth', 'triangle'] },
     ],
     outputs: [],
     implementations: {
