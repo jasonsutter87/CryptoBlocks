@@ -1,5 +1,7 @@
-import Editor from '@monaco-editor/react'
+import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react'
 import type { Language } from '../types/block'
+
+const MonacoEditor = lazy(() => import('@monaco-editor/react').then(m => ({ default: m.default })))
 
 interface CodeViewProps {
   code: string
@@ -7,7 +9,26 @@ interface CodeViewProps {
   onLanguageChange: (lang: Language) => void
 }
 
+/** Simple <pre> fallback when Monaco can't load (Brave Shields, etc.) */
+function PlainCodeView({ code, language }: { code: string; language: string }) {
+  return (
+    <div className="h-full overflow-auto bg-[#1e1e2e] p-3">
+      <pre className="text-[13px] leading-relaxed text-[#cdd6f4] font-mono whitespace-pre-wrap break-words">
+        <code data-language={language}>{code || '// No code generated yet'}</code>
+      </pre>
+    </div>
+  )
+}
+
 export default function CodeView({ code, language, onLanguageChange }: CodeViewProps) {
+  const [monacoFailed, setMonacoFailed] = useState(false)
+
+  const monacoLang = language === 'python' ? 'python' : language === 'html' ? 'html' : 'javascript'
+
+  const handleMonacoError = useCallback(() => {
+    setMonacoFailed(true)
+  }, [])
+
   return (
     <div className="flex flex-col h-full bg-[#1e1e2e]">
       {/* Language toggle */}
@@ -49,29 +70,74 @@ export default function CodeView({ code, language, onLanguageChange }: CodeViewP
 
       {/* Code editor */}
       <div className="flex-1 min-h-0">
-        <Editor
-          language={language === 'python' ? 'python' : language === 'html' ? 'html' : 'javascript'}
-          value={code}
-          theme="vs-dark"
-          options={{
-            readOnly: true,
-            minimap: { enabled: false },
-            fontSize: 13,
-            lineNumbers: 'on',
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            padding: { top: 12 },
-            renderLineHighlight: 'none',
-            overviewRulerLanes: 0,
-            hideCursorInOverviewRuler: true,
-            overviewRulerBorder: false,
-            scrollbar: {
-              vertical: 'auto',
-              horizontal: 'hidden',
-            },
-          }}
-        />
+        {monacoFailed ? (
+          <PlainCodeView code={code} language={monacoLang} />
+        ) : (
+          <Suspense fallback={<PlainCodeView code={code} language={monacoLang} />}>
+            <MonacoEditorWrapper
+              code={code}
+              language={monacoLang}
+              onError={handleMonacoError}
+            />
+          </Suspense>
+        )}
       </div>
     </div>
+  )
+}
+
+/** Wrapper that catches Monaco load failures and reports them */
+function MonacoEditorWrapper({
+  code,
+  language,
+  onError,
+}: {
+  code: string
+  language: string
+  onError: () => void
+}) {
+  const [timedOut, setTimedOut] = useState(false)
+  const mountedRef = useRef(false)
+
+  // If Monaco hasn't mounted within 4 seconds, fall back
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!mountedRef.current) {
+        setTimedOut(true)
+        onError()
+      }
+    }, 4000)
+    return () => clearTimeout(timer)
+  }, [onError])
+
+  if (timedOut) {
+    return <PlainCodeView code={code} language={language} />
+  }
+
+  return (
+    <MonacoEditor
+      language={language}
+      value={code}
+      theme="vs-dark"
+      loading={<PlainCodeView code={code} language={language} />}
+      onMount={() => { mountedRef.current = true }}
+      options={{
+        readOnly: true,
+        minimap: { enabled: false },
+        fontSize: 13,
+        lineNumbers: 'on',
+        scrollBeyondLastLine: false,
+        wordWrap: 'on',
+        padding: { top: 12 },
+        renderLineHighlight: 'none',
+        overviewRulerLanes: 0,
+        hideCursorInOverviewRuler: true,
+        overviewRulerBorder: false,
+        scrollbar: {
+          vertical: 'auto',
+          horizontal: 'hidden',
+        },
+      }}
+    />
   )
 }

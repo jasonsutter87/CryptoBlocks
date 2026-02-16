@@ -22,6 +22,12 @@ import type { Challenge } from './challenges'
 import { getNextChallenge } from './challenges'
 import { validateOutput, calculateStars, countBlocks } from './challenges/validator'
 import { saveProgress } from './challenges/progress'
+import type { Blockset } from './blocksets'
+import { getNextBlockset } from './blocksets'
+import { saveBlocksetProgress } from './blocksets/progress'
+import type { GolfProblem } from './code-golf'
+import { getNextProblem } from './code-golf'
+import { saveGolfProgress } from './code-golf/progress'
 import Toolbar from './components/Toolbar'
 import BlockEditor from './components/BlockEditor'
 import CodeView from './components/CodeView'
@@ -30,6 +36,12 @@ import CreateBlockModal from './components/CreateBlockModal'
 import ChallengeBrowser from './components/ChallengeBrowser'
 import ChallengePanel from './components/ChallengePanel'
 import ChallengeComplete from './components/ChallengeComplete'
+import BlocksetBrowser from './components/BlocksetBrowser'
+import BlocksetPanel from './components/BlocksetPanel'
+import BlocksetComplete from './components/BlocksetComplete'
+import GolfBrowser from './components/GolfBrowser'
+import GolfPanel from './components/GolfPanel'
+import GolfComplete from './components/GolfComplete'
 import ExamplesBrowser from './components/ExamplesBrowser'
 import CodeToBlocksModal from './components/CodeToBlocksModal'
 import PublishModal from './components/PublishModal'
@@ -37,6 +49,8 @@ import type { ConversionResult } from './converters/js-to-workspace'
 import type { Example } from './examples'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
+  | 'blocksets' | 'active-blockset'
+  | 'code-golf' | 'active-golf'
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('javascript')
@@ -61,6 +75,15 @@ export default function App() {
   const [blockCount, setBlockCount] = useState(0)
   const [showComplete, setShowComplete] = useState(false)
   const [challengeStars, setChallengeStars] = useState(0)
+
+  // Blockset state
+  const [activeBlockset, setActiveBlockset] = useState<Blockset | null>(null)
+  const [showBlocksetComplete, setShowBlocksetComplete] = useState(false)
+
+  // Code Golf state
+  const [activeGolfProblem, setActiveGolfProblem] = useState<GolfProblem | null>(null)
+  const [showGolfComplete, setShowGolfComplete] = useState(false)
+  const [golfIsNewBest, setGolfIsNewBest] = useState(false)
 
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
@@ -277,6 +300,192 @@ export default function App() {
       setMode('challenges')
     }
   }, [mode, handleBackToSandbox])
+
+  // === Blockset handlers ===
+  const handleOpenBlocksets = useCallback(() => {
+    if (mode === 'blocksets') {
+      handleBackToSandbox()
+    } else {
+      setMode('blocksets')
+    }
+  }, [mode, handleBackToSandbox])
+
+  const handleSelectBlockset = useCallback((blockset: Blockset) => {
+    if (workspaceRef.current && modeRef.current === 'sandbox') {
+      savedSandboxState.current = Blockly.serialization.workspaces.save(workspaceRef.current)
+    }
+
+    setActiveBlockset(blockset)
+    setMode('active-blockset')
+    setShowBlocksetComplete(false)
+    setShowOutput(false)
+    setResult(null)
+    setBlockCount(0)
+
+    setTimeout(() => {
+      if (workspaceRef.current) {
+        const toolbox = getFilteredToolboxXml(blockset.allowedCategories)
+        workspaceRef.current.updateToolbox(toolbox)
+        workspaceRef.current.clear()
+      }
+    }, 0)
+  }, [])
+
+  const handleBackToBlocksets = useCallback(() => {
+    setMode('blocksets')
+    setActiveBlockset(null)
+    setShowBlocksetComplete(false)
+  }, [])
+
+  const handleNextBlockset = useCallback(() => {
+    if (!activeBlockset) return
+    const next = getNextBlockset(activeBlockset.id)
+    if (next) {
+      handleSelectBlockset(next)
+    } else {
+      handleBackToBlocksets()
+    }
+  }, [activeBlockset, handleSelectBlockset, handleBackToBlocksets])
+
+  const handleCheckBlocksetSolution = useCallback(async () => {
+    if (!activeBlockset || !workspaceRef.current) return
+
+    setIsRunning(true)
+    setShowOutput(true)
+    setResult(null)
+    setLiveOutput([])
+
+    const execLang = language === 'html' ? 'javascript' : language
+    const execCode = language === 'html' && workspaceRef.current
+      ? generateCode(workspaceRef.current, 'javascript')
+      : code
+
+    const handle = executeCode(execCode, execLang, (line) => {
+      setLiveOutput((prev) => [...prev, line])
+    })
+    executionHandleRef.current = handle
+
+    const execResult = await handle.promise
+    executionHandleRef.current = null
+    setResult(execResult)
+    setLiveOutput([])
+    setIsRunning(false)
+
+    if (execResult.error) return
+
+    const passed = validateOutput(execResult.output, activeBlockset.expectedOutput)
+    if (passed) {
+      saveBlocksetProgress({
+        blocksetId: activeBlockset.id,
+        completed: true,
+        attempts: 1,
+      })
+      setShowBlocksetComplete(true)
+    }
+  }, [code, language, activeBlockset])
+
+  // === Code Golf handlers ===
+  const handleOpenGolf = useCallback(() => {
+    if (mode === 'code-golf') {
+      handleBackToSandbox()
+    } else {
+      setMode('code-golf')
+    }
+  }, [mode, handleBackToSandbox])
+
+  const handleSelectGolfProblem = useCallback((problem: GolfProblem) => {
+    if (workspaceRef.current && modeRef.current === 'sandbox') {
+      savedSandboxState.current = Blockly.serialization.workspaces.save(workspaceRef.current)
+    }
+
+    setActiveGolfProblem(problem)
+    setMode('active-golf')
+    setShowGolfComplete(false)
+    setShowOutput(false)
+    setResult(null)
+    setBlockCount(0)
+    setGolfIsNewBest(false)
+
+    setTimeout(() => {
+      if (workspaceRef.current) {
+        const toolbox = problem.allowedCategories
+          ? getFilteredToolboxXml(problem.allowedCategories)
+          : getToolboxXml()
+        workspaceRef.current.updateToolbox(toolbox)
+        workspaceRef.current.clear()
+      }
+    }, 0)
+  }, [])
+
+  const handleBackToGolf = useCallback(() => {
+    setMode('code-golf')
+    setActiveGolfProblem(null)
+    setShowGolfComplete(false)
+  }, [])
+
+  const handleNextGolfProblem = useCallback(() => {
+    if (!activeGolfProblem) return
+    const next = getNextProblem(activeGolfProblem.id)
+    if (next) {
+      handleSelectGolfProblem(next)
+    } else {
+      handleBackToGolf()
+    }
+  }, [activeGolfProblem, handleSelectGolfProblem, handleBackToGolf])
+
+  const handleRetryGolf = useCallback(() => {
+    setShowGolfComplete(false)
+    setResult(null)
+    setShowOutput(false)
+    if (workspaceRef.current) {
+      workspaceRef.current.clear()
+    }
+  }, [])
+
+  const handleCheckGolfSolution = useCallback(async () => {
+    if (!activeGolfProblem || !workspaceRef.current) return
+
+    setIsRunning(true)
+    setShowOutput(true)
+    setResult(null)
+    setLiveOutput([])
+
+    const execLang = language === 'html' ? 'javascript' : language
+    const execCode = language === 'html' && workspaceRef.current
+      ? generateCode(workspaceRef.current, 'javascript')
+      : code
+
+    const handle = executeCode(execCode, execLang, (line) => {
+      setLiveOutput((prev) => [...prev, line])
+    })
+    executionHandleRef.current = handle
+
+    const execResult = await handle.promise
+    executionHandleRef.current = null
+    setResult(execResult)
+    setLiveOutput([])
+    setIsRunning(false)
+
+    if (execResult.error) return
+
+    const passed = validateOutput(execResult.output, activeGolfProblem.expectedOutput)
+    if (passed) {
+      const blocks = countBlocks(workspaceRef.current)
+      const { getGolfProgressById } = await import('./code-golf/progress')
+      const prev = getGolfProgressById(activeGolfProblem.id)
+      const isNewBest = !prev || blocks < prev.bestBlockCount
+      setGolfIsNewBest(isNewBest)
+
+      saveGolfProgress({
+        problemId: activeGolfProblem.id,
+        completed: true,
+        bestBlockCount: blocks,
+        attempts: 1,
+      })
+
+      setShowGolfComplete(true)
+    }
+  }, [code, language, activeGolfProblem])
 
   const handleSelectExample = useCallback((example: Example) => {
     setShowExamples(false)
@@ -513,6 +722,8 @@ export default function App() {
         onClear={handleClear}
         mode={mode}
         onOpenChallenges={handleOpenChallenges}
+        onOpenBlocksets={handleOpenBlocksets}
+        onOpenGolf={handleOpenGolf}
         onOpenExamples={() => setShowExamples(true)}
       />
 
@@ -524,8 +735,24 @@ export default function App() {
         />
       )}
 
-      {/* Editor Mode (sandbox or active-challenge) */}
-      {mode !== 'challenges' && (
+      {/* Blockset Browser Mode */}
+      {mode === 'blocksets' && (
+        <BlocksetBrowser
+          onSelectBlockset={handleSelectBlockset}
+          onBackToSandbox={handleBackToSandbox}
+        />
+      )}
+
+      {/* Code Golf Browser Mode */}
+      {mode === 'code-golf' && (
+        <GolfBrowser
+          onSelectProblem={handleSelectGolfProblem}
+          onBackToSandbox={handleBackToSandbox}
+        />
+      )}
+
+      {/* Editor Mode (sandbox, active-challenge, active-blockset, active-golf) */}
+      {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && (
         <>
           {/* Challenge Panel Banner */}
           {mode === 'active-challenge' && activeChallenge && (
@@ -534,6 +761,28 @@ export default function App() {
               blockCount={blockCount}
               onCheckSolution={handleCheckSolution}
               onBack={handleBackToChallenges}
+              isRunning={isRunning}
+            />
+          )}
+
+          {/* Blockset Panel Banner */}
+          {mode === 'active-blockset' && activeBlockset && (
+            <BlocksetPanel
+              blockset={activeBlockset}
+              blockCount={blockCount}
+              onCheckSolution={handleCheckBlocksetSolution}
+              onBack={handleBackToBlocksets}
+              isRunning={isRunning}
+            />
+          )}
+
+          {/* Golf Panel Banner */}
+          {mode === 'active-golf' && activeGolfProblem && (
+            <GolfPanel
+              problem={activeGolfProblem}
+              blockCount={blockCount}
+              onCheckSolution={handleCheckGolfSolution}
+              onBack={handleBackToGolf}
               isRunning={isRunning}
             />
           )}
@@ -625,6 +874,28 @@ export default function App() {
           onBackToChallenges={handleBackToChallenges}
           onRetry={handleRetryChallenge}
           hasNextChallenge={!!getNextChallenge(activeChallenge.id)}
+        />
+      )}
+
+      {/* Blockset Complete Overlay */}
+      {showBlocksetComplete && activeBlockset && (
+        <BlocksetComplete
+          onNextBlockset={handleNextBlockset}
+          onBackToBlocksets={handleBackToBlocksets}
+          hasNextBlockset={!!getNextBlockset(activeBlockset.id)}
+        />
+      )}
+
+      {/* Golf Complete Overlay */}
+      {showGolfComplete && activeGolfProblem && (
+        <GolfComplete
+          blockCount={blockCount}
+          par={activeGolfProblem.par}
+          isNewBest={golfIsNewBest}
+          onRetry={handleRetryGolf}
+          onNextProblem={handleNextGolfProblem}
+          onBackToGolf={handleBackToGolf}
+          hasNextProblem={!!getNextProblem(activeGolfProblem.id)}
         />
       )}
     </div>

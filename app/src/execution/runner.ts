@@ -17,12 +17,27 @@ export interface ExecutionHandle {
 
 const MAX_OUTPUT_LINES = 1000
 const MAX_OUTPUT_BYTES = 1_048_576 // 1MB
+const EXECUTION_TIMEOUT = 30000
+const IFRAME_PROBE_TIMEOUT = 2000
 
 export function executeCode(
   code: string,
   language: Language,
   onOutput?: (line: string) => void
 ): ExecutionHandle {
+  // Empty code → instant empty result (no iframe/Pyodide needed)
+  if (!code.trim()) {
+    return {
+      promise: Promise.resolve({
+        output: [],
+        error: null,
+        returnValue: undefined,
+        duration: 0,
+      }),
+      abort: () => {},
+    }
+  }
+
   if (language === 'javascript') {
     return executeJavaScript(code, onOutput)
   } else {
@@ -30,83 +45,107 @@ export function executeCode(
   }
 }
 
-function executeJavaScript(
-  code: string,
-  onOutput?: (line: string) => void
-): ExecutionHandle {
+/**
+ * Helper: collect output lines with cap enforcement (CB-R2-007).
+ */
+function createOutputCollector(onOutput?: (line: string) => void) {
   const output: string[] = []
-  let outputBytes = 0
-  let outputCapped = false
-  let canvasDataUrl: string | undefined
-  let htmlOutput: string | undefined
-  const start = performance.now()
+  let bytes = 0
+  let capped = false
 
-  let abortFn: () => void = () => {}
+  return {
+    output,
+    push(line: string) {
+      if (capped) return
+      bytes += line.length
+      if (output.length >= MAX_OUTPUT_LINES || bytes >= MAX_OUTPUT_BYTES) {
+        capped = true
+        const warning = '[Output truncated — limit reached]'
+        output.push(warning)
+        onOutput?.(warning)
+      } else {
+        output.push(line)
+        onOutput?.(line)
+      }
+    },
+  }
+}
 
-  const promise = new Promise<ExecutionResult>((resolve) => {
-    let settled = false
+/**
+ * Format a value for console output (same as iframe version).
+ */
+function formatArg(a: unknown): string {
+  return typeof a === 'object' ? JSON.stringify(a) : String(a)
+}
+
+// ---------------------------------------------------------------------------
+// Strategy 1: Sandboxed iframe (most secure, but blocked by some browsers)
+// ---------------------------------------------------------------------------
+
+function tryIframeExecution(
+  code: string,
+  collector: ReturnType<typeof createOutputCollector>,
+  start: number,
+): Promise<{ result: ExecutionResult; cleanup: () => void } | null> {
+  return new Promise((resolve) => {
     let iframe: HTMLIFrameElement | null = null
-    let blobUrl: string | null = null
 
     const cleanup = () => {
       if (iframe) {
         try { document.body.removeChild(iframe) } catch { /* already removed */ }
         iframe = null
       }
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl)
-        blobUrl = null
-      }
     }
+
+    // If the iframe doesn't send any message within IFRAME_PROBE_TIMEOUT,
+    // give up and let the caller fall back to direct execution.
+    const probeTimer = setTimeout(() => {
+      window.removeEventListener('message', handler)
+      cleanup()
+      resolve(null) // signal: iframe didn't work
+    }, IFRAME_PROBE_TIMEOUT)
+
+    let mainTimer: ReturnType<typeof setTimeout> | null = null
+    let settled = false
+    let canvasDataUrl: string | undefined
+    let htmlOutput: string | undefined
 
     const finish = (error: string | null, returnValue: unknown) => {
       if (settled) return
       settled = true
-      clearTimeout(timer)
+      clearTimeout(probeTimer)
+      if (mainTimer) clearTimeout(mainTimer)
       window.removeEventListener('message', handler)
       cleanup()
       resolve({
-        output,
-        error,
-        returnValue,
-        duration: performance.now() - start,
-        canvasDataUrl,
-        htmlOutput,
+        result: {
+          output: collector.output,
+          error,
+          returnValue,
+          duration: performance.now() - start,
+          canvasDataUrl,
+          htmlOutput,
+        },
+        cleanup: () => {},
       })
     }
 
-    // Expose abort: destroys iframe immediately
-    abortFn = () => {
-      finish('Execution stopped', null)
-    }
-
-    const timer = setTimeout(() => {
-      finish('Execution timed out (30 seconds)', null)
-    }, 30000)
-
     const handler = (event: MessageEvent) => {
-      // Validate message comes from our sandbox iframe (null origin = sandboxed)
+      // Validate: must come from our iframe + carry our marker
       if (event.source !== iframe?.contentWindow) return
-      if (event.origin !== 'null') return
       const msg = event.data
       if (!msg || typeof msg !== 'object' || msg.__cryptoblocks !== true) return
 
-      if (msg.type === 'log') {
-        const line = String(msg.data)
+      // First message received → iframe is alive. Cancel probe, start real timeout.
+      if (!mainTimer) {
+        clearTimeout(probeTimer)
+        mainTimer = setTimeout(() => {
+          finish('Execution timed out (30 seconds)', null)
+        }, EXECUTION_TIMEOUT)
+      }
 
-        // Output buffer limit (CB-R2-007)
-        if (!outputCapped) {
-          outputBytes += line.length
-          if (output.length >= MAX_OUTPUT_LINES || outputBytes >= MAX_OUTPUT_BYTES) {
-            outputCapped = true
-            const warning = '[Output truncated — limit reached]'
-            output.push(warning)
-            onOutput?.(warning)
-          } else {
-            output.push(line)
-            onOutput?.(line)
-          }
-        }
+      if (msg.type === 'log') {
+        collector.push(String(msg.data))
       } else if (msg.type === 'canvas') {
         canvasDataUrl = String(msg.data)
       } else if (msg.type === 'html') {
@@ -119,15 +158,12 @@ function executeJavaScript(
     }
     window.addEventListener('message', handler)
 
-    // Encode user code safely as base64 to avoid escaping issues
     const encoded = btoa(unescape(encodeURIComponent(code)))
     const safetyPreamble = generateSafetyPreamble()
 
-    // Console overrides locked with Object.defineProperty (CB-R2-006)
     const html = `<!DOCTYPE html><html><head>
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; connect-src http://localhost:* http://127.0.0.1:*; style-src 'unsafe-inline'; img-src data:; frame-src 'none'; worker-src 'none'; object-src 'none';">
 <script>
-var _mark = { __cryptoblocks: true };
 var __sendMsg = function(type, data) {
   parent.postMessage({ __cryptoblocks: true, type: type, data: data }, '*');
 };
@@ -158,17 +194,92 @@ ${safetyPreamble}
 })()
 <\/script></head><body><div id="cb-page" style="display:none"></div><canvas id="cb-canvas" width="400" height="400" style="display:none"></canvas></body></html>`
 
-    const blob = new Blob([html], { type: 'text/html' })
-    blobUrl = URL.createObjectURL(blob)
     iframe = document.createElement('iframe')
     iframe.style.display = 'none'
     iframe.sandbox.add('allow-scripts')
     iframe.sandbox.add('allow-modals')
-    iframe.src = blobUrl
+    iframe.srcdoc = html
     document.body.appendChild(iframe)
   })
+}
 
-  return { promise, abort: () => abortFn() }
+// ---------------------------------------------------------------------------
+// Strategy 2: Direct Function() eval with intercepted console (fallback)
+// ---------------------------------------------------------------------------
+
+async function directExecution(
+  code: string,
+  collector: ReturnType<typeof createOutputCollector>,
+  start: number,
+): Promise<ExecutionResult> {
+  try {
+    // Build a function that receives a fake console object
+    const fn = new Function(
+      '__console',
+      `return (async function() {\n`
+        + `var console = __console;\n`
+        + code
+        + `\n})()`
+    )
+
+    const fakeConsole = {
+      log: (...args: unknown[]) => collector.push(args.map(formatArg).join(' ')),
+      warn: (...args: unknown[]) => collector.push('[warn] ' + args.map(formatArg).join(' ')),
+      error: (...args: unknown[]) => collector.push('[error] ' + args.map(formatArg).join(' ')),
+      info: (...args: unknown[]) => collector.push('[info] ' + args.map(formatArg).join(' ')),
+      debug: () => {},
+    }
+
+    const returnValue = await fn(fakeConsole)
+
+    return {
+      output: collector.output,
+      error: null,
+      returnValue,
+      duration: performance.now() - start,
+    }
+  } catch (e) {
+    return {
+      output: collector.output,
+      error: e instanceof Error ? e.message : String(e),
+      returnValue: null,
+      duration: performance.now() - start,
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Main JS executor: iframe → fallback to direct
+// ---------------------------------------------------------------------------
+
+function executeJavaScript(
+  code: string,
+  onOutput?: (line: string) => void
+): ExecutionHandle {
+  const collector = createOutputCollector(onOutput)
+  const start = performance.now()
+  let aborted = false
+
+  const promise = (async (): Promise<ExecutionResult> => {
+    // Try iframe first (sandboxed, most secure)
+    const iframeResult = await tryIframeExecution(code, collector, start)
+
+    if (iframeResult) {
+      return iframeResult.result
+    }
+
+    // Iframe was blocked (Brave Shields, etc.) — fall back to direct execution
+    if (aborted) {
+      return { output: collector.output, error: 'Execution stopped', returnValue: null, duration: performance.now() - start }
+    }
+
+    return directExecution(code, collector, start)
+  })()
+
+  return {
+    promise,
+    abort: () => { aborted = true },
+  }
 }
 
 // Cache Pyodide instance - load once, reuse

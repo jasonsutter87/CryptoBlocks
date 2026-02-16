@@ -1,5 +1,14 @@
 import { test, expect } from '@playwright/test'
 
+/** Filter out known noise: Monaco init, Blockly CSP media warnings */
+function isKnownNoise(msg: string): boolean {
+  return (
+    msg.includes('Monaco initialization') ||
+    msg.includes('Content Security Policy') ||
+    msg.includes('blockly-demo.appspot.com')
+  )
+}
+
 test.describe('CryptoBlocks App', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
@@ -156,5 +165,167 @@ test.describe('CryptoBlocks App', () => {
       // The generated code should be visible
       await expect(page.locator('.blocklySvg')).toBeVisible()
     }
+  })
+
+  test('Run with empty workspace does not time out', async ({ page }) => {
+    // Clear workspace first to ensure it's empty
+    const clearBtn = page.locator('button', { hasText: 'Clear' })
+    if (await clearBtn.isVisible()) {
+      await clearBtn.click()
+    }
+
+    const runBtn = page.locator('button', { hasText: 'Run' })
+    await runBtn.click()
+
+    // Should NOT show "Execution timed out" — should resolve quickly
+    // Wait a reasonable amount of time (2s) and check there's no timeout error
+    await page.waitForTimeout(2000)
+    await expect(page.locator('text=Execution timed out')).not.toBeVisible()
+  })
+
+  // --- Blocksets E2E ---
+
+  test('Blocksets browser opens without console errors', async ({ page }) => {
+    const errors: string[] = []
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !isKnownNoise(msg.text())) errors.push(msg.text())
+    })
+
+    // Click Blocksets button (desktop)
+    const blocksetsBtn = page.locator('button', { hasText: 'Blocksets' }).first()
+    await blocksetsBtn.click()
+
+    // Browser should render
+    await expect(page.getByRole('heading', { name: 'Blocksets' })).toBeVisible()
+    await expect(page.locator('text=Basics 101')).toBeVisible()
+    await expect(page.locator('text=Loops & Logic')).toBeVisible()
+
+    expect(errors).toHaveLength(0)
+  })
+
+  test('Blocksets pack expands and shows individual blocksets', async ({ page }) => {
+    const blocksetsBtn = page.locator('button', { hasText: 'Blocksets' }).first()
+    await blocksetsBtn.click()
+
+    // Expand Basics 101 pack
+    await page.locator('text=Basics 101').click()
+
+    // Individual blocksets should appear
+    await expect(page.locator('text=First Print')).toBeVisible()
+    await expect(page.locator('text=Number Crunch')).toBeVisible()
+  })
+
+  test('Selecting a blockset enters active-blockset mode without console errors', async ({ page }) => {
+    const errors: string[] = []
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !isKnownNoise(msg.text())) errors.push(msg.text())
+    })
+
+    // Navigate to Blocksets > Basics 101 > First Print
+    await page.locator('button', { hasText: 'Blocksets' }).first().click()
+    await page.locator('text=Basics 101').click()
+    await page.locator('text=First Print').click()
+
+    // BlocksetPanel should show with step instructions
+    await expect(page.locator('text=First Print')).toBeVisible()
+    await expect(page.locator('text=Step 1')).toBeVisible()
+    await expect(page.locator('.blocklySvg')).toBeVisible()
+
+    expect(errors).toHaveLength(0)
+  })
+
+  test('Blockset step navigation works', async ({ page }) => {
+    await page.locator('button', { hasText: 'Blocksets' }).first().click()
+    await page.locator('text=Basics 101').click()
+    await page.locator('text=First Print').click()
+
+    // Should start at step 1
+    await expect(page.locator('text=Step 1')).toBeVisible()
+
+    // Click Next
+    await page.locator('text=Next →').click()
+    await expect(page.locator('text=Step 2')).toBeVisible()
+
+    // Click Previous
+    await page.locator('text=← Previous').click()
+    await expect(page.locator('text=Step 1')).toBeVisible()
+  })
+
+  test('Blockset back button returns to browser', async ({ page }) => {
+    await page.locator('button', { hasText: 'Blocksets' }).first().click()
+    await page.locator('text=Basics 101').click()
+    await page.locator('text=First Print').click()
+
+    // Click back arrow
+    await page.locator('button[title="Back to Blocksets"]').click()
+
+    // Should be back in browser
+    await expect(page.getByRole('heading', { name: 'Blocksets' })).toBeVisible()
+  })
+
+  // --- Code Golf E2E ---
+
+  test('Code Golf browser opens without console errors', async ({ page }) => {
+    const errors: string[] = []
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !isKnownNoise(msg.text())) errors.push(msg.text())
+    })
+
+    // Click Code Golf button (desktop)
+    const golfBtn = page.locator('button', { hasText: 'Code Golf' }).first()
+    await golfBtn.click()
+
+    // Browser should render
+    await expect(page.getByRole('heading', { name: 'Code Golf' })).toBeVisible()
+    await expect(page.locator('text=Warmup')).toBeVisible()
+    await expect(page.locator('text=Brain Teasers')).toBeVisible()
+    await expect(page.locator('text=Mind Benders')).toBeVisible()
+
+    expect(errors).toHaveLength(0)
+  })
+
+  test('Code Golf pack expands and shows problems with par', async ({ page }) => {
+    await page.locator('button', { hasText: 'Code Golf' }).first().click()
+
+    // Expand Warmup pack
+    await page.locator('text=Warmup').click()
+
+    // Individual problems should appear
+    await expect(page.locator('text=One Hundred')).toBeVisible()
+    await expect(page.locator('text=Triple Echo')).toBeVisible()
+    // Par values should be visible
+    await expect(page.locator('text=Par 2')).toBeVisible()
+  })
+
+  test('Selecting a golf problem enters active-golf mode without console errors', async ({ page }) => {
+    const errors: string[] = []
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !isKnownNoise(msg.text())) errors.push(msg.text())
+    })
+
+    // Navigate to Code Golf > Warmup > One Hundred
+    await page.locator('button', { hasText: 'Code Golf' }).first().click()
+    await page.locator('text=Warmup').click()
+    await page.locator('text=One Hundred').click()
+
+    // GolfPanel should show with par and block count
+    await expect(page.locator('text=One Hundred')).toBeVisible()
+    await expect(page.locator('text=Par:')).toBeVisible()
+    await expect(page.locator('text=Blocks:')).toBeVisible()
+    await expect(page.locator('.blocklySvg')).toBeVisible()
+
+    expect(errors).toHaveLength(0)
+  })
+
+  test('Golf back button returns to browser', async ({ page }) => {
+    await page.locator('button', { hasText: 'Code Golf' }).first().click()
+    await page.locator('text=Warmup').click()
+    await page.locator('text=One Hundred').click()
+
+    // Click back arrow
+    await page.locator('button[title="Back to Code Golf"]').click()
+
+    // Should be back in browser
+    await expect(page.getByRole('heading', { name: 'Code Golf' })).toBeVisible()
   })
 })

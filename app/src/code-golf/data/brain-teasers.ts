@@ -1,0 +1,60 @@
+import type { GolfPack } from '../types'
+
+export const brainTeasers: GolfPack = {
+  id: 'brain-teasers',
+  name: 'Brain Teasers',
+  description: 'Medium puzzles that require clever block combinations',
+  icon: '🧩',
+  color: '#f9e2af',
+  problems: [
+    {
+      id: 'golf-7',
+      title: 'Countdown',
+      description: 'Print 5, 4, 3, 2, 1 — each on its own line.',
+      difficulty: 'medium',
+      expectedOutput: ['5', '4', '3', '2', '1'],
+      par: 6,
+    },
+    {
+      id: 'golf-8',
+      title: 'Powers of Two',
+      description: 'Print the first 6 powers of 2: 1, 2, 4, 8, 16, 32.',
+      difficulty: 'medium',
+      expectedOutput: ['1', '2', '4', '8', '16', '32'],
+      par: 8,
+    },
+    {
+      id: 'golf-9',
+      title: 'Reverse It',
+      description: 'Reverse the text "BLOCKS" and print "SKCOLB".',
+      difficulty: 'medium',
+      expectedOutput: ['SKCOLB'],
+      par: 3,
+      allowedCategories: ['Basics', 'Text'],
+    },
+    {
+      id: 'golf-10',
+      title: 'Factorial',
+      description: 'Calculate 5! (5 factorial = 120) and print the result.',
+      difficulty: 'medium',
+      expectedOutput: ['120'],
+      par: 7,
+    },
+    {
+      id: 'golf-11',
+      title: 'FizzBuzz',
+      description: 'Print numbers 1-15. For multiples of 3 print "Fizz", 5 print "Buzz", both print "FizzBuzz".',
+      difficulty: 'medium',
+      expectedOutput: ['1', '2', 'Fizz', '4', 'Buzz', 'Fizz', '7', '8', 'Fizz', 'Buzz', '11', 'Fizz', '13', '14', 'FizzBuzz'],
+      par: 12,
+    },
+    {
+      id: 'golf-12',
+      title: 'Biggest of Three',
+      description: 'Find and print the maximum of 12, 45, and 23.',
+      difficulty: 'medium',
+      expectedOutput: ['45'],
+      par: 9,
+    },
+  ],
+}
