@@ -54,6 +54,11 @@ import PublishModal from './components/PublishModal'
 import type { ConversionResult } from './converters/js-to-workspace'
 import type { Example } from './examples'
 import { initEasterEggs } from './easter-eggs'
+import type { Achievement } from './achievements'
+import { checkAchievements } from './achievements'
+import { recordRun, recordChallengeComplete, recordGolfComplete, recordLabComplete, recordAchievement } from './stats'
+import { AchievementToast } from './components/AchievementToast'
+import StatsPanel from './components/StatsPanel'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -98,6 +103,11 @@ export default function App() {
   const [showLabComplete, setShowLabComplete] = useState(false)
   const [labCode, setLabCode] = useState('')
 
+  // Achievement + Stats state
+  const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null)
+  const achievementQueue = useRef<Achievement[]>([])
+  const [showStats, setShowStats] = useState(false)
+
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
 
@@ -125,6 +135,58 @@ export default function App() {
     }
     setInitialWorkspaceState(workspaceState)
     setRestored(true)
+
+    // Listen for hacker mode activation — trigger achievement
+    const handleHackerMode = () => {
+      const newAchievements = checkAchievements({ event: 'hacker-mode' })
+      if (newAchievements.length > 0) {
+        for (const a of newAchievements) {
+          recordAchievement()
+          achievementQueue.current.push(a)
+        }
+        // Show first if not already showing
+        setCurrentAchievement((prev) => {
+          if (prev) return prev
+          return achievementQueue.current.shift() ?? null
+        })
+      }
+    }
+    document.addEventListener('cb:hacker-mode-changed', handleHackerMode)
+    return () => document.removeEventListener('cb:hacker-mode-changed', handleHackerMode)
+  }, [])
+
+  // Process achievement queue — show one at a time
+  const showNextAchievement = useCallback(() => {
+    if (achievementQueue.current.length > 0) {
+      setCurrentAchievement(achievementQueue.current.shift()!)
+    } else {
+      setCurrentAchievement(null)
+    }
+  }, [])
+
+  const processAchievements = useCallback((newAchievements: Achievement[]) => {
+    if (newAchievements.length === 0) return
+    for (const a of newAchievements) {
+      recordAchievement()
+      achievementQueue.current.push(a)
+    }
+    // If not currently showing one, kick off the queue
+    if (!currentAchievement) {
+      showNextAchievement()
+    }
+  }, [currentAchievement, showNextAchievement])
+
+  // Helper to get categories used in current workspace
+  const getUsedCategories = useCallback((): string[] => {
+    if (!workspaceRef.current) return []
+    const cats = new Set<string>()
+    const blocks = workspaceRef.current.getAllBlocks(false)
+    for (const block of blocks) {
+      const blockType = block.type.replace(/^cb_/, '')
+      const def = registry.get(blockType)
+      if (def) cats.add(def.category)
+    }
+    return Array.from(cats)
   }, [])
 
   const handleWorkspaceChange = useCallback(
@@ -184,7 +246,23 @@ export default function App() {
     setResult(execResult)
     setLiveOutput([])
     setIsRunning(false)
-  }, [code, language])
+
+    // Track stats + check achievements
+    const blocks = workspaceRef.current ? countBlocks(workspaceRef.current) : 0
+    const lineCount = execCode.split('\n').length
+    const lang = language === 'html' ? 'javascript' as const : language as 'javascript' | 'python'
+    recordRun({ language: lang, blockCount: blocks, lineCount })
+
+    const newAchievements = checkAchievements({
+      event: 'run',
+      output: execResult.output,
+      hasError: !!execResult.error,
+      blockCount: blocks,
+      categoriesUsed: getUsedCategories(),
+      language: lang,
+    })
+    processAchievements(newAchievements)
+  }, [code, language, processAchievements, getUsedCategories])
 
   const handleStop = useCallback(() => {
     executionHandleRef.current?.abort()
@@ -233,9 +311,16 @@ export default function App() {
         attempts: 1,
       })
 
+      recordChallengeComplete()
+      const newAchievements = checkAchievements({
+        event: 'challenge-complete',
+        challengeStars: stars,
+      })
+      processAchievements(newAchievements)
+
       setShowComplete(true)
     }
-  }, [code, language, activeChallenge])
+  }, [code, language, activeChallenge, processAchievements])
 
   const handleSelectChallenge = useCallback((challenge: Challenge) => {
     // Save current sandbox workspace
@@ -498,9 +583,13 @@ export default function App() {
         attempts: 1,
       })
 
+      recordGolfComplete()
+      const newAchievements = checkAchievements({ event: 'golf-complete' })
+      processAchievements(newAchievements)
+
       setShowGolfComplete(true)
     }
-  }, [code, language, activeGolfProblem])
+  }, [code, language, activeGolfProblem, processAchievements])
 
   // === Code Lab handlers ===
   const handleOpenLab = useCallback(() => {
@@ -569,9 +658,14 @@ export default function App() {
         completed: true,
         attempts: 1,
       })
+
+      recordLabComplete()
+      const newAchievements = checkAchievements({ event: 'lab-complete' })
+      processAchievements(newAchievements)
+
       setShowLabComplete(true)
     }
-  }, [labCode, activeLabExercise])
+  }, [labCode, activeLabExercise, processAchievements])
 
   const handleLabCodeChange = useCallback((newCode: string) => {
     setLabCode(newCode)
@@ -648,7 +742,11 @@ export default function App() {
 
     setShowCreateModal(false)
     setEditingBlock(null)
-  }, [])
+
+    // Check architect achievement
+    const newAchievements = checkAchievements({ event: 'custom-block' })
+    processAchievements(newAchievements)
+  }, [processAchievements])
 
   const handleEditBlock = useCallback((blockDef: BlockDefinition) => {
     setEditingBlock(blockDef)
@@ -846,6 +944,7 @@ export default function App() {
         onOpenGolf={handleOpenGolf}
         onOpenLab={handleOpenLab}
         onOpenExamples={() => setShowExamples(true)}
+        onOpenStats={() => setShowStats(true)}
       />
 
       {/* Challenge Browser Mode */}
@@ -1077,6 +1176,17 @@ export default function App() {
           hasNextExercise={!!getNextExercise(activeLabExercise.id)}
         />
       )}
+
+      {/* Stats Dashboard */}
+      {showStats && (
+        <StatsPanel onClose={() => setShowStats(false)} />
+      )}
+
+      {/* Achievement Toast */}
+      <AchievementToast
+        achievement={currentAchievement}
+        onDismiss={showNextAchievement}
+      />
     </div>
   )
 }

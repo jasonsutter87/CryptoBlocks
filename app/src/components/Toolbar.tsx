@@ -29,6 +29,7 @@ interface ToolbarProps {
   onOpenGolf: () => void
   onOpenLab: () => void
   onOpenExamples: () => void
+  onOpenStats: () => void
 }
 
 const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
@@ -55,6 +56,7 @@ export default function Toolbar({
   onOpenGolf,
   onOpenLab,
   onOpenExamples,
+  onOpenStats,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
@@ -276,6 +278,18 @@ export default function Toolbar({
             {/* Divider */}
             <div className="hidden md:block w-px h-6 bg-[#313244]" />
 
+            {/* Stats button */}
+            <button
+              onClick={onOpenStats}
+              className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+              title="Developer Stats"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Stats
+            </button>
+
             {/* Learn dropdown */}
             <div className="relative hidden md:block">
               <button
@@ -473,6 +487,12 @@ export default function Toolbar({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                   Code Lab
+                </button>
+                <button onClick={() => { onOpenStats(); setOpenMenu(null) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Developer Stats
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onExportHtml(); setOpenMenu(null) }} className={menuItem}>
