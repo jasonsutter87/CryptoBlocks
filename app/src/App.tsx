@@ -28,6 +28,9 @@ import { saveBlocksetProgress } from './blocksets/progress'
 import type { GolfProblem } from './code-golf'
 import { getNextProblem } from './code-golf'
 import { saveGolfProgress } from './code-golf/progress'
+import type { LabExercise } from './code-lab'
+import { getNextExercise } from './code-lab'
+import { saveLabProgress } from './code-lab/progress'
 import Toolbar from './components/Toolbar'
 import BlockEditor from './components/BlockEditor'
 import CodeView from './components/CodeView'
@@ -42,6 +45,9 @@ import BlocksetComplete from './components/BlocksetComplete'
 import GolfBrowser from './components/GolfBrowser'
 import GolfPanel from './components/GolfPanel'
 import GolfComplete from './components/GolfComplete'
+import LabBrowser from './components/LabBrowser'
+import LabPanel from './components/LabPanel'
+import LabComplete from './components/LabComplete'
 import ExamplesBrowser from './components/ExamplesBrowser'
 import CodeToBlocksModal from './components/CodeToBlocksModal'
 import PublishModal from './components/PublishModal'
@@ -51,6 +57,7 @@ import type { Example } from './examples'
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
   | 'code-golf' | 'active-golf'
+  | 'code-lab' | 'active-lab'
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('javascript')
@@ -84,6 +91,11 @@ export default function App() {
   const [activeGolfProblem, setActiveGolfProblem] = useState<GolfProblem | null>(null)
   const [showGolfComplete, setShowGolfComplete] = useState(false)
   const [golfIsNewBest, setGolfIsNewBest] = useState(false)
+
+  // Code Lab state
+  const [activeLabExercise, setActiveLabExercise] = useState<LabExercise | null>(null)
+  const [showLabComplete, setShowLabComplete] = useState(false)
+  const [labCode, setLabCode] = useState('')
 
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
@@ -487,6 +499,81 @@ export default function App() {
     }
   }, [code, language, activeGolfProblem])
 
+  // === Code Lab handlers ===
+  const handleOpenLab = useCallback(() => {
+    if (mode === 'code-lab') {
+      handleBackToSandbox()
+    } else {
+      setMode('code-lab')
+    }
+  }, [mode, handleBackToSandbox])
+
+  const handleSelectExercise = useCallback((exercise: LabExercise) => {
+    if (workspaceRef.current && modeRef.current === 'sandbox') {
+      savedSandboxState.current = Blockly.serialization.workspaces.save(workspaceRef.current)
+    }
+
+    setActiveLabExercise(exercise)
+    setMode('active-lab')
+    setShowLabComplete(false)
+    setShowOutput(false)
+    setResult(null)
+    setLabCode(exercise.starterCode || '')
+  }, [])
+
+  const handleBackToLab = useCallback(() => {
+    setMode('code-lab')
+    setActiveLabExercise(null)
+    setShowLabComplete(false)
+    setLabCode('')
+  }, [])
+
+  const handleNextExercise = useCallback(() => {
+    if (!activeLabExercise) return
+    const next = getNextExercise(activeLabExercise.id)
+    if (next) {
+      handleSelectExercise(next)
+    } else {
+      handleBackToLab()
+    }
+  }, [activeLabExercise, handleSelectExercise, handleBackToLab])
+
+  const handleCheckLabSolution = useCallback(async () => {
+    if (!activeLabExercise) return
+
+    setIsRunning(true)
+    setShowOutput(true)
+    setResult(null)
+    setLiveOutput([])
+
+    const handle = executeCode(labCode, 'javascript', (line) => {
+      setLiveOutput((prev) => [...prev, line])
+    })
+    executionHandleRef.current = handle
+
+    const execResult = await handle.promise
+    executionHandleRef.current = null
+    setResult(execResult)
+    setLiveOutput([])
+    setIsRunning(false)
+
+    if (execResult.error) return
+
+    const passed = validateOutput(execResult.output, activeLabExercise.expectedOutput)
+    if (passed) {
+      saveLabProgress({
+        exerciseId: activeLabExercise.id,
+        completed: true,
+        attempts: 1,
+      })
+      setShowLabComplete(true)
+    }
+  }, [labCode, activeLabExercise])
+
+  const handleLabCodeChange = useCallback((newCode: string) => {
+    setLabCode(newCode)
+  }, [])
+
   const handleSelectExample = useCallback((example: Example) => {
     setShowExamples(false)
 
@@ -754,6 +841,7 @@ export default function App() {
         onOpenChallenges={handleOpenChallenges}
         onOpenBlocksets={handleOpenBlocksets}
         onOpenGolf={handleOpenGolf}
+        onOpenLab={handleOpenLab}
         onOpenExamples={() => setShowExamples(true)}
       />
 
@@ -781,8 +869,56 @@ export default function App() {
         />
       )}
 
+      {/* Code Lab Browser Mode */}
+      {mode === 'code-lab' && (
+        <LabBrowser
+          onSelectExercise={handleSelectExercise}
+          onBackToSandbox={handleBackToSandbox}
+        />
+      )}
+
+      {/* Active Lab Mode — full-width editor, no Blockly */}
+      {mode === 'active-lab' && activeLabExercise && (
+        <>
+          <LabPanel
+            exercise={activeLabExercise}
+            onCheckSolution={handleCheckLabSolution}
+            onBack={handleBackToLab}
+            isRunning={isRunning}
+          />
+
+          <div className="flex-1 flex flex-col md:flex-row min-h-0">
+            {/* Full-width Code Editor */}
+            <div className={`${showOutput ? 'h-1/2 md:h-full md:w-1/2' : 'h-full w-full'} flex flex-col`}>
+              <div className="flex items-center gap-2 px-4 py-2 bg-[#181825] border-b border-[#313244]">
+                <span className="text-xs text-[#6c7086] uppercase tracking-wide font-semibold mr-2">
+                  Code Lab
+                </span>
+                <span className="text-xs text-[#f9e2af] bg-[#313244] px-2 py-0.5 rounded">JavaScript</span>
+              </div>
+              <div className="flex-1 min-h-0">
+                <CodeView
+                  code={labCode}
+                  language="javascript"
+                  onLanguageChange={() => {}}
+                  editable
+                  onCodeChange={handleLabCodeChange}
+                />
+              </div>
+            </div>
+
+            {/* Output Panel */}
+            {showOutput && (
+              <div className="h-1/2 md:h-full md:w-1/2 border-t md:border-t-0 md:border-l border-[#313244]">
+                <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} />
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       {/* Editor Mode (sandbox, active-challenge, active-blockset, active-golf) */}
-      {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && (
+      {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && mode !== 'code-lab' && mode !== 'active-lab' && (
         <>
           {/* Challenge Panel Banner */}
           {mode === 'active-challenge' && activeChallenge && (
@@ -927,6 +1063,15 @@ export default function App() {
           onNextProblem={handleNextGolfProblem}
           onBackToGolf={handleBackToGolf}
           hasNextProblem={!!getNextProblem(activeGolfProblem.id)}
+        />
+      )}
+
+      {/* Lab Complete Overlay */}
+      {showLabComplete && activeLabExercise && (
+        <LabComplete
+          onNextExercise={handleNextExercise}
+          onBackToLab={handleBackToLab}
+          hasNextExercise={!!getNextExercise(activeLabExercise.id)}
         />
       )}
     </div>

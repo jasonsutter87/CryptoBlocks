@@ -10,6 +10,10 @@ import { webBlocks } from './definitions/web'
 import { artBlocks } from './definitions/art'
 import { databaseBlocks } from './definitions/database'
 import { cryptoBlocks } from './definitions/crypto'
+import { aiBlocks } from './definitions/ai'
+import { soundBlocks } from './definitions/sound'
+import { gamesBlocks } from './definitions/games'
+import { hardwareBlocks } from './definitions/hardware'
 
 class BlockRegistry {
   private blocks: Map<string, BlockDefinition> = new Map()
@@ -25,6 +29,10 @@ class BlockRegistry {
     this.registerAll(webBlocks)
     this.registerAll(artBlocks)
     this.registerAll(cryptoBlocks)
+    this.registerAll(aiBlocks)
+    this.registerAll(soundBlocks)
+    this.registerAll(gamesBlocks)
+    this.registerAll(hardwareBlocks)
   }
 
   register(block: BlockDefinition) {

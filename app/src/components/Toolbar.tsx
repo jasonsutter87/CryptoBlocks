@@ -4,6 +4,7 @@ import type { Language } from '../types/block'
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
   | 'code-golf' | 'active-golf'
+  | 'code-lab' | 'active-lab'
 
 interface ToolbarProps {
   language: Language
@@ -25,6 +26,7 @@ interface ToolbarProps {
   onOpenChallenges: () => void
   onOpenBlocksets: () => void
   onOpenGolf: () => void
+  onOpenLab: () => void
   onOpenExamples: () => void
 }
 
@@ -50,6 +52,7 @@ export default function Toolbar({
   onOpenChallenges,
   onOpenBlocksets,
   onOpenGolf,
+  onOpenLab,
   onOpenExamples,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -90,7 +93,7 @@ export default function Toolbar({
     }
   }
 
-  const inChallenge = mode === 'active-challenge' || mode === 'active-blockset' || mode === 'active-golf'
+  const inChallenge = mode === 'active-challenge' || mode === 'active-blockset' || mode === 'active-golf' || mode === 'active-lab'
 
   const menuItem = 'flex items-center gap-2 w-full px-3 py-2.5 text-sm text-[#cdd6f4] hover:bg-[#45475a] transition-colors text-left'
   const menuDropdown = 'absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1'
@@ -264,7 +267,7 @@ export default function Toolbar({
               <button
                 onClick={() => toggleMenu('learn')}
                 className={
-                  ['challenges', 'blocksets', 'code-golf'].includes(mode)
+                  ['challenges', 'blocksets', 'code-golf', 'code-lab'].includes(mode)
                     ? `${btn} bg-[#f9e2af] text-[#1e1e2e]`
                     : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
                 }
@@ -306,6 +309,13 @@ export default function Toolbar({
                     Code Golf
                     {mode === 'code-golf' && <span className="ml-auto text-xs text-[#a6e3a1] font-bold">Active</span>}
                   </button>
+                  <button onClick={() => { onOpenLab(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Code Lab
+                    {mode === 'code-lab' && <span className="ml-auto text-xs text-[#cba6f7] font-bold">Active</span>}
+                  </button>
                 </div>
               )}
             </div>
@@ -330,7 +340,7 @@ export default function Toolbar({
         )}
 
         {/* Peek / Hide Code */}
-        {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && (
+        {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && mode !== 'code-lab' && mode !== 'active-lab' && (
           <button
             onClick={onToggleCode}
             className={
@@ -347,7 +357,7 @@ export default function Toolbar({
         )}
 
         {/* Language indicator (desktop) */}
-        {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && (
+        {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && mode !== 'code-lab' && mode !== 'active-lab' && (
           <div className="hidden md:block text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded font-mono">
             {language === 'javascript' ? 'JS' : language === 'python' ? 'PY' : 'HTML'}
           </div>
@@ -443,6 +453,12 @@ export default function Toolbar({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11m16-11v11" />
                   </svg>
                   Code Golf
+                </button>
+                <button onClick={() => { onOpenLab(); setOpenMenu(null) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  Code Lab
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onExportHtml(); setOpenMenu(null) }} className={menuItem}>
