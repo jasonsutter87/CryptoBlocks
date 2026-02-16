@@ -33,7 +33,7 @@ const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat'])
 // --- HTML/CSS block types (native Blockly, not registry) ---
 const HTML_BLOCKS = new Set([
   'cb_container', 'cb_row', 'cb_column', 'cb_div',
-  'cb_heading', 'cb_paragraph', 'cb_image', 'cb_button',
+  'cb_heading', 'cb_paragraph', 'cb_image', 'cb_button', 'cb_link',
   'cb_set_style', 'cb_set_color', 'cb_set_background', 'cb_set_size',
 ])
 
@@ -199,6 +199,18 @@ function registerHtmlBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('A button element')
+    },
+  }
+
+  Blockly.Blocks['cb_link'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Link')
+      this.appendValueInput('TEXT').setCheck('String').appendField('text')
+      this.appendValueInput('URL').setCheck('String').appendField('url')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('A link that opens in a new tab (target="_blank")')
     },
   }
 
@@ -670,6 +682,12 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
       return `(function() {\n  var __el = document.createElement('button');\n  __el.textContent = ${text};\n  __el.style.padding = '8px 16px';\n  __el.style.cursor = 'pointer';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
     }
 
+    case 'cb_link': {
+      const text = htmlVal(block, 'TEXT', '"Link"', language)
+      const url = htmlVal(block, 'URL', '"#"', language)
+      return `(function() {\n  var __el = document.createElement('a');\n  __el.textContent = ${text};\n  __el.href = ${url};\n  __el.target = '_blank';\n  __el.rel = 'noopener noreferrer';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+    }
+
     // --- CSS/Style blocks ---
     case 'cb_set_style': {
       const prop = htmlVal(block, 'PROPERTY', '"color"', language)
@@ -864,6 +882,11 @@ function htmlToolboxXml(): string {
 
   xml += '<block type="cb_button">'
   xml += '<value name="TEXT"><shadow type="text"><field name="TEXT">Click me</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_link">'
+  xml += '<value name="TEXT"><shadow type="text"><field name="TEXT">Visit site</field></shadow></value>'
+  xml += '<value name="URL"><shadow type="text"><field name="TEXT">https://example.com</field></shadow></value>'
   xml += '</block>'
 
   xml += '<sep gap="12"></sep>'
@@ -1102,6 +1125,12 @@ function generateHtmlMarkupForBlock(block: Blockly.Block): string {
     case 'cb_button': {
       const text = getTextValue(block, 'TEXT', 'Click me')
       result = `<button>${text}</button>`
+      break
+    }
+    case 'cb_link': {
+      const text = getTextValue(block, 'TEXT', 'Link')
+      const url = getTextValue(block, 'URL', '#')
+      result = `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`
       break
     }
     case 'cb_set_style': {

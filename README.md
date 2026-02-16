@@ -116,21 +116,24 @@ You can see:
 
 Blocks are organized by category:
 
-| Category | Examples |
-|----------|----------|
-| **Basics** | Variables, loops, if/else, print, input |
-| **Math** | Add, multiply, random, round, min/max |
-| **Text** | Uppercase, split, replace, contains, reverse |
-| **Lists** | Sort, filter, map, find, slice |
-| **Logic** | AND, OR, NOT, compare, switch |
-| **Web** | Fetch URL, parse JSON, display image |
-| **Games** | Move sprite, detect collision, score counter |
-| **Sound** | Play tone, record, text-to-speech |
-| **Art** | Draw shape, color picker, animation frame — **Built** |
-| **Data** | Read CSV, chart it, average, count — **Built** |
-| **Crypto** | Hash text, encode base64, generate password — **Built** |
-| **AI** | Classify image, generate text, sentiment |
-| **Hardware** | LED on/off, read sensor, servo move (Raspberry Pi) |
+| Category | Blocks | Examples |
+|----------|--------|----------|
+| **Basics** | 6 | Print, ask, wait, set/get global variables |
+| **Math** | 8 | Add, multiply, random, power, fibonacci |
+| **Text** | 7 | Uppercase, join, reverse, replace, contains, length |
+| **Logic** | 7 | If/then, equals, greater/less than, AND, OR, NOT |
+| **Lists** | 7 | Create, add, get, remove, sort, filter |
+| **Data** | 7 | Objects, set/get property, has/delete property |
+| **Web** | 8 | HTTP GET/POST, WebSocket, JSON parsing |
+| **Crypto** | 28 | Hash, AES encrypt/decrypt, XOR cipher, base64, hex, HMAC, bitwise ops |
+| **Art** | 5 | Canvas, draw rect/circle/line, clear |
+| **AI** | 12 | Classify, generate, sentiment, summarize |
+| **Sound** | 12 | Play tone, speech, recording, audio effects |
+| **Games** | 11 | Sprites, collision, score, keyboard input |
+| **Turtle** | 10 | Move, turn, pen up/down, draw shapes |
+| **Hardware** | 10 | Device info, battery, screen, geolocation |
+| **Database** | 13 | Tables, insert, query, update, delete |
+| **???** | 13 | Secret blocks — unlock in hacker mode |
 
 Categories grow as the community builds. If enough blocks cluster around a new topic, it becomes a category.
 
@@ -248,7 +251,7 @@ Users can publish their own tutorials. Same quality tiers as blocks:
 - **Live streaming** — output streams to UI in real-time via `postMessage`
 
 ### Testing (Built)
-- **Vitest** — 1,592 unit + smoke tests (jsdom environment)
+- **Vitest** — 2,766 unit + smoke tests (jsdom environment)
 - **Playwright** — E2E browser tests (Chromium)
 - **Smoke suite** — validates every block in the registry has valid name, category, color, and implementations
 
@@ -315,22 +318,43 @@ The key difference: **Scratch is a destination. CryptoBlocks is a bridge.** Kids
 
 ---
 
-## Monetization (Ideas, Not Decisions)
+## Monetization
 
-The platform is free for kids. Always. Non-negotiable.
+### The Line: High School vs College
 
-Revenue options:
+Everything up to and including high school level is **free. Forever.** The visual editor, all blocks, themed challenges, Code Golf, Block Islands, Blocksets, Code Lab — free.
+
+The paywall kicks in at **college-level CS content**:
+
+### Free Tier (K-12)
+- All 164+ blocks across every category
+- Visual snap editor + code peek + dual-language output
+- Create-your-own-block editor
+- All themed challenge packs (Minecraft, Space, Crypto, etc.)
+- Block Islands, Blocksets, Code Golf, Code Lab
+- Save/Load projects, export HTML, publish to GitHub Pages
+
+### Premium Tier (College-Level CS)
+- **Big O & Complexity** — analyze algorithm efficiency, time/space complexity challenges
+- **Data Structures** — trees, graphs, hash maps, heaps, linked lists — build and visualize them
+- **Algorithm Challenges** — sorting, searching, dynamic programming, recursion deep dives
+- **Systems Concepts** — concurrency, memory models, networking fundamentals
+- **CS Theory** — formal logic, automata, computational thinking at the academic level
+- **Structured Courses** — guided curriculum with progression, certificates
+
+### Additional Revenue
 - **School/classroom licenses** — teacher dashboard, assignment system, progress tracking
 - **Premium cosmetics** — custom block themes, profile frames, workspace skins
 - **Certification program** — "CryptoBlocks Certified" badges for completing skill paths
 - **API access** — let schools/companies embed the block editor in their own platforms
 - **Sponsored block categories** — "Robotics blocks powered by Arduino" (not ads, integrations)
 
-What we will NOT do:
-- Paywall blocks behind a subscription
+### What we will NOT do
+- Paywall the visual editor or any blocks
+- Gate K-12 level content behind a subscription
 - Show ads to kids
 - Sell user data
-- Charge for core features
+- Charge for core creative/building features
 
 ---
 
@@ -366,7 +390,7 @@ These won't ship as-is (they're CTF-specific), but they prove the architecture: 
 ### Phase 0: Prototype — DONE
 - [x] Blockly integration with custom block definitions (Zelos renderer)
 - [x] Dual JS/Python execution in browser (sandboxed iframe + Pyodide)
-- [x] 67 blocks across 9 categories (Basics, Math, Text, Logic, Lists, Data, Web, Crypto, Art)
+- [x] 164 blocks across 16 categories (Basics, Math, Text, Logic, Lists, Data, Web, Crypto, Art, AI, Sound, Games, Hardware, Database, Turtle, Secrets)
 - [x] "Peek Code" toggle — Monaco Editor showing generated JS or Python
 - [x] Live output streaming with async/await support
 - [x] Single-user, no accounts, local only
@@ -377,7 +401,7 @@ These won't ship as-is (they're CTF-specific), but they prove the architecture: 
 - [x] Save/Load .blocks project files
 - [x] Block shape system (value vs statement blocks)
 - [x] Web/API blocks (HTTP GET/POST, WebSocket, JSON parsing)
-- [x] Testing infrastructure (1,200+ unit tests, smoke tests, Playwright E2E)
+- [x] Testing infrastructure (2,766 unit tests, smoke tests, Playwright E2E)
 
 ### Phase 1.5: Challenge Hub — DONE
 > *"Your cousin will only care about this if it's Minecraft or objects based"* — Mom, at dinner
@@ -390,7 +414,7 @@ Gamified coding challenges. Solve them with the fewest blocks possible.
 - [x] Output validator (compare actual vs expected)
 - [x] Star rating (par, birdie, eagle based on block count)
 - [x] "Show Solution" after 3 attempts
-- [x] **13 Theme packs** (62+ challenges):
+- [x] **24 Theme packs** (125 challenges):
   - [x] Getting Started — Hello World, countdown, variables
   - [x] Minecraft — crafting, mining, enchanting
   - [x] Pet Simulator — name, feed, level up, evolve
@@ -404,6 +428,22 @@ Gamified coding challenges. Solve them with the fewest blocks possible.
   - [x] Science Lab — formulas, growth, cell division
   - [x] Startup Sim — capstone: combine all skills
   - [x] Euler Blocks — 10 Project Euler-style computational puzzles
+  - [x] Web Detective — HTTP, JSON, API challenges
+  - [x] Arcade Mode — game logic, scoring, combos
+  - [x] Beat Lab — rhythm, timing, frequency puzzles
+  - [x] Pixel Art — drawing, patterns, canvas
+  - [x] Crypto Puzzles — hashing, encoding, ciphers
+  - [x] Brain Trainer — memory, sequence, logic drills
+  - [x] Device Scan — hardware info, sensors, system data
+  - [x] Data Wizard — objects, properties, JSON manipulation
+  - [x] **Shipwrecked** — island puzzle: reconnect scattered blocks (beginner)
+  - [x] **Block Puzzles** — island puzzle: logic and variables (intermediate)
+  - [x] **Code Rescue** — island puzzle: crypto + text blocks (advanced)
+- [x] **Block Islands** — preset puzzle challenges where blocks float on the workspace and users must connect them (jigsaw-style)
+  - [x] Starter blocks load scattered at different positions
+  - [x] Starter blocks are undeletable (user must use them)
+  - [x] Retry reloads the original scattered layout
+  - [x] "Island" badge shown on challenge panel
 - [x] Leaderboard (fewest blocks wins)
 
 ### Phase 1.6: Blocksets — DONE

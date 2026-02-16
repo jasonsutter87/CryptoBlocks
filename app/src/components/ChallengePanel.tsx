@@ -35,7 +35,14 @@ export default function ChallengePanel({ challenge, blockCount, onCheckSolution,
             </svg>
           </button>
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-[#cdd6f4] truncate">{challenge.title}</h3>
+            <h3 className="text-sm font-semibold text-[#cdd6f4] truncate flex items-center gap-1.5">
+              {challenge.title}
+              {challenge.starterBlocks && (
+                <span className="text-[10px] bg-[#89b4fa]/20 text-[#89b4fa] px-1.5 py-0.5 rounded-full font-medium">
+                  Island
+                </span>
+              )}
+            </h3>
             <p className="text-xs text-[#6c7086] truncate hidden sm:block">{challenge.description}</p>
           </div>
         </div>

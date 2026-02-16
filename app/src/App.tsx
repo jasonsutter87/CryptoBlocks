@@ -346,6 +346,10 @@ export default function App() {
 
         if (challenge.starterBlocks) {
           Blockly.serialization.workspaces.load(challenge.starterBlocks, workspaceRef.current)
+          // Lock starter blocks — user must use them
+          for (const b of workspaceRef.current.getAllBlocks(false)) {
+            b.setDeletable(false)
+          }
         }
       }
     }, 0)
@@ -390,8 +394,15 @@ export default function App() {
     setShowOutput(false)
     if (workspaceRef.current) {
       workspaceRef.current.clear()
+      // Reload starter blocks if this is an island challenge
+      if (activeChallenge?.starterBlocks) {
+        Blockly.serialization.workspaces.load(activeChallenge.starterBlocks, workspaceRef.current)
+        for (const b of workspaceRef.current.getAllBlocks(false)) {
+          b.setDeletable(false)
+        }
+      }
     }
-  }, [])
+  }, [activeChallenge])
 
   const handleOpenChallenges = useCallback(() => {
     if (mode === 'challenges') {

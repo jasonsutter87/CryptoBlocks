@@ -20,6 +20,9 @@ import { cryptoPuzzles } from './data/crypto-puzzles'
 import { brainTrainer } from './data/brain-trainer'
 import { deviceScan } from './data/device-scan'
 import { dataWizard } from './data/data-wizard'
+import { shipwrecked } from './data/shipwrecked'
+import { blockPuzzles } from './data/block-puzzles'
+import { codeRescue } from './data/code-rescue'
 
 export const allThemes: ThemePack[] = [
   gettingStarted,
@@ -43,6 +46,9 @@ export const allThemes: ThemePack[] = [
   brainTrainer,
   deviceScan,
   dataWizard,
+  shipwrecked,
+  blockPuzzles,
+  codeRescue,
 ]
 
 export function getChallengeById(id: string): Challenge | null {

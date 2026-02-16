@@ -88,18 +88,27 @@
   {{/* Block categories */}}
   <section class="bg-white py-8">
     <div class="container">
-      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-2">49 blocks and counting</h2>
-      <p class="text-center text-gray-500 mb-6">7 categories. Two languages. Infinite combinations.</p>
+      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-2">164 blocks and counting</h2>
+      <p class="text-center text-gray-500 mb-6">16 categories. Two languages. Infinite combinations.</p>
 
       <div class="row justify-content-center">
         {{ $categories := slice
-          (dict "name" "Basics" "color" "#4C97AF" "count" "7" "desc" "print, ask, wait, repeat")
-          (dict "name" "Math" "color" "#5B80A5" "count" "7" "desc" "add, subtract, random, power")
+          (dict "name" "Basics" "color" "#4C97AF" "count" "6" "desc" "print, ask, wait, variables")
+          (dict "name" "Math" "color" "#5B80A5" "count" "8" "desc" "add, multiply, random, power")
           (dict "name" "Text" "color" "#8B5CF6" "count" "7" "desc" "join, reverse, replace, length")
           (dict "name" "Logic" "color" "#059669" "count" "7" "desc" "if/then, equals, and, or, not")
-          (dict "name" "Lists" "color" "#D97706" "count" "7" "desc" "create, add, get, remove")
+          (dict "name" "Lists" "color" "#D97706" "count" "7" "desc" "create, add, sort, filter")
           (dict "name" "Data" "color" "#0891B2" "count" "7" "desc" "objects, properties, JSON")
-          (dict "name" "Web" "color" "#DC2626" "count" "7" "desc" "HTTP, WebSocket, API calls")
+          (dict "name" "Web" "color" "#DC2626" "count" "8" "desc" "HTTP, WebSocket, API calls")
+          (dict "name" "Crypto" "color" "#4F46E5" "count" "28" "desc" "hash, encrypt, XOR, base64")
+          (dict "name" "Art" "color" "#EC4899" "count" "5" "desc" "canvas, draw, shapes, colors")
+          (dict "name" "AI" "color" "#8B5CF6" "count" "12" "desc" "classify, generate, sentiment")
+          (dict "name" "Sound" "color" "#F59E0B" "count" "12" "desc" "tones, speech, recording")
+          (dict "name" "Games" "color" "#22C55E" "count" "11" "desc" "sprites, collision, score")
+          (dict "name" "Turtle" "color" "#14B8A6" "count" "10" "desc" "move, turn, draw, pen")
+          (dict "name" "Hardware" "color" "#EF4444" "count" "10" "desc" "LED, sensors, device info")
+          (dict "name" "Database" "color" "#6366F1" "count" "13" "desc" "tables, queries, CRUD")
+          (dict "name" "Secrets" "color" "#1e1e2e" "count" "13" "desc" "????? unlock in hacker mode")
         }}
         {{ range $categories }}
           <div class="col-6 col-md-4 col-lg-3 mb-3">
@@ -142,6 +151,35 @@
           <div class="bg-white rounded-xl p-5 h-full shadow-sm">
             <h3 class="fw-bold text-gray-800 mb-2">Runs in the browser</h3>
             <p class="text-gray-600 mb-0">Nothing to install. Nothing to configure. Open the page and start building. JavaScript runs in a sandbox, Python runs via Pyodide — all in the browser.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {{/* Challenges */}}
+  <section class="bg-white py-8">
+    <div class="container">
+      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-2">125 challenges across 24 theme packs</h2>
+      <p class="text-center text-gray-500 mb-6">Minecraft, Space, Crypto, Secret Agent — learn to code through stories you care about.</p>
+
+      <div class="row">
+        <div class="col-12 col-md-4 mb-4">
+          <div class="bg-gray-50 rounded-xl p-5 h-full">
+            <h3 class="fw-bold text-lg text-gray-800 mb-2">Themed Challenges</h3>
+            <p class="text-gray-600 mb-0">Solve puzzles with the fewest blocks. Earn stars. Progress through Minecraft crafting, space exploration, secret agent missions, and more.</p>
+          </div>
+        </div>
+        <div class="col-12 col-md-4 mb-4">
+          <div class="rounded-xl p-5 h-full text-white" style="background: linear-gradient(135deg, #89dceb 0%, #cba6f7 50%, #f38ba8 100%);">
+            <h3 class="fw-bold text-lg mb-2">Block Islands</h3>
+            <p class="mb-0 opacity-90">Puzzle-style challenges where code blocks float on the workspace like scattered jigsaw pieces. Drag, connect, and solve — no typing required.</p>
+          </div>
+        </div>
+        <div class="col-12 col-md-4 mb-4">
+          <div class="bg-gray-50 rounded-xl p-5 h-full">
+            <h3 class="fw-bold text-lg text-gray-800 mb-2">Code Golf & Labs</h3>
+            <p class="text-gray-600 mb-0">Competitive efficiency puzzles, step-by-step guided tutorials, and a code lab for writing JavaScript directly. Four ways to learn.</p>
           </div>
         </div>
       </div>

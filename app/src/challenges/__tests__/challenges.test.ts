@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { allThemes, getChallengeById, getNextChallenge } from '../index'
 
 describe('Challenge data smoke tests', () => {
-  it('has 21 themes', () => {
-    expect(allThemes).toHaveLength(21)
+  it('has 24 themes', () => {
+    expect(allThemes).toHaveLength(24)
   })
 
   for (const theme of allThemes) {

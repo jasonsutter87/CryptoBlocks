@@ -7,16 +7,28 @@ priority: 0.8
 
 ## Learning Hub
 
-**Coming soon.** We're building tutorials, skill paths, and interactive challenges.
+Multiple ways to learn — pick the style that fits you.
 
-### What's coming
+### Challenges (125 puzzles)
 
-- **Your First Block** — 5-minute walkthrough from zero to running program
-- **Variables Are Boxes** — mental models that stick
-- **Loops: Doing Things Again** — why repetition is the enemy
-- **Functions: Giving Your Code a Name** — the gateway to writing blocks
-- **Challenge Hub** — gamified coding puzzles with themed packs (Minecraft, Pets, Secret Agent)
+Solve coding puzzles with the fewest blocks possible. Earn stars. Progress through **24 themed packs** — Minecraft, Space Explorer, Secret Agent, Crypto Puzzles, and more.
 
-### In the meantime
+### Block Islands (new)
+
+Puzzle-style challenges where code blocks float on the workspace like scattered jigsaw pieces. Drag them together, connect the right inputs and outputs, and solve the puzzle. Three island packs: **Shipwrecked** (beginner), **Block Puzzles** (intermediate), and **Code Rescue** (advanced with crypto blocks).
+
+### Blocksets (guided tutorials)
+
+Step-by-step instructions that walk you through building programs block by block — like LEGO instruction sets for code. **6 packs, 30 tutorials.**
+
+### Code Golf
+
+Competitive efficiency puzzles — solve problems with the absolute minimum number of blocks. No hints, no solutions. **3 packs, 18 problems.**
+
+### Code Lab
+
+Write JavaScript directly in a code editor. For when you're ready to graduate from blocks to text.
+
+### Just explore
 
 The best way to learn is to [open CryptoBlocks](/app) and start dragging blocks. Hit Peek Code to see what each block does. Hit Run to see it execute. Break things. That's how you learn.
