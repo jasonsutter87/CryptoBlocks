@@ -31,4 +31,4 @@ Write JavaScript directly in a code editor. For when you're ready to graduate fr
 
 ### Just explore
 
-The best way to learn is to [open CryptoBlocks](/app) and start dragging blocks. Hit Peek Code to see what each block does. Hit Run to see it execute. Break things. That's how you learn.
+The best way to learn is to [open CryptoBlocks](https://app-cryptoblocks.netlify.app) and start dragging blocks. Hit Peek Code to see what each block does. Hit Run to see it execute. Break things. That's how you learn.
