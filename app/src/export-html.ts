@@ -105,6 +105,15 @@ ${hasZta ? ztaScriptBlock(ztaId, options.ztaEndpoint) : ''}
   #cb-output .line { color: #a6e3a1; }
   #cb-output .warn { color: #f9e2af; }
   #cb-output .error { color: #f38ba8; }
+  #cb-page {
+    background: #fff;
+    color: #1e1e2e;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  #cb-canvas-wrap { text-align: center; margin-bottom: 1rem; }
+  #cb-canvas-wrap canvas { border-radius: 8px; border: 1px solid #313244; }
   #cb-footer {
     margin-top: 0.75rem;
     text-align: center;
@@ -125,6 +134,8 @@ ${hasZta ? ztaScriptBlock(ztaId, options.ztaEndpoint) : ''}
     </div>
     <h1>${escapeHtml(title)}</h1>
   </div>
+  <div id="cb-page" style="display:none"></div>
+  <div id="cb-canvas-wrap" style="display:none"><canvas id="cb-canvas" width="400" height="400"></canvas></div>
   <div id="cb-output" aria-live="polite"></div>
   <div id="cb-footer">Built with <a href="https://cryptoblocks.dev" target="_blank" rel="noopener">CryptoBlocks</a></div>
 </div>
@@ -190,6 +201,8 @@ export function generateEmbedSnippet(code: string, options: ExportOptions = {}):
     : ''
 
   return `<!-- CryptoBlocks Embed -->${ztaScriptTag}
+<div id="cb-page" style="display:none;background:#fff;color:#1e1e2e;border-radius:8px;margin-bottom:8px;font-family:sans-serif"></div>
+<div id="cb-canvas-wrap" style="display:none;text-align:center;margin-bottom:8px"><canvas id="cb-canvas" width="400" height="400" style="border-radius:8px"></canvas></div>
 <div id="cb-embed" style="background:#181825;border:1px solid #313244;border-radius:8px;padding:1rem;font-family:monospace;font-size:14px;color:#a6e3a1;min-height:80px;max-height:300px;overflow-y:auto;white-space:pre-wrap"></div>
 <script>
 (function(){var el=document.getElementById('cb-embed');var __n=0;function a(t,c){var d=document.createElement('div');d.style.color=c||'#a6e3a1';d.textContent=t;el.appendChild(d);el.scrollTop=el.scrollHeight;__n++}var f=function(v){return typeof v==='object'?JSON.stringify(v):String(v)};console.log=function(){a(Array.prototype.slice.call(arguments).map(f).join(' '))};console.warn=function(){a('[warn] '+Array.prototype.slice.call(arguments).map(f).join(' '),'#f9e2af')};console.error=function(){a('[error] '+Array.prototype.slice.call(arguments).map(f).join(' '),'#f38ba8')};${ztaInline}var __s=performance.now();try{var c=decodeURIComponent(escape(atob("${encoded}")));${ztaRun}(new Function("return (async function(){\\n"+c+"\\n})()"))().then(function(){${ztaComplete}}).catch(function(e){a('Error: '+e.message,'#f38ba8');${ztaError}})}catch(e){a('Error: '+e.message,'#f38ba8');${ztaError}}})();

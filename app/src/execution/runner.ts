@@ -1,32 +1,49 @@
 import type { Language } from '../types/block'
+import { generateSafetyPreamble } from '../safety'
 
 export interface ExecutionResult {
   output: string[]
   error: string | null
   returnValue: unknown
   duration: number
+  canvasDataUrl?: string
+  htmlOutput?: string
 }
 
-export async function executeCode(
+export interface ExecutionHandle {
+  promise: Promise<ExecutionResult>
+  abort: () => void
+}
+
+const MAX_OUTPUT_LINES = 1000
+const MAX_OUTPUT_BYTES = 1_048_576 // 1MB
+
+export function executeCode(
   code: string,
   language: Language,
   onOutput?: (line: string) => void
-): Promise<ExecutionResult> {
+): ExecutionHandle {
   if (language === 'javascript') {
     return executeJavaScript(code, onOutput)
   } else {
-    return executePython(code)
+    return executePython(code, onOutput)
   }
 }
 
-async function executeJavaScript(
+function executeJavaScript(
   code: string,
   onOutput?: (line: string) => void
-): Promise<ExecutionResult> {
+): ExecutionHandle {
   const output: string[] = []
+  let outputBytes = 0
+  let outputCapped = false
+  let canvasDataUrl: string | undefined
+  let htmlOutput: string | undefined
   const start = performance.now()
 
-  return new Promise((resolve) => {
+  let abortFn: () => void = () => {}
+
+  const promise = new Promise<ExecutionResult>((resolve) => {
     let settled = false
     let iframe: HTMLIFrameElement | null = null
     let blobUrl: string | null = null
@@ -53,7 +70,14 @@ async function executeJavaScript(
         error,
         returnValue,
         duration: performance.now() - start,
+        canvasDataUrl,
+        htmlOutput,
       })
+    }
+
+    // Expose abort: destroys iframe immediately
+    abortFn = () => {
+      finish('Execution stopped', null)
     }
 
     const timer = setTimeout(() => {
@@ -61,13 +85,31 @@ async function executeJavaScript(
     }, 30000)
 
     const handler = (event: MessageEvent) => {
+      // Validate message comes from our sandbox iframe
+      if (event.source !== iframe?.contentWindow) return
       const msg = event.data
       if (!msg || typeof msg !== 'object' || msg.__cryptoblocks !== true) return
 
       if (msg.type === 'log') {
         const line = String(msg.data)
-        output.push(line)
-        onOutput?.(line)
+
+        // Output buffer limit (CB-R2-007)
+        if (!outputCapped) {
+          outputBytes += line.length
+          if (output.length >= MAX_OUTPUT_LINES || outputBytes >= MAX_OUTPUT_BYTES) {
+            outputCapped = true
+            const warning = '[Output truncated — limit reached]'
+            output.push(warning)
+            onOutput?.(warning)
+          } else {
+            output.push(line)
+            onOutput?.(line)
+          }
+        }
+      } else if (msg.type === 'canvas') {
+        canvasDataUrl = String(msg.data)
+      } else if (msg.type === 'html') {
+        htmlOutput = String(msg.data)
       } else if (msg.type === 'error') {
         finish(String(msg.data), null)
       } else if (msg.type === 'done') {
@@ -78,25 +120,42 @@ async function executeJavaScript(
 
     // Encode user code safely as base64 to avoid escaping issues
     const encoded = btoa(unescape(encodeURIComponent(code)))
+    const safetyPreamble = generateSafetyPreamble()
 
-    const html = `<!DOCTYPE html><html><head><script>
+    // Console overrides locked with Object.defineProperty (CB-R2-006)
+    const html = `<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; connect-src https: wss: http://localhost:* http://127.0.0.1:*; style-src 'unsafe-inline'; img-src data: https: http:; frame-src 'none'; worker-src 'none'; object-src 'none';">
+<script>
 var _mark = { __cryptoblocks: true };
-console.log = function() {
-  var args = Array.prototype.slice.call(arguments);
-  var msg = args.map(function(a) { return typeof a === 'object' ? JSON.stringify(a) : String(a); }).join(' ');
-  parent.postMessage({ __cryptoblocks: true, type: 'log', data: msg }, '*');
+var __sendMsg = function(type, data) {
+  parent.postMessage({ __cryptoblocks: true, type: type, data: data }, '*');
 };
+var __formatArg = function(a) { return typeof a === 'object' ? JSON.stringify(a) : String(a); };
+Object.defineProperty(console, 'log', { value: function() { __sendMsg('log', Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'warn', { value: function() { __sendMsg('log', '[warn] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'error', { value: function() { __sendMsg('log', '[error] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'info', { value: function() { __sendMsg('log', '[info] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'debug', { value: function() {}, configurable: false, writable: false });
+${safetyPreamble}
 (async function() {
   try {
     var __code = decodeURIComponent(escape(atob("${encoded}")));
     var __fn = new Function("return (async function() {\\n" + __code + "\\n})()");
     var __result = await __fn();
+    var __cvs = document.getElementById('cb-canvas');
+    if (__cvs && __cvs.width > 0 && __cvs.style.display !== 'none') {
+      try { parent.postMessage({ __cryptoblocks: true, type: 'canvas', data: __cvs.toDataURL('image/png') }, '*'); } catch(e) {}
+    }
+    var __page = document.getElementById('cb-page');
+    if (__page && __page.children.length > 0) {
+      parent.postMessage({ __cryptoblocks: true, type: 'html', data: __page.innerHTML }, '*');
+    }
     parent.postMessage({ __cryptoblocks: true, type: 'done', data: __result }, '*');
   } catch(e) {
     parent.postMessage({ __cryptoblocks: true, type: 'error', data: e.message }, '*');
   }
 })()
-<\/script></head><body></body></html>`
+<\/script></head><body><div id="cb-page" style="display:none"></div><canvas id="cb-canvas" width="400" height="400" style="display:none"></canvas></body></html>`
 
     const blob = new Blob([html], { type: 'text/html' })
     blobUrl = URL.createObjectURL(blob)
@@ -108,13 +167,17 @@ console.log = function() {
     iframe.src = blobUrl
     document.body.appendChild(iframe)
   })
+
+  return { promise, abort: () => abortFn() }
 }
 
-// Cache Pyodide instance - load once, reuse forever
+// Cache Pyodide instance - load once, reuse
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let pyodideInstance: any = null
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let pyodideLoading: Promise<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let pyodideInitialGlobals: Set<string> | null = null
 
 async function getPyodide() {
   if (pyodideInstance) return pyodideInstance
@@ -123,6 +186,11 @@ async function getPyodide() {
   pyodideLoading = (async () => {
     const pyodideModule = await import('pyodide')
     pyodideInstance = await pyodideModule.loadPyodide()
+
+    // Capture initial globals for reset between runs (CB-R2-010)
+    const globals = pyodideInstance.globals.toJs() as Map<string, unknown>
+    pyodideInitialGlobals = new Set(globals.keys())
+
     pyodideLoading = null
     return pyodideInstance
   })()
@@ -130,40 +198,129 @@ async function getPyodide() {
   return pyodideLoading
 }
 
-async function executePython(code: string): Promise<ExecutionResult> {
+/** Reset Pyodide user-defined globals between runs (CB-R2-010) */
+function resetPyodideGlobals() {
+  if (!pyodideInstance || !pyodideInitialGlobals) return
+  const current = pyodideInstance.globals.toJs() as Map<string, unknown>
+  for (const key of current.keys()) {
+    if (!pyodideInitialGlobals.has(key)) {
+      pyodideInstance.globals.delete(key)
+    }
+  }
+}
+
+/**
+ * Python safety preamble that blocks js bridge access (CB-R2-001).
+ * Prevents `from js import window, document, fetch, localStorage` etc.
+ * Also blocks dangerous Python modules.
+ *
+ * NOTE: For true process-level isolation, migrate Pyodide to a Web Worker.
+ * This preamble is defense-in-depth for the current main-thread architecture.
+ */
+const PYTHON_SAFETY_PREAMBLE = `
+import sys as _cb_sys
+import types as _cb_types
+
+# Block js bridge — replaces real modules with empty stubs
+for _cb_m in ['js', 'pyodide', 'pyodide.ffi', 'pyodide.http', 'pyodide.code']:
+    _cb_sys.modules[_cb_m] = _cb_types.ModuleType(_cb_m)
+
+# Block dangerous Python modules
+_cb_blocked = frozenset({
+    'os', 'subprocess', 'socket', 'http', 'http.client', 'http.server',
+    'urllib', 'urllib.request', 'ctypes', 'shutil', 'pathlib',
+    'importlib', 'importlib.reload',
+})
+_cb_real_import = __import__
+
+def _cb_restricted_import(name, *args, **kwargs):
+    base = name.split('.')[0]
+    if name in _cb_blocked or base in _cb_blocked:
+        raise ImportError("Module '" + name + "' is not available in CryptoBlocks")
+    if name.startswith('pyodide'):
+        raise ImportError("Module '" + name + "' is not available in CryptoBlocks")
+    return _cb_real_import(name, *args, **kwargs)
+
+import builtins as _cb_bi
+_cb_bi.__import__ = _cb_restricted_import
+
+# Redirect stdout/stderr for capture
+from io import StringIO as _cb_StringIO
+_cb_stdout = _cb_StringIO()
+_cb_stderr = _cb_StringIO()
+_cb_sys.stdout = _cb_stdout
+_cb_sys.stderr = _cb_stderr
+
+# Clean up preamble names from user namespace
+del _cb_types, _cb_blocked, _cb_real_import, _cb_bi, _cb_StringIO
+`
+
+function executePython(
+  _code: string,
+  onOutput?: (line: string) => void
+): ExecutionHandle {
   const output: string[] = []
+  let outputBytes = 0
+  let outputCapped = false
   const start = performance.now()
 
-  try {
-    const pyodide = await getPyodide()
+  // Python runs synchronously on main thread, so abort is best-effort
+  let aborted = false
 
-    // Fresh stdout capture for each run
-    pyodide.runPython(`
-import sys
-from io import StringIO
-_stdout = StringIO()
-sys.stdout = _stdout
-    `)
+  const promise = (async (): Promise<ExecutionResult> => {
+    try {
+      const pyodide = await getPyodide()
 
-    const result = pyodide.runPython(code)
+      // Reset user-defined globals from previous run (CB-R2-010)
+      resetPyodideGlobals()
 
-    const stdout = pyodide.runPython('_stdout.getvalue()')
-    if (stdout) {
-      output.push(...stdout.split('\n').filter((l: string) => l.length > 0))
+      // Apply safety preamble (CB-R2-001)
+      pyodide.runPython(PYTHON_SAFETY_PREAMBLE)
+
+      if (aborted) {
+        return { output, error: 'Execution stopped', returnValue: null, duration: performance.now() - start }
+      }
+
+      const result = pyodide.runPython(_code)
+
+      const stdout: string = pyodide.runPython('_cb_stdout.getvalue()')
+      if (stdout) {
+        const lines = stdout.split('\n').filter((l: string) => l.length > 0)
+        for (const line of lines) {
+          // Output buffer limit (CB-R2-007)
+          if (!outputCapped) {
+            outputBytes += line.length
+            if (output.length >= MAX_OUTPUT_LINES || outputBytes >= MAX_OUTPUT_BYTES) {
+              outputCapped = true
+              const warning = '[Output truncated — limit reached]'
+              output.push(warning)
+              onOutput?.(warning)
+            } else {
+              output.push(line)
+              onOutput?.(line)
+            }
+          }
+        }
+      }
+
+      return {
+        output,
+        error: null,
+        returnValue: result,
+        duration: performance.now() - start,
+      }
+    } catch (e) {
+      return {
+        output,
+        error: e instanceof Error ? e.message : String(e),
+        returnValue: null,
+        duration: performance.now() - start,
+      }
     }
+  })()
 
-    return {
-      output,
-      error: null,
-      returnValue: result,
-      duration: performance.now() - start,
-    }
-  } catch (e) {
-    return {
-      output,
-      error: e instanceof Error ? e.message : String(e),
-      returnValue: null,
-      duration: performance.now() - start,
-    }
+  return {
+    promise,
+    abort: () => { aborted = true },
   }
 }
