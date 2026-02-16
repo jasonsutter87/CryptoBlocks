@@ -362,6 +362,11 @@ export function registerSingleBlock(block: BlockDefinition) {
   }
 }
 
+export function unregisterBlock(name: string) {
+  const blockType = `cb_${name}`
+  delete Blockly.Blocks[blockType]
+}
+
 export function generateCode(workspace: Blockly.Workspace, language: Language): string {
   const topBlocks = workspace.getTopBlocks(true)
   const lines: string[] = []

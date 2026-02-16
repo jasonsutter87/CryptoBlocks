@@ -33,6 +33,10 @@ class BlockRegistry {
     blocks.forEach((b) => this.register(b))
   }
 
+  unregister(name: string) {
+    this.blocks.delete(name)
+  }
+
   get(name: string): BlockDefinition | undefined {
     return this.blocks.get(name)
   }

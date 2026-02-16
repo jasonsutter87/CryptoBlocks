@@ -7,6 +7,7 @@ import type { BlockDefinition } from '../types/block'
 interface BlockEditorProps {
   onWorkspaceChange: (workspace: Blockly.WorkspaceSvg) => void
   onEditBlock?: (block: BlockDefinition) => void
+  onDeleteBlock?: (block: BlockDefinition) => void
   onSaveAsBlock?: (jsCode: string, pyCode: string) => void
   initialWorkspaceState?: Record<string, unknown> | null
 }
@@ -14,16 +15,18 @@ interface BlockEditorProps {
 // Register blocks once at module level
 let blocksRegistered = false
 
-export default function BlockEditor({ onWorkspaceChange, onEditBlock, onSaveAsBlock, initialWorkspaceState }: BlockEditorProps) {
+export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBlock, onSaveAsBlock, initialWorkspaceState }: BlockEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
   const callbackRef = useRef(onWorkspaceChange)
   const editCallbackRef = useRef(onEditBlock)
+  const deleteCallbackRef = useRef(onDeleteBlock)
   const saveAsBlockRef = useRef(onSaveAsBlock)
 
   // Keep callback refs up to date without triggering workspace rebuild
   callbackRef.current = onWorkspaceChange
   editCallbackRef.current = onEditBlock
+  deleteCallbackRef.current = onDeleteBlock
   saveAsBlockRef.current = onSaveAsBlock
 
   useEffect(() => {
@@ -122,6 +125,32 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onSaveAsBl
     }
     Blockly.ContextMenuRegistry.registry.register(saveAsBlockOption)
 
+    // Register "Delete Block" context menu for user-created blocks
+    const deleteOption: Blockly.ContextMenuRegistry.RegistryItem = {
+      displayText: 'Delete Block',
+      preconditionFn(scope) {
+        const block = scope.block
+        if (!block) return 'hidden'
+        const name = block.type.replace('cb_', '')
+        const def = registry.get(name)
+        if (def && def.author === 'User') return 'enabled'
+        return 'hidden'
+      },
+      callback(scope) {
+        const block = scope.block
+        if (!block) return
+        const name = block.type.replace('cb_', '')
+        const def = registry.get(name)
+        if (def && deleteCallbackRef.current) {
+          deleteCallbackRef.current(def)
+        }
+      },
+      scopeType: Blockly.ContextMenuRegistry.ScopeType.BLOCK,
+      id: 'delete_user_block',
+      weight: 2,
+    }
+    Blockly.ContextMenuRegistry.registry.register(deleteOption)
+
     const listener = () => {
       callbackRef.current(workspace)
     }
@@ -131,6 +160,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onSaveAsBl
     return () => {
       workspace.removeChangeListener(listener)
       Blockly.ContextMenuRegistry.registry.unregister('edit_user_block')
+      Blockly.ContextMenuRegistry.registry.unregister('delete_user_block')
       Blockly.ContextMenuRegistry.registry.unregister('save_as_block')
       workspace.dispose()
       workspaceRef.current = null

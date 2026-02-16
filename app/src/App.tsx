@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import * as Blockly from 'blockly'
 import type { Language, BlockDefinition } from './types/block'
-import { generateCode, generateHtmlMarkup, registerSingleBlock, getToolboxXml, getFilteredToolboxXml } from './blocks/blockly-register'
+import { generateCode, generateHtmlMarkup, registerSingleBlock, unregisterBlock, getToolboxXml, getFilteredToolboxXml } from './blocks/blockly-register'
 import { registry } from './blocks/registry'
 import { executeCode } from './execution/runner'
 import type { ExecutionResult, ExecutionHandle } from './execution/runner'
@@ -565,6 +565,36 @@ export default function App() {
     setShowCreateModal(true)
   }, [])
 
+  const handleDeleteBlock = useCallback((blockDef: BlockDefinition) => {
+    const displayName = blockDef.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    if (!confirm(`Delete "${displayName}"? This will remove it from your saved blocks and the workspace.`)) return
+
+    // Remove all instances of this block from the workspace
+    if (workspaceRef.current) {
+      const blockType = `cb_${blockDef.name}`
+      const instances = workspaceRef.current.getBlocksByType(blockType, false)
+      for (const block of instances) {
+        block.dispose(false)
+      }
+    }
+
+    // Remove from registry and Blockly
+    registry.unregister(blockDef.name)
+    unregisterBlock(blockDef.name)
+
+    // Remove from state and localStorage
+    setCustomBlocks((prev) => {
+      const updated = prev.filter((b) => b.name !== blockDef.name)
+      saveCustomBlocksToLocal(updated)
+      return updated
+    })
+
+    // Refresh toolbox
+    if (workspaceRef.current) {
+      workspaceRef.current.updateToolbox(getToolboxXml())
+    }
+  }, [])
+
   const handleSaveAsBlock = useCallback((jsCode: string, pyCode: string) => {
     setEditingBlock({
       name: '',
@@ -797,6 +827,7 @@ export default function App() {
               <BlockEditor
                 onWorkspaceChange={handleWorkspaceChange}
                 onEditBlock={handleEditBlock}
+                onDeleteBlock={handleDeleteBlock}
                 onSaveAsBlock={handleSaveAsBlock}
                 initialWorkspaceState={initialWorkspaceState}
               />
