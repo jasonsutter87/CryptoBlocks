@@ -64,3 +64,80 @@ body {
 .blocklyMainWorkspaceScrollbar {
   display: none !important;
 }
+
+/* === HACKER MODE === */
+/* Activated by Konami code (↑↑↓↓←→←→BA) or clicking the logo 7 times */
+
+.hacker-mode {
+  --hm-green: #00ff41;
+  --hm-dark: #0a0a0a;
+  --hm-dim: #003b00;
+}
+
+.hacker-mode body {
+  font-family: 'Courier New', 'Fira Code', monospace !important;
+}
+
+/* Toolbar goes dark with green accents */
+.hacker-mode header {
+  background-color: var(--hm-dark) !important;
+  border-color: var(--hm-dim) !important;
+}
+
+.hacker-mode header h1 {
+  color: var(--hm-green) !important;
+  text-shadow: 0 0 8px var(--hm-green);
+}
+
+.hacker-mode header button,
+.hacker-mode header span {
+  color: var(--hm-green) !important;
+}
+
+.hacker-mode header svg {
+  stroke: var(--hm-green) !important;
+}
+
+/* Blockly workspace goes black with green grid */
+.hacker-mode .blocklySvg {
+  background-color: var(--hm-dark) !important;
+}
+
+/* Output panel green text */
+.hacker-mode [class*="bg-[#1e1e2e]"] {
+  background-color: var(--hm-dark) !important;
+}
+
+/* Logo blocks pulse */
+.hacker-mode .flex.items-center.gap-1\\.5 > div[class*="rounded"] {
+  background-color: var(--hm-green) !important;
+  animation: hm-pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--hm-green);
+}
+
+@keyframes hm-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Scanline overlay effect on the whole page */
+.hacker-mode::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 65, 0.03) 2px,
+    rgba(0, 255, 65, 0.03) 4px
+  );
+}
+
+/* Version badge goes green */
+.hacker-mode span[class*="text-\\[10px\\]"] {
+  color: var(--hm-green) !important;
+  background-color: var(--hm-dim) !important;
+}

@@ -26,17 +26,25 @@ describe('Block smoke tests', () => {
         expect(block.color).toMatch(/^#[0-9A-Fa-f]{6}$/)
       })
 
-      it('has a JavaScript implementation', () => {
-        const js = block.implementations.javascript
-        expect(js).toBeTruthy()
-        expect(js).toMatch(/function\s+\w+/)
-      })
+      // Secret (???) blocks use inline code / IIFEs, not function definitions
+      if (block.category !== '???') {
+        it('has a JavaScript implementation', () => {
+          const js = block.implementations.javascript
+          expect(js).toBeTruthy()
+          expect(js).toMatch(/function\s+\w+/)
+        })
 
-      it('has a Python implementation', () => {
-        const py = block.implementations.python
-        expect(py).toBeTruthy()
-        expect(py).toMatch(/def\s+\w+/)
-      })
+        it('has a Python implementation', () => {
+          const py = block.implementations.python
+          expect(py).toBeTruthy()
+          expect(py).toMatch(/def\s+\w+/)
+        })
+      } else {
+        it('has implementations', () => {
+          expect(block.implementations.javascript).toBeTruthy()
+          expect(block.implementations.python).toBeTruthy()
+        })
+      }
     })
   }
 

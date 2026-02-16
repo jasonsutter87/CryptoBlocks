@@ -1,5 +1,6 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import type { Language } from '../types/block'
+import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -61,6 +62,19 @@ export default function Toolbar({
   const [embedCopied, setEmbedCopied] = useState(false)
   const menuContainerRef = useRef<HTMLDivElement>(null)
 
+  // Logo click counter — 7 rapid clicks toggles hacker mode
+  const logoClickCount = useRef(0)
+  const logoClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleLogoClick = useCallback(() => {
+    logoClickCount.current++
+    if (logoClickTimer.current) clearTimeout(logoClickTimer.current)
+    logoClickTimer.current = setTimeout(() => { logoClickCount.current = 0 }, 1500)
+    if (logoClickCount.current >= 7) {
+      logoClickCount.current = 0
+      toggleHackerMode()
+    }
+  }, [])
+
   // Close menus on outside click
   useEffect(() => {
     if (!openMenu) return
@@ -106,8 +120,8 @@ export default function Toolbar({
 
   return (
     <header className="flex items-center justify-between px-3 md:px-4 py-2 bg-[#181825] border-b border-[#313244] select-none">
-      {/* Logo */}
-      <div className="flex items-center gap-2 md:gap-3 shrink-0">
+      {/* Logo — click 7 times rapidly to toggle hacker mode */}
+      <div className="flex items-center gap-2 md:gap-3 shrink-0 cursor-pointer select-none" onClick={handleLogoClick}>
         <div className="flex items-center gap-1.5">
           <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-[#89b4fa]" />
           <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-[#f9e2af] -ml-1.5" />

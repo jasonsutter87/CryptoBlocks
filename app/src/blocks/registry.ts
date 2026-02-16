@@ -14,6 +14,7 @@ import { aiBlocks } from './definitions/ai'
 import { soundBlocks } from './definitions/sound'
 import { gamesBlocks } from './definitions/games'
 import { hardwareBlocks } from './definitions/hardware'
+import { secretBlocks } from './definitions/secrets'
 
 class BlockRegistry {
   private blocks: Map<string, BlockDefinition> = new Map()
@@ -33,6 +34,7 @@ class BlockRegistry {
     this.registerAll(soundBlocks)
     this.registerAll(gamesBlocks)
     this.registerAll(hardwareBlocks)
+    this.registerAll(secretBlocks)
   }
 
   register(block: BlockDefinition) {

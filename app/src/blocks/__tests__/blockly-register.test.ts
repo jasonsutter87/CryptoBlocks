@@ -39,22 +39,26 @@ describe('Blockly registration', () => {
 })
 
 describe('Toolbox XML', () => {
-  it('includes all categories', () => {
+  it('includes all categories (except hidden ???)', () => {
     registerCustomBlocks()
     const xml = getToolboxXml()
 
     const categories = registry.getCategories()
     for (const cat of categories) {
+      // ??? category is hidden unless hacker mode is active
+      if (cat === '???') continue
       expect(xml).toContain(`name="${cat}"`)
     }
   })
 
-  it('includes all block types', () => {
+  it('includes all block types (except hidden ??? blocks)', () => {
     registerCustomBlocks()
     const xml = getToolboxXml()
 
     const allBlocks = registry.getAll()
     for (const block of allBlocks) {
+      // ??? blocks are hidden unless hacker mode is active
+      if (block.category === '???') continue
       expect(xml).toContain(`type="cb_${block.name}"`)
     }
   })

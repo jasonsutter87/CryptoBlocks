@@ -48,6 +48,7 @@ export type BlockCategory =
   | 'Crypto'
   | 'AI'
   | 'Hardware'
+  | '???'
   | 'My Blocks'
 
 export type Language = 'javascript' | 'python' | 'html'
@@ -67,5 +68,6 @@ export const CATEGORY_COLORS: Record<BlockCategory, string> = {
   Crypto: '#4F46E5',
   AI: '#7C3AED',
   Hardware: '#65A30D',
+  '???': '#00ff41',
   'My Blocks': '#F59E0B',
 }

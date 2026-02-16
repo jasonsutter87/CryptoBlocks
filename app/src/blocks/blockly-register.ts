@@ -1,6 +1,7 @@
 import * as Blockly from 'blockly'
 import type { BlockDefinition, Language } from '../types/block'
 import { registry } from './registry'
+import { isHackerModeActive } from '../easter-eggs/hacker-mode'
 
 function typeToBlocklyField(type: string): string {
   switch (type) {
@@ -870,6 +871,9 @@ export function getToolboxXml(): string {
   let xml = '<xml>'
 
   for (const cat of categories) {
+    // Hide ??? category unless hacker mode is active
+    if (cat === '???' && !isHackerModeActive()) continue
+
     const blocks = registry.getByCategory(cat)
     const color = registry.getCategoryColor(cat)
     // Convert hex color to Blockly hue (0-360)

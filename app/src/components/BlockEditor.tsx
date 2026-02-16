@@ -167,6 +167,17 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     }
   }, [])
 
+  // Refresh toolbox when hacker mode toggles (shows/hides ??? category)
+  useEffect(() => {
+    const handleHackerMode = () => {
+      if (workspaceRef.current) {
+        workspaceRef.current.updateToolbox(getToolboxXml())
+      }
+    }
+    window.addEventListener('cb:hacker-mode-changed', handleHackerMode)
+    return () => window.removeEventListener('cb:hacker-mode-changed', handleHackerMode)
+  }, [])
+
   // Handle resize
   useEffect(() => {
     const handleResize = () => {

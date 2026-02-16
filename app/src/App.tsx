@@ -53,6 +53,7 @@ import CodeToBlocksModal from './components/CodeToBlocksModal'
 import PublishModal from './components/PublishModal'
 import type { ConversionResult } from './converters/js-to-workspace'
 import type { Example } from './examples'
+import { initEasterEggs } from './easter-eggs'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -112,6 +113,8 @@ export default function App() {
 
   // Restore from localStorage on mount
   useEffect(() => {
+    initEasterEggs()
+
     const { customBlocks: saved, workspaceState } = loadFromLocalStorage()
     if (saved.length > 0) {
       for (const block of saved) {
