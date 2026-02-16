@@ -67,5 +67,20 @@ export const spaceExplorer: ThemePack = {
       ],
       allowedCategories: ['Basics', 'Text', 'Math', 'Logic'],
     },
+    {
+      id: 'se-5',
+      title: 'Fuel Calculator',
+      description:
+        'Calculate fuel needed for the mission. You need 50 units per light-year and the destination is 8 light-years away. Print the total fuel needed.',
+      difficulty: 'intermediate',
+      theme: 'space-explorer',
+      expectedOutput: ['400'],
+      par: 4,
+      hints: [
+        'Use a Multiply block to calculate 50 times 8.',
+        'Wrap the Multiply block in a Print block.',
+      ],
+      allowedCategories: ['Basics', 'Math'],
+    },
   ],
 }

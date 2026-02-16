@@ -52,5 +52,35 @@ export const robotFactory: ThemePack = {
       ],
       allowedCategories: ['Basics', 'Text', 'Math', 'Logic'],
     },
+    {
+      id: 'rf-4',
+      title: 'Batch Production',
+      description:
+        'The factory needs to stamp serial numbers. Use a Repeat loop to print "Unit ready" exactly 5 times. Mass production!',
+      difficulty: 'intermediate',
+      theme: 'robot-factory',
+      expectedOutput: ['Unit ready', 'Unit ready', 'Unit ready', 'Unit ready', 'Unit ready'],
+      par: 4,
+      hints: [
+        'The Repeat block runs everything inside it multiple times — set it to 5.',
+        'Put a Print block with "Unit ready" inside the Repeat block.',
+      ],
+      allowedCategories: ['Basics', 'Text', 'Logic'],
+    },
+    {
+      id: 'rf-5',
+      title: 'Firmware Update',
+      description:
+        'Calculate the firmware version. The major version is 3, the minor version is 12. Join them with a dot and print "v3.12". Use Join Text and number-to-text conversion.',
+      difficulty: 'advanced',
+      theme: 'robot-factory',
+      expectedOutput: ['v3.12'],
+      par: 7,
+      hints: [
+        'You need to join three pieces of text: "v", the major version, ".", and the minor version.',
+        'Use nested Join Text blocks: Join("v", Join(3, Join(".", 12))).',
+      ],
+      allowedCategories: ['Basics', 'Text', 'Math'],
+    },
   ],
 }
