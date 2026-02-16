@@ -248,7 +248,7 @@ Users can publish their own tutorials. Same quality tiers as blocks:
 - **Live streaming** — output streams to UI in real-time via `postMessage`
 
 ### Testing (Built)
-- **Vitest** — 266 unit + smoke tests (jsdom environment)
+- **Vitest** — 1,200+ unit + smoke tests (jsdom environment)
 - **Playwright** — E2E browser tests (Chromium)
 - **Smoke suite** — validates every block in the registry has valid name, category, color, and implementations
 
@@ -377,25 +377,34 @@ These won't ship as-is (they're CTF-specific), but they prove the architecture: 
 - [x] Save/Load .blocks project files
 - [x] Block shape system (value vs statement blocks)
 - [x] Web/API blocks (HTTP GET/POST, WebSocket, JSON parsing)
-- [x] Testing infrastructure (266 unit tests, smoke tests, Playwright E2E)
+- [x] Testing infrastructure (1,200+ unit tests, smoke tests, Playwright E2E)
 
-### Phase 1.5: Challenge Hub — UP NEXT
+### Phase 1.5: Challenge Hub — DONE
 > *"Your cousin will only care about this if it's Minecraft or objects based"* — Mom, at dinner
 
 Gamified coding challenges. Solve them with the fewest blocks possible.
 
-- [ ] Challenge data model (description, par block count, validator, theme)
-- [ ] Challenge browser/selector UI
-- [ ] Block counter on workspace
-- [ ] Output validator (compare actual vs expected)
-- [ ] Star rating (par, birdie, eagle based on block count)
-- [ ] "Show Solution" after 3 attempts
-- [ ] **Theme packs:**
-  - [ ] **Minecraft Mode** — build mobs, inventory counter, damage calc, crafting recipes
-  - [ ] **Pet Simulator** — name your pet, feed counter, pet battles
-  - [ ] **Secret Agent** — Caesar cipher, secret messages, password generator
-  - [ ] **Speed Run** — Hello World (1 block), countdown, FizzBuzz
-- [ ] Leaderboard (fewest blocks wins)
+- [x] Challenge data model (description, par block count, validator, theme)
+- [x] Challenge browser/selector UI
+- [x] Block counter on workspace
+- [x] Output validator (compare actual vs expected)
+- [x] Star rating (par, birdie, eagle based on block count)
+- [x] "Show Solution" after 3 attempts
+- [x] **13 Theme packs** (62+ challenges):
+  - [x] Getting Started — Hello World, countdown, variables
+  - [x] Minecraft — crafting, mining, enchanting
+  - [x] Pet Simulator — name, feed, level up, evolve
+  - [x] Space Explorer — asteroids, shields, warp speed
+  - [x] Robot Factory — assembly line, quality control
+  - [x] Secret Agent — ciphers, encoding, decoding
+  - [x] Treasure Hunt — lists, inventory, loot management
+  - [x] Game Builder — objects, health bars, character sheets
+  - [x] Hacker Terminal — logic gates, boolean expressions
+  - [x] Music Festival — loops, math patterns, beat drops
+  - [x] Science Lab — formulas, growth, cell division
+  - [x] Startup Sim — capstone: combine all skills
+  - [x] Euler Blocks — 10 Project Euler-style computational puzzles
+- [x] Leaderboard (fewest blocks wins)
 
 ### Phase 2: Share
 - [ ] User accounts and authentication (Clerk)
