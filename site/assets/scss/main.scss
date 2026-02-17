@@ -258,7 +258,99 @@
 // Add your project-specific styles below using full SCSS power!
 // ==========================================================================
 
-// Example: Custom component with nesting
+// Prose styles for markdown content pages
+.prose {
+  max-width: 720px;
+  margin: 0 auto;
+
+  h1, h2, h3, h4 {
+    font-weight: $font-weight-bold;
+    color: $gray-800;
+    line-height: 1.25;
+  }
+
+  h1 { font-size: 2.25rem; margin-top: 0; margin-bottom: 1rem; }
+  h2 { font-size: 1.75rem; margin-top: 2.5rem; margin-bottom: 0.75rem; }
+  h3 { font-size: 1.25rem; margin-top: 2rem; margin-bottom: 0.5rem; }
+  h4 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+
+  p {
+    color: $gray-600;
+    line-height: 1.75;
+    margin-bottom: 1.25rem;
+  }
+
+  a {
+    color: $primary;
+    text-decoration: underline;
+
+    &:hover { color: darken($primary, 15%); }
+  }
+
+  strong { color: $gray-800; font-weight: $font-weight-bold; }
+
+  ul, ol {
+    color: $gray-600;
+    line-height: 1.75;
+    margin-bottom: 1.25rem;
+    padding-left: 1.5rem;
+  }
+
+  ul { list-style-type: disc; }
+  ol { list-style-type: decimal; }
+
+  li {
+    margin-bottom: 0.5rem;
+
+    strong { color: $gray-800; }
+  }
+
+  blockquote {
+    border-left: 4px solid $primary;
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
+    background: $gray-100;
+    border-radius: 0 $border-radius $border-radius 0;
+
+    p {
+      color: $gray-700;
+      font-style: italic;
+      margin-bottom: 0;
+    }
+  }
+
+  code {
+    background: $gray-100;
+    padding: 0.125rem 0.375rem;
+    border-radius: $border-radius-sm;
+    font-family: $font-family-mono;
+    font-size: 0.875em;
+    color: $secondary;
+  }
+
+  pre {
+    background: $gray-800;
+    color: $gray-100;
+    padding: 1.25rem;
+    border-radius: $border-radius-lg;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+
+    code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+    }
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid $gray-200;
+    margin: 2rem 0;
+  }
+}
+
+// Hero component
 .hero {
   @include flex-center;
   min-height: 60vh;
