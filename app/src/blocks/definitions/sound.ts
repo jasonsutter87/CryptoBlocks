@@ -335,4 +335,199 @@ export const soundBlocks: BlockDefinition[] = [
     ],
     color: '#DB2777',
   },
+  // ── Multi-Track System ──────────────────────────────────────
+  {
+    name: 'create_track',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Create a named track with an instrument and number of beats',
+    category: 'Sound',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Track name (e.g. drums, melody, bass)', default: 'melody' },
+      { name: 'instrument', type: 'string', description: 'Waveform or "drums"', default: 'sine', choices: ['sine', 'square', 'sawtooth', 'triangle', 'drums'] },
+      { name: 'beats', type: 'number', description: 'Number of beats', default: 8 },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function createTrack(name, instrument, beats) {
+  window.__tracks = window.__tracks || {};
+  var b = [];
+  for (var i = 0; i < beats; i++) b.push([]);
+  window.__tracks[name] = { instrument: instrument, beats: b, volume: 0.5 };
+}`,
+      python: `def create_track(name, instrument, beats):
+    print("[Sound is only available in JavaScript mode]")`,
+    },
+    tests: [
+      { input: { name: 'melody', instrument: 'sine', beats: 8 }, expected: {} },
+    ],
+    color: '#DB2777',
+  },
+  {
+    name: 'add_note_to_track',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Add a note or drum sound at a beat position on a track',
+    category: 'Sound',
+    inputs: [
+      { name: 'track', type: 'string', description: 'Track name', default: 'melody' },
+      { name: 'position', type: 'number', description: 'Beat position (1-based)', default: 1 },
+      { name: 'sound', type: 'string', description: 'Note (C4, D#5) or drum (kick, snare, hi-hat)', default: 'C4' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function addNoteToTrack(track, position, sound) {
+  window.__tracks = window.__tracks || {};
+  if (!window.__tracks[track]) { console.log("Error: Track '" + track + "' does not exist"); return; }
+  var t = window.__tracks[track];
+  var idx = Math.max(0, Math.min(Number(position) - 1, t.beats.length - 1));
+  t.beats[idx].push(String(sound));
+}`,
+      python: `def add_note_to_track(track, position, sound):
+    print("[Sound is only available in JavaScript mode]")`,
+    },
+    tests: [
+      { input: { track: 'melody', position: 1, sound: 'C4' }, expected: {} },
+    ],
+    color: '#DB2777',
+  },
+  {
+    name: 'set_track_volume',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Set the volume of a track (0.0 to 1.0)',
+    category: 'Sound',
+    inputs: [
+      { name: 'track', type: 'string', description: 'Track name', default: 'melody' },
+      { name: 'volume', type: 'number', description: 'Volume (0.0 = silent, 1.0 = max)', default: 0.5 },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function setTrackVolume(track, volume) {
+  window.__tracks = window.__tracks || {};
+  if (!window.__tracks[track]) { console.log("Error: Track '" + track + "' does not exist"); return; }
+  window.__tracks[track].volume = Math.max(0, Math.min(1, Number(volume)));
+}`,
+      python: `def set_track_volume(track, volume):
+    print("[Sound is only available in JavaScript mode]")`,
+    },
+    tests: [
+      { input: { track: 'melody', volume: 0.8 }, expected: {} },
+    ],
+    color: '#DB2777',
+  },
+  {
+    name: 'play_all_tracks',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Play all tracks simultaneously, synced to the current tempo',
+    category: 'Sound',
+    inputs: [],
+    outputs: [],
+    implementations: {
+      javascript: `async function playAllTracks() {
+  window.__tracks = window.__tracks || {};
+  var noteMap = {"C":261.63,"C#":277.18,"Db":277.18,"D":293.66,"D#":311.13,"Eb":311.13,"E":329.63,"F":349.23,"F#":369.99,"Gb":369.99,"G":392,"G#":415.3,"Ab":415.3,"A":440,"A#":466.16,"Bb":466.16,"B":493.88};
+  var drums = ["kick","snare","hi-hat","clap","tom","cymbal"];
+  var ctx = window.__audio = window.__audio || new (window.AudioContext || window.webkitAudioContext)();
+  var bpm = window.__tempo || 120;
+  var beatDur = 60 / bpm;
+  var t0 = ctx.currentTime + 0.05;
+  var maxBeats = 0;
+  var trackNames = Object.keys(window.__tracks);
+  for (var ti = 0; ti < trackNames.length; ti++) {
+    var tr = window.__tracks[trackNames[ti]];
+    if (tr.beats.length > maxBeats) maxBeats = tr.beats.length;
+    var vol = tr.volume != null ? tr.volume : 0.5;
+    var inst = tr.instrument || "sine";
+    for (var i = 0; i < tr.beats.length; i++) {
+      var bt = t0 + i * beatDur;
+      for (var j = 0; j < tr.beats[i].length; j++) {
+        var s = tr.beats[i][j];
+        if (drums.indexOf(s) >= 0) {
+          if (s === "kick") {
+            var o = ctx.createOscillator(); var g = ctx.createGain();
+            o.frequency.setValueAtTime(150, bt); o.frequency.exponentialRampToValueAtTime(50, bt + 0.1);
+            g.gain.setValueAtTime(vol, bt); g.gain.exponentialRampToValueAtTime(0.01, bt + 0.3);
+            o.connect(g); g.connect(ctx.destination); o.start(bt); o.stop(bt + 0.3);
+          } else if (s === "snare" || s === "clap") {
+            var dur = s === "snare" ? 0.2 : 0.15;
+            var freq = s === "snare" ? 3000 : 2000;
+            var buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+            var d = buf.getChannelData(0); for (var k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1;
+            var src = ctx.createBufferSource(); src.buffer = buf;
+            var f = ctx.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = freq;
+            var g = ctx.createGain(); g.gain.setValueAtTime(vol, bt); g.gain.exponentialRampToValueAtTime(0.01, bt + dur);
+            src.connect(f); f.connect(g); g.connect(ctx.destination); src.start(bt);
+          } else if (s === "hi-hat") {
+            var buf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
+            var d = buf.getChannelData(0); for (var k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1;
+            var src = ctx.createBufferSource(); src.buffer = buf;
+            var f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 7000;
+            var g = ctx.createGain(); g.gain.setValueAtTime(vol * 0.6, bt); g.gain.exponentialRampToValueAtTime(0.01, bt + 0.05);
+            src.connect(f); f.connect(g); g.connect(ctx.destination); src.start(bt);
+          } else if (s === "tom") {
+            var o = ctx.createOscillator(); var g = ctx.createGain();
+            o.frequency.setValueAtTime(200, bt); o.frequency.exponentialRampToValueAtTime(80, bt + 0.2);
+            g.gain.setValueAtTime(vol, bt); g.gain.exponentialRampToValueAtTime(0.01, bt + 0.3);
+            o.connect(g); g.connect(ctx.destination); o.start(bt); o.stop(bt + 0.3);
+          } else if (s === "cymbal") {
+            var buf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate);
+            var d = buf.getChannelData(0); for (var k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1;
+            var src = ctx.createBufferSource(); src.buffer = buf;
+            var f = ctx.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 5000;
+            var g = ctx.createGain(); g.gain.setValueAtTime(vol * 0.6, bt); g.gain.exponentialRampToValueAtTime(0.01, bt + 0.5);
+            src.connect(f); f.connect(g); g.connect(ctx.destination); src.start(bt);
+          }
+        } else {
+          var m = String(s).match(/^([A-Ga-g][#b]?)(\\d)$/);
+          if (m) {
+            var nn = m[1].charAt(0).toUpperCase() + m[1].slice(1);
+            var oct = parseInt(m[2]);
+            var base = noteMap[nn];
+            if (base) {
+              var freq = base * Math.pow(2, oct - 4);
+              var o = ctx.createOscillator(); var g = ctx.createGain();
+              o.type = inst;
+              o.frequency.setValueAtTime(freq, bt);
+              g.gain.setValueAtTime(vol, bt);
+              g.gain.exponentialRampToValueAtTime(0.01, bt + beatDur * 0.8);
+              o.connect(g); g.connect(ctx.destination);
+              o.start(bt); o.stop(bt + beatDur * 0.8);
+            }
+          }
+        }
+      }
+    }
+  }
+  await new Promise(function(r) { setTimeout(r, maxBeats * beatDur * 1000); });
+}`,
+      python: `def play_all_tracks():
+    print("[Sound is only available in JavaScript mode]")`,
+    },
+    tests: [
+      { input: {}, expected: {} },
+    ],
+    color: '#DB2777',
+  },
+  {
+    name: 'clear_tracks',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Remove all tracks (reset the multi-track mixer)',
+    category: 'Sound',
+    inputs: [],
+    outputs: [],
+    implementations: {
+      javascript: `function clearTracks() {
+  window.__tracks = {};
+}`,
+      python: `def clear_tracks():
+    print("[Sound is only available in JavaScript mode]")`,
+    },
+    tests: [
+      { input: {}, expected: {} },
+    ],
+    color: '#DB2777',
+  },
 ]
