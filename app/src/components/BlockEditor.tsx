@@ -151,6 +151,34 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     }
     Blockly.ContextMenuRegistry.registry.register(deleteOption)
 
+    // Register "Duplicate Stack" context menu for chains of connected blocks
+    const duplicateStackOption: Blockly.ContextMenuRegistry.RegistryItem = {
+      displayText: 'Duplicate Stack',
+      preconditionFn(scope) {
+        const block = scope.block
+        if (!block) return 'hidden'
+        // Show when the block has at least one next-connected block
+        if (block.nextConnection && block.nextConnection.targetBlock()) return 'enabled'
+        return 'hidden'
+      },
+      callback(scope) {
+        const block = scope.block
+        if (!block) return
+        // Serialize the block + entire chain below it
+        const state = Blockly.serialization.blocks.save(block)
+        if (!state) return
+        // Offset so it doesn't land directly on top
+        if (state.x != null) state.x += 30
+        if (state.y != null) state.y += 30
+        // Append the duplicated stack to the workspace
+        Blockly.serialization.blocks.append(state, block.workspace)
+      },
+      scopeType: Blockly.ContextMenuRegistry.ScopeType.BLOCK,
+      id: 'duplicate_stack',
+      weight: -1,
+    }
+    Blockly.ContextMenuRegistry.registry.register(duplicateStackOption)
+
     const listener = () => {
       callbackRef.current(workspace)
     }
@@ -162,6 +190,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       Blockly.ContextMenuRegistry.registry.unregister('edit_user_block')
       Blockly.ContextMenuRegistry.registry.unregister('delete_user_block')
       Blockly.ContextMenuRegistry.registry.unregister('save_as_block')
+      Blockly.ContextMenuRegistry.registry.unregister('duplicate_stack')
       workspace.dispose()
       workspaceRef.current = null
     }
