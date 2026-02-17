@@ -777,9 +777,8 @@ export default function App() {
       }
     }
 
-    // Remove from registry and Blockly
+    // Remove from registry (so getToolboxXml won't include it)
     registry.unregister(blockDef.name)
-    unregisterBlock(blockDef.name)
 
     // Remove from state and localStorage
     setCustomBlocks((prev) => {
@@ -788,10 +787,14 @@ export default function App() {
       return updated
     })
 
-    // Refresh toolbox
+    // Refresh toolbox BEFORE deleting from Blockly.Blocks
+    // (Blockly needs the block definition to cleanly remove it from the toolbox)
     if (workspaceRef.current) {
       workspaceRef.current.updateToolbox(getToolboxXml())
     }
+
+    // Now safe to remove the Blockly block definition
+    unregisterBlock(blockDef.name)
   }, [])
 
   const handleSaveAsBlock = useCallback((jsCode: string, pyCode: string) => {
