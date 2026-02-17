@@ -1,4 +1,4 @@
-baseURL = 'https://cryptoblocks.dev/'
+baseURL = 'https://cryptoblocks.netlify.app/'
 languageCode = 'en-us'
 title = 'CryptoBlocks'
 
@@ -13,4 +13,4 @@ appURL = 'https://app-cryptoblocks.netlify.app'
 baseURL = 'http://localhost:1313/'
 
 [environments.production]
-baseURL = 'https://cryptoblocks.dev/'
+baseURL = 'https://cryptoblocks.netlify.app/'
