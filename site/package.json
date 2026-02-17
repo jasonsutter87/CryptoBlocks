@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"npm run watch:scss\" \"npm run watch:scss:pages\" \"npm run watch:css\" \"npm run watch:css:pages\" \"hugo server\"",
-    "build": "npm run build:scss && npm run build:scss:pages && npm run build:css && npm run build:css:pages && hugo --gc --minify",
+    "build": "npm run build:scss && npm run build:scss:pages && npm run build:css && npm run build:css:pages && hugo --gc --minify --buildFuture",
 
     "build:scss": "sass assets/scss/main.scss assets/css/main.css --no-source-map",
     "build:scss:pages": "sass assets/scss/pages:assets/css/pages --no-source-map",
