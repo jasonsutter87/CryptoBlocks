@@ -138,7 +138,7 @@ export default function OutputPanel({ result, isRunning, liveOutput }: OutputPan
         <div className="flex-1 overflow-hidden">
           {hasHtml ? (
             <iframe
-              srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline' https://cdn.tailwindcss.com; font-src data:; img-src data: https:; connect-src https: data:;"><script src="https://cdn.tailwindcss.com"><\/script><style>body{font-family:sans-serif;margin:16px;}h1,h2,h3,h4,h5,h6{font-size:revert;font-weight:revert;margin:revert;}p{margin:revert;}button{all:revert;cursor:pointer;}a{color:revert;text-decoration:revert;}ul,ol{list-style:revert;margin:revert;padding:revert;}</style></head><body>${result!.htmlOutput}</body></html>`}
+              srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: https:;"><style>body{font-family:sans-serif;margin:16px;}</style></head><body>${result!.htmlOutput}</body></html>`}
               sandbox="allow-scripts allow-same-origin"
               className="w-full h-full border-none bg-white"
               title="HTML Preview"
