@@ -68,7 +68,7 @@ ${hasZta ? ztaScriptBlock(ztaId, options.ztaEndpoint) : ''}
   }
   #cb-container {
     width: 100%;
-    max-width: 640px;
+    max-width: 1340px;
   }
   #cb-header {
     display: flex;
