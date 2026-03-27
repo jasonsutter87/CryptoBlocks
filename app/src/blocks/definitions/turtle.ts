@@ -28,6 +28,7 @@ export const turtleBlocks: BlockDefinition[] = [
   }
   canvas.width = size;
   canvas.height = size;
+  canvas.style.display = 'block';
   var ctx = canvas.getContext('2d');
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, size, size);
