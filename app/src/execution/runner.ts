@@ -295,8 +295,11 @@ async function getPyodide() {
   if (pyodideLoading) return pyodideLoading
 
   pyodideLoading = (async () => {
-    const pyodideModule = await import('pyodide')
-    pyodideInstance = await pyodideModule.loadPyodide()
+    // Load Pyodide from CDN — bundling the npm package breaks dynamic chunk loading
+    const pyodideModule = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.mjs')
+    pyodideInstance = await pyodideModule.loadPyodide({
+      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/',
+    })
 
     // Capture initial globals for reset between runs (CB-R2-010)
     const globals = pyodideInstance.globals.toJs() as Map<string, unknown>
