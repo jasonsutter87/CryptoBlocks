@@ -50,7 +50,7 @@ export function generateStandaloneHtml(code: string, options: ExportOptions = {}
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: https:; frame-src blob:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: https:; frame-src blob:;">
 <title>${escapeHtml(title)}</title>
 ${hasZta ? ztaScriptBlock(ztaId, options.ztaEndpoint) : ''}
 <style>
