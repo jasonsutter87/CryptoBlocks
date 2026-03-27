@@ -296,6 +296,7 @@ async function getPyodide() {
 
   pyodideLoading = (async () => {
     // Load Pyodide from CDN — bundling the npm package breaks dynamic chunk loading
+    // @ts-ignore: CDN URL import
     const pyodideModule = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.mjs')
     pyodideInstance = await pyodideModule.loadPyodide({
       indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/',
