@@ -219,13 +219,9 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
             <div className="overflow-x-auto">
               <div className="inline-block min-w-full">
                 {/* Month labels */}
-                <div className="relative mb-2 ml-8" style={{ height: '16px' }}>
+                <div className="flex justify-between mb-2 ml-8">
                   {monthLabels.map((label, i) => (
-                    <span
-                      key={i}
-                      className="absolute text-xs text-[#6c7086]"
-                      style={{ left: `${label.offset * 14}px` }}
-                    >
+                    <span key={i} className="text-xs text-[#6c7086]">
                       {label.text}
                     </span>
                   ))}
