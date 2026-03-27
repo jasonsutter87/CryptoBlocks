@@ -747,7 +747,7 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   // Handle HTML/CSS blocks
   const htmlCode = generateHtmlCode(block, language)
   if (htmlCode !== null) {
-    let code = htmlCode
+    let code = htmlCode.endsWith(')') ? htmlCode + ';' : htmlCode
     const nextBlock = block.getNextBlock()
     if (nextBlock) {
       code += '\n' + generateBlockCode(nextBlock, language)
