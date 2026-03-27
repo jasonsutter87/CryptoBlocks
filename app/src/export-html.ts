@@ -170,8 +170,14 @@ ${hasZta ? ztaTrackingCode(ztaId) : ''}
     + 'console.log=function(){parent.postMessage({t:"log",d:Array.prototype.slice.call(arguments).map(_fmt).join(" ")},"*")};'
     + 'console.warn=function(){parent.postMessage({t:"warn",d:Array.prototype.slice.call(arguments).map(_fmt).join(" ")},"*")};'
     + 'console.error=function(){parent.postMessage({t:"err",d:Array.prototype.slice.call(arguments).map(_fmt).join(" ")},"*")};'
-    + '(async function(){try{var fn=new Function("return (async function(){\\\\n"+' + JSON.stringify(__code) + '+"\\\\n})()");await fn();parent.postMessage({t:"done"},"*")}catch(e){parent.postMessage({t:"err",d:e.message},"*")}})()'
-    + '</' + 'script></head><body></body></html>';
+    + '(async function(){try{'
+    + 'await new Promise(function(r){setTimeout(r,0)});'
+    + 'var fn=new Function("return (async function(){\\\\n"+' + JSON.stringify(__code) + '+"\\\\n})()");await fn();'
+    + 'var __page=document.getElementById("cb-page");'
+    + 'if(__page&&__page.children.length>0){parent.postMessage({t:"html",d:__page.innerHTML},"*")}'
+    + 'parent.postMessage({t:"done"},"*")'
+    + '}catch(e){parent.postMessage({t:"err",d:e.message},"*")}})()'
+    + '</' + 'script></head><body><div id="cb-page" style="display:none"></div></body></html>';
   var __blob = new Blob([__sandboxHtml], {type: 'text/html'});
   var __blobUrl = URL.createObjectURL(__blob);
   var __iframe = document.createElement('iframe');
@@ -188,6 +194,10 @@ ${hasZta ? '  __zta(\'block_run\');' : ''}
     else if (ev.data.t === 'err') {
       addLine('Error: ' + ev.data.d, 'error');
 ${hasZta ? '      __zta(\'block_error\', { error: ev.data.d });' : ''}
+    }
+    else if (ev.data.t === 'html') {
+      var cbPage = document.getElementById('cb-page');
+      if (cbPage) { cbPage.innerHTML = ev.data.d; cbPage.style.display = 'block'; }
     }
     else if (ev.data.t === 'done') {
       var __dur = Math.round(performance.now() - __start);
