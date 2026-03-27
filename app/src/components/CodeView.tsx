@@ -12,7 +12,21 @@ interface CodeViewProps {
 }
 
 /** Simple <pre> fallback when Monaco can't load (Brave Shields, etc.) */
-function PlainCodeView({ code, language }: { code: string; language: string }) {
+function PlainCodeView({ code, language, editable, onCodeChange }: { code: string; language: string; editable?: boolean; onCodeChange?: (code: string) => void }) {
+  if (editable) {
+    return (
+      <div className="h-full bg-[#1e1e2e] p-3">
+        <textarea
+          value={code}
+          onChange={(e) => onCodeChange?.(e.target.value)}
+          className="w-full h-full bg-transparent text-[13px] leading-relaxed text-[#cdd6f4] font-mono resize-none outline-none border-none"
+          spellCheck={false}
+          autoCapitalize="off"
+          autoCorrect="off"
+        />
+      </div>
+    )
+  }
   return (
     <div className="h-full overflow-auto bg-[#1e1e2e] p-3">
       <pre className="text-[13px] leading-relaxed text-[#cdd6f4] font-mono whitespace-pre-wrap break-words">
@@ -75,9 +89,9 @@ export default function CodeView({ code, language, onLanguageChange, editable, o
       {/* Code editor */}
       <div className="flex-1 min-h-0">
         {monacoFailed ? (
-          <PlainCodeView code={code} language={monacoLang} />
+          <PlainCodeView code={code} language={monacoLang} editable={editable} onCodeChange={onCodeChange} />
         ) : (
-          <Suspense fallback={<PlainCodeView code={code} language={monacoLang} />}>
+          <Suspense fallback={<PlainCodeView code={code} language={monacoLang} editable={editable} onCodeChange={onCodeChange} />}>
             <MonacoEditorWrapper
               code={code}
               language={monacoLang}
@@ -121,7 +135,7 @@ function MonacoEditorWrapper({
   }, [onError])
 
   if (timedOut) {
-    return <PlainCodeView code={code} language={language} />
+    return <PlainCodeView code={code} language={language} editable={editable} onCodeChange={onCodeChange} />
   }
 
   return (
@@ -129,7 +143,7 @@ function MonacoEditorWrapper({
       language={language}
       value={code}
       theme="vs-dark"
-      loading={<PlainCodeView code={code} language={language} />}
+      loading={<PlainCodeView code={code} language={language} editable={editable} onCodeChange={onCodeChange} />}
       onMount={() => { mountedRef.current = true }}
       onChange={editable ? (value) => onCodeChange?.(value || '') : undefined}
       options={{
