@@ -675,6 +675,19 @@ export default function App() {
       processAchievements(newAchievements)
 
       setShowLabComplete(true)
+    } else {
+      const expected = activeLabExercise.expectedOutput.join('\n')
+      const actual = execResult.output.length > 0 ? execResult.output.join('\n') : '(no output)'
+      setResult({
+        ...execResult,
+        output: [
+          ...execResult.output,
+          '',
+          '❌ Not quite! Make sure your code prints the result.',
+          `Expected output: ${expected}`,
+          `Your output: ${actual}`,
+        ],
+      })
     }
   }, [labCode, activeLabExercise, processAchievements])
 
