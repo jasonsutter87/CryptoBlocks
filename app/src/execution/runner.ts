@@ -295,11 +295,20 @@ async function getPyodide() {
   if (pyodideLoading) return pyodideLoading
 
   pyodideLoading = (async () => {
-    // Load Pyodide from CDN — bundling the npm package breaks dynamic chunk loading
-    // @ts-ignore: CDN URL import
-    const pyodideModule = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/pyodide.mjs')
-    pyodideInstance = await pyodideModule.loadPyodide({
-      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.27.5/full/',
+    // Load Pyodide via script tag from CDN — dynamic import() of the npm
+    // package produces a broken chunk, and import() of CDN URLs gets blocked.
+    const PYODIDE_VERSION = '0.27.5'
+    const cdnBase = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full`
+    await new Promise<void>((resolve, reject) => {
+      if ((window as any).loadPyodide) { resolve(); return }
+      const script = document.createElement('script')
+      script.src = `${cdnBase}/pyodide.js`
+      script.onload = () => resolve()
+      script.onerror = () => reject(new Error('Failed to load Pyodide from CDN'))
+      document.head.appendChild(script)
+    })
+    pyodideInstance = await (window as any).loadPyodide({
+      indexURL: cdnBase + '/',
     })
 
     // Capture initial globals for reset between runs (CB-R2-010)
