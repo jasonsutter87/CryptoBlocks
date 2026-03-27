@@ -296,7 +296,15 @@ function executeJavaScript(
   const start = performance.now()
   let aborted = false
 
+  // Code that uses fetch() needs direct execution — sandboxed iframes
+  // send Origin: null which breaks CORS on most servers
+  const needsFetch = /\bfetch\s*\(/.test(code)
+
   const promise = (async (): Promise<ExecutionResult> => {
+    if (needsFetch) {
+      return directExecution(code, collector, start)
+    }
+
     // Try iframe first (sandboxed, most secure)
     const iframeResult = await tryIframeExecution(code, collector, start)
 
