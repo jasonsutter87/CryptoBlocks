@@ -480,7 +480,7 @@ export function generateCode(workspace: Blockly.Workspace, language: Language): 
     lines.push('// Wait for DOM to be ready (script runs in <head>)')
     lines.push('await new Promise(function(r) { setTimeout(r, 0); });')
     lines.push('var __page = document.getElementById(\'cb-page\');')
-    lines.push('if (!__page) { __page = document.createElement(\'div\'); document.body.appendChild(__page); }')
+    lines.push('if (!__page) { __page = document.createElement(\'div\'); __page.id = \'cb-page\'; document.body.appendChild(__page); }')
     lines.push('__page.style.display = \'block\';')
     lines.push('var __parentStack = [__page];')
     lines.push('var __currentParent = function() { return __parentStack[__parentStack.length - 1]; };')
