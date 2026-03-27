@@ -230,20 +230,47 @@ async function directExecution(
       debug: () => {},
     }
 
+    // Create cb-canvas and cb-page if they don't exist (fallback mode)
+    let createdCanvas: HTMLCanvasElement | null = null
+    if (!document.getElementById('cb-canvas')) {
+      createdCanvas = document.createElement('canvas')
+      createdCanvas.id = 'cb-canvas'
+      createdCanvas.width = 400
+      createdCanvas.height = 400
+      createdCanvas.style.display = 'none'
+      document.body.appendChild(createdCanvas)
+    }
+    let createdPage: HTMLDivElement | null = null
+    if (!document.getElementById('cb-page')) {
+      createdPage = document.createElement('div')
+      createdPage.id = 'cb-page'
+      createdPage.style.display = 'none'
+      document.body.appendChild(createdPage)
+    }
+
     const returnValue = await fn(fakeConsole)
 
-    // Capture HTML output from cb-page if it was created by the fallback
+    // Capture canvas output
+    let canvasDataUrl: string | undefined
+    const canvas = document.getElementById('cb-canvas') as HTMLCanvasElement | null
+    if (canvas && canvas.style.display !== 'none') {
+      try { canvasDataUrl = canvas.toDataURL('image/png') } catch { /* tainted canvas */ }
+    }
+    if (createdCanvas) createdCanvas.remove()
+
+    // Capture HTML output from cb-page
     let htmlOutput: string | undefined
-    const page = document.getElementById('cb-page') ?? document.querySelector('[data-cb-page]')
+    const page = document.getElementById('cb-page')
     if (page && page.children.length > 0) {
       htmlOutput = page.innerHTML
-      page.remove()
     }
+    if (createdPage) createdPage.remove()
 
     return {
       output: collector.output,
       error: null,
       returnValue,
+      canvasDataUrl,
       htmlOutput,
       duration: performance.now() - start,
     }
