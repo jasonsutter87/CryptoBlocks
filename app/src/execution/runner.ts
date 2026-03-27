@@ -232,10 +232,19 @@ async function directExecution(
 
     const returnValue = await fn(fakeConsole)
 
+    // Capture HTML output from cb-page if it was created by the fallback
+    let htmlOutput: string | undefined
+    const page = document.getElementById('cb-page') ?? document.querySelector('[data-cb-page]')
+    if (page && page.children.length > 0) {
+      htmlOutput = page.innerHTML
+      page.remove()
+    }
+
     return {
       output: collector.output,
       error: null,
       returnValue,
+      htmlOutput,
       duration: performance.now() - start,
     }
   } catch (e) {
