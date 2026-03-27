@@ -162,7 +162,7 @@ function tryIframeExecution(
     const safetyPreamble = generateSafetyPreamble()
 
     const html = `<!DOCTYPE html><html><head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; connect-src http://localhost:* http://127.0.0.1:*; style-src 'unsafe-inline'; img-src data:; frame-src 'none'; worker-src 'none'; object-src 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; connect-src http://localhost:* http://127.0.0.1:* https:; style-src 'unsafe-inline'; img-src data:; frame-src 'none'; worker-src 'none'; object-src 'none';">
 <script>
 var __sendMsg = function(type, data) {
   parent.postMessage({ __cryptoblocks: true, type: type, data: data }, '*');
