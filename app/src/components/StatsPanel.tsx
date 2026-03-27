@@ -82,7 +82,15 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
       }
     })
 
-    return labels
+    // Filter out labels that would overlap (need at least 3 columns apart)
+    const MIN_GAP = 3
+    const filtered: typeof labels = []
+    for (const label of labels) {
+      if (filtered.length === 0 || label.offset - filtered[filtered.length - 1].offset >= MIN_GAP) {
+        filtered.push(label)
+      }
+    }
+    return filtered
   }, [heatmapData])
 
   const getColorForCount = (count: number): string => {
