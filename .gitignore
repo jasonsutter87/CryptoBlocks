@@ -8,6 +8,9 @@ dist/
 # Security reports (may open for audits later)
 security_reports/
 
+# Admin testing docs
+admin_testing/
+
 # Hugo
 site/public/
 site/resources/
