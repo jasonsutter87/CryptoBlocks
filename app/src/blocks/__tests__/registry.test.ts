@@ -41,7 +41,7 @@ describe('BlockRegistry', () => {
     expect(categories).toContain('Sound')
     expect(categories).toContain('Games')
     expect(categories).toContain('Hardware')
-    expect(categories).toContain('Turtle')
+    expect(categories).toContain('Pen')
     expect(categories).toContain('Testing')
     expect(categories).toContain('???')
   })

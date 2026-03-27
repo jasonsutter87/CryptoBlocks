@@ -88,9 +88,9 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'turtle-power',
-    name: 'Turtle Power',
-    description: 'Use a Turtle block',
-    icon: '🐢',
+    name: 'Pen Power',
+    description: 'Use a Pen block',
+    icon: '🖊️',
     rarity: 'rare',
     secret: true,
   },

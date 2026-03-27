@@ -241,10 +241,10 @@ describe('Achievement System', () => {
       expect(centurion!.name).toBe('Centurion')
     })
 
-    it('unlocks turtle-power when Turtle category is used', () => {
+    it('unlocks turtle-power when Pen category is used', () => {
       const context: AchievementContext = {
         event: 'run',
-        categoriesUsed: ['Basics', 'Turtle'],
+        categoriesUsed: ['Basics', 'Pen'],
         language: 'javascript',
       }
 

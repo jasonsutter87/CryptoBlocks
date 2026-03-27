@@ -116,7 +116,7 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
       return context.event === 'custom-block'
 
     case 'turtle-power':
-      return context.categoriesUsed?.includes('Turtle') ?? false
+      return context.categoriesUsed?.includes('Pen') ?? false
 
     case 'mad-scientist':
       return (context.categoriesUsed?.length ?? 0) >= 5
