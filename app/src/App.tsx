@@ -1086,7 +1086,11 @@ export default function App() {
             {/* Block Editor */}
             <div
               className={`${
-                showCode ? 'h-1/2 md:h-full md:w-1/2' : 'h-full w-full'
+                showCode
+                  ? 'h-1/2 md:h-full md:w-1/2'
+                  : showOutput
+                    ? 'h-1/2 md:h-full md:w-1/2'
+                    : 'h-full w-full'
               } transition-all duration-300 border-b md:border-b-0 md:border-r border-[#313244]`}
             >
               <BlockEditor
@@ -1118,9 +1122,9 @@ export default function App() {
               </div>
             )}
 
-            {/* Output when code view is hidden */}
+            {/* Output when code view is hidden — show on right side */}
             {!showCode && showOutput && (
-              <div className="absolute bottom-0 left-0 right-0 h-48 border-t border-[#313244]">
+              <div className="h-1/2 md:h-full md:w-1/2 border-t md:border-t-0 md:border-l border-[#313244]">
                 <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} />
               </div>
             )}
