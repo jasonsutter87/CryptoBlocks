@@ -188,7 +188,16 @@ function apiExplorer(): Record<string, unknown> {
 function passwordVault(): Record<string, unknown> {
   resetIds()
 
-  // Heading
+  // --- Setup: create user object and users list ---
+  const createUser = block('cb_create_object', undefined, {
+    name: textVal('user'),
+  }, 50, 50)
+
+  const createUsersList = block('cb_create_list', undefined, {
+    name: textVal('users'),
+  })
+
+  // --- Page UI ---
   const heading = block('cb_heading', { LEVEL: '1' }, {
     TEXT: textVal('Password Vault'),
   })
@@ -197,21 +206,11 @@ function passwordVault(): Record<string, unknown> {
     TEXT: textVal('Register a user, then try to login. Wrong password = denied!'),
   })
 
-  // --- Setup: create user object and users list ---
-  const createUser = block('cb_create_object', undefined, {
-    name: textVal('user'),
-  }, 50, 350)
-
-  const createUsersList = block('cb_create_list', undefined, {
-    name: textVal('users'),
-  })
-
-  // --- REGISTER button ---
+  // --- REGISTER button + absorbed actions ---
   const registerBtn = block('cb_button', undefined, {
     TEXT: textVal('Register'),
   })
 
-  // Store username in global
   const storeUsername = block('cb_set_global', undefined, {
     name: textVal('username'),
     value: block('cb_ask', undefined, {
@@ -219,7 +218,6 @@ function passwordVault(): Record<string, unknown> {
     }),
   })
 
-  // Hash password and store in global
   const storeHash = block('cb_set_global', undefined, {
     name: textVal('passhash'),
     value: block('cb_hash_text', undefined, {
@@ -229,115 +227,98 @@ function passwordVault(): Record<string, unknown> {
     }),
   })
 
-  // Set username property on user object
   const setUserName = block('cb_set_property', undefined, {
     object_name: textVal('user'),
     key: textVal('name'),
-    value: block('cb_get_global', undefined, {
-      name: textVal('username'),
-    }),
+    value: block('cb_get_global', undefined, { name: textVal('username') }),
   })
 
-  // Set password hash property on user object
   const setUserHash = block('cb_set_property', undefined, {
     object_name: textVal('user'),
     key: textVal('hash'),
-    value: block('cb_get_global', undefined, {
-      name: textVal('passhash'),
-    }),
+    value: block('cb_get_global', undefined, { name: textVal('passhash') }),
   })
 
-  // Add user object to users list
   const addUser = block('cb_add_to_list', undefined, {
     list_name: textVal('users'),
-    item: block('cb_object_value', undefined, {
-      name: textVal('user'),
-    }),
+    item: block('cb_object_value', undefined, { name: textVal('user') }),
   })
 
-  // Print confirmation
-  const printRegistered = block('cb_print', undefined, {
-    message: block('cb_join_text', undefined, {
-      first: textVal('Registered: '),
-      second: block('cb_get_global', undefined, {
-        name: textVal('username'),
-      }),
-    }),
-  })
-
-  const printStoredHash = block('cb_print', undefined, {
-    message: block('cb_join_text', undefined, {
-      first: textVal('Stored hash: '),
-      second: block('cb_get_global', undefined, {
-        name: textVal('passhash'),
-      }),
-    }),
-  })
-
-  // --- LOGIN button ---
+  // --- LOGIN button + absorbed actions + if/else with HTML toasts ---
   const loginBtn = block('cb_button', undefined, {
-    TEXT: textVal('Login'),
+    TEXT: textVal('login'),
   })
 
-  // Hash the login attempt and store it
   const storeLoginHash = block('cb_set_global', undefined, {
-    name: textVal('loginhash'),
+    name: textVal('loginPass'),
     value: block('cb_hash_text', undefined, {
       text: block('cb_ask', undefined, {
-        question: textVal('Enter your password'),
+        question: textVal('Enter Your password'),
       }),
     }),
   })
 
-  // Use if_then to check match (prints granted), placed after button
-  const printLoginHash = block('cb_print', undefined, {
-    message: block('cb_join_text', undefined, {
-      first: textVal('Login hash: '),
-      second: block('cb_get_global', undefined, {
-        name: textVal('loginhash'),
-      }),
-    }),
+  // Success toast: Div > Row > Column > H4 + green background
+  const successH4 = block('cb_heading', { LEVEL: '4' }, {
+    TEXT: textVal('Login Worked!'),
   })
 
-  // Compare hashes with if/else — placed as standalone after container
+  const successCol = blockWithStatements('cb_column', undefined,
+    { GAP: numVal(8) }, { CHILDREN: successH4 })
+
+  const successRow = blockWithStatements('cb_row', undefined,
+    { GAP: numVal(8) }, { CHILDREN: successCol })
+
+  const successDiv = blockWithStatements('cb_div', undefined,
+    { CLASS: textVal('my-class') }, { CHILDREN: successRow })
+
+  const successBg = block('cb_set_background', undefined, {
+    COLOR: colorVal('#22C55E'),
+  })
+
+  // Failure toast: Div > Row > Column > H4 + red background
+  const failH4 = block('cb_heading', { LEVEL: '4' }, {
+    TEXT: textVal('Login Failed!'),
+  })
+
+  const failCol = blockWithStatements('cb_column', undefined,
+    { GAP: numVal(8) }, { CHILDREN: failH4 })
+
+  const failRow = blockWithStatements('cb_row', undefined,
+    { GAP: numVal(8) }, { CHILDREN: failCol })
+
+  const failDiv = blockWithStatements('cb_div', undefined,
+    { CLASS: textVal('my-class') }, { CHILDREN: failRow })
+
+  const failBg = block('cb_set_background', undefined, {
+    COLOR: colorVal('#EF4444'),
+  })
+
+  // If/else: compare stored hash with login hash
   const condition = block('cb_equals', undefined, {
-    a: block('cb_get_global', undefined, {
-      name: textVal('loginhash'),
-    }),
-    b: block('cb_get_global', undefined, {
-      name: textVal('passhash'),
-    }),
-  })
-
-  const printSuccess = block('cb_print', undefined, {
-    message: textVal('Access GRANTED — hashes match!'),
-  })
-
-  const printDenied = block('cb_print', undefined, {
-    message: textVal('Access DENIED — wrong password!'),
+    a: block('cb_get_global', undefined, { name: textVal('passhash') }),
+    b: block('cb_get_global', undefined, { name: textVal('loginPass') }),
   })
 
   const ifElse = blockWithStatements(
     'cb_if_else',
     undefined,
     { CONDITION: condition },
-    { DO: printSuccess, ELSE: printDenied },
+    { DO: chain(successDiv, successBg), ELSE: chain(failDiv, failBg) },
   )
 
-  // Build the page — action blocks + control flow after each button get absorbed into onclick
+  // Build container with all children — buttons absorb subsequent action/control-flow blocks
   const container = blockWithStatements(
     'cb_container',
     undefined,
-    { COLOR: colorVal('#1E1E2E'), PADDING: numVal(24) },
+    { COLOR: colorVal('#3B82F6'), PADDING: numVal(24) },
     { CHILDREN: chain(
       heading, helpText,
-      registerBtn, storeUsername, storeHash, setUserName, setUserHash, addUser, printRegistered, printStoredHash,
-      loginBtn, storeLoginHash, printLoginHash, ifElse,
+      registerBtn, storeUsername, storeHash, setUserName, setUserHash, addUser,
+      loginBtn, storeLoginHash, ifElse,
     ) },
-    50, 50,
   )
 
-  // Setup runs first, then container renders
   return workspace(chain(createUser, createUsersList, container))
 }
 
