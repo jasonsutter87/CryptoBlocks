@@ -684,7 +684,7 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
     }
 
     case 'cb_image': {
-      const url = htmlVal(block, 'URL', '"https://via.placeholder.com/150"', language)
+      const url = htmlVal(block, 'URL', '"https://picsum.photos/200/300"', language)
       const width = htmlVal(block, 'WIDTH', '150', language)
       return `(function() {\n  var __el = document.createElement('img');\n  __el.src = ${url};\n  __el.style.width = ${width} + 'px';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
     }
@@ -981,7 +981,7 @@ function htmlToolboxXml(): string {
   xml += '</block>'
 
   xml += '<block type="cb_image">'
-  xml += '<value name="URL"><shadow type="text"><field name="TEXT">https://via.placeholder.com/150</field></shadow></value>'
+  xml += '<value name="URL"><shadow type="text"><field name="TEXT">https://picsum.photos/200/300</field></shadow></value>'
   xml += '<value name="WIDTH"><shadow type="math_number"><field name="NUM">150</field></shadow></value>'
   xml += '</block>'
 
