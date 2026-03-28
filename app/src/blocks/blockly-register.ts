@@ -192,10 +192,9 @@ function registerHtmlBlocks() {
       this.setColour(HTML_COLOR)
       this.appendDummyInput().appendField('Button')
       this.appendValueInput('TEXT').setCheck('String').appendField('text')
-      this.appendStatementInput('ON_CLICK').appendField('on click')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
-      this.setTooltip('A button element with optional click handler')
+      this.setTooltip('A button element — action blocks stacked below become the click handler')
     },
   }
 
@@ -692,13 +691,7 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
 
     case 'cb_button': {
       const text = htmlVal(block, 'TEXT', '"Click me"', language)
-      const onClick = generateStatementCode(block, 'ON_CLICK', language)
-      let code = `(function() {\n  var __el = document.createElement('button');\n  __el.textContent = ${text};\n  __el.style.padding = '8px 16px';\n  __el.style.cursor = 'pointer';`
-      if (onClick) {
-        code += `\n  __el.onclick = function() {\n${indent(indent(onClick, language), language)}\n  };`
-      }
-      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
-      return code
+      return `(function() {\n  var __el = document.createElement('button');\n  __el.textContent = ${text};\n  __el.style.padding = '8px 16px';\n  __el.style.cursor = 'pointer';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
     }
 
     case 'cb_link': {
@@ -735,7 +728,16 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
   }
 }
 
+/** Blocks consumed by a button's onclick — skip them in the normal chain. */
+const _consumedByButton = new WeakSet<Blockly.Block>()
+
 function generateBlockCode(block: Blockly.Block, language: Language): string {
+  // Skip blocks already consumed as a button onclick handler
+  if (_consumedByButton.has(block)) {
+    const nextBlock = block.getNextBlock()
+    return nextBlock ? generateBlockCode(nextBlock, language) : ''
+  }
+
   // Handle built-in Blockly value blocks first
   const builtin = generateBuiltinCode(block, language)
   if (builtin !== null) return builtin
@@ -755,7 +757,54 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   const htmlCode = generateHtmlCode(block, language)
   if (htmlCode !== null) {
     let code = htmlCode.endsWith(')') ? htmlCode + ';' : htmlCode
-    const nextBlock = block.getNextBlock()
+    let nextBlock = block.getNextBlock()
+
+    // Button auto-onclick: if the next block is an action (registry) block,
+    // absorb it into the button's onclick handler instead of running it inline.
+    if (block.type === 'cb_button' && nextBlock && !isNativeBlock(nextBlock.type) && !isBuiltinBlock(nextBlock.type)) {
+      const actionName = nextBlock.type.replace('cb_', '')
+      const actionDef = registry.get(actionName)
+      if (actionDef) {
+        // Mark this block as consumed so it's skipped in the chain
+        _consumedByButton.add(nextBlock)
+        // Generate the action call fresh (without chaining to next blocks)
+        const fnName = extractFunctionName(actionDef, language)
+        const args: string[] = []
+        for (const input of actionDef.inputs) {
+          if (input.choices && input.choices.length > 0) {
+            const val = nextBlock.getFieldValue(input.name) ?? input.choices[0]
+            args.push(`"${val}"`)
+            continue
+          }
+          const inputBlock = nextBlock.getInputTargetBlock(input.name)
+          if (inputBlock) {
+            args.push(generateBlockCode(inputBlock, language))
+          } else {
+            const defaultVal = input.default
+            if (defaultVal !== undefined) {
+              args.push(typeof defaultVal === 'string' ? `"${defaultVal}"` : String(defaultVal))
+            } else {
+              switch (input.type) {
+                case 'string': args.push('""'); break
+                case 'number': args.push('0'); break
+                case 'boolean': args.push(language === 'javascript' ? 'false' : 'False'); break
+                default: args.push(language === 'javascript' ? 'null' : 'None')
+              }
+            }
+          }
+        }
+        const isAsync = actionDef.implementations[language as 'javascript' | 'python'].trimStart().startsWith('async ')
+        const call = isAsync ? `await ${fnName}(${args.join(', ')})` : `${fnName}(${args.join(', ')})`
+        // Inject onclick into the button code
+        code = code.replace(
+          `__lastEl = __el;\n})();`,
+          `__el.onclick = function() {\n    ${call};\n  };\n  __lastEl = __el;\n})();`
+        )
+        // Continue chaining from the block after the consumed one
+        nextBlock = nextBlock.getNextBlock()
+      }
+    }
+
     if (nextBlock) {
       code += '\n' + generateBlockCode(nextBlock, language)
     }
@@ -1152,10 +1201,7 @@ function generateHtmlMarkupForBlock(block: Blockly.Block): string {
     }
     case 'cb_button': {
       const text = getTextValue(block, 'TEXT', 'Click me')
-      const hasClick = block.getInputTargetBlock('ON_CLICK')
-      result = hasClick
-        ? `<button onclick="...">${text}</button>`
-        : `<button>${text}</button>`
+      result = `<button>${text}</button>`
       break
     }
     case 'cb_link': {
