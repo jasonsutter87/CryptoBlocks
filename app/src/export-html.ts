@@ -50,7 +50,7 @@ export function generateStandaloneHtml(code: string, options: ExportOptions = {}
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; style-src 'unsafe-inline'; img-src data: https:; frame-src blob:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; style-src 'unsafe-inline'; img-src data: https:; connect-src https:;">
 <script src="https://cdn.tailwindcss.com"></script>
 <title>${escapeHtml(title)}</title>
 ${hasZta ? ztaScriptBlock(ztaId, options.ztaEndpoint) : ''}
@@ -161,51 +161,30 @@ ${hasZta ? ztaScriptBlock(ztaId, options.ztaEndpoint) : ''}
   console.error = function() { addLine('[error] ' + Array.prototype.slice.call(arguments).map(_fmt).join(' '), 'error'); };
   console.info = function() { addLine('[info] ' + Array.prototype.slice.call(arguments).map(_fmt).join(' '), 'line'); };
 ${hasZta ? ztaTrackingCode(ztaId) : ''}
-
-  // Run user code in a sandboxed iframe for isolation
-  var __code = decodeURIComponent(escape(atob("${encoded}")));
-  var __sandboxHtml = '<!DOCTYPE html><html><head>'
-    + '<meta http-equiv="Content-Security-Policy" content="default-src \\'none\\'; script-src \\'unsafe-inline\\' \\'unsafe-eval\\'; style-src \\'unsafe-inline\\'; img-src data: https:;">'
-    + '<' + 'script>'
-    + 'var _fmt=function(a){return typeof a==="object"?JSON.stringify(a):String(a)};'
-    + 'console.log=function(){parent.postMessage({t:"log",d:Array.prototype.slice.call(arguments).map(_fmt).join(" ")},"*")};'
-    + 'console.warn=function(){parent.postMessage({t:"warn",d:Array.prototype.slice.call(arguments).map(_fmt).join(" ")},"*")};'
-    + 'console.error=function(){parent.postMessage({t:"err",d:Array.prototype.slice.call(arguments).map(_fmt).join(" ")},"*")};'
-    + '(async function(){try{'
-    + 'await new Promise(function(r){setTimeout(r,0)});'
-    + 'var fn=new Function("return (async function(){\\\\n"+' + JSON.stringify(__code) + '+"\\\\n})()");await fn();'
-    + 'var __page=document.getElementById("cb-page");'
-    + 'if(__page&&__page.children.length>0){parent.postMessage({t:"html",d:__page.innerHTML},"*")}'
-    + 'parent.postMessage({t:"done"},"*")'
-    + '}catch(e){parent.postMessage({t:"err",d:e.message},"*")}})()'
-    + '</' + 'script></head><body><div id="cb-page" style="display:none"></div></body></html>';
-  var __blob = new Blob([__sandboxHtml], {type: 'text/html'});
-  var __blobUrl = URL.createObjectURL(__blob);
-  var __iframe = document.createElement('iframe');
-  __iframe.sandbox = 'allow-scripts';
-  __iframe.style.display = 'none';
-  __iframe.src = __blobUrl;
-  document.body.appendChild(__iframe);
 ${hasZta ? '  __zta(\'block_run\');' : ''}
+
+  // Run user code directly in the page so DOM elements + event handlers stay live
+  var __code = decodeURIComponent(escape(atob("${encoded}")));
   var __start = performance.now();
-  window.addEventListener('message', function(ev) {
-    if (!ev.data || !ev.data.t) return;
-    if (ev.data.t === 'log') addLine(ev.data.d, 'line');
-    else if (ev.data.t === 'warn') addLine('[warn] ' + ev.data.d, 'warn');
-    else if (ev.data.t === 'err') {
-      addLine('Error: ' + ev.data.d, 'error');
-${hasZta ? '      __zta(\'block_error\', { error: ev.data.d });' : ''}
-    }
-    else if (ev.data.t === 'html') {
+  (async function() {
+    try {
+      var fn = new Function("return (async function(){\\n" + __code + "\\n})()");
+      await fn();
+      // Show cb-page if it has content
       var cbPage = document.getElementById('cb-page');
-      if (cbPage) { cbPage.innerHTML = ev.data.d; cbPage.style.display = 'block'; }
-    }
-    else if (ev.data.t === 'done') {
+      if (cbPage && cbPage.children.length > 0) { cbPage.style.display = 'block'; }
+      // Show canvas if drawn
+      var cvs = document.getElementById('cb-canvas');
+      if (cvs && cvs.style.display !== 'none') {
+        document.getElementById('cb-canvas-wrap').style.display = 'block';
+      }
       var __dur = Math.round(performance.now() - __start);
 ${hasZta ? '      __zta(\'block_complete\', { duration: __dur, outputLines: __lines });' : ''}
-      URL.revokeObjectURL(__blobUrl);
+    } catch(e) {
+      addLine('Error: ' + e.message, 'error');
+${hasZta ? '      __zta(\'block_error\', { error: e.message });' : ''}
     }
-  });
+  })();
 })();
 </script>
 </body>
