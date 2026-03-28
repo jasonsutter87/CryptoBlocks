@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { soundBlocks } from '../definitions/sound'
 
 describe('Sound Blocks', () => {
-  it('defines exactly 10 blocks', () => {
-    expect(soundBlocks).toHaveLength(10)
+  it('defines exactly 15 blocks', () => {
+    expect(soundBlocks).toHaveLength(15)
   })
 
   it('all blocks belong to the Sound category', () => {
@@ -29,6 +29,11 @@ describe('Sound Blocks', () => {
     'add_beat',
     'play_pattern',
     'rest',
+    'create_track',
+    'add_note_to_track',
+    'set_track_volume',
+    'play_all_tracks',
+    'clear_tracks',
   ]
 
   it('contains all expected block names', () => {

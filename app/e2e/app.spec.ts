@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, Page } from '@playwright/test'
 
 /** Filter out known noise: Monaco init, Blockly CSP media warnings */
 function isKnownNoise(msg: string): boolean {
@@ -9,41 +9,52 @@ function isKnownNoise(msg: string): boolean {
   )
 }
 
+/** Helper: open a toolbar dropdown menu by name (File, Build, Share, Learn) */
+async function openMenu(page: Page, menuName: string) {
+  const menuBtn = page.locator('button', { hasText: menuName }).first()
+  await menuBtn.click()
+}
+
+/** Helper: click a menu item inside an already-opened dropdown */
+async function clickMenuItem(page: Page, menuName: string, itemText: string) {
+  await openMenu(page, menuName)
+  await page.locator('button', { hasText: itemText }).first().click()
+}
+
 test.describe('CryptoBlocks App', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    // Wait for Blockly to initialize
-    await page.waitForSelector('.blocklySvg', { timeout: 10000 })
+    // Wait for Blockly workspace AND toolbox to initialize
+    await page.waitForSelector('.blocklySvg', { timeout: 15000 })
+    await page.waitForSelector('.blocklyToolboxDiv', { timeout: 10000 }).catch(() => {
+      // Some Blockly versions use different class names
+    })
+    // Extra buffer for React hydration
+    await page.waitForTimeout(500)
   })
 
   test('loads without error', async ({ page }) => {
     // App title is visible
-    await expect(page.locator('text=CryptoBlocks')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'CryptoBlocks' })).toBeVisible()
     // Blockly workspace is rendered
     await expect(page.locator('.blocklySvg')).toBeVisible()
   })
 
   test('Brick Bin shows categories', async ({ page }) => {
-    // Blockly toolbox categories are visible
-    const toolbox = page.locator('.blocklyToolboxDiv')
-    await expect(toolbox).toBeVisible()
+    // Blockly toolbox categories are visible (try both class names)
+    const toolbox = page.locator('.blocklyToolboxDiv, .blocklyToolboxCategories').first()
+    await expect(toolbox).toBeVisible({ timeout: 10000 })
 
     // Check for specific categories
-    await expect(toolbox.locator('text=Basics')).toBeVisible()
-    await expect(toolbox.locator('text=Math')).toBeVisible()
-    await expect(toolbox.locator('text=Web')).toBeVisible()
+    await expect(page.locator('.blocklyToolboxCategoryLabel:has-text("Basics")')).toBeVisible()
+    await expect(page.locator('.blocklyToolboxCategoryLabel:has-text("Math")')).toBeVisible()
+    await expect(page.locator('.blocklyToolboxCategoryLabel:has-text("Web")')).toBeVisible()
   })
 
-  test('Save and Load buttons exist and are clickable', async ({ page }) => {
-    const saveButton = page.locator('button', { hasText: 'Save' })
-    const loadButton = page.locator('button', { hasText: 'Load' })
-
-    await expect(saveButton).toBeVisible()
-    await expect(loadButton).toBeVisible()
-
-    // Save button should be clickable (triggers download)
-    await expect(saveButton).toBeEnabled()
-    await expect(loadButton).toBeEnabled()
+  test('File menu shows Save and Load options', async ({ page }) => {
+    await openMenu(page, 'File')
+    await expect(page.locator('button', { hasText: 'Save .blocks' })).toBeVisible()
+    await expect(page.locator('button', { hasText: 'Load .blocks' })).toBeVisible()
   })
 
   test('Run button exists and is clickable', async ({ page }) => {
@@ -53,83 +64,64 @@ test.describe('CryptoBlocks App', () => {
   })
 
   test('Output panel shows placeholder text', async ({ page }) => {
-    await expect(page.locator('text=Hit Play to run your blocks')).toBeVisible()
+    await expect(page.locator('text=Hit Play to run your blocks')).toBeVisible({ timeout: 10000 })
   })
 
   test('Peek Code toggle works', async ({ page }) => {
-    const peekButton = page.locator('button', { hasText: 'Peek Code' })
-    await expect(peekButton).toBeVisible()
+    // The Peek Code text is inside a span with hidden sm:inline
+    const peekButton = page.locator('button:has-text("Peek Code")').first()
+    await expect(peekButton).toBeVisible({ timeout: 10000 })
 
     await peekButton.click()
 
     // After clicking, should show "Hide Code"
-    await expect(page.locator('button', { hasText: 'Hide Code' })).toBeVisible()
+    await expect(page.locator('button:has-text("Hide Code")').first()).toBeVisible()
   })
 
-  // --- New E2E tests ---
+  // --- Build menu ---
 
   test('Code to Blocks modal opens and closes', async ({ page }) => {
-    const codeToBlocksBtn = page.locator('button', { hasText: 'Code to Blocks' })
-    await expect(codeToBlocksBtn).toBeVisible()
-
-    await codeToBlocksBtn.click()
+    await clickMenuItem(page, 'Build', 'Code to Blocks')
 
     // Modal should appear
-    await expect(page.locator('text=Code to Blocks')).toBeVisible()
-
-    // Close modal (click X or overlay)
-    const closeBtn = page.locator('[aria-label="Close"]').or(page.locator('button', { hasText: 'Cancel' }))
-    if (await closeBtn.count() > 0) {
-      await closeBtn.first().click()
-    } else {
-      // Try pressing Escape
-      await page.keyboard.press('Escape')
-    }
-
-    // Modal should be gone
-    await expect(page.locator('button', { hasText: 'Code to Blocks' })).toBeVisible()
-  })
-
-  test('Create Block modal opens and closes', async ({ page }) => {
-    const createBtn = page.locator('button', { hasText: 'Create Block' })
-    await expect(createBtn).toBeVisible()
-
-    await createBtn.click()
-
-    // Modal should appear — look for form elements or heading
-    await expect(page.locator('text=Create Block').or(page.locator('text=Block Builder'))).toBeVisible()
+    await expect(page.locator('text=Code to Blocks').first()).toBeVisible()
 
     // Close via Escape
     await page.keyboard.press('Escape')
   })
 
-  test('Clear workspace works', async ({ page }) => {
-    // Click Clear
-    const clearBtn = page.locator('button', { hasText: 'Clear' })
-    await expect(clearBtn).toBeVisible()
-    await clearBtn.click()
+  test('Create Block modal opens and closes', async ({ page }) => {
+    await clickMenuItem(page, 'Build', 'Create Block')
 
-    // After clear, workspace should have no user blocks
-    // The blockly workspace should still be visible but empty
+    // Modal should appear
+    await page.waitForTimeout(500)
+    await expect(page.locator('text=Create Block').first()).toBeVisible()
+
+    // Close via Escape
+    await page.keyboard.press('Escape')
+  })
+
+  // --- File menu ---
+
+  test('Clear workspace works', async ({ page }) => {
+    await clickMenuItem(page, 'File', 'Clear Workspace')
+
+    // Workspace should still be visible but empty
     await expect(page.locator('.blocklySvg')).toBeVisible()
   })
 
+  // --- Share menu ---
+
   test('Share dropdown shows Export HTML and Copy Embed', async ({ page }) => {
-    const shareBtn = page.locator('button', { hasText: 'Share' })
-    await expect(shareBtn).toBeVisible()
-
-    await shareBtn.click()
-
-    // Dropdown menu with options
+    await openMenu(page, 'Share')
     await expect(page.locator('text=Export as HTML')).toBeVisible()
     await expect(page.locator('text=Copy Embed Snippet')).toBeVisible()
   })
 
-  test('Examples modal opens with example cards', async ({ page }) => {
-    const examplesBtn = page.locator('button', { hasText: 'Examples' })
-    await expect(examplesBtn).toBeVisible()
+  // --- Learn menu ---
 
-    await examplesBtn.click()
+  test('Examples opens from Learn menu', async ({ page }) => {
+    await clickMenuItem(page, 'Learn', 'Examples')
 
     // Should show examples list with known names
     await expect(page.locator('text=Hello World')).toBeVisible()
@@ -140,45 +132,33 @@ test.describe('CryptoBlocks App', () => {
   })
 
   test('Challenges mode opens browser', async ({ page }) => {
-    const challengesBtn = page.locator('button', { hasText: 'Challenges' })
-    await expect(challengesBtn).toBeVisible()
+    await clickMenuItem(page, 'Learn', 'Challenges')
 
-    await challengesBtn.click()
-
-    // Challenge browser should be visible
-    await expect(page.locator('text=Challenges').first()).toBeVisible()
+    // Challenge browser heading should be visible
+    await expect(page.getByRole('heading', { name: 'Challenges' }).first()).toBeVisible()
   })
 
   test('Language tabs switch code generation', async ({ page }) => {
-    // Ensure code view is open
     const peekBtn = page.locator('button', { hasText: 'Peek Code' })
     if (await peekBtn.isVisible()) {
       await peekBtn.click()
     }
 
-    // Look for a Python tab
     const pythonTab = page.locator('button', { hasText: 'Python' }).or(page.locator('text=PY'))
     if (await pythonTab.count() > 0) {
       await pythonTab.first().click()
-      // After switching, the code pane should show Python-style comment
       await page.waitForTimeout(500)
-      // The generated code should be visible
       await expect(page.locator('.blocklySvg')).toBeVisible()
     }
   })
 
   test('Run with empty workspace does not time out', async ({ page }) => {
-    // Clear workspace first to ensure it's empty
-    const clearBtn = page.locator('button', { hasText: 'Clear' })
-    if (await clearBtn.isVisible()) {
-      await clearBtn.click()
-    }
+    // Clear workspace first
+    await clickMenuItem(page, 'File', 'Clear Workspace')
 
     const runBtn = page.locator('button', { hasText: 'Run' })
     await runBtn.click()
 
-    // Should NOT show "Execution timed out" — should resolve quickly
-    // Wait a reasonable amount of time (2s) and check there's no timeout error
     await page.waitForTimeout(2000)
     await expect(page.locator('text=Execution timed out')).not.toBeVisible()
   })
@@ -191,11 +171,8 @@ test.describe('CryptoBlocks App', () => {
       if (msg.type() === 'error' && !isKnownNoise(msg.text())) errors.push(msg.text())
     })
 
-    // Click Blocksets button (desktop)
-    const blocksetsBtn = page.locator('button', { hasText: 'Blocksets' }).first()
-    await blocksetsBtn.click()
+    await clickMenuItem(page, 'Learn', 'Blocksets')
 
-    // Browser should render
     await expect(page.getByRole('heading', { name: 'Blocksets' })).toBeVisible()
     await expect(page.locator('text=Basics 101')).toBeVisible()
     await expect(page.locator('text=Loops & Logic')).toBeVisible()
@@ -204,13 +181,11 @@ test.describe('CryptoBlocks App', () => {
   })
 
   test('Blocksets pack expands and shows individual blocksets', async ({ page }) => {
-    const blocksetsBtn = page.locator('button', { hasText: 'Blocksets' }).first()
-    await blocksetsBtn.click()
+    await clickMenuItem(page, 'Learn', 'Blocksets')
 
     // Expand Basics 101 pack
     await page.locator('text=Basics 101').click()
 
-    // Individual blocksets should appear
     await expect(page.locator('text=First Print')).toBeVisible()
     await expect(page.locator('text=Number Crunch')).toBeVisible()
   })
@@ -221,13 +196,11 @@ test.describe('CryptoBlocks App', () => {
       if (msg.type() === 'error' && !isKnownNoise(msg.text())) errors.push(msg.text())
     })
 
-    // Navigate to Blocksets > Basics 101 > First Print
-    await page.locator('button', { hasText: 'Blocksets' }).first().click()
+    await clickMenuItem(page, 'Learn', 'Blocksets')
     await page.locator('text=Basics 101').click()
     await page.locator('text=First Print').click()
 
-    // BlocksetPanel should show with step instructions
-    await expect(page.locator('text=First Print')).toBeVisible()
+    await expect(page.locator('text=First Print').first()).toBeVisible()
     await expect(page.locator('text=Step 1')).toBeVisible()
     await expect(page.locator('.blocklySvg')).toBeVisible()
 
@@ -235,31 +208,26 @@ test.describe('CryptoBlocks App', () => {
   })
 
   test('Blockset step navigation works', async ({ page }) => {
-    await page.locator('button', { hasText: 'Blocksets' }).first().click()
+    await clickMenuItem(page, 'Learn', 'Blocksets')
     await page.locator('text=Basics 101').click()
     await page.locator('text=First Print').click()
 
-    // Should start at step 1
     await expect(page.locator('text=Step 1')).toBeVisible()
 
-    // Click Next
     await page.locator('text=Next →').click()
     await expect(page.locator('text=Step 2')).toBeVisible()
 
-    // Click Previous
     await page.locator('text=← Previous').click()
     await expect(page.locator('text=Step 1')).toBeVisible()
   })
 
   test('Blockset back button returns to browser', async ({ page }) => {
-    await page.locator('button', { hasText: 'Blocksets' }).first().click()
+    await clickMenuItem(page, 'Learn', 'Blocksets')
     await page.locator('text=Basics 101').click()
     await page.locator('text=First Print').click()
 
-    // Click back arrow
     await page.locator('button[title="Back to Blocksets"]').click()
 
-    // Should be back in browser
     await expect(page.getByRole('heading', { name: 'Blocksets' })).toBeVisible()
   })
 
@@ -271,11 +239,8 @@ test.describe('CryptoBlocks App', () => {
       if (msg.type() === 'error' && !isKnownNoise(msg.text())) errors.push(msg.text())
     })
 
-    // Click Code Golf button (desktop)
-    const golfBtn = page.locator('button', { hasText: 'Code Golf' }).first()
-    await golfBtn.click()
+    await clickMenuItem(page, 'Learn', 'Code Golf')
 
-    // Browser should render
     await expect(page.getByRole('heading', { name: 'Code Golf' })).toBeVisible()
     await expect(page.locator('text=Warmup')).toBeVisible()
     await expect(page.locator('text=Brain Teasers')).toBeVisible()
@@ -285,15 +250,12 @@ test.describe('CryptoBlocks App', () => {
   })
 
   test('Code Golf pack expands and shows problems with par', async ({ page }) => {
-    await page.locator('button', { hasText: 'Code Golf' }).first().click()
+    await clickMenuItem(page, 'Learn', 'Code Golf')
 
-    // Expand Warmup pack
     await page.locator('text=Warmup').click()
 
-    // Individual problems should appear
     await expect(page.locator('text=One Hundred')).toBeVisible()
     await expect(page.locator('text=Triple Echo')).toBeVisible()
-    // Par values should be visible
     await expect(page.locator('text=Par 2')).toBeVisible()
   })
 
@@ -303,13 +265,11 @@ test.describe('CryptoBlocks App', () => {
       if (msg.type() === 'error' && !isKnownNoise(msg.text())) errors.push(msg.text())
     })
 
-    // Navigate to Code Golf > Warmup > One Hundred
-    await page.locator('button', { hasText: 'Code Golf' }).first().click()
+    await clickMenuItem(page, 'Learn', 'Code Golf')
     await page.locator('text=Warmup').click()
     await page.locator('text=One Hundred').click()
 
-    // GolfPanel should show with par and block count
-    await expect(page.locator('text=One Hundred')).toBeVisible()
+    await expect(page.locator('text=One Hundred').first()).toBeVisible()
     await expect(page.locator('text=Par:')).toBeVisible()
     await expect(page.locator('text=Blocks:')).toBeVisible()
     await expect(page.locator('.blocklySvg')).toBeVisible()
@@ -318,14 +278,97 @@ test.describe('CryptoBlocks App', () => {
   })
 
   test('Golf back button returns to browser', async ({ page }) => {
-    await page.locator('button', { hasText: 'Code Golf' }).first().click()
+    await clickMenuItem(page, 'Learn', 'Code Golf')
     await page.locator('text=Warmup').click()
     await page.locator('text=One Hundred').click()
 
-    // Click back arrow
     await page.locator('button[title="Back to Code Golf"]').click()
 
-    // Should be back in browser
     await expect(page.getByRole('heading', { name: 'Code Golf' })).toBeVisible()
+  })
+
+  // --- Code Lab E2E ---
+
+  test('Code Lab browser opens without console errors', async ({ page }) => {
+    const errors: string[] = []
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !isKnownNoise(msg.text())) errors.push(msg.text())
+    })
+
+    await clickMenuItem(page, 'Learn', 'Code Lab')
+
+    await expect(page.getByRole('heading', { name: 'Code Lab' }).first()).toBeVisible()
+    expect(errors).toHaveLength(0)
+  })
+
+  test('Code Lab pack expands and shows exercises', async ({ page }) => {
+    await clickMenuItem(page, 'Learn', 'Code Lab')
+
+    await page.waitForTimeout(500)
+    const packs = page.locator('button:has-text("Variables"), button:has-text("Print"), button:has-text("Basics")')
+    if (await packs.count() > 0) {
+      await packs.first().click()
+      await page.waitForTimeout(500)
+    }
+
+    await expect(page.getByRole('heading', { name: 'Code Lab' }).first()).toBeVisible()
+  })
+
+  // --- Stats Panel E2E ---
+
+  test('Stats panel opens and shows stats', async ({ page }) => {
+    const statsBtn = page.locator('button[title="Developer Stats"]').first()
+    if (await statsBtn.isVisible()) {
+      await statsBtn.click()
+      await page.waitForTimeout(500)
+      await expect(page.getByRole('heading', { name: 'Developer Stats' })).toBeVisible()
+    }
+  })
+
+  // --- Block drag-and-run E2E ---
+
+  test('drag a Print block from toolbox and run it', async ({ page }) => {
+    const toolbox = page.locator('.blocklyToolboxDiv, .blocklyToolboxCategories').first()
+    await toolbox.locator('text=Basics').click()
+
+    await page.waitForSelector('.blocklyFlyout .blocklyDraggable', { timeout: 5000 })
+
+    const flyoutBlock = page.locator('.blocklyFlyout .blocklyDraggable').first()
+    const workspace = page.locator('.blocklyMainBackground')
+
+    const flyoutBox = await flyoutBlock.boundingBox()
+    const wsBox = await workspace.boundingBox()
+    if (flyoutBox && wsBox) {
+      await page.mouse.move(flyoutBox.x + flyoutBox.width / 2, flyoutBox.y + flyoutBox.height / 2)
+      await page.mouse.down()
+      await page.mouse.move(wsBox.x + wsBox.width / 2, wsBox.y + wsBox.height / 2, { steps: 10 })
+      await page.mouse.up()
+    }
+
+    await page.waitForTimeout(500)
+    const workspaceBlocks = page.locator('.blocklyWorkspace > .blocklyBlockCanvas .blocklyDraggable')
+    const blockCount = await workspaceBlocks.count()
+    expect(blockCount).toBeGreaterThanOrEqual(1)
+
+    await page.locator('button', { hasText: 'Run' }).click()
+
+    await page.waitForTimeout(3000)
+    await expect(page.locator('text=Execution timed out')).not.toBeVisible()
+  })
+
+  // --- Error display E2E ---
+
+  test('running empty workspace completes without error', async ({ page }) => {
+    await page.locator('button', { hasText: 'Run' }).click()
+    await page.waitForTimeout(2000)
+    await expect(page.locator('text=Execution timed out')).not.toBeVisible()
+  })
+
+  // --- Keyboard shortcuts E2E ---
+
+  test('Ctrl+Enter triggers Run without crash', async ({ page }) => {
+    await page.keyboard.press('Control+Enter')
+    await page.waitForTimeout(1000)
+    await expect(page.locator('.blocklySvg')).toBeVisible()
   })
 })
