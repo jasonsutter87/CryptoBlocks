@@ -759,24 +759,29 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
     let code = htmlCode.endsWith(')') ? htmlCode + ';' : htmlCode
     let nextBlock = block.getNextBlock()
 
-    // Button auto-onclick: if the next block is an action (registry) block,
-    // absorb it into the button's onclick handler instead of running it inline.
+    // Button auto-onclick: absorb all consecutive action (registry) blocks
+    // into the button's onclick handler instead of running them inline.
     if (block.type === 'cb_button' && nextBlock && !isNativeBlock(nextBlock.type) && !isBuiltinBlock(nextBlock.type)) {
-      const actionName = nextBlock.type.replace('cb_', '')
-      const actionDef = registry.get(actionName)
-      if (actionDef) {
-        // Mark this block as consumed so it's skipped in the chain
-        _consumedByButton.add(nextBlock)
-        // Generate the action call fresh (without chaining to next blocks)
+      const calls: string[] = []
+      let hasAsync = false
+      let cursor: Blockly.Block | null = nextBlock
+
+      while (cursor && !isNativeBlock(cursor.type) && !isBuiltinBlock(cursor.type) && !CONTROL_FLOW_BLOCKS.has(cursor.type)) {
+        const actionName = cursor.type.replace('cb_', '')
+        const actionDef = registry.get(actionName)
+        if (!actionDef) break
+
+        _consumedByButton.add(cursor)
+
         const fnName = extractFunctionName(actionDef, language)
         const args: string[] = []
         for (const input of actionDef.inputs) {
           if (input.choices && input.choices.length > 0) {
-            const val = nextBlock.getFieldValue(input.name) ?? input.choices[0]
+            const val = cursor.getFieldValue(input.name) ?? input.choices[0]
             args.push(`"${val}"`)
             continue
           }
-          const inputBlock = nextBlock.getInputTargetBlock(input.name)
+          const inputBlock = cursor.getInputTargetBlock(input.name)
           if (inputBlock) {
             args.push(generateBlockCode(inputBlock, language))
           } else {
@@ -793,15 +798,25 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
             }
           }
         }
-        const isAsync = actionDef.implementations[language as 'javascript' | 'python'].trimStart().startsWith('async ')
-        const call = isAsync ? `await ${fnName}(${args.join(', ')})` : `${fnName}(${args.join(', ')})`
-        // Inject onclick into the button code
+
+        const actionIsAsync = actionDef.implementations[language as 'javascript' | 'python'].trimStart().startsWith('async ')
+        // Also check if any argument code contains await (nested async calls)
+        const argsHaveAwait = args.some(a => a.includes('await '))
+        if (actionIsAsync || argsHaveAwait) hasAsync = true
+        const call = actionIsAsync ? `await ${fnName}(${args.join(', ')})` : `${fnName}(${args.join(', ')})`
+        calls.push(`    ${call};`)
+
+        cursor = cursor.getNextBlock()
+      }
+
+      if (calls.length > 0) {
+        const fnKeyword = hasAsync ? 'async function' : 'function'
+        const body = calls.join('\n')
         code = code.replace(
           `__lastEl = __el;\n})();`,
-          `__el.onclick = function() {\n    ${call};\n  };\n  __lastEl = __el;\n})();`
+          `__el.onclick = ${fnKeyword}() {\n${body}\n  };\n  __lastEl = __el;\n})();`
         )
-        // Continue chaining from the block after the consumed one
-        nextBlock = nextBlock.getNextBlock()
+        nextBlock = cursor
       }
     }
 
