@@ -240,7 +240,7 @@ function passwordVault(): Record<string, unknown> {
   })
 
   const addUser = block('cb_add_to_list', undefined, {
-    list_name: textVal('users'),
+    name: textVal('users'),
     item: block('cb_object_value', undefined, { name: textVal('user') }),
   })
 
