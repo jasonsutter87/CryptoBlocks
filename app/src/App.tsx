@@ -252,8 +252,7 @@ export default function App() {
     // Track stats + check achievements
     const blocks = workspaceRef.current ? countBlocks(workspaceRef.current) : 0
     const lineCount = execCode.split('\n').length
-    const lang = language === 'html' ? 'javascript' as const : language as 'javascript' | 'python'
-    recordRun({ language: lang, blockCount: blocks, lineCount })
+    recordRun({ language: language as 'javascript' | 'python' | 'html', blockCount: blocks, lineCount })
 
     const newAchievements = checkAchievements({
       event: 'run',
@@ -261,7 +260,7 @@ export default function App() {
       hasError: !!execResult.error,
       blockCount: blocks,
       categoriesUsed: getUsedCategories(),
-      language: lang,
+      language: language,
     })
     processAchievements(newAchievements)
   }, [code, language, processAchievements, getUsedCategories])
