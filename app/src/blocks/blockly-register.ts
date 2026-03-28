@@ -766,7 +766,7 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
       let hasAsync = false
       let cursor: Blockly.Block | null = nextBlock
 
-      while (cursor && !isNativeBlock(cursor.type) && !isBuiltinBlock(cursor.type)) {
+      while (cursor && !HTML_BLOCKS.has(cursor.type) && !isBuiltinBlock(cursor.type)) {
         // Handle control flow blocks (if, if-else, repeat) inside onclick
         if (CONTROL_FLOW_BLOCKS.has(cursor.type)) {
           _consumedByButton.add(cursor)
