@@ -8,6 +8,24 @@ import { linkedLists } from './data/linked-lists'
 import { stacksQueues } from './data/stacks-queues'
 import { trees } from './data/trees'
 import { hashMaps } from './data/hash-maps'
+import { recursion } from './data/recursion'
+import { graphs } from './data/graphs'
+import { binarySearch } from './data/binary-search'
+import { dynamicProgramming } from './data/dynamic-programming'
+import { strings } from './data/strings'
+import { arrays } from './data/arrays'
+import { mathFundamentals } from './data/math-fundamentals'
+import { bitManipulation } from './data/bit-manipulation'
+import { greedy } from './data/greedy'
+import { twoPointers } from './data/two-pointers'
+import { slidingWindow } from './data/sliding-window'
+import { backtracking } from './data/backtracking'
+import { sets } from './data/sets'
+import { matrices } from './data/matrices'
+import { patternMatching } from './data/pattern-matching'
+import { functional } from './data/functional'
+import { errorHandling } from './data/error-handling'
+import { asyncPromises } from './data/async-promises'
 
 export const allLabPacks: LabPack[] = [
   beginner,
@@ -19,6 +37,24 @@ export const allLabPacks: LabPack[] = [
   stacksQueues,
   trees,
   hashMaps,
+  recursion,
+  graphs,
+  binarySearch,
+  dynamicProgramming,
+  strings,
+  arrays,
+  mathFundamentals,
+  bitManipulation,
+  greedy,
+  twoPointers,
+  slidingWindow,
+  backtracking,
+  sets,
+  matrices,
+  patternMatching,
+  functional,
+  errorHandling,
+  asyncPromises,
 ]
 
 export function getExerciseById(id: string): LabExercise | null {

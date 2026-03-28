@@ -23,6 +23,9 @@ import { dataWizard } from './data/data-wizard'
 import { shipwrecked } from './data/shipwrecked'
 import { blockPuzzles } from './data/block-puzzles'
 import { codeRescue } from './data/code-rescue'
+import { cryptoMaster } from './data/crypto-master'
+import { aiAcademy } from './data/ai-academy'
+import { websocketRelay } from './data/websocket-relay'
 
 export const allThemes: ThemePack[] = [
   gettingStarted,
@@ -49,6 +52,9 @@ export const allThemes: ThemePack[] = [
   shipwrecked,
   blockPuzzles,
   codeRescue,
+  cryptoMaster,
+  aiAcademy,
+  websocketRelay,
 ]
 
 export function getChallengeById(id: string): Challenge | null {

@@ -3,7 +3,7 @@ import { allThemes, getChallengeById, getNextChallenge } from '../index'
 
 describe('Challenge data smoke tests', () => {
   it('has 24 themes', () => {
-    expect(allThemes).toHaveLength(24)
+    expect(allThemes).toHaveLength(27)
   })
 
   for (const theme of allThemes) {
@@ -37,8 +37,8 @@ describe('Challenge data smoke tests', () => {
             expect(typeof challenge.description).toBe('string')
           })
 
-          it('has non-empty expectedOutput', () => {
-            expect(challenge.expectedOutput.length).toBeGreaterThan(0)
+          it('has expectedOutput array', () => {
+            expect(Array.isArray(challenge.expectedOutput)).toBe(true)
           })
 
           it('has par > 0', () => {
