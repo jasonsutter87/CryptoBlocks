@@ -68,6 +68,7 @@ type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
 export default function App() {
   const [language, setLanguage] = useState<Language>('javascript')
   const [code, setCode] = useState('')
+  const [lastExecCode, setLastExecCode] = useState('')
   const [showCode, setShowCode] = useState(true)
   const [showOutput, setShowOutput] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
@@ -235,6 +236,7 @@ export default function App() {
     const execCode = language === 'html' && workspaceRef.current
       ? generateCode(workspaceRef.current, 'javascript')
       : code
+    setLastExecCode(execCode)
 
     const handle = executeCode(execCode, execLang, (line) => {
       setLiveOutput((prev) => [...prev, line])
@@ -1039,7 +1041,7 @@ export default function App() {
             {/* Output Panel */}
             {showOutput && (
               <div className="h-1/2 md:h-full md:w-1/2 border-t md:border-t-0 md:border-l border-[#313244]">
-                <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} />
+                <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
               </div>
             )}
           </div>
@@ -1116,7 +1118,7 @@ export default function App() {
                 {/* Output Panel */}
                 {showOutput && (
                   <div className="h-1/2 border-t border-[#313244]">
-                    <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} />
+                    <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
                   </div>
                 )}
               </div>
@@ -1125,7 +1127,7 @@ export default function App() {
             {/* Output when code view is hidden — show on right side */}
             {!showCode && showOutput && (
               <div className="h-1/2 md:h-full md:w-1/2 border-t md:border-t-0 md:border-l border-[#313244]">
-                <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} />
+                <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
               </div>
             )}
           </div>

@@ -7,9 +7,10 @@ interface OutputPanelProps {
   result: ExecutionResult | null
   isRunning: boolean
   liveOutput: string[]
+  previewCode?: string
 }
 
-export default function OutputPanel({ result, isRunning, liveOutput }: OutputPanelProps) {
+export default function OutputPanel({ result, isRunning, liveOutput, previewCode }: OutputPanelProps) {
   const lines = isRunning ? liveOutput : result?.output ?? []
   const hasCanvas = !!result?.canvasDataUrl
   const hasHtml = !!result?.htmlOutput
@@ -133,13 +134,20 @@ export default function OutputPanel({ result, isRunning, liveOutput }: OutputPan
         </div>
       )}
 
-      {/* Preview tab */}
+      {/* Preview tab — executes full generated code so event handlers work */}
       {activeTab === 'preview' && (
         <div className="flex-1 overflow-hidden">
-          {hasHtml ? (
+          {hasHtml && previewCode ? (
+            <iframe
+              srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: https:; connect-src https:;"><style>body{font-family:sans-serif;margin:16px;}#cb-canvas{display:none;}</style></head><body><div id="cb-page" style="display:none"></div><canvas id="cb-canvas" width="400" height="400"></canvas><script>(async function(){try{${previewCode}}catch(e){console.error(e)}})()</script></body></html>`}
+              sandbox="allow-scripts allow-modals"
+              className="w-full h-full border-none bg-white"
+              title="HTML Preview"
+            />
+          ) : hasHtml ? (
             <iframe
               srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: https:;"><style>body{font-family:sans-serif;margin:16px;}</style></head><body>${result!.htmlOutput}</body></html>`}
-              sandbox="allow-scripts allow-same-origin"
+              sandbox="allow-scripts"
               className="w-full h-full border-none bg-white"
               title="HTML Preview"
             />
