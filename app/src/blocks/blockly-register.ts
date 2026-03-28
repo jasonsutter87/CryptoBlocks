@@ -756,7 +756,12 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   // Handle HTML/CSS blocks
   const htmlCode = generateHtmlCode(block, language)
   if (htmlCode !== null) {
-    let code = htmlCode.endsWith(')') ? htmlCode + ';' : htmlCode
+    let code = htmlCode
+    // Make IIFEs async when they contain await calls
+    if (code.includes('await ') && code.includes('(function()')) {
+      code = code.replace(/\(function\(\)/g, '(async function()')
+    }
+    code = code.endsWith(')') ? code + ';' : code
     let nextBlock = block.getNextBlock()
 
     // Button auto-onclick: absorb all consecutive action (registry) blocks
