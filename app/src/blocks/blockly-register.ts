@@ -192,9 +192,10 @@ function registerHtmlBlocks() {
       this.setColour(HTML_COLOR)
       this.appendDummyInput().appendField('Button')
       this.appendValueInput('TEXT').setCheck('String').appendField('text')
+      this.appendStatementInput('ON_CLICK').appendField('on click')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
-      this.setTooltip('A button element')
+      this.setTooltip('A button element with optional click handler')
     },
   }
 
@@ -691,7 +692,13 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
 
     case 'cb_button': {
       const text = htmlVal(block, 'TEXT', '"Click me"', language)
-      return `(function() {\n  var __el = document.createElement('button');\n  __el.textContent = ${text};\n  __el.style.padding = '8px 16px';\n  __el.style.cursor = 'pointer';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      const onClick = generateStatementCode(block, 'ON_CLICK', language)
+      let code = `(function() {\n  var __el = document.createElement('button');\n  __el.textContent = ${text};\n  __el.style.padding = '8px 16px';\n  __el.style.cursor = 'pointer';`
+      if (onClick) {
+        code += `\n  __el.onclick = function() {\n${indent(indent(onClick, language), language)}\n  };`
+      }
+      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      return code
     }
 
     case 'cb_link': {
@@ -1145,7 +1152,10 @@ function generateHtmlMarkupForBlock(block: Blockly.Block): string {
     }
     case 'cb_button': {
       const text = getTextValue(block, 'TEXT', 'Click me')
-      result = `<button>${text}</button>`
+      const hasClick = block.getInputTargetBlock('ON_CLICK')
+      result = hasClick
+        ? `<button onclick="...">${text}</button>`
+        : `<button>${text}</button>`
       break
     }
     case 'cb_link': {
