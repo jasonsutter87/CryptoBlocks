@@ -766,7 +766,20 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
       let hasAsync = false
       let cursor: Blockly.Block | null = nextBlock
 
-      while (cursor && !isNativeBlock(cursor.type) && !isBuiltinBlock(cursor.type) && !CONTROL_FLOW_BLOCKS.has(cursor.type)) {
+      while (cursor && !isNativeBlock(cursor.type) && !isBuiltinBlock(cursor.type)) {
+        // Handle control flow blocks (if, if-else, repeat) inside onclick
+        if (CONTROL_FLOW_BLOCKS.has(cursor.type)) {
+          _consumedByButton.add(cursor)
+          const cfCode = generateControlFlowCode(cursor, language)
+          if (cfCode) {
+            for (const line of cfCode.split('\n')) {
+              calls.push(`    ${line}`)
+            }
+          }
+          cursor = cursor.getNextBlock()
+          continue
+        }
+
         const actionName = cursor.type.replace('cb_', '')
         const actionDef = registry.get(actionName)
         if (!actionDef) break

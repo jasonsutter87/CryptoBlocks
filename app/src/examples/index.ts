@@ -193,62 +193,152 @@ function passwordVault(): Record<string, unknown> {
     TEXT: textVal('Password Vault'),
   })
 
-  // "Register" button → ask username + password, hash password, print credentials
+  const helpText = block('cb_paragraph', undefined, {
+    TEXT: textVal('Register a user, then try to login. Wrong password = denied!'),
+  })
+
+  // --- Setup: create user object and users list ---
+  const createUser = block('cb_create_object', undefined, {
+    name: textVal('user'),
+  }, 50, 350)
+
+  const createUsersList = block('cb_create_list', undefined, {
+    name: textVal('users'),
+  })
+
+  // --- REGISTER button ---
   const registerBtn = block('cb_button', undefined, {
     TEXT: textVal('Register'),
   })
 
-  // Print the username
-  const printUser = block('cb_print', undefined, {
-    message: block('cb_join_text', undefined, {
-      first: textVal('User: '),
-      second: block('cb_ask', undefined, {
-        question: textVal('Choose a username'),
+  // Store username in global
+  const storeUsername = block('cb_set_global', undefined, {
+    name: textVal('username'),
+    value: block('cb_ask', undefined, {
+      question: textVal('Choose a username'),
+    }),
+  })
+
+  // Hash password and store in global
+  const storeHash = block('cb_set_global', undefined, {
+    name: textVal('passhash'),
+    value: block('cb_hash_text', undefined, {
+      text: block('cb_ask', undefined, {
+        question: textVal('Choose a password'),
       }),
     }),
   })
 
-  // Hash the password and print it
-  const printHash = block('cb_print', undefined, {
+  // Set username property on user object
+  const setUserName = block('cb_set_property', undefined, {
+    object_name: textVal('user'),
+    key: textVal('name'),
+    value: block('cb_get_global', undefined, {
+      name: textVal('username'),
+    }),
+  })
+
+  // Set password hash property on user object
+  const setUserHash = block('cb_set_property', undefined, {
+    object_name: textVal('user'),
+    key: textVal('hash'),
+    value: block('cb_get_global', undefined, {
+      name: textVal('passhash'),
+    }),
+  })
+
+  // Add user object to users list
+  const addUser = block('cb_add_to_list', undefined, {
+    list_name: textVal('users'),
+    item: block('cb_object_value', undefined, {
+      name: textVal('user'),
+    }),
+  })
+
+  // Print confirmation
+  const printRegistered = block('cb_print', undefined, {
     message: block('cb_join_text', undefined, {
-      first: textVal('Password hash: '),
-      second: block('cb_hash_text', undefined, {
-        text: block('cb_ask', undefined, {
-          question: textVal('Choose a password'),
-        }),
+      first: textVal('Registered: '),
+      second: block('cb_get_global', undefined, {
+        name: textVal('username'),
       }),
     }),
   })
 
-  // "Login" button → ask password, hash it, print for comparison
+  const printStoredHash = block('cb_print', undefined, {
+    message: block('cb_join_text', undefined, {
+      first: textVal('Stored hash: '),
+      second: block('cb_get_global', undefined, {
+        name: textVal('passhash'),
+      }),
+    }),
+  })
+
+  // --- LOGIN button ---
   const loginBtn = block('cb_button', undefined, {
     TEXT: textVal('Login'),
   })
 
-  const printLoginHash = block('cb_print', undefined, {
-    message: block('cb_join_text', undefined, {
-      first: textVal('Login hash: '),
-      second: block('cb_hash_text', undefined, {
-        text: block('cb_ask', undefined, {
-          question: textVal('Enter your password'),
-        }),
+  // Hash the login attempt and store it
+  const storeLoginHash = block('cb_set_global', undefined, {
+    name: textVal('loginhash'),
+    value: block('cb_hash_text', undefined, {
+      text: block('cb_ask', undefined, {
+        question: textVal('Enter your password'),
       }),
     }),
   })
 
-  const helpText = block('cb_paragraph', undefined, {
-    TEXT: textVal('Register first, then login. If the hashes match, you\'re in!'),
+  // Use if_then to check match (prints granted), placed after button
+  const printLoginHash = block('cb_print', undefined, {
+    message: block('cb_join_text', undefined, {
+      first: textVal('Login hash: '),
+      second: block('cb_get_global', undefined, {
+        name: textVal('loginhash'),
+      }),
+    }),
   })
 
+  // Compare hashes with if/else — placed as standalone after container
+  const condition = block('cb_equals', undefined, {
+    a: block('cb_get_global', undefined, {
+      name: textVal('loginhash'),
+    }),
+    b: block('cb_get_global', undefined, {
+      name: textVal('passhash'),
+    }),
+  })
+
+  const printSuccess = block('cb_print', undefined, {
+    message: textVal('Access GRANTED — hashes match!'),
+  })
+
+  const printDenied = block('cb_print', undefined, {
+    message: textVal('Access DENIED — wrong password!'),
+  })
+
+  const ifElse = blockWithStatements(
+    'cb_if_else',
+    undefined,
+    { CONDITION: condition },
+    { DO: printSuccess, ELSE: printDenied },
+  )
+
+  // Build the page — action blocks + control flow after each button get absorbed into onclick
   const container = blockWithStatements(
     'cb_container',
     undefined,
     { COLOR: colorVal('#1E1E2E'), PADDING: numVal(24) },
-    { CHILDREN: chain(heading, helpText, registerBtn, printUser, printHash, loginBtn, printLoginHash) },
+    { CHILDREN: chain(
+      heading, helpText,
+      registerBtn, storeUsername, storeHash, setUserName, setUserHash, addUser, printRegistered, printStoredHash,
+      loginBtn, storeLoginHash, printLoginHash, ifElse,
+    ) },
     50, 50,
   )
 
-  return workspace(container)
+  // Setup runs first, then container renders
+  return workspace(chain(createUser, createUsersList, container))
 }
 
 // --- Example 10: Kitchen Sink (Max Complexity) ---
