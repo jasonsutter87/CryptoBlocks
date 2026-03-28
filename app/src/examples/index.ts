@@ -319,7 +319,14 @@ function passwordVault(): Record<string, unknown> {
     ) },
   )
 
-  return workspace(chain(createUser, createUsersList, container))
+  // Setup as separate top-level chain so blocks don't stack too tall
+  createUser.x = 50
+  createUser.y = 30
+
+  container.x = 50
+  container.y = 130
+
+  return workspace(chain(createUser, createUsersList), container)
 }
 
 // --- Example 10: Kitchen Sink (Max Complexity) ---

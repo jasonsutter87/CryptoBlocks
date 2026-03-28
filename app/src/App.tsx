@@ -715,6 +715,8 @@ export default function App() {
         }
         workspaceRef.current.clear()
         Blockly.serialization.workspaces.load(example.workspace, workspaceRef.current)
+        // Scroll to show the loaded blocks
+        workspaceRef.current.scrollCenter()
       }
     }, 0)
   }, [])
