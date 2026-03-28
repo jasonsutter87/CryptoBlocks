@@ -184,6 +184,209 @@ function apiExplorer(): Record<string, unknown> {
   return workspace(fetchData)
 }
 
+// --- Example 9: Password Vault (Auth System) ---
+function passwordVault(): Record<string, unknown> {
+  resetIds()
+
+  // Heading
+  const heading = block('cb_heading', { LEVEL: '1' }, {
+    TEXT: textVal('Password Vault'),
+  })
+
+  // "Register" button → ask username + password, hash password, print credentials
+  const registerBtn = block('cb_button', undefined, {
+    TEXT: textVal('Register'),
+  })
+
+  // Print the username
+  const printUser = block('cb_print', undefined, {
+    message: block('cb_join_text', undefined, {
+      first: textVal('User: '),
+      second: block('cb_ask', undefined, {
+        question: textVal('Choose a username'),
+      }),
+    }),
+  })
+
+  // Hash the password and print it
+  const printHash = block('cb_print', undefined, {
+    message: block('cb_join_text', undefined, {
+      first: textVal('Password hash: '),
+      second: block('cb_hash_text', undefined, {
+        text: block('cb_ask', undefined, {
+          question: textVal('Choose a password'),
+        }),
+      }),
+    }),
+  })
+
+  // "Login" button → ask password, hash it, print for comparison
+  const loginBtn = block('cb_button', undefined, {
+    TEXT: textVal('Login'),
+  })
+
+  const printLoginHash = block('cb_print', undefined, {
+    message: block('cb_join_text', undefined, {
+      first: textVal('Login hash: '),
+      second: block('cb_hash_text', undefined, {
+        text: block('cb_ask', undefined, {
+          question: textVal('Enter your password'),
+        }),
+      }),
+    }),
+  })
+
+  const helpText = block('cb_paragraph', undefined, {
+    TEXT: textVal('Register first, then login. If the hashes match, you\'re in!'),
+  })
+
+  const container = blockWithStatements(
+    'cb_container',
+    undefined,
+    { COLOR: colorVal('#1E1E2E'), PADDING: numVal(24) },
+    { CHILDREN: chain(heading, helpText, registerBtn, printUser, printHash, loginBtn, printLoginHash) },
+    50, 50,
+  )
+
+  return workspace(container)
+}
+
+// --- Example 10: Kitchen Sink (Max Complexity) ---
+function kitchenSink(): Record<string, unknown> {
+  resetIds()
+
+  // Step 1: Fetch data from API
+  const storeData = block('cb_set_global', undefined, {
+    name: textVal('todo'),
+    value: block('cb_get_json_field', undefined, {
+      data: block('cb_http_get', undefined, {
+        url: textVal('https://jsonplaceholder.typicode.com/todos/1'),
+      }),
+      key: textVal('title'),
+    }),
+  }, 50, 50)
+
+  // Step 2: Hash the fetched title
+  const storeHash = block('cb_set_global', undefined, {
+    name: textVal('fingerprint'),
+    value: block('cb_hash_text', undefined, {
+      text: block('cb_get_global', undefined, {
+        name: textVal('todo'),
+      }),
+    }),
+  })
+
+  // Step 3: Print the fetched data
+  const printTitle = block('cb_print', undefined, {
+    message: block('cb_join_text', undefined, {
+      first: textVal('Fetched: '),
+      second: block('cb_uppercase', undefined, {
+        text: block('cb_get_global', undefined, {
+          name: textVal('todo'),
+        }),
+      }),
+    }),
+  })
+
+  // Step 4: Print the hash
+  const printHash = block('cb_print', undefined, {
+    message: block('cb_join_text', undefined, {
+      first: textVal('SHA-256: '),
+      second: block('cb_get_global', undefined, {
+        name: textVal('fingerprint'),
+      }),
+    }),
+  })
+
+  // Step 5: Check text length with if/else
+  const condition = block('cb_greater_than', undefined, {
+    a: block('cb_text_length', undefined, {
+      text: block('cb_get_global', undefined, {
+        name: textVal('todo'),
+      }),
+    }),
+    b: numVal(10),
+  })
+
+  const printLong = block('cb_print', undefined, {
+    message: textVal('That\'s a long title!'),
+  })
+
+  const printShort = block('cb_print', undefined, {
+    message: textVal('Short and sweet.'),
+  })
+
+  const ifElse = blockWithStatements(
+    'cb_if_else',
+    undefined,
+    { CONDITION: condition },
+    { DO: printLong, ELSE: printShort },
+  )
+
+  // Step 6: Loop and play tones for each character count
+  const loopPrint = block('cb_print', undefined, {
+    message: block('cb_join_text', undefined, {
+      first: textVal('Beep #'),
+      second: block('cb_get_global', undefined, {
+        name: textVal('count'),
+      }),
+    }),
+  })
+
+  const playBeep = block('cb_play_tone', undefined, {
+    frequency: block('cb_multiply', undefined, {
+      a: block('cb_get_global', undefined, {
+        name: textVal('count'),
+      }),
+      b: numVal(200),
+    }),
+    duration: numVal(200),
+  })
+
+  const incrementCount = block('cb_set_global', undefined, {
+    name: textVal('count'),
+    value: block('cb_add', undefined, {
+      a: block('cb_get_global', undefined, {
+        name: textVal('count'),
+      }),
+      b: numVal(1),
+    }),
+  })
+
+  const setCount = block('cb_set_global', undefined, {
+    name: textVal('count'),
+    value: numVal(1),
+  })
+
+  const loopBody = chain(loopPrint, playBeep, incrementCount)
+
+  const repeatBlock = blockWithStatements(
+    'cb_repeat',
+    undefined,
+    { TIMES: numVal(3) },
+    { DO: loopBody },
+  )
+
+  // Step 7: Base64 encode the result
+  const printEncoded = block('cb_print', undefined, {
+    message: block('cb_join_text', undefined, {
+      first: textVal('Base64: '),
+      second: block('cb_base64_encode', undefined, {
+        text: block('cb_get_global', undefined, {
+          name: textVal('todo'),
+        }),
+      }),
+    }),
+  })
+
+  // Step 8: Final summary
+  const printDone = block('cb_print', undefined, {
+    message: textVal('--- Kitchen Sink complete! Web → Crypto → Text → Logic → Sound → Math ---'),
+  })
+
+  return workspace(chain(storeData, storeHash, printTitle, printHash, ifElse, setCount, repeatBlock, printEncoded, printDone))
+}
+
 export const EXAMPLES: Example[] = [
   {
     id: 'hello-world',
@@ -248,5 +451,21 @@ export const EXAMPLES: Example[] = [
     difficulty: 'advanced',
     tags: ['Web', 'Basics'],
     workspace: apiExplorer(),
+  },
+  {
+    id: 'password-vault',
+    name: 'Password Vault',
+    description: 'Build a mini auth system — register with a hashed password, then login to verify.',
+    difficulty: 'advanced',
+    tags: ['HTML', 'Crypto', 'Basics', 'Text'],
+    workspace: passwordVault(),
+  },
+  {
+    id: 'kitchen-sink',
+    name: 'Kitchen Sink',
+    description: 'The ultimate stress test: fetch API data, hash it, loop with sound, encode in Base64, and more.',
+    difficulty: 'advanced',
+    tags: ['Web', 'Crypto', 'Text', 'Logic', 'Sound', 'Math', 'Basics'],
+    workspace: kitchenSink(),
   },
 ]

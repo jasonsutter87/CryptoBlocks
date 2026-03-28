@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { EXAMPLES, type Example } from '../index'
 
 describe('EXAMPLES array', () => {
-  it('has 8 entries', () => {
-    expect(EXAMPLES).toHaveLength(8)
+  it('has 10 entries', () => {
+    expect(EXAMPLES).toHaveLength(10)
   })
 
   it('each entry has required fields', () => {
