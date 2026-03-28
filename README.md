@@ -130,7 +130,7 @@ Blocks are organized by category:
 | **AI** | 12 | Classify, generate, sentiment, summarize |
 | **Sound** | 12 | Play tone, speech, recording, audio effects |
 | **Games** | 11 | Sprites, collision, score, keyboard input |
-| **Turtle** | 10 | Move, turn, pen up/down, draw shapes |
+| **Pen** | 10 | Move, turn, pen up/down, draw shapes |
 | **Hardware** | 10 | Device info, battery, screen, geolocation |
 | **Database** | 13 | Tables, insert, query, update, delete |
 | **???** | 13 | Secret blocks — unlock in hacker mode |
@@ -322,7 +322,7 @@ The key difference: **Scratch is a destination. CryptoBlocks is a bridge.** Kids
 
 ### The Line: High School vs College
 
-Everything up to and including high school level is **free. Forever.** The visual editor, all blocks, themed challenges, Code Golf, Block Islands, Blocksets, Code Lab — free.
+Everything up to and including high school level is **free. Forever.** The visual editor, all blocks, themed challenges, Code Golf, Block Islands, Blocksets — free.
 
 The paywall kicks in at **college-level CS content**:
 
@@ -331,7 +331,7 @@ The paywall kicks in at **college-level CS content**:
 - Visual snap editor + code peek + dual-language output
 - Create-your-own-block editor
 - All themed challenge packs (Minecraft, Space, Crypto, etc.)
-- Block Islands, Blocksets, Code Golf, Code Lab
+- Block Islands, Blocksets, Code Golf
 - Save/Load projects, export HTML, publish to GitHub Pages
 
 ### Premium Tier (College-Level CS)
