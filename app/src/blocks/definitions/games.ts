@@ -5,27 +5,28 @@ export const gamesBlocks: BlockDefinition[] = [
     name: 'create_sprite',
     author: 'CryptoBlocks',
     version: '1.0.0',
-    description: 'Create a named rectangle sprite at a position with size and color',
+    description: 'Create a named sprite — use an emoji for instant characters or a color for rectangles',
     category: 'Games',
     inputs: [
       { name: 'name', type: 'string', description: 'Sprite name' },
       { name: 'x', type: 'number', description: 'X position', default: 0 },
       { name: 'y', type: 'number', description: 'Y position', default: 0 },
-      { name: 'width', type: 'number', description: 'Width in pixels', default: 20 },
-      { name: 'height', type: 'number', description: 'Height in pixels', default: 20 },
-      { name: 'color', type: 'string', description: 'Fill color', default: '#ff0000' },
+      { name: 'width', type: 'number', description: 'Size in pixels', default: 32 },
+      { name: 'height', type: 'number', description: 'Height in pixels', default: 32 },
+      { name: 'color', type: 'string', description: 'Fill color (ignored if emoji is set)', default: '#ff0000' },
+      { name: 'emoji', type: 'string', description: 'Emoji character (e.g. 🚀 👾 ⭐)', default: '' },
     ],
     outputs: [],
     implementations: {
-      javascript: `function createSprite(name, x, y, width, height, color) {
+      javascript: `function createSprite(name, x, y, width, height, color, emoji) {
   window.__game = window.__game || { sprites: {}, score: 0 };
-  window.__game.sprites[name] = { x: Number(x), y: Number(y), w: Number(width), h: Number(height), color: String(color) };
+  window.__game.sprites[name] = { x: Number(x), y: Number(y), w: Number(width), h: Number(height), color: String(color), emoji: emoji || '' };
 }`,
-      python: `def create_sprite(name, x, y, width, height, color):
+      python: `def create_sprite(name, x, y, width, height, color, emoji=""):
     print("[Games are only available in JavaScript mode]")`,
     },
     tests: [
-      { input: { name: 'player', x: 100, y: 200, width: 20, height: 20, color: '#ff0000' }, expected: {} },
+      { input: { name: 'player', x: 100, y: 200, width: 32, height: 32, color: '#ff0000', emoji: '' }, expected: {} },
     ],
     color: '#EA580C',
   },
@@ -207,12 +208,19 @@ export const gamesBlocks: BlockDefinition[] = [
   var sprites = window.__game.sprites;
   for (var name in sprites) {
     var s = sprites[name];
-    ctx.fillStyle = s.color;
-    ctx.fillRect(s.x, s.y, s.w, s.h);
+    if (s.emoji) {
+      ctx.font = s.w + 'px serif';
+      ctx.textBaseline = 'top';
+      ctx.fillText(s.emoji, s.x, s.y);
+    } else {
+      ctx.fillStyle = s.color;
+      ctx.fillRect(s.x, s.y, s.w, s.h);
+    }
   }
   if (window.__game.score !== undefined) {
     ctx.fillStyle = '#cdd6f4';
     ctx.font = '16px sans-serif';
+    ctx.textBaseline = 'alphabetic';
     ctx.fillText('Score: ' + window.__game.score, 10, 24);
   }
 }`,
