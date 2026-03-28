@@ -10,6 +10,7 @@ const difficultyColor = (d: string) => {
     case 'beginner': return 'bg-[#a6e3a1] text-[#1e1e2e]'
     case 'intermediate': return 'bg-[#f9e2af] text-[#1e1e2e]'
     case 'advanced': return 'bg-[#f38ba8] text-[#1e1e2e]'
+    case 'pro': return 'bg-[#cba6f7] text-[#1e1e2e]'
     default: return 'bg-[#6c7086] text-[#cdd6f4]'
   }
 }

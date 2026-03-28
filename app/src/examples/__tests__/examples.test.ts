@@ -14,7 +14,7 @@ describe('EXAMPLES array', () => {
       expect(ex.name.length).toBeGreaterThan(0)
       expect(typeof ex.description).toBe('string')
       expect(ex.description.length).toBeGreaterThan(0)
-      expect(['beginner', 'intermediate', 'advanced']).toContain(ex.difficulty)
+      expect(['beginner', 'intermediate', 'advanced', 'pro']).toContain(ex.difficulty)
       expect(Array.isArray(ex.tags)).toBe(true)
       expect(ex.tags.length).toBeGreaterThan(0)
       expect(typeof ex.workspace).toBe('object')
@@ -27,7 +27,7 @@ describe('EXAMPLES array', () => {
   })
 
   it('difficulties are valid enum values', () => {
-    const valid = new Set(['beginner', 'intermediate', 'advanced'])
+    const valid = new Set(['beginner', 'intermediate', 'advanced', 'pro'])
     for (const ex of EXAMPLES) {
       expect(valid.has(ex.difficulty)).toBe(true)
     }

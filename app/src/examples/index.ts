@@ -13,7 +13,7 @@ export interface Example {
   id: string
   name: string
   description: string
-  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  difficulty: 'beginner' | 'intermediate' | 'advanced' | 'pro'
   tags: string[]
   workspace: Record<string, unknown>
 }
@@ -456,7 +456,7 @@ export const EXAMPLES: Example[] = [
     id: 'password-vault',
     name: 'Password Vault',
     description: 'Build a mini auth system — register with a hashed password, then login to verify.',
-    difficulty: 'advanced',
+    difficulty: 'pro',
     tags: ['HTML', 'Crypto', 'Basics', 'Text'],
     workspace: passwordVault(),
   },
@@ -464,7 +464,7 @@ export const EXAMPLES: Example[] = [
     id: 'kitchen-sink',
     name: 'Kitchen Sink',
     description: 'The ultimate stress test: fetch API data, hash it, loop with sound, encode in Base64, and more.',
-    difficulty: 'advanced',
+    difficulty: 'pro',
     tags: ['Web', 'Crypto', 'Text', 'Logic', 'Sound', 'Math', 'Basics'],
     workspace: kitchenSink(),
   },
