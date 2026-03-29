@@ -296,12 +296,12 @@ function executeJavaScript(
   const start = performance.now()
   let aborted = false
 
-  // Code that uses fetch() needs direct execution — sandboxed iframes
-  // send Origin: null which breaks CORS on most servers
-  const needsFetch = /\bfetch\s*\(/.test(code)
+  // Code that uses fetch() or WebSocket needs direct execution — sandboxed
+  // iframes send Origin: null which breaks CORS/WS on most servers
+  const needsDirectExec = /\bfetch\s*\(/.test(code) || /\bWebSocket\s*\(/.test(code)
 
   const promise = (async (): Promise<ExecutionResult> => {
-    if (needsFetch) {
+    if (needsDirectExec) {
       return directExecution(code, collector, start)
     }
 
