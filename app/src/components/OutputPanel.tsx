@@ -139,7 +139,7 @@ export default function OutputPanel({ result, isRunning, liveOutput, previewCode
         <div className="flex-1 overflow-hidden">
           {hasHtml && previewCode ? (
             <iframe
-              srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: https:; connect-src https:;"><style>body{font-family:sans-serif;margin:16px;}#cb-canvas{display:none;}</style></head><body><div id="cb-page" style="display:none"></div><canvas id="cb-canvas" width="400" height="400"></canvas><script>(async function(){try{${previewCode}}catch(e){console.error(e)}})()</script></body></html>`}
+              srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: https:; connect-src https: wss:;"><style>body{font-family:sans-serif;margin:16px;}#cb-canvas{display:none;}</style></head><body><div id="cb-page" style="display:none"></div><canvas id="cb-canvas" width="400" height="400"></canvas><script>(async function(){try{${previewCode}}catch(e){console.error(e)}})()</script></body></html>`}
               sandbox="allow-scripts allow-modals"
               className="w-full h-full border-none bg-white"
               title="HTML Preview"

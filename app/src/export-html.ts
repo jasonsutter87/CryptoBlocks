@@ -50,7 +50,7 @@ export function generateStandaloneHtml(code: string, options: ExportOptions = {}
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; style-src 'unsafe-inline'; img-src data: https:; connect-src https:;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; style-src 'unsafe-inline'; img-src data: https:; connect-src https: wss:;">
 <script src="https://cdn.tailwindcss.com"></script>
 <title>${escapeHtml(title)}</title>
 ${hasZta ? ztaScriptBlock(ztaId, options.ztaEndpoint) : ''}
