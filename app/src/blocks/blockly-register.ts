@@ -35,6 +35,7 @@ const HTML_BLOCKS = new Set([
   'cb_container', 'cb_row', 'cb_column', 'cb_div',
   'cb_heading', 'cb_paragraph', 'cb_image', 'cb_button', 'cb_link',
   'cb_set_style', 'cb_set_color', 'cb_set_background', 'cb_set_size',
+  'cb_set_text', 'cb_get_text',
 ])
 
 function isNativeBlock(type: string): boolean {
@@ -158,6 +159,7 @@ function registerHtmlBlocks() {
           ['H4', '4'], ['H5', '5'], ['H6', '6'],
         ]), 'LEVEL')
       this.appendValueInput('TEXT').setCheck('String').appendField('text')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('A heading element (H1-H6)')
@@ -169,6 +171,7 @@ function registerHtmlBlocks() {
       this.setColour(HTML_COLOR)
       this.appendDummyInput().appendField('Paragraph')
       this.appendValueInput('TEXT').setCheck('String').appendField('text')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('A paragraph element')
@@ -192,6 +195,7 @@ function registerHtmlBlocks() {
       this.setColour(HTML_COLOR)
       this.appendDummyInput().appendField('Button')
       this.appendValueInput('TEXT').setCheck('String').appendField('text')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('A button element — action blocks stacked below become the click handler')
@@ -255,6 +259,30 @@ function registerHtmlBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Set width and height on the last created element')
+    },
+  }
+
+  // --- Element manipulation blocks ---
+
+  Blockly.Blocks['cb_set_text'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Set Text')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
+      this.appendValueInput('TEXT').setCheck('String').appendField('text')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Set the text content of an element by its ID')
+    },
+  }
+
+  Blockly.Blocks['cb_get_text'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Get Text')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
+      this.setOutput(true, 'String')
+      this.setTooltip('Get the text content of an element by its ID')
     },
   }
 }
@@ -675,12 +703,20 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
     case 'cb_heading': {
       const level = block.getFieldValue('LEVEL') ?? '1'
       const text = htmlVal(block, 'TEXT', '"Heading"', language)
-      return `(function() {\n  var __el = document.createElement('h${level}');\n  __el.textContent = ${text};\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      const id = htmlVal(block, 'ID', '""', language)
+      let code = `(function() {\n  var __el = document.createElement('h${level}');\n  __el.textContent = ${text};`
+      if (id !== '""') code += `\n  if (${id}) __el.id = ${id};`
+      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      return code
     }
 
     case 'cb_paragraph': {
       const text = htmlVal(block, 'TEXT', '"Paragraph text"', language)
-      return `(function() {\n  var __el = document.createElement('p');\n  __el.textContent = ${text};\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      const id = htmlVal(block, 'ID', '""', language)
+      let code = `(function() {\n  var __el = document.createElement('p');\n  __el.textContent = ${text};`
+      if (id !== '""') code += `\n  if (${id}) __el.id = ${id};`
+      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      return code
     }
 
     case 'cb_image': {
@@ -691,7 +727,11 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
 
     case 'cb_button': {
       const text = htmlVal(block, 'TEXT', '"Click me"', language)
-      return `(function() {\n  var __el = document.createElement('button');\n  __el.textContent = ${text};\n  __el.style.padding = '8px 16px';\n  __el.style.cursor = 'pointer';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      const id = htmlVal(block, 'ID', '""', language)
+      let code = `(function() {\n  var __el = document.createElement('button');\n  __el.textContent = ${text};\n  __el.style.padding = '8px 16px';\n  __el.style.cursor = 'pointer';`
+      if (id !== '""') code += `\n  if (${id}) __el.id = ${id};`
+      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      return code
     }
 
     case 'cb_link': {
@@ -721,6 +761,18 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
       const w = htmlVal(block, 'WIDTH', '100', language)
       const h = htmlVal(block, 'HEIGHT', '100', language)
       return `if (__lastEl) { __lastEl.style.width = ${w} + 'px'; __lastEl.style.height = ${h} + 'px'; }`
+    }
+
+    // --- Element manipulation by ID ---
+    case 'cb_set_text': {
+      const id = htmlVal(block, 'ID', '""', language)
+      const text = htmlVal(block, 'TEXT', '""', language)
+      return `(function() { var __target = document.getElementById(${id}); if (__target) __target.textContent = ${text}; })()`
+    }
+
+    case 'cb_get_text': {
+      const id = htmlVal(block, 'ID', '""', language)
+      return `(function() { var __target = document.getElementById(${id}); return __target ? __target.textContent : ""; })()`
     }
 
     default:
@@ -1020,6 +1072,17 @@ function htmlToolboxXml(): string {
   xml += '<value name="HEIGHT"><shadow type="math_number"><field name="NUM">100</field></shadow></value>'
   xml += '</block>'
 
+  xml += '<sep gap="20"></sep>'
+
+  xml += '<block type="cb_set_text">'
+  xml += '<value name="ID"><shadow type="text"><field name="TEXT">my-id</field></shadow></value>'
+  xml += '<value name="TEXT"><shadow type="text"><field name="TEXT">New text</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_get_text">'
+  xml += '<value name="ID"><shadow type="text"><field name="TEXT">my-id</field></shadow></value>'
+  xml += '</block>'
+
   xml += '</category>'
   return xml
 }
@@ -1263,6 +1326,17 @@ function generateHtmlMarkupForBlock(block: Blockly.Block): string {
       const w = getTextValue(block, 'WIDTH', '100')
       const h = getTextValue(block, 'HEIGHT', '100')
       result = `<!-- set-size: ${w}x${h} -->`
+      break
+    }
+    case 'cb_set_text': {
+      const id = getTextValue(block, 'ID', '')
+      const text = getTextValue(block, 'TEXT', '')
+      result = `<!-- set-text #${id}: "${text}" -->`
+      break
+    }
+    case 'cb_get_text': {
+      const id = getTextValue(block, 'ID', '')
+      result = `<!-- get-text #${id} -->`
       break
     }
     default: {
