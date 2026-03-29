@@ -469,6 +469,7 @@ export function unregisterBlock(name: string) {
 }
 
 export function generateCode(workspace: Blockly.Workspace, language: Language): string {
+  _loopVarCounter = 0
   const topBlocks = workspace.getTopBlocks(true)
   const lines: string[] = []
 
@@ -626,10 +627,11 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
         ? generateBlockCode(timesBlock, language)
         : '0'
       const body = generateStatementCode(block, 'DO', language)
+      const loopVar = `__i${_loopVarCounter++}`
 
       if (language === 'javascript') {
-        if (!body) return `for (var __i = 0; __i < ${times}; __i++) {}`
-        return `for (var __i = 0; __i < ${times}; __i++) {\n${indent(body, language)}\n}`
+        if (!body) return `for (var ${loopVar} = 0; ${loopVar} < ${times}; ${loopVar}++) {}`
+        return `for (var ${loopVar} = 0; ${loopVar} < ${times}; ${loopVar}++) {\n${indent(body, language)}\n}`
       } else {
         if (!body) return `for _ in range(int(${times})):\n    pass`
         return `for _ in range(int(${times})):\n${indent(body, language)}`
@@ -782,6 +784,7 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
 
 /** Blocks consumed by a button's onclick — skip them in the normal chain. */
 const _consumedByButton = new WeakSet<Blockly.Block>()
+let _loopVarCounter = 0
 
 function generateBlockCode(block: Blockly.Block, language: Language): string {
   // Skip blocks already consumed as a button onclick handler
