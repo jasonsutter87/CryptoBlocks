@@ -7,7 +7,7 @@ CompanyName = 'CryptoBlocks'
 repoName = 'CryptoBlocks'
 tagline = 'Snap blocks. See code. Build anything.'
 description = 'A visual coding platform where kids and young coders build programs by snapping blocks together — then level up by writing their own.'
-appURL = 'https://app-cryptoblocks.netlify.app'
+appURL = 'https://app.getcryptoblocks.com'
 
 [environments.development]
 baseURL = 'http://localhost:1313/'

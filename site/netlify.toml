@@ -8,10 +8,10 @@
 
 [[redirects]]
   from = "/app"
-  to = "https://app-cryptoblocks.netlify.app"
+  to = "https://app.getcryptoblocks.com"
   status = 301
 
 [[redirects]]
   from = "/app/*"
-  to = "https://app-cryptoblocks.netlify.app/:splat"
+  to = "https://app.getcryptoblocks.com/:splat"
   status = 301
