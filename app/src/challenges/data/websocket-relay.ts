@@ -11,14 +11,14 @@ export const websocketRelay: ThemePack = {
       id: 'wr-1',
       title: 'First Connection',
       description:
-        'Connect to "wss://ws.postman-echo.com/raw" using the WebSocket Connect block. When the connection opens, print "Connected!".',
+        'Connect to "wss://echo.websocket.org" using the WebSocket Connect block. When the connection opens, print "Connected!".',
       difficulty: 'beginner',
       theme: 'websocket-relay',
       expectedOutput: ['Connected!'],
       par: 3,
       hints: [
         'Use the WebSocket Connect block and provide the server URL.',
-        'WS Connect "wss://ws.postman-echo.com/raw" → in the on-open callback, Print "Connected!".',
+        'WS Connect "wss://echo.websocket.org" → in the on-open callback, Print "Connected!".',
       ],
       allowedCategories: ['Basics', 'Web', 'Text'],
     },
@@ -26,7 +26,7 @@ export const websocketRelay: ThemePack = {
       id: 'wr-2',
       title: 'Echo Chamber',
       description:
-        'Connect to the echo server "wss://ws.postman-echo.com/raw". After connecting, send the message "Hello". Use the on-message handler to receive the echo and print it.',
+        'Connect to the echo server "wss://echo.websocket.org". After connecting, send the message "Hello". Use the on-message handler to receive the echo and print it.',
       difficulty: 'beginner',
       theme: 'websocket-relay',
       expectedOutput: ['Hello'],
