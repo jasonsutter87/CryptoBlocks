@@ -35,7 +35,7 @@ const HTML_BLOCKS = new Set([
   'cb_container', 'cb_row', 'cb_column', 'cb_div',
   'cb_heading', 'cb_paragraph', 'cb_image', 'cb_button', 'cb_link',
   'cb_set_style', 'cb_set_color', 'cb_set_background', 'cb_set_size',
-  'cb_set_text', 'cb_get_text',
+  'cb_set_text', 'cb_get_text', 'cb_clicked_id',
 ])
 
 function isNativeBlock(type: string): boolean {
@@ -273,6 +273,15 @@ function registerHtmlBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Set the text content of an element by its ID')
+    },
+  }
+
+  Blockly.Blocks['cb_clicked_id'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Clicked ID')
+      this.setOutput(true, 'String')
+      this.setTooltip('Returns the ID of the clicked element — use inside a button onclick')
     },
   }
 
@@ -777,6 +786,10 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
       return `(function() { var __target = document.getElementById(${id}); return __target ? __target.textContent : ""; })()`
     }
 
+    case 'cb_clicked_id': {
+      return `(this && this.id ? this.id : "")`
+    }
+
     default:
       return null
   }
@@ -1086,6 +1099,8 @@ function htmlToolboxXml(): string {
   xml += '<value name="ID"><shadow type="text"><field name="TEXT">my-id</field></shadow></value>'
   xml += '</block>'
 
+  xml += '<block type="cb_clicked_id"></block>'
+
   xml += '</category>'
   return xml
 }
@@ -1340,6 +1355,10 @@ function generateHtmlMarkupForBlock(block: Blockly.Block): string {
     case 'cb_get_text': {
       const id = getTextValue(block, 'ID', '')
       result = `<!-- get-text #${id} -->`
+      break
+    }
+    case 'cb_clicked_id': {
+      result = `<!-- clicked-id -->`
       break
     }
     default: {
