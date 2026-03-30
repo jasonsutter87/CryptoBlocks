@@ -787,7 +787,7 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
     }
 
     case 'cb_clicked_id': {
-      return `(this && this.id ? this.id : "")`
+      return `__clickedId`
     }
 
     default:
@@ -901,10 +901,12 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
 
       if (calls.length > 0) {
         const fnKeyword = hasAsync ? 'async function' : 'function'
+        const needsClickedId = calls.some(c => c.includes('__clickedId'))
+        const idCapture = needsClickedId ? '\n    var __clickedId = this.id || "";' : ''
         const body = calls.join('\n')
         code = code.replace(
           `__lastEl = __el;\n})();`,
-          `__el.onclick = ${fnKeyword}() {\n${body}\n  };\n  __lastEl = __el;\n})();`
+          `__el.onclick = ${fnKeyword}() {${idCapture}\n${body}\n  };\n  __lastEl = __el;\n})();`
         )
         nextBlock = cursor
       }
