@@ -829,7 +829,11 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
     if (code.includes('await ') && code.includes('(function()')) {
       code = code.replace(/\(function\(\)/g, '(async function()')
     }
-    code = code.endsWith(')') ? code + ';' : code
+    // Only add semicolons to statement blocks, not value blocks
+    const isValueBlock = block.outputConnection !== null
+    if (!isValueBlock) {
+      code = code.endsWith(')') ? code + ';' : code
+    }
     let nextBlock = block.getNextBlock()
 
     // Button auto-onclick: absorb all consecutive action (registry) blocks
