@@ -8,6 +8,7 @@ import {
   chain,
   workspace,
 } from './workspaces'
+import { ticTacToeWorkspace } from './tic-tac-toe-workspace'
 
 export interface Example {
   id: string
@@ -682,5 +683,13 @@ export const EXAMPLES: Example[] = [
     difficulty: 'advanced',
     tags: ['Web', 'HTML', 'Text', 'Basics'],
     workspace: weatherDashboard(),
+  },
+  {
+    id: 'tic-tac-toe',
+    name: 'Tic-Tac-Toe',
+    description: 'A playable two-player game with a 3×3 grid, turn switching (❌/⭕), occupied cell detection, and a reset button.',
+    difficulty: 'pro',
+    tags: ['HTML', 'Logic', 'Basics', 'Math', 'Text'],
+    workspace: ticTacToeWorkspace,
   },
 ]
