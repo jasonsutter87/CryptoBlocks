@@ -9,6 +9,7 @@ import {
   workspace,
 } from './workspaces'
 import { ticTacToeWorkspace } from './tic-tac-toe-workspace'
+import { weatherDashboardWorkspace } from './weather-dashboard-workspace'
 
 export interface Example {
   id: string
@@ -466,135 +467,6 @@ function kitchenSink(): Record<string, unknown> {
   return workspace(chain(storeData, storeHash, printTitle, printHash, ifElse, setCount, repeatBlock, printEncoded, printDone))
 }
 
-// --- Example 11: Weather Dashboard ---
-function weatherDashboard(): Record<string, unknown> {
-  resetIds()
-
-  // Helper to drill into wttr.in JSON: response.current_condition[0]
-  const currentCondition = (field: string) =>
-    block('cb_get_json_field', undefined, {
-      data: block('cb_get_json_field', undefined, {
-        data: block('cb_get_json_field', undefined, {
-          data: block('cb_get_global', undefined, { name: textVal('weather') }),
-          key: textVal('current_condition'),
-        }),
-        key: textVal('0'),
-      }),
-      key: textVal(field),
-    })
-
-  // Drill into nested array fields: field[0].value
-  const nestedValue = (field: string) =>
-    block('cb_get_json_field', undefined, {
-      data: block('cb_get_json_field', undefined, {
-        data: currentCondition(field),
-        key: textVal('0'),
-      }),
-      key: textVal('value'),
-    })
-
-  // Step 1: Build API URL from timezone and fetch
-  const apiUrl = block('cb_join_text', undefined, {
-    first: textVal('https://wttr.in/'),
-    second: block('cb_join_text', undefined, {
-      first: block('cb_get_timezone', undefined, {}),
-      second: textVal('?format=j1'),
-    }),
-  })
-
-  const fetchWeather = block('cb_set_global', undefined, {
-    name: textVal('weather'),
-    value: block('cb_http_get', undefined, { url: apiUrl }),
-  }, 50, 50)
-
-  // Step 2: Store key values in globals
-  const storeDesc = block('cb_set_global', undefined, {
-    name: textVal('desc'),
-    value: nestedValue('weatherDesc'),
-  })
-
-  const storeIcon = block('cb_set_global', undefined, {
-    name: textVal('icon'),
-    value: nestedValue('weatherIconUrl'),
-  })
-
-  const storeTemp = block('cb_set_global', undefined, {
-    name: textVal('temp'),
-    value: currentCondition('temp_F'),
-  })
-
-  const storeHumidity = block('cb_set_global', undefined, {
-    name: textVal('humidity'),
-    value: currentCondition('humidity'),
-  })
-
-  // Step 3: Print to console
-  const printWeather = block('cb_print', undefined, {
-    message: block('cb_join_text', undefined, {
-      first: textVal('Weather: '),
-      second: block('cb_get_global', undefined, { name: textVal('desc') }),
-    }),
-  })
-
-  const printTemp = block('cb_print', undefined, {
-    message: block('cb_join_text', undefined, {
-      first: textVal('Temperature: '),
-      second: block('cb_join_text', undefined, {
-        first: block('cb_get_global', undefined, { name: textVal('temp') }),
-        second: textVal('°F'),
-      }),
-    }),
-  })
-
-  // Step 4: Build HTML dashboard
-  const heading = block('cb_heading', { LEVEL: '1' }, {
-    TEXT: textVal('CryptoBlocks Weather'),
-  })
-
-  const weatherIcon = block('cb_image', undefined, {
-    URL: block('cb_get_global', undefined, { name: textVal('icon') }),
-    WIDTH: numVal(64),
-  })
-
-  const descPara = block('cb_paragraph', undefined, {
-    TEXT: block('cb_join_text', undefined, {
-      first: block('cb_get_global', undefined, { name: textVal('desc') }),
-      second: block('cb_join_text', undefined, {
-        first: textVal(' — '),
-        second: block('cb_join_text', undefined, {
-          first: block('cb_get_global', undefined, { name: textVal('temp') }),
-          second: textVal('°F'),
-        }),
-      }),
-    }),
-  })
-
-  const humidityPara = block('cb_paragraph', undefined, {
-    TEXT: block('cb_join_text', undefined, {
-      first: textVal('Humidity: '),
-      second: block('cb_join_text', undefined, {
-        first: block('cb_get_global', undefined, { name: textVal('humidity') }),
-        second: textVal('%'),
-      }),
-    }),
-  })
-
-  const container = blockWithStatements(
-    'cb_container',
-    undefined,
-    { COLOR: colorVal('#1E3A5F'), PADDING: numVal(24) },
-    { CHILDREN: chain(heading, weatherIcon, descPara, humidityPara) },
-  )
-
-  container.x = 50
-  container.y = 250
-
-  return workspace(
-    chain(fetchWeather, storeDesc, storeIcon, storeTemp, storeHumidity, printWeather, printTemp),
-    container,
-  )
-}
-
 export const EXAMPLES: Example[] = [
   {
     id: 'hello-world',
@@ -682,7 +554,7 @@ export const EXAMPLES: Example[] = [
     description: 'Fetch live weather from wttr.in using your timezone, display icon and conditions.',
     difficulty: 'advanced',
     tags: ['Web', 'HTML', 'Text', 'Basics'],
-    workspace: weatherDashboard(),
+    workspace: weatherDashboardWorkspace,
   },
   {
     id: 'tic-tac-toe',
