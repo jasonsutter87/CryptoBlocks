@@ -135,4 +135,41 @@ export const textBlocks: BlockDefinition[] = [
     ],
     color: '#8B5CF6',
   },
+  {
+    name: 'to_number',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Convert text to a number',
+    category: 'Text',
+    inputs: [{ name: 'text', type: 'string', description: 'The text to convert', default: '0' }],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: `function toNumber(text) {\n  var n = Number(text);\n  return isNaN(n) ? 0 : n;\n}`,
+      python: `def to_number(text):\n    try:\n        return float(text) if '.' in str(text) else int(text)\n    except (ValueError, TypeError):\n        return 0`,
+    },
+    tests: [
+      { input: { text: '42' }, expected: { result: 42 } },
+      { input: { text: '3.14' }, expected: { result: 3.14 } },
+      { input: { text: 'abc' }, expected: { result: 0 } },
+    ],
+    color: '#8B5CF6',
+  },
+  {
+    name: 'to_text',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Convert a number to text',
+    category: 'Text',
+    inputs: [{ name: 'value', type: 'number', description: 'The number to convert', default: 0 }],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function toText(value) {\n  return String(value);\n}`,
+      python: `def to_text(value):\n    return str(value)`,
+    },
+    tests: [
+      { input: { value: 42 }, expected: { result: '42' } },
+      { input: { value: 3.14 }, expected: { result: '3.14' } },
+    ],
+    color: '#8B5CF6',
+  },
 ]
