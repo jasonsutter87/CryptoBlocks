@@ -244,24 +244,31 @@ export default function App() {
         : code
     setLastExecCode(execCode)
 
-    if (traceEnabled) console.log('[SlowMo] trace enabled, code length:', execCode.length)
+    const traceLog: string[] = []
 
     const handle = executeCode(execCode, execLang, (line) => {
       setLiveOutput((prev) => [...prev, line])
     }, traceEnabled ? (blockId) => {
-      console.log('[SlowMo] highlight block:', blockId)
-      workspaceRef.current?.highlightBlock(blockId)
+      traceLog.push(blockId)
     } : undefined)
     executionHandleRef.current = handle
 
     const execResult = await handle.promise
     executionHandleRef.current = null
-    // Clear trace highlight
-    if (traceEnabled) {
+
+    // Replay trace highlights with delay so user can follow along
+    if (traceEnabled && traceLog.length > 0) {
+      setResult(execResult)
+      setLiveOutput([])
+      for (const blockId of traceLog) {
+        workspaceRef.current?.highlightBlock(blockId)
+        await new Promise(r => setTimeout(r, 200))
+      }
       workspaceRef.current?.highlightBlock(null as unknown as string)
+    } else {
+      setResult(execResult)
+      setLiveOutput([])
     }
-    setResult(execResult)
-    setLiveOutput([])
     setIsRunning(false)
 
     // Track stats + check achievements
