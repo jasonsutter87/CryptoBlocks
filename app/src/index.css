@@ -65,6 +65,13 @@ body {
   display: none !important;
 }
 
+/* === SLOW-MO TRACE HIGHLIGHT === */
+.blocklyHighlighted > .blocklyPath {
+  stroke: #f9e2af !important;
+  stroke-width: 4px !important;
+  filter: drop-shadow(0 0 8px #f9e2af) drop-shadow(0 0 16px rgba(249, 226, 175, 0.5)) !important;
+}
+
 /* === HACKER MODE === */
 /* Activated by Konami code (↑↑↓↓←→←→BA) or clicking the logo 7 times */
 
