@@ -49,12 +49,14 @@ export function generateSafeApisCode(): string {
     configurable: false,
     writable: false,
   });
-  if (navigator.serviceWorker) {
-    Object.defineProperty(navigator, 'serviceWorker', {
-      get: function() { return undefined; },
-      configurable: false,
-    });
-  }
+  try {
+    if (navigator.serviceWorker) {
+      Object.defineProperty(navigator, 'serviceWorker', {
+        get: function() { return undefined; },
+        configurable: false,
+      });
+    }
+  } catch(e) { /* sandboxed — already blocked */ }
 
   // Rate-limit alert/confirm/prompt (max 3 per execution, locked)
   var __modalCount = 0;
