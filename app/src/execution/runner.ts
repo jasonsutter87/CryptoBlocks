@@ -23,7 +23,8 @@ const IFRAME_PROBE_TIMEOUT = 2000
 export function executeCode(
   code: string,
   language: Language,
-  onOutput?: (line: string) => void
+  onOutput?: (line: string) => void,
+  onTrace?: (blockId: string) => void,
 ): ExecutionHandle {
   // Empty code → instant empty result (no iframe/Pyodide needed)
   if (!code.trim()) {
@@ -39,7 +40,7 @@ export function executeCode(
   }
 
   if (language === 'javascript') {
-    return executeJavaScript(code, onOutput)
+    return executeJavaScript(code, onOutput, onTrace)
   } else {
     return executePython(code, onOutput)
   }
@@ -86,6 +87,7 @@ function tryIframeExecution(
   code: string,
   collector: ReturnType<typeof createOutputCollector>,
   start: number,
+  onTrace?: (blockId: string) => void,
 ): Promise<{ result: ExecutionResult; cleanup: () => void } | null> {
   return new Promise((resolve) => {
     let iframe: HTMLIFrameElement | null = null
@@ -144,7 +146,9 @@ function tryIframeExecution(
         }, EXECUTION_TIMEOUT)
       }
 
-      if (msg.type === 'log') {
+      if (msg.type === 'trace') {
+        onTrace?.(String(msg.data))
+      } else if (msg.type === 'log') {
         collector.push(String(msg.data))
       } else if (msg.type === 'canvas') {
         canvasDataUrl = String(msg.data)
@@ -290,7 +294,8 @@ async function directExecution(
 
 function executeJavaScript(
   code: string,
-  onOutput?: (line: string) => void
+  onOutput?: (line: string) => void,
+  onTrace?: (blockId: string) => void,
 ): ExecutionHandle {
   const collector = createOutputCollector(onOutput)
   const start = performance.now()
@@ -306,7 +311,7 @@ function executeJavaScript(
     }
 
     // Try iframe first (sandboxed, most secure)
-    const iframeResult = await tryIframeExecution(code, collector, start)
+    const iframeResult = await tryIframeExecution(code, collector, start, onTrace)
 
     if (iframeResult) {
       return iframeResult.result

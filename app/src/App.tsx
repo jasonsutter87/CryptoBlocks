@@ -104,6 +104,9 @@ export default function App() {
   const [showLabComplete, setShowLabComplete] = useState(false)
   const [labCode, setLabCode] = useState('')
 
+  // Slow-Mo trace state
+  const [slowMo, setSlowMo] = useState(false)
+
   // Achievement + Stats state
   const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null)
   const achievementQueue = useRef<Achievement[]>([])
@@ -233,18 +236,27 @@ export default function App() {
 
     // Always execute as JS or Python — HTML peek is display-only
     const execLang = language === 'html' ? 'javascript' : language
+    const traceEnabled = slowMo && execLang === 'javascript'
     const execCode = language === 'html' && workspaceRef.current
-      ? generateCode(workspaceRef.current, 'javascript')
-      : code
+      ? generateCode(workspaceRef.current, 'javascript', traceEnabled)
+      : traceEnabled && workspaceRef.current
+        ? generateCode(workspaceRef.current, language, true)
+        : code
     setLastExecCode(execCode)
 
     const handle = executeCode(execCode, execLang, (line) => {
       setLiveOutput((prev) => [...prev, line])
-    })
+    }, traceEnabled ? (blockId) => {
+      workspaceRef.current?.highlightBlock(blockId)
+    } : undefined)
     executionHandleRef.current = handle
 
     const execResult = await handle.promise
     executionHandleRef.current = null
+    // Clear trace highlight
+    if (traceEnabled) {
+      workspaceRef.current?.highlightBlock(null as unknown as string)
+    }
     setResult(execResult)
     setLiveOutput([])
     setIsRunning(false)
@@ -975,6 +987,8 @@ export default function App() {
         onOpenLab={handleOpenLab}
         onOpenExamples={() => setShowExamples(true)}
         onOpenStats={() => setShowStats(true)}
+        slowMo={slowMo}
+        onToggleSlowMo={() => setSlowMo(s => !s)}
       />
 
       {/* Challenge Browser Mode */}
