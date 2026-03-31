@@ -215,16 +215,22 @@ async function directExecution(
   code: string,
   collector: ReturnType<typeof createOutputCollector>,
   start: number,
+  onTrace?: (blockId: string) => void,
 ): Promise<ExecutionResult> {
   try {
-    // Build a function that receives a fake console object
+    // Build a function that receives a fake console object and __sendMsg
     const fn = new Function(
       '__console',
+      '__sendMsg',
       `return (async function() {\n`
         + `var console = __console;\n`
         + code
         + `\n})()`
     )
+
+    const fakeSendMsg = onTrace
+      ? (type: string, data: string) => { if (type === 'trace') onTrace(data) }
+      : () => {}
 
     const fakeConsole = {
       log: (...args: unknown[]) => collector.push(args.map(formatArg).join(' ')),
@@ -252,7 +258,7 @@ async function directExecution(
       document.body.appendChild(createdPage)
     }
 
-    const returnValue = await fn(fakeConsole)
+    const returnValue = await fn(fakeConsole, fakeSendMsg)
 
     // Capture canvas output
     let canvasDataUrl: string | undefined
@@ -307,7 +313,7 @@ function executeJavaScript(
 
   const promise = (async (): Promise<ExecutionResult> => {
     if (needsDirectExec) {
-      return directExecution(code, collector, start)
+      return directExecution(code, collector, start, onTrace)
     }
 
     // Try iframe first (sandboxed, most secure)
@@ -322,7 +328,7 @@ function executeJavaScript(
       return { output: collector.output, error: 'Execution stopped', returnValue: null, duration: performance.now() - start }
     }
 
-    return directExecution(code, collector, start)
+    return directExecution(code, collector, start, onTrace)
   })()
 
   return {
