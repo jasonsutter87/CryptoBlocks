@@ -494,10 +494,9 @@ export function generateCode(workspace: Blockly.Workspace, language: Language, t
   // Trace mode preamble — only for JavaScript (iframe strategy)
   if (_traceMode) {
     lines.push('// --- Slow-Mo Trace ---')
-    lines.push('if (typeof __sendMsg === \'undefined\') { var __sendMsg = function() {}; }')
     lines.push('var __traceDelay = 200;')
     lines.push('var __trace = function(id) {')
-    lines.push('  __sendMsg(\'trace\', id);')
+    lines.push('  if (typeof __sendMsg === "function") { __sendMsg("trace", id); }')
     lines.push('  return new Promise(function(r) { setTimeout(r, __traceDelay); });')
     lines.push('};')
     lines.push('')
