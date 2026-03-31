@@ -396,10 +396,11 @@ export default function Toolbar({
         )}
 
         {/* Slow-Mo toggle */}
-        {mode === 'sandbox' && !isRunning && (
+        {mode === 'sandbox' && (
           <button
             onClick={onToggleSlowMo}
-            className={`${btn} ${slowMo ? 'bg-[#f9e2af] text-[#1e1e2e]' : 'text-[#6c7086] hover:bg-[#313244]'} transition-colors`}
+            disabled={isRunning}
+            className={`${btn} ${slowMo ? 'bg-[#f9e2af] text-[#1e1e2e]' : 'text-[#6c7086] hover:bg-[#313244]'} transition-colors ${isRunning && slowMo ? 'animate-pulse' : ''} ${isRunning ? 'opacity-60 cursor-not-allowed' : ''}`}
             title="Slow-Mo: highlight blocks as they run"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

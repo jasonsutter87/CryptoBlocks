@@ -237,16 +237,19 @@ export default function App() {
     // Always execute as JS or Python — HTML peek is display-only
     const execLang = language === 'html' ? 'javascript' : language
     const traceEnabled = slowMo && execLang === 'javascript'
-    const execCode = language === 'html' && workspaceRef.current
-      ? generateCode(workspaceRef.current, 'javascript', traceEnabled)
-      : traceEnabled && workspaceRef.current
-        ? generateCode(workspaceRef.current, language, true)
+    const execCode = traceEnabled && workspaceRef.current
+      ? generateCode(workspaceRef.current, language === 'html' ? 'javascript' : language, true)
+      : language === 'html' && workspaceRef.current
+        ? generateCode(workspaceRef.current, 'javascript')
         : code
     setLastExecCode(execCode)
+
+    if (traceEnabled) console.log('[SlowMo] trace enabled, code length:', execCode.length)
 
     const handle = executeCode(execCode, execLang, (line) => {
       setLiveOutput((prev) => [...prev, line])
     }, traceEnabled ? (blockId) => {
+      console.log('[SlowMo] highlight block:', blockId)
       workspaceRef.current?.highlightBlock(blockId)
     } : undefined)
     executionHandleRef.current = handle
