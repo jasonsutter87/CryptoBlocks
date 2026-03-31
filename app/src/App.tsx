@@ -275,7 +275,7 @@ export default function App() {
       language: language,
     })
     processAchievements(newAchievements)
-  }, [code, language, processAchievements, getUsedCategories])
+  }, [code, language, slowMo, processAchievements, getUsedCategories])
 
   const handleStop = useCallback(() => {
     executionHandleRef.current?.abort()
