@@ -11,6 +11,7 @@ import {
 import { ticTacToeWorkspace } from './tic-tac-toe-workspace'
 import { weatherDashboardWorkspace } from './weather-dashboard-workspace'
 import { calculatorWorkspace } from './calculator-workspace'
+import { drumsetWorkspace } from './drumset-workspace'
 
 export interface Example {
   id: string
@@ -572,5 +573,13 @@ export const EXAMPLES: Example[] = [
     difficulty: 'pro',
     tags: ['HTML', 'Logic', 'Math', 'Basics', 'Lists'],
     workspace: calculatorWorkspace,
+  },
+  {
+    id: 'drum-pad',
+    name: 'Drum Pad',
+    description: 'Play drums with your keyboard — arrow keys, space, and enter each trigger a different sound.',
+    difficulty: 'beginner',
+    tags: ['Sound', 'Events'],
+    workspace: drumsetWorkspace,
   },
 ]
