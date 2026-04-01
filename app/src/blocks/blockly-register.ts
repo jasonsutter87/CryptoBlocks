@@ -403,9 +403,9 @@ function registerFunctionBlocks() {
       this.appendDummyInput()
         .appendField('function')
         .appendField(new Blockly.FieldTextInput('myFunction'), 'NAME')
-      this.appendValueInput('PARAM1').setCheck('String').appendField('param 1')
-      this.appendValueInput('PARAM2').setCheck('String').appendField('param 2')
-      this.appendValueInput('PARAM3').setCheck('String').appendField('param 3')
+      this.appendValueInput('PARAM1').appendField('param 1')
+      this.appendValueInput('PARAM2').appendField('param 2')
+      this.appendValueInput('PARAM3').appendField('param 3')
       this.appendStatementInput('BODY').appendField('do')
       this.setTooltip('Create a reusable function you can call from anywhere')
     },
