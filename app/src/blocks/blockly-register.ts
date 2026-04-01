@@ -776,18 +776,26 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
     case 'cb_create_function': {
       const name = block.getFieldValue('NAME') ?? 'myFunction'
       const paramsRaw = block.getFieldValue('PARAMS') ?? ''
-      const params = paramsRaw
+      const paramList = paramsRaw
         .split(',')
         .map((p: string) => p.trim())
         .filter((p: string) => p.length > 0)
-        .join(', ')
+      const params = paramList.join(', ')
       const body = generateStatementCode(block, 'BODY', language)
+
+      // Inject setGlobal calls so params are accessible via Get Global blocks
+      const paramSync = paramList
+        .map(p => language === 'javascript'
+          ? `  setGlobal("${p}", ${p});`
+          : `    set_global("${p}", ${p})`)
+        .join('\n')
 
       if (language === 'javascript') {
         const isAsync = body.includes('await ')
         const fnKeyword = isAsync ? 'async function' : 'function'
-        if (!body) return `${fnKeyword} ${name}(${params}) {}`
-        return `${fnKeyword} ${name}(${params}) {\n${indent(body, language)}\n}`
+        if (!body && !paramSync) return `${fnKeyword} ${name}(${params}) {}`
+        const fullBody = [paramSync, body ? indent(body, language) : ''].filter(Boolean).join('\n')
+        return `${fnKeyword} ${name}(${params}) {\n${fullBody}\n}`
       } else {
         // Python: snake_case the function name
         const pyName = name.replace(/([A-Z])/g, (m: string) => '_' + m.toLowerCase()).replace(/^_/, '')
@@ -796,8 +804,9 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
           .map((p: string) => p.trim())
           .filter((p: string) => p.length > 0)
           .join(', ')
-        if (!body) return `def ${pyName}(${pyParams}):\n    pass`
-        return `def ${pyName}(${pyParams}):\n${indent(body, language)}`
+        if (!body && !paramSync) return `def ${pyName}(${pyParams}):\n    pass`
+        const pyFullBody = [paramSync, body ? indent(body, language) : ''].filter(Boolean).join('\n')
+        return `def ${pyName}(${pyParams}):\n${pyFullBody}`
       }
     }
 
