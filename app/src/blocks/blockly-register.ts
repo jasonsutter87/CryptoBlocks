@@ -28,7 +28,7 @@ function typeToBlocklyCheck(type: string): string | null {
 }
 
 // --- Control flow block types ---
-const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat'])
+const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat', 'cb_loop_index'])
 
 // --- HTML/CSS block types (native Blockly, not registry) ---
 const HTML_BLOCKS = new Set([
@@ -94,6 +94,16 @@ function registerControlFlowBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Repeat blocks a number of times')
+    },
+  }
+
+  // LOOP INDEX (value block — returns current iteration number)
+  Blockly.Blocks['cb_loop_index'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#059669')
+      this.appendDummyInput().appendField('loop index')
+      this.setOutput(true, 'Number')
+      this.setTooltip('Get the current loop iteration number (starts at 0)')
     },
   }
 }
@@ -735,14 +745,21 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
         : '0'
       const body = generateStatementCode(block, 'DO', language)
       const loopVar = `__i${_loopVarCounter++}`
+      const savedVar = `__savedIndex${_loopVarCounter}`
 
       if (language === 'javascript') {
         if (!body) return `for (var ${loopVar} = 0; ${loopVar} < ${times}; ${loopVar}++) {}`
-        return `for (var ${loopVar} = 0; ${loopVar} < ${times}; ${loopVar}++) {\n${indent(body, language)}\n}`
+        const indexSetup = `var ${savedVar} = typeof __loopIndex !== 'undefined' ? __loopIndex : 0;\n  var __loopIndex = ${loopVar};`
+        const indexRestore = `__loopIndex = ${savedVar};`
+        return `for (var ${loopVar} = 0; ${loopVar} < ${times}; ${loopVar}++) {\n${indent(indexSetup, language)}\n${indent(body, language)}\n${indent(indexRestore, language)}\n}`
       } else {
-        if (!body) return `for _ in range(int(${times})):\n    pass`
-        return `for _ in range(int(${times})):\n${indent(body, language)}`
+        if (!body) return `for __loopIndex in range(int(${times})):\n    pass`
+        return `for __loopIndex in range(int(${times})):\n${indent(body, language)}`
       }
+    }
+
+    case 'cb_loop_index': {
+      return language === 'javascript' ? '__loopIndex' : '__loopIndex'
     }
 
     default:
@@ -1227,6 +1244,7 @@ function controlFlowToolboxXml(cat: string): string {
     '<block type="cb_if"></block>' +
     '<block type="cb_if_else"></block>' +
     '<block type="cb_repeat"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>' +
+    '<block type="cb_loop_index"></block>' +
     '<sep gap="20"></sep>'
   )
 }
