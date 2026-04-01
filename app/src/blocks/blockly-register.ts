@@ -403,9 +403,9 @@ function registerFunctionBlocks() {
       this.appendDummyInput()
         .appendField('function')
         .appendField(new Blockly.FieldTextInput('myFunction'), 'NAME')
-        .appendField('(')
-        .appendField(new Blockly.FieldTextInput(''), 'PARAMS')
-        .appendField(')')
+      this.appendValueInput('PARAM1').setCheck('String').appendField('param 1')
+      this.appendValueInput('PARAM2').setCheck('String').appendField('param 2')
+      this.appendValueInput('PARAM3').setCheck('String').appendField('param 3')
       this.appendStatementInput('BODY').appendField('do')
       this.setTooltip('Create a reusable function you can call from anywhere')
     },
@@ -775,11 +775,17 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
   switch (block.type) {
     case 'cb_create_function': {
       const name = block.getFieldValue('NAME') ?? 'myFunction'
-      const paramsRaw = block.getFieldValue('PARAMS') ?? ''
-      const paramList = paramsRaw
-        .split(',')
-        .map((p: string) => p.trim())
-        .filter((p: string) => p.length > 0)
+      // Read param names from value inputs (text blocks)
+      const paramList: string[] = []
+      for (const inputName of ['PARAM1', 'PARAM2', 'PARAM3']) {
+        const paramBlock = block.getInputTargetBlock(inputName)
+        if (paramBlock) {
+          const val = generateBlockCode(paramBlock, language)
+          // Strip quotes from string literals to get the param name
+          const paramName = val.replace(/^["']|["']$/g, '')
+          if (paramName) paramList.push(paramName)
+        }
+      }
       const params = paramList.join(', ')
       const body = generateStatementCode(block, 'BODY', language)
 
@@ -799,14 +805,9 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
       } else {
         // Python: snake_case the function name
         const pyName = name.replace(/([A-Z])/g, (m: string) => '_' + m.toLowerCase()).replace(/^_/, '')
-        const pyParams = paramsRaw
-          .split(',')
-          .map((p: string) => p.trim())
-          .filter((p: string) => p.length > 0)
-          .join(', ')
-        if (!body && !paramSync) return `def ${pyName}(${pyParams}):\n    pass`
+        if (!body && !paramSync) return `def ${pyName}(${params}):\n    pass`
         const pyFullBody = [paramSync, body ? indent(body, language) : ''].filter(Boolean).join('\n')
-        return `def ${pyName}(${pyParams}):\n${pyFullBody}`
+        return `def ${pyName}(${params}):\n${pyFullBody}`
       }
     }
 
@@ -1282,7 +1283,11 @@ function functionsToolboxXml(): string {
   const hue = hexToHue(FUNCTION_COLOR)
   let xml = `<category name="Functions" colour="${hue}">`
 
-  xml += '<block type="cb_create_function"></block>'
+  xml += '<block type="cb_create_function">'
+  xml += '<value name="PARAM1"><shadow type="text"><field name="TEXT"></field></shadow></value>'
+  xml += '<value name="PARAM2"><shadow type="text"><field name="TEXT"></field></shadow></value>'
+  xml += '<value name="PARAM3"><shadow type="text"><field name="TEXT"></field></shadow></value>'
+  xml += '</block>'
 
   xml += '<block type="cb_call_function">'
   xml += '<value name="ARG1"><shadow type="math_number"><field name="NUM">0</field></shadow></value>'
