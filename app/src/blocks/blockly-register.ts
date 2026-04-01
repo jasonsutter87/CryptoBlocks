@@ -785,7 +785,7 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
 
       // Inject setGlobal calls so params are accessible via Get Global blocks
       const paramSync = paramList
-        .map(p => language === 'javascript'
+        .map((p: string) => language === 'javascript'
           ? `  setGlobal("${p}", ${p});`
           : `    set_global("${p}", ${p})`)
         .join('\n')
