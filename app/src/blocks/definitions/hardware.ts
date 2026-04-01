@@ -221,4 +221,26 @@ export const hardwareBlocks: BlockDefinition[] = [
     color: '#65A30D',
     shape: 'value',
   },
+  {
+    name: 'get_current_time',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get the current time as a readable string',
+    category: 'Hardware',
+    inputs: [],
+    outputs: [{ name: 'time', type: 'string' }],
+    implementations: {
+      javascript: `function getCurrentTime() {
+  return new Date().toLocaleTimeString();
+}`,
+      python: `def get_current_time():
+    import time
+    return time.strftime("%H:%M:%S")`,
+    },
+    tests: [
+      { input: {}, expected: { time: 'string' } },
+    ],
+    color: '#65A30D',
+    shape: 'value',
+  },
 ]
