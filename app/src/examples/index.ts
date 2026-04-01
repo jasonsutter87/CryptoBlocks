@@ -10,6 +10,7 @@ import {
 } from './workspaces'
 import { ticTacToeWorkspace } from './tic-tac-toe-workspace'
 import { weatherDashboardWorkspace } from './weather-dashboard-workspace'
+import { calculatorWorkspace } from './calculator-workspace'
 
 export interface Example {
   id: string
@@ -563,5 +564,13 @@ export const EXAMPLES: Example[] = [
     difficulty: 'pro',
     tags: ['HTML', 'Logic', 'Basics', 'Math', 'Text'],
     workspace: ticTacToeWorkspace,
+  },
+  {
+    id: 'calculator',
+    name: 'Calculator',
+    description: 'A fully working calculator with multi-digit numbers, all four operators, and a toggle sign button.',
+    difficulty: 'pro',
+    tags: ['HTML', 'Logic', 'Math', 'Basics', 'Lists'],
+    workspace: calculatorWorkspace,
   },
 ]
