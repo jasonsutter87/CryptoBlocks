@@ -816,7 +816,7 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
       const args: string[] = []
       for (const argName of ['ARG1', 'ARG2', 'ARG3']) {
         const argBlock = block.getInputTargetBlock(argName)
-        if (argBlock) args.push(generateBlockCode(argBlock, language))
+        if (argBlock && !argBlock.isShadow()) args.push(generateBlockCode(argBlock, language))
       }
 
       if (language === 'javascript') {
