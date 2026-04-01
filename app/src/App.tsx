@@ -107,6 +107,10 @@ export default function App() {
   // Slow-Mo trace state
   const [slowMo, setSlowMo] = useState(false)
 
+  // Resizable split pane state (percentage for left/block editor pane)
+  const [splitPercent, setSplitPercent] = useState(50)
+  const isDraggingSplit = useRef(false)
+
   // Achievement + Stats state
   const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null)
   const achievementQueue = useRef<Achievement[]>([])
@@ -286,6 +290,30 @@ export default function App() {
     })
     processAchievements(newAchievements)
   }, [code, language, slowMo, processAchievements, getUsedCategories])
+
+  // Split pane drag handler
+  const handleSplitMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isDraggingSplit.current = true
+    const container = (e.target as HTMLElement).parentElement!
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!isDraggingSplit.current) return
+      const rect = container.getBoundingClientRect()
+      const pct = ((ev.clientX - rect.left) / rect.width) * 100
+      setSplitPercent(Math.min(85, Math.max(15, pct)))
+    }
+    const onMouseUp = () => {
+      isDraggingSplit.current = false
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+  }, [])
 
   const handleStop = useCallback(() => {
     executionHandleRef.current?.abort()
@@ -1112,13 +1140,8 @@ export default function App() {
           <div className="flex-1 flex flex-col md:flex-row min-h-0">
             {/* Block Editor */}
             <div
-              className={`${
-                showCode
-                  ? 'h-1/2 md:h-full md:w-1/2'
-                  : showOutput
-                    ? 'h-1/2 md:h-full md:w-1/2'
-                    : 'h-full w-full'
-              } transition-all duration-300 border-b md:border-b-0 md:border-r border-[#313244]`}
+              className="h-1/2 md:h-full border-b md:border-b-0 md:border-r border-[#313244]"
+              style={(showCode || showOutput) ? { width: `${splitPercent}%` } : { width: '100%' }}
             >
               <BlockEditor
                 onWorkspaceChange={handleWorkspaceChange}
@@ -1129,9 +1152,19 @@ export default function App() {
               />
             </div>
 
+            {/* Drag handle */}
+            {(showCode || showOutput) && (
+              <div
+                className="hidden md:flex items-center justify-center w-1.5 cursor-col-resize bg-[#313244] hover:bg-[#f9e2af] active:bg-[#f9e2af] transition-colors flex-shrink-0"
+                onMouseDown={handleSplitMouseDown}
+              >
+                <div className="w-0.5 h-8 bg-[#6c7086] rounded-full" />
+              </div>
+            )}
+
             {/* Code View */}
             {showCode && (
-              <div className="h-1/2 md:h-full md:w-1/2 flex flex-col">
+              <div className="h-1/2 md:h-full flex flex-col" style={{ width: `${100 - splitPercent}%` }}>
                 <div className={showOutput ? 'h-1/2' : 'h-full'}>
                   <CodeView
                     code={code}
@@ -1151,7 +1184,7 @@ export default function App() {
 
             {/* Output when code view is hidden — show on right side */}
             {!showCode && showOutput && (
-              <div className="h-1/2 md:h-full md:w-1/2 border-t md:border-t-0 md:border-l border-[#313244]">
+              <div className="h-1/2 md:h-full border-t md:border-t-0 md:border-l border-[#313244]" style={{ width: `${100 - splitPercent}%` }}>
                 <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
               </div>
             )}
