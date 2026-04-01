@@ -38,8 +38,14 @@ const HTML_BLOCKS = new Set([
   'cb_set_text', 'cb_get_text', 'cb_clicked_id',
 ])
 
+// --- Function block types ---
+const FUNCTION_BLOCKS = new Set(['cb_create_function', 'cb_call_function'])
+
+// --- Event block types ---
+const EVENT_BLOCKS = new Set(['cb_when_key_pressed', 'cb_when_clicked'])
+
 function isNativeBlock(type: string): boolean {
-  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type)
+  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type)
 }
 
 /** Register control flow blocks (IF, IF-ELSE, REPEAT) as native Blockly blocks with statement inputs. */
@@ -376,12 +382,94 @@ function registerColorBlock() {
   }
 }
 
+const FUNCTION_COLOR = '#3B82F6'
+const EVENT_COLOR = '#F59E0B'
+
+/** Register function definition and call blocks. */
+function registerFunctionBlocks() {
+  Blockly.Blocks['cb_create_function'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(FUNCTION_COLOR)
+      this.appendDummyInput()
+        .appendField('function')
+        .appendField(new Blockly.FieldTextInput('myFunction'), 'NAME')
+        .appendField('(')
+        .appendField(new Blockly.FieldTextInput(''), 'PARAMS')
+        .appendField(')')
+      this.appendStatementInput('BODY').appendField('do')
+      this.setTooltip('Create a reusable function you can call from anywhere')
+    },
+  }
+
+  Blockly.Blocks['cb_call_function'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(FUNCTION_COLOR)
+      this.appendDummyInput()
+        .appendField('call')
+        .appendField(new Blockly.FieldTextInput('myFunction'), 'NAME')
+      this.appendValueInput('ARG1').appendField('with')
+      this.appendValueInput('ARG2').appendField('and')
+      this.appendValueInput('ARG3').appendField('and')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Call a function by name')
+    },
+  }
+}
+
+/** Register event blocks (key press, click). */
+function registerEventBlocks() {
+  const keyOptions: [string, string][] = [
+    ['Up Arrow', 'ArrowUp'],
+    ['Down Arrow', 'ArrowDown'],
+    ['Left Arrow', 'ArrowLeft'],
+    ['Right Arrow', 'ArrowRight'],
+    ['Space', ' '],
+    ['Enter', 'Enter'],
+    ['Escape', 'Escape'],
+    ...('abcdefghijklmnopqrstuvwxyz'.split('').map(c => [c, c] as [string, string])),
+    ...('0123456789'.split('').map(c => [c, c] as [string, string])),
+  ]
+
+  Blockly.Blocks['cb_when_key_pressed'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(EVENT_COLOR)
+      this.appendDummyInput()
+        .appendField('when key')
+        .appendField(new Blockly.FieldDropdown(keyOptions), 'KEY')
+        .appendField('pressed')
+      this.appendStatementInput('DO').appendField('do')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Run blocks when a key is pressed')
+    },
+  }
+
+  Blockly.Blocks['cb_when_clicked'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(EVENT_COLOR)
+      this.appendValueInput('ID').setCheck('String').appendField('when')
+      this.appendDummyInput().appendField('clicked')
+      this.appendStatementInput('DO').appendField('do')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Run blocks when an element is clicked')
+    },
+  }
+}
+
 export function registerCustomBlocks() {
   // Register control flow blocks first
   registerControlFlowBlocks()
 
   // Register HTML/CSS blocks
   registerHtmlBlocks()
+
+  // Register function blocks
+  registerFunctionBlocks()
+
+  // Register event blocks
+  registerEventBlocks()
 
   // Register color picker block
   registerColorBlock()
@@ -662,6 +750,97 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
   }
 }
 
+/**
+ * Generate code for function definition and call blocks.
+ * Returns null if the block is not a function block.
+ */
+function generateFunctionCode(block: Blockly.Block, language: Language): string | null {
+  switch (block.type) {
+    case 'cb_create_function': {
+      const name = block.getFieldValue('NAME') ?? 'myFunction'
+      const paramsRaw = block.getFieldValue('PARAMS') ?? ''
+      const params = paramsRaw
+        .split(',')
+        .map((p: string) => p.trim())
+        .filter((p: string) => p.length > 0)
+        .join(', ')
+      const body = generateStatementCode(block, 'BODY', language)
+
+      if (language === 'javascript') {
+        const isAsync = body.includes('await ')
+        const fnKeyword = isAsync ? 'async function' : 'function'
+        if (!body) return `${fnKeyword} ${name}(${params}) {}`
+        return `${fnKeyword} ${name}(${params}) {\n${indent(body, language)}\n}`
+      } else {
+        // Python: snake_case the function name
+        const pyName = name.replace(/([A-Z])/g, (m: string) => '_' + m.toLowerCase()).replace(/^_/, '')
+        const pyParams = paramsRaw
+          .split(',')
+          .map((p: string) => p.trim())
+          .filter((p: string) => p.length > 0)
+          .join(', ')
+        if (!body) return `def ${pyName}(${pyParams}):\n    pass`
+        return `def ${pyName}(${pyParams}):\n${indent(body, language)}`
+      }
+    }
+
+    case 'cb_call_function': {
+      const name = block.getFieldValue('NAME') ?? 'myFunction'
+      const args: string[] = []
+      for (const argName of ['ARG1', 'ARG2', 'ARG3']) {
+        const argBlock = block.getInputTargetBlock(argName)
+        if (argBlock) args.push(generateBlockCode(argBlock, language))
+      }
+
+      if (language === 'javascript') {
+        return `${name}(${args.join(', ')});`
+      } else {
+        const pyName = name.replace(/([A-Z])/g, (m: string) => '_' + m.toLowerCase()).replace(/^_/, '')
+        return `${pyName}(${args.join(', ')})`
+      }
+    }
+
+    default:
+      return null
+  }
+}
+
+/**
+ * Generate code for event blocks (key press, click).
+ * Returns null if the block is not an event block.
+ */
+function generateEventCode(block: Blockly.Block, language: Language): string | null {
+  switch (block.type) {
+    case 'cb_when_key_pressed': {
+      if (language !== 'javascript') {
+        return `# Key press events are only available in JavaScript mode`
+      }
+      const key = block.getFieldValue('KEY') ?? 'ArrowUp'
+      const body = generateStatementCode(block, 'DO', language)
+      const isAsync = body.includes('await ')
+      const fnKeyword = isAsync ? 'async function' : 'function'
+      const bodyIndented = body ? `\n${indent(body, language)}\n` : ''
+      return `document.addEventListener('keydown', ${fnKeyword}(e) {\n  if (e.key === ${JSON.stringify(key)}) {${bodyIndented}  }\n});`
+    }
+
+    case 'cb_when_clicked': {
+      if (language !== 'javascript') {
+        return `# Click events are only available in JavaScript mode`
+      }
+      const idBlock = block.getInputTargetBlock('ID')
+      const idCode = idBlock ? generateBlockCode(idBlock, language) : '""'
+      const body = generateStatementCode(block, 'DO', language)
+      const isAsync = body.includes('await ')
+      const fnKeyword = isAsync ? 'async function' : 'function'
+      const bodyIndented = body ? `\n${indent(body, language)}\n    ` : ''
+      return `(${isAsync ? 'async ' : ''}function() {\n  var __target = document.getElementById(${idCode});\n  if (__target) {\n    __target.addEventListener('click', ${fnKeyword}() {\n      var __clickedId = this.id || "";${bodyIndented}});\n  }\n})()`
+    }
+
+    default:
+      return null
+  }
+}
+
 /** Helper to get a value input or a default string for HTML code gen. */
 function htmlVal(block: Blockly.Block, inputName: string, fallback: string, language: Language): string {
   const target = block.getInputTargetBlock(inputName)
@@ -830,6 +1009,35 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   const controlFlow = generateControlFlowCode(block, language)
   if (controlFlow !== null) {
     let code = traceCall(block) + controlFlow
+    const nextBlock = block.getNextBlock()
+    if (nextBlock) {
+      code += '\n' + generateBlockCode(nextBlock, language)
+    }
+    return code
+  }
+
+  // Handle function blocks (create_function, call_function)
+  const functionCode = generateFunctionCode(block, language)
+  if (functionCode !== null) {
+    let code = traceCall(block) + functionCode
+    const nextBlock = block.getNextBlock()
+    if (nextBlock) {
+      code += '\n' + generateBlockCode(nextBlock, language)
+    }
+    return code
+  }
+
+  // Handle event blocks (when_key_pressed, when_clicked)
+  const eventCode = generateEventCode(block, language)
+  if (eventCode !== null) {
+    let code = traceCall(block) + eventCode
+    // Make outer IIFEs async when they contain await calls
+    if (code.includes('await ') && code.includes('(function()')) {
+      code = code.replace(/\(function\(\)/g, '(async function()')
+    }
+    if (block.type === 'cb_when_clicked') {
+      code = code.endsWith(')') ? code + ';' : code
+    }
     const nextBlock = block.getNextBlock()
     if (nextBlock) {
       code += '\n' + generateBlockCode(nextBlock, language)
@@ -1042,6 +1250,36 @@ function inputShadowXml(input: { name: string; type: string; default?: string | 
   return shadow
 }
 
+/** Generate the Functions toolbox category. */
+function functionsToolboxXml(): string {
+  const hue = hexToHue(FUNCTION_COLOR)
+  let xml = `<category name="Functions" colour="${hue}">`
+
+  xml += '<block type="cb_create_function"></block>'
+
+  xml += '<block type="cb_call_function">'
+  xml += '<value name="ARG1"><shadow type="math_number"><field name="NUM">0</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '</category>'
+  return xml
+}
+
+/** Generate the Events toolbox category. */
+function eventsToolboxXml(): string {
+  const hue = hexToHue(EVENT_COLOR)
+  let xml = `<category name="Events" colour="${hue}">`
+
+  xml += '<block type="cb_when_key_pressed"></block>'
+
+  xml += '<block type="cb_when_clicked">'
+  xml += '<value name="ID"><shadow type="text"><field name="TEXT">my-button</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '</category>'
+  return xml
+}
+
 /** Generate the HTML toolbox category with structure + CSS blocks. */
 function htmlToolboxXml(): string {
   const hue = hexToHue(HTML_COLOR)
@@ -1156,6 +1394,12 @@ export function getToolboxXml(): string {
     xml += '</category>'
   }
 
+  // Add Functions category
+  xml += functionsToolboxXml()
+
+  // Add Events category
+  xml += eventsToolboxXml()
+
   // Add HTML category
   xml += htmlToolboxXml()
 
@@ -1196,6 +1440,16 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
     }
 
     xml += '</category>'
+  }
+
+  // Add Functions category if allowed
+  if (allowedCategories.includes('Functions')) {
+    xml += functionsToolboxXml()
+  }
+
+  // Add Events category if allowed
+  if (allowedCategories.includes('Events')) {
+    xml += eventsToolboxXml()
   }
 
   // Add HTML category if allowed
