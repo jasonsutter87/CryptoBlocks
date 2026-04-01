@@ -1289,9 +1289,7 @@ function functionsToolboxXml(): string {
   xml += '<value name="PARAM3"><shadow type="text"><field name="TEXT"></field></shadow></value>'
   xml += '</block>'
 
-  xml += '<block type="cb_call_function">'
-  xml += '<value name="ARG1"><shadow type="math_number"><field name="NUM">0</field></shadow></value>'
-  xml += '</block>'
+  xml += '<block type="cb_call_function"></block>'
 
   xml += '</category>'
   return xml
