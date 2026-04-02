@@ -53,6 +53,44 @@ export const basicsBlocks: BlockDefinition[] = [
     color: '#4C97AF',
   },
   {
+    name: 'set_local',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Store a value scoped to the current function',
+    category: 'Basics',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Variable name' },
+      { name: 'value', type: 'any', description: 'Value to store' },
+    ],
+    outputs: [{ name: 'value', type: 'any' }],
+    implementations: {
+      javascript: `function setLocal(name, value) {\n  var scope = (window.__localStack || [{}]);\n  scope[scope.length - 1][name] = value;\n  return value;\n}`,
+      python: `def set_local(name, value):\n    if not hasattr(set_local, '_stack') or not set_local._stack:\n        set_local._stack = [{}]\n    set_local._stack[-1][name] = value\n    return value`,
+    },
+    tests: [
+      { input: { name: 'x', value: 42 }, expected: { value: 42 } },
+    ],
+    color: '#4C97AF',
+    shape: 'statement',
+  },
+  {
+    name: 'get_local',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get a value that was stored with Set Local',
+    category: 'Basics',
+    inputs: [{ name: 'name', type: 'string', description: 'Variable name' }],
+    outputs: [{ name: 'value', type: 'any' }],
+    implementations: {
+      javascript: `function getLocal(name) {\n  var scope = (window.__localStack || [{}]);\n  return scope[scope.length - 1][name];\n}`,
+      python: `def get_local(name):\n    if not hasattr(get_local, '_stack') or not get_local._stack:\n        return None\n    return get_local._stack[-1].get(name)`,
+    },
+    tests: [
+      { input: { name: 'x' }, expected: { value: 'any' } },
+    ],
+    color: '#4C97AF',
+  },
+  {
     name: 'set_global',
     author: 'CryptoBlocks',
     version: '1.0.0',

@@ -789,24 +789,28 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
       const params = paramList.join(', ')
       const body = generateStatementCode(block, 'BODY', language)
 
-      // Inject setGlobal calls so params are accessible via Get Global blocks
+      // Inject local scope push + param sync so params are accessible via Get Local blocks
       const paramSync = paramList
         .map((p: string) => language === 'javascript'
-          ? `  setGlobal("${p}", ${p});`
-          : `    set_global("${p}", ${p})`)
+          ? `  setLocal("${p}", ${p});`
+          : `    set_local("${p}", ${p})`)
         .join('\n')
 
       if (language === 'javascript') {
         const isAsync = body.includes('await ')
         const fnKeyword = isAsync ? 'async function' : 'function'
-        if (!body && !paramSync) return `${fnKeyword} ${name}(${params}) {}`
-        const fullBody = [paramSync, body ? indent(body, language) : ''].filter(Boolean).join('\n')
+        const scopePush = '  window.__localStack = window.__localStack || []; window.__localStack.push({});'
+        const scopePop = '  window.__localStack.pop();'
+        if (!body && !paramSync) return `${fnKeyword} ${name}(${params}) {\n${scopePush}\n${scopePop}\n}`
+        const fullBody = [scopePush, paramSync, body ? indent(body, language) : '', scopePop].filter(Boolean).join('\n')
         return `${fnKeyword} ${name}(${params}) {\n${fullBody}\n}`
       } else {
         // Python: snake_case the function name
         const pyName = name.replace(/([A-Z])/g, (m: string) => '_' + m.toLowerCase()).replace(/^_/, '')
-        if (!body && !paramSync) return `def ${pyName}(${params}):\n    pass`
-        const pyFullBody = [paramSync, body ? indent(body, language) : ''].filter(Boolean).join('\n')
+        const pyScopePush = `    if not hasattr(set_local, '_stack'): set_local._stack = []\n    set_local._stack.append({})`
+        const pyScopePop = '    set_local._stack.pop()'
+        if (!body && !paramSync) return `def ${pyName}(${params}):\n${pyScopePush}\n${pyScopePop}`
+        const pyFullBody = [pyScopePush, paramSync, body ? indent(body, language) : '', pyScopePop].filter(Boolean).join('\n')
         return `def ${pyName}(${params}):\n${pyFullBody}`
       }
     }
