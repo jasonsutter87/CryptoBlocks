@@ -53,6 +53,9 @@ import CodeToBlocksModal from './components/CodeToBlocksModal'
 import PublishModal from './components/PublishModal'
 import type { ConversionResult } from './converters/js-to-workspace'
 import type { Example } from './examples'
+import { useVersionControl } from './version-control/useVersionControl'
+import CheckpointModal from './components/CheckpointModal'
+import HistoryPanel from './components/HistoryPanel'
 import { initEasterEggs } from './easter-eggs'
 import type { Achievement } from './achievements'
 import { checkAchievements } from './achievements'
@@ -123,6 +126,19 @@ export default function App() {
   const executionHandleRef = useRef<ExecutionHandle | null>(null)
 
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
+
+  // Version control
+  const {
+    showHistory,
+    setShowHistory,
+    showCheckpointModal,
+    setShowCheckpointModal,
+    saveCheckpoint,
+    rollbackTo,
+    currentBranch,
+    checkpoints,
+  } = useVersionControl(workspaceRef, blockCount)
+
   const languageRef = useRef(language)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const modeRef = useRef(mode)
@@ -1028,6 +1044,9 @@ export default function App() {
         slowMo={slowMo}
         onToggleSlowMo={() => setSlowMo(s => !s)}
         blockCount={blockCount}
+        onSaveCheckpoint={() => setShowCheckpointModal(true)}
+        onOpenHistory={() => setShowHistory(true)}
+        currentBranchName={currentBranch?.name}
       />
 
       {/* Challenge Browser Mode */}
@@ -1272,6 +1291,30 @@ export default function App() {
       {/* Stats Dashboard */}
       {showStats && (
         <StatsPanel onClose={() => setShowStats(false)} />
+      )}
+
+      {/* Checkpoint Modal */}
+      {showCheckpointModal && (
+        <CheckpointModal
+          onSave={async (label) => {
+            setShowCheckpointModal(false)
+            await saveCheckpoint(label)
+          }}
+          onCancel={() => setShowCheckpointModal(false)}
+        />
+      )}
+
+      {/* History Panel */}
+      {showHistory && (
+        <HistoryPanel
+          checkpoints={checkpoints}
+          currentBranch={currentBranch}
+          onRollback={async (id) => {
+            setShowHistory(false)
+            await rollbackTo(id)
+          }}
+          onClose={() => setShowHistory(false)}
+        />
       )}
 
       {/* Achievement Toast */}

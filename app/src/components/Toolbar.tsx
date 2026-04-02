@@ -33,6 +33,9 @@ interface ToolbarProps {
   slowMo: boolean
   onToggleSlowMo: () => void
   blockCount?: number
+  onSaveCheckpoint: () => void
+  onOpenHistory: () => void
+  currentBranchName?: string
 }
 
 const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
@@ -63,6 +66,9 @@ export default function Toolbar({
   slowMo,
   onToggleSlowMo,
   blockCount = 0,
+  onSaveCheckpoint,
+  onOpenHistory,
+  currentBranchName,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
@@ -184,6 +190,24 @@ export default function Toolbar({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                     Import as Block
+                  </button>
+                  <div className={menuDivider} />
+                  <button onClick={() => { onSaveCheckpoint(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Save Checkpoint
+                  </button>
+                  <button onClick={() => { onOpenHistory(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    History
+                    {currentBranchName && currentBranchName !== 'Main' && (
+                      <span className="ml-auto text-xs text-[#cba6f7] bg-[#1e1e2e] px-1.5 py-0.5 rounded font-mono">
+                        {currentBranchName}
+                      </span>
+                    )}
                   </button>
                   <div className={menuDivider} />
                   <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
@@ -544,6 +568,19 @@ export default function Toolbar({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Publish to GitHub
+                </button>
+                <div className={menuDivider} />
+                <button onClick={() => { onSaveCheckpoint(); setOpenMenu(null) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Save Checkpoint
+                </button>
+                <button onClick={() => { onOpenHistory(); setOpenMenu(null) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  History
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
