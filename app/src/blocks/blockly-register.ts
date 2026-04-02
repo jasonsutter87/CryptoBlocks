@@ -1,4 +1,5 @@
 import * as Blockly from 'blockly'
+import { compileString } from 'sass'
 import type { BlockDefinition, Language } from '../types/block'
 import { registry } from './registry'
 import { isHackerModeActive } from '../easter-eggs/hacker-mode'
@@ -36,6 +37,7 @@ const HTML_BLOCKS = new Set([
   'cb_heading', 'cb_paragraph', 'cb_image', 'cb_button', 'cb_link',
   'cb_set_style', 'cb_set_color', 'cb_set_background', 'cb_set_size',
   'cb_set_text', 'cb_get_text', 'cb_clicked_id',
+  'cb_scss_style',
 ])
 
 // --- Function block types ---
@@ -120,6 +122,7 @@ function registerHtmlBlocks() {
       this.appendDummyInput().appendField('Container')
       this.appendValueInput('COLOR').setCheck('String').appendField('background')
       this.appendValueInput('PADDING').setCheck('Number').appendField('padding')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
       this.appendStatementInput('CHILDREN').appendField('children')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
@@ -132,6 +135,7 @@ function registerHtmlBlocks() {
       this.setColour(HTML_COLOR)
       this.appendDummyInput().appendField('Row')
       this.appendValueInput('GAP').setCheck('Number').appendField('gap')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
       this.appendStatementInput('CHILDREN').appendField('children')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
@@ -144,6 +148,7 @@ function registerHtmlBlocks() {
       this.setColour(HTML_COLOR)
       this.appendDummyInput().appendField('Column')
       this.appendValueInput('GAP').setCheck('Number').appendField('gap')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
       this.appendStatementInput('CHILDREN').appendField('children')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
@@ -156,6 +161,7 @@ function registerHtmlBlocks() {
       this.setColour(HTML_COLOR)
       this.appendDummyInput().appendField('Div')
       this.appendValueInput('CLASS').setCheck('String').appendField('class')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
       this.appendStatementInput('CHILDREN').appendField('children')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
@@ -200,6 +206,7 @@ function registerHtmlBlocks() {
       this.appendDummyInput().appendField('Image')
       this.appendValueInput('URL').setCheck('String').appendField('url')
       this.appendValueInput('WIDTH').setCheck('Number').appendField('width')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('An image element')
@@ -224,6 +231,7 @@ function registerHtmlBlocks() {
       this.appendDummyInput().appendField('Link')
       this.appendValueInput('TEXT').setCheck('String').appendField('text')
       this.appendValueInput('URL').setCheck('String').appendField('url')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('A link that opens in a new tab (target="_blank")')
@@ -308,6 +316,18 @@ function registerHtmlBlocks() {
       this.appendValueInput('ID').setCheck('String').appendField('id')
       this.setOutput(true, 'String')
       this.setTooltip('Get the text content of an element by its ID')
+    },
+  }
+
+  Blockly.Blocks['cb_scss_style'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('SCSS')
+      this.appendDummyInput()
+        .appendField(new Blockly.FieldMultilineInput('.example {\n  color: red;\n}'), 'CODE')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Write SCSS styles — compiled to CSS automatically')
     },
   }
 }
@@ -905,8 +925,11 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
     case 'cb_container': {
       const color = htmlVal(block, 'COLOR', '"transparent"', language)
       const padding = htmlVal(block, 'PADDING', '8', language)
+      const id = htmlVal(block, 'ID', '""', language)
       const children = generateStatementCode(block, 'CHILDREN', language)
-      let code = `(function() {\n  var __el = document.createElement('div');\n  __el.style.background = ${color};\n  __el.style.padding = ${padding} + 'px';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
+      let code = `(function() {\n  var __el = document.createElement('div');\n  __el.style.background = ${color};\n  __el.style.padding = ${padding} + 'px';`
+      if (id !== '""') code += `\n  if (${id}) __el.id = ${id};`
+      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
       if (children) code += `\n${indent(children, language)}`
       code += `\n  __parentStack.pop();\n})()`
       return code
@@ -914,8 +937,11 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
 
     case 'cb_row': {
       const gap = htmlVal(block, 'GAP', '8', language)
+      const id = htmlVal(block, 'ID', '""', language)
       const children = generateStatementCode(block, 'CHILDREN', language)
-      let code = `(function() {\n  var __el = document.createElement('div');\n  __el.style.display = 'flex';\n  __el.style.flexDirection = 'row';\n  __el.style.gap = ${gap} + 'px';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
+      let code = `(function() {\n  var __el = document.createElement('div');\n  __el.style.display = 'flex';\n  __el.style.flexDirection = 'row';\n  __el.style.gap = ${gap} + 'px';`
+      if (id !== '""') code += `\n  if (${id}) __el.id = ${id};`
+      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
       if (children) code += `\n${indent(children, language)}`
       code += `\n  __parentStack.pop();\n})()`
       return code
@@ -923,8 +949,11 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
 
     case 'cb_column': {
       const gap = htmlVal(block, 'GAP', '8', language)
+      const id = htmlVal(block, 'ID', '""', language)
       const children = generateStatementCode(block, 'CHILDREN', language)
-      let code = `(function() {\n  var __el = document.createElement('div');\n  __el.style.display = 'flex';\n  __el.style.flexDirection = 'column';\n  __el.style.gap = ${gap} + 'px';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
+      let code = `(function() {\n  var __el = document.createElement('div');\n  __el.style.display = 'flex';\n  __el.style.flexDirection = 'column';\n  __el.style.gap = ${gap} + 'px';`
+      if (id !== '""') code += `\n  if (${id}) __el.id = ${id};`
+      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
       if (children) code += `\n${indent(children, language)}`
       code += `\n  __parentStack.pop();\n})()`
       return code
@@ -932,8 +961,11 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
 
     case 'cb_div': {
       const cls = htmlVal(block, 'CLASS', '""', language)
+      const id = htmlVal(block, 'ID', '""', language)
       const children = generateStatementCode(block, 'CHILDREN', language)
-      let code = `(function() {\n  var __el = document.createElement('div');\n  if (${cls}) __el.className = ${cls};\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
+      let code = `(function() {\n  var __el = document.createElement('div');\n  if (${cls}) __el.className = ${cls};`
+      if (id !== '""') code += `\n  if (${id}) __el.id = ${id};`
+      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n  __parentStack.push(__el);`
       if (children) code += `\n${indent(children, language)}`
       code += `\n  __parentStack.pop();\n})()`
       return code
@@ -962,7 +994,11 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
     case 'cb_image': {
       const url = htmlVal(block, 'URL', '"https://picsum.photos/200/300"', language)
       const width = htmlVal(block, 'WIDTH', '150', language)
-      return `(function() {\n  var __el = document.createElement('img');\n  __el.src = ${url};\n  __el.style.width = ${width} + 'px';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      const id = htmlVal(block, 'ID', '""', language)
+      let code = `(function() {\n  var __el = document.createElement('img');\n  __el.src = ${url};\n  __el.style.width = ${width} + 'px';`
+      if (id !== '""') code += `\n  if (${id}) __el.id = ${id};`
+      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      return code
     }
 
     case 'cb_button': {
@@ -977,7 +1013,11 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
     case 'cb_link': {
       const text = htmlVal(block, 'TEXT', '"Link"', language)
       const url = htmlVal(block, 'URL', '"#"', language)
-      return `(function() {\n  var __el = document.createElement('a');\n  __el.textContent = ${text};\n  __el.href = ${url};\n  __el.target = '_blank';\n  __el.rel = 'noopener noreferrer';\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      const id = htmlVal(block, 'ID', '""', language)
+      let code = `(function() {\n  var __el = document.createElement('a');\n  __el.textContent = ${text};\n  __el.href = ${url};\n  __el.target = '_blank';\n  __el.rel = 'noopener noreferrer';`
+      if (id !== '""') code += `\n  if (${id}) __el.id = ${id};`
+      code += `\n  __currentParent().appendChild(__el);\n  __lastEl = __el;\n})()`
+      return code
     }
 
     // --- CSS/Style blocks ---
@@ -1017,6 +1057,16 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
 
     case 'cb_clicked_id': {
       return `__clickedId`
+    }
+
+    case 'cb_scss_style': {
+      const scss = block.getFieldValue('CODE') || ''
+      try {
+        const compiled = compileString(scss).css
+        return `(function() {\n  var __style = document.createElement('style');\n  __style.textContent = ${JSON.stringify(compiled)};\n  document.head.appendChild(__style);\n})()`
+      } catch (e) {
+        return `console.error("SCSS compilation error: " + ${JSON.stringify(String(e))})`
+      }
     }
 
     default:
@@ -1404,6 +1454,11 @@ function htmlToolboxXml(): string {
   xml += '</block>'
 
   xml += '<block type="cb_clicked_id"></block>'
+
+  xml += '<sep gap="12"></sep>'
+
+  // SCSS block
+  xml += '<block type="cb_scss_style"></block>'
 
   xml += '</category>'
   return xml

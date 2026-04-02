@@ -166,7 +166,8 @@ function tryIframeExecution(
     const safetyPreamble = generateSafetyPreamble()
 
     const html = `<!DOCTYPE html><html><head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; connect-src http://localhost:* http://127.0.0.1:* https: wss:; style-src 'unsafe-inline'; img-src data:; frame-src 'none'; worker-src 'none'; object-src 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com; connect-src http://localhost:* http://127.0.0.1:* https: wss:; style-src 'unsafe-inline' https://cdn.tailwindcss.com; img-src data: https:; frame-src 'none'; worker-src blob:; object-src 'none';">
+<script src="https://cdn.tailwindcss.com"><\/script>
 <script>
 var __sendMsg = function(type, data) {
   parent.postMessage({ __cryptoblocks: true, type: type, data: data }, '*');
