@@ -56,6 +56,7 @@ import type { Example } from './examples'
 import { useVersionControl } from './version-control/useVersionControl'
 import CheckpointModal from './components/CheckpointModal'
 import HistoryPanel from './components/HistoryPanel'
+import SettingsModal from './components/SettingsModal'
 import { initEasterEggs } from './easter-eggs'
 import type { Achievement } from './achievements'
 import { checkAchievements } from './achievements'
@@ -118,6 +119,7 @@ export default function App() {
   const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null)
   const achievementQueue = useRef<Achievement[]>([])
   const [showStats, setShowStats] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
@@ -137,6 +139,7 @@ export default function App() {
     rollbackTo,
     currentBranch,
     checkpoints,
+    resetAutoSave,
   } = useVersionControl(workspaceRef, blockCount)
 
   const languageRef = useRef(language)
@@ -1047,6 +1050,10 @@ export default function App() {
         onSaveCheckpoint={() => setShowCheckpointModal(true)}
         onOpenHistory={() => setShowHistory(true)}
         currentBranchName={currentBranch?.name}
+        onUndo={() => workspaceRef.current?.undo(false)}
+        onRedo={() => workspaceRef.current?.undo(true)}
+        onFitView={() => workspaceRef.current?.zoomToFit()}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       {/* Challenge Browser Mode */}
@@ -1314,6 +1321,14 @@ export default function App() {
             await rollbackTo(id)
           }}
           onClose={() => setShowHistory(false)}
+        />
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          onSettingsChanged={resetAutoSave}
         />
       )}
 

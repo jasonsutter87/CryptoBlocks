@@ -29,7 +29,7 @@ function typeToBlocklyCheck(type: string): string | null {
 }
 
 // --- Control flow block types ---
-const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat', 'cb_loop_index'])
+const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat', 'cb_loop_index', 'cb_while'])
 
 // --- HTML/CSS block types (native Blockly, not registry) ---
 const HTML_BLOCKS = new Set([
@@ -96,6 +96,21 @@ function registerControlFlowBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Repeat blocks a number of times')
+    },
+  }
+
+  // WHILE loop
+  Blockly.Blocks['cb_while'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#059669')
+      this.appendValueInput('CONDITION')
+        .setCheck('Boolean')
+        .appendField('while')
+      this.appendStatementInput('DO')
+        .appendField('do')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Keep running blocks while the condition is true')
     },
   }
 
@@ -778,6 +793,23 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
       }
     }
 
+    case 'cb_while': {
+      const condBlock = block.getInputTargetBlock('CONDITION')
+      const condition = condBlock
+        ? generateBlockCode(condBlock, language)
+        : (language === 'javascript' ? 'false' : 'False')
+      const body = generateStatementCode(block, 'DO', language)
+      const countVar = `__whileCount${block.id.substring(0, 4)}`
+
+      if (language === 'javascript') {
+        if (!body) return `var ${countVar} = 0;\nwhile (${condition}) {\n  if (++${countVar} > 10000) { console.error("Loop limit reached"); break; }\n}`
+        return `var ${countVar} = 0;\nwhile (${condition}) {\n  if (++${countVar} > 10000) { console.error("Loop limit reached"); break; }\n${indent(body, language)}\n}`
+      } else {
+        if (!body) return `${countVar} = 0\nwhile ${condition}:\n    ${countVar} += 1\n    if ${countVar} > 10000:\n        print("Loop limit reached")\n        break`
+        return `${countVar} = 0\nwhile ${condition}:\n    ${countVar} += 1\n    if ${countVar} > 10000:\n        print("Loop limit reached")\n        break\n${indent(body, language)}`
+      }
+    }
+
     case 'cb_loop_index': {
       return language === 'javascript' ? '__loopIndex' : '__loopIndex'
     }
@@ -1318,6 +1350,7 @@ function controlFlowToolboxXml(cat: string): string {
     '<block type="cb_if_else"></block>' +
     '<block type="cb_repeat"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>' +
     '<block type="cb_loop_index"></block>' +
+    '<block type="cb_while"></block>' +
     '<sep gap="20"></sep>'
   )
 }

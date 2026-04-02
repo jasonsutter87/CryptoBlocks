@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import * as Blockly from 'blockly'
 import type { ProjectHistory, Branch, Checkpoint } from './types'
 import { loadHistory, saveHistory } from './storage'
+import { loadSettings } from '../settings'
 
 const DEFAULT_PROJECT_ID = 'default'
 
@@ -35,6 +36,10 @@ export function useVersionControl(
   const [showHistory, setShowHistory] = useState(false)
   const [showCheckpointModal, setShowCheckpointModal] = useState(false)
 
+  // Auto-save: track last saved block count to detect changes
+  const lastAutoSaveBlockCount = useRef<number>(-1)
+  const autoSaveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
   // Load or initialize history on mount
   useEffect(() => {
     loadHistory(DEFAULT_PROJECT_ID).then((loaded) => {
@@ -47,6 +52,40 @@ export function useVersionControl(
       }
     }).catch(console.error)
   }, [])
+
+  // Keep a stable ref to blockCount so the interval callback always sees current value
+  const blockCountRef = useRef(blockCount)
+  blockCountRef.current = blockCount
+
+  // Stable ref to saveCheckpoint — populated after saveCheckpoint is defined below
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const saveCheckpointRef = useRef<(label: string) => Promise<void>>(async () => {})
+
+  // Set up auto-save interval — re-runs when settings change (via resetAutoSave)
+  const [autoSaveKey, setAutoSaveKey] = useState(0)
+  const resetAutoSave = useCallback(() => setAutoSaveKey((k) => k + 1), [])
+
+  useEffect(() => {
+    const settings = loadSettings()
+    if (!settings.autoSaveEnabled) return
+
+    const intervalMs = settings.autoSaveIntervalMinutes * 60 * 1000
+
+    autoSaveIntervalRef.current = setInterval(() => {
+      const current = blockCountRef.current
+      if (current !== lastAutoSaveBlockCount.current) {
+        lastAutoSaveBlockCount.current = current
+        saveCheckpointRef.current('Auto-save').catch(console.error)
+      }
+    }, intervalMs)
+
+    return () => {
+      if (autoSaveIntervalRef.current) {
+        clearInterval(autoSaveIntervalRef.current)
+        autoSaveIntervalRef.current = null
+      }
+    }
+  }, [autoSaveKey])
 
   const currentBranch = history
     ? history.branches.find((b) => b.id === history.activeBranchId) ?? null
@@ -90,7 +129,13 @@ export function useVersionControl(
 
     setHistory(updated)
     await saveHistory(DEFAULT_PROJECT_ID, updated)
-  }, [workspaceRef, history, currentBranch, blockCount])
+
+    // Reset auto-save interval so it doesn't fire too soon after a manual save
+    resetAutoSave()
+  }, [workspaceRef, history, currentBranch, blockCount, resetAutoSave])
+
+  // Keep ref in sync so the interval callback always calls the latest version
+  saveCheckpointRef.current = saveCheckpoint
 
   const rollbackTo = useCallback(async (checkpointId: string) => {
     if (!workspaceRef.current || !history) return
@@ -139,5 +184,6 @@ export function useVersionControl(
     rollbackTo,
     currentBranch,
     checkpoints,
+    resetAutoSave,
   }
 }

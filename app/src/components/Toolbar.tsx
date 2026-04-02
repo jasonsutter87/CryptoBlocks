@@ -36,6 +36,10 @@ interface ToolbarProps {
   onSaveCheckpoint: () => void
   onOpenHistory: () => void
   currentBranchName?: string
+  onUndo: () => void
+  onRedo: () => void
+  onFitView: () => void
+  onOpenSettings: () => void
 }
 
 const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
@@ -69,6 +73,10 @@ export default function Toolbar({
   onSaveCheckpoint,
   onOpenHistory,
   currentBranchName,
+  onUndo,
+  onRedo,
+  onFitView,
+  onOpenSettings,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
@@ -208,6 +216,13 @@ export default function Toolbar({
                         {currentBranchName}
                       </span>
                     )}
+                  </button>
+                  <button onClick={() => { onOpenSettings(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#6c7086]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Settings
                   </button>
                   <div className={menuDivider} />
                   <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
@@ -453,6 +468,39 @@ export default function Toolbar({
           </button>
         )}
 
+        {/* Undo / Redo / Fit View — sandbox only, desktop */}
+        {mode === 'sandbox' && (
+          <div className="hidden md:flex items-center gap-0.5 bg-[#313244] rounded-lg p-0.5">
+            <button
+              onClick={onUndo}
+              title="Undo"
+              className="flex items-center justify-center w-7 h-7 rounded text-[#6c7086] hover:text-[#cdd6f4] hover:bg-[#45475a] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4-4" />
+              </svg>
+            </button>
+            <button
+              onClick={onRedo}
+              title="Redo"
+              className="flex items-center justify-center w-7 h-7 rounded text-[#6c7086] hover:text-[#cdd6f4] hover:bg-[#45475a] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 10H11a5 5 0 000 10h4m6-10l-4-4 4-4" />
+              </svg>
+            </button>
+            <button
+              onClick={onFitView}
+              title="Fit View"
+              className="flex items-center justify-center w-7 h-7 rounded text-[#6c7086] hover:text-[#cdd6f4] hover:bg-[#45475a] transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V5a1 1 0 011-1h3M4 16v3a1 1 0 001 1h3m10-11V5a1 1 0 00-1-1h-3m4 11v3a1 1 0 01-1 1h-3" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         {/* Run / Stop */}
         {mode === 'sandbox' && (
           <>
@@ -568,6 +616,25 @@ export default function Toolbar({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Publish to GitHub
+                </button>
+                <div className={menuDivider} />
+                <button onClick={() => { onUndo(); setOpenMenu(null) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#cdd6f4]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4-4" />
+                  </svg>
+                  Undo
+                </button>
+                <button onClick={() => { onRedo(); setOpenMenu(null) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#cdd6f4]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 10H11a5 5 0 000 10h4m6-10l-4-4 4-4" />
+                  </svg>
+                  Redo
+                </button>
+                <button onClick={() => { onFitView(); setOpenMenu(null) }} className={menuItem}>
+                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V5a1 1 0 011-1h3M4 16v3a1 1 0 001 1h3m10-11V5a1 1 0 00-1-1h-3m4 11v3a1 1 0 01-1 1h-3" />
+                  </svg>
+                  Fit View
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onSaveCheckpoint(); setOpenMenu(null) }} className={menuItem}>
