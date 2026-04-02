@@ -32,6 +32,7 @@ interface ToolbarProps {
   onOpenStats: () => void
   slowMo: boolean
   onToggleSlowMo: () => void
+  blockCount?: number
 }
 
 const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
@@ -61,6 +62,7 @@ export default function Toolbar({
   onOpenStats,
   slowMo,
   onToggleSlowMo,
+  blockCount = 0,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
@@ -392,6 +394,22 @@ export default function Toolbar({
         {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && mode !== 'code-lab' && mode !== 'active-lab' && (
           <div className="hidden md:block text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded font-mono">
             {language === 'javascript' ? 'JS' : language === 'python' ? 'PY' : 'HTML'}
+          </div>
+        )}
+
+        {/* Block counter */}
+        {mode === 'sandbox' && (
+          <div
+            className="hidden md:flex items-center gap-1 text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded font-mono"
+            title="Blocks on workspace"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            {blockCount}
           </div>
         )}
 

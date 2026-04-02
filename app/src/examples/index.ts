@@ -12,6 +12,7 @@ import { ticTacToeWorkspace } from './tic-tac-toe-workspace'
 import { weatherDashboardWorkspace } from './weather-dashboard-workspace'
 import { calculatorWorkspace } from './calculator-workspace'
 import { drumsetWorkspace } from './drumset-workspace'
+import { calculatorLeanWorkspace } from './calculator-lean-workspace'
 
 export interface Example {
   id: string
@@ -581,5 +582,13 @@ export const EXAMPLES: Example[] = [
     difficulty: 'beginner',
     tags: ['Sound', 'Events'],
     workspace: drumsetWorkspace,
+  },
+  {
+    id: 'calculator-lean',
+    name: 'Calculator (Lean)',
+    description: 'A fully working calculator built with functions and local variables — cleaner logic, less global state.',
+    difficulty: 'pro',
+    tags: ['HTML', 'Logic', 'Math', 'Basics', 'Functions'],
+    workspace: calculatorLeanWorkspace,
   },
 ]

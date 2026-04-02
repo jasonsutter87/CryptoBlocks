@@ -1027,6 +1027,7 @@ export default function App() {
         onOpenStats={() => setShowStats(true)}
         slowMo={slowMo}
         onToggleSlowMo={() => setSlowMo(s => !s)}
+        blockCount={blockCount}
       />
 
       {/* Challenge Browser Mode */}
