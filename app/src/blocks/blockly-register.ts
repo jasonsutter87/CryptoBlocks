@@ -864,6 +864,15 @@ function generateEventCode(block: Blockly.Block, language: Language): string | n
       const isAsync = body.includes('await ')
       const fnKeyword = isAsync ? 'async function' : 'function'
       const bodyIndented = body ? `\n${indent(body, language)}\n    ` : ''
+
+      // When inside a button (or any HTML element), attach to __lastEl directly
+      // instead of getElementById which may reference undefined variables like __clickedId
+      const parentBlock = block.getSurroundParent()
+      const insideHtmlElement = parentBlock && HTML_BLOCKS.has(parentBlock.type)
+      if (insideHtmlElement) {
+        return `__lastEl.addEventListener('click', ${fnKeyword}() {\n      var __clickedId = this.id || "";${bodyIndented}});`
+      }
+
       return `(${isAsync ? 'async ' : ''}function() {\n  var __target = document.getElementById(${idCode});\n  if (__target) {\n    __target.addEventListener('click', ${fnKeyword}() {\n      var __clickedId = this.id || "";${bodyIndented}});\n  }\n})()`
     }
 
