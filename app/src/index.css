@@ -10,8 +10,17 @@ body,
 
 /* Shareplace / Dashboard pages override the editor's overflow lock */
 body.scrollable-page,
-body.scrollable-page #root {
-  overflow: auto;
+body.scrollable-page #root,
+body.scrollable-page html {
+  overflow: auto !important;
+  overflow-y: auto !important;
+  height: auto;
+  min-height: 100%;
+}
+
+html:has(body.scrollable-page) {
+  overflow: auto !important;
+  overflow-y: auto !important;
   height: auto;
   min-height: 100%;
 }

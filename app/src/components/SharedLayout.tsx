@@ -11,8 +11,10 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
   // Unlock scrolling for non-editor pages; restore overflow lock on unmount
   useEffect(() => {
     document.body.classList.add('scrollable-page')
+    document.documentElement.classList.add('scrollable-page')
     return () => {
       document.body.classList.remove('scrollable-page')
+      document.documentElement.classList.remove('scrollable-page')
     }
   }, [])
 
