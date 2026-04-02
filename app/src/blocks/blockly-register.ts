@@ -1,5 +1,4 @@
 import * as Blockly from 'blockly'
-import { FieldMultilineInput } from '@blockly/field-multilineinput'
 import { compileString } from 'sass'
 import type { BlockDefinition, Language } from '../types/block'
 import { registry } from './registry'
@@ -323,12 +322,12 @@ function registerHtmlBlocks() {
   Blockly.Blocks['cb_scss_style'] = {
     init: function (this: Blockly.Block) {
       this.setColour(HTML_COLOR)
-      this.appendDummyInput().appendField('SCSS')
       this.appendDummyInput()
-        .appendField(new FieldMultilineInput('.example {\n  color: red;\n}'), 'CODE')
+        .appendField('SCSS')
+        .appendField(new Blockly.FieldTextInput('.example { color: red; }'), 'CODE')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
-      this.setTooltip('Write SCSS styles — compiled to CSS automatically')
+      this.setTooltip('Write SCSS styles — click "Edit SCSS" to open the full editor')
     },
   }
 }

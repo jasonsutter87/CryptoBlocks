@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 import * as Blockly from 'blockly'
 import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode } from '../blocks/blockly-register'
 import { registry } from '../blocks/registry'
 import type { BlockDefinition } from '../types/block'
+
+const ScssEditorModal = lazy(() => import('./ScssEditorModal'))
 
 interface BlockEditorProps {
   onWorkspaceChange: (workspace: Blockly.WorkspaceSvg) => void
@@ -22,6 +24,9 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
   const editCallbackRef = useRef(onEditBlock)
   const deleteCallbackRef = useRef(onDeleteBlock)
   const saveAsBlockRef = useRef(onSaveAsBlock)
+
+  // SCSS editor modal state
+  const [scssModal, setScssModal] = useState<{ blockId: string; code: string } | null>(null)
 
   // Keep callback refs up to date without triggering workspace rebuild
   callbackRef.current = onWorkspaceChange
@@ -179,6 +184,24 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     }
     Blockly.ContextMenuRegistry.registry.register(duplicateStackOption)
 
+    // Register "Edit SCSS" context menu for cb_scss_style blocks
+    const editScssOption: Blockly.ContextMenuRegistry.RegistryItem = {
+      displayText: 'Edit SCSS',
+      preconditionFn(scope) {
+        return scope.block?.type === 'cb_scss_style' ? 'enabled' : 'hidden'
+      },
+      callback(scope) {
+        const block = scope.block
+        if (!block) return
+        const code = block.getFieldValue('CODE') || ''
+        setScssModal({ blockId: block.id, code })
+      },
+      scopeType: Blockly.ContextMenuRegistry.ScopeType.BLOCK,
+      id: 'edit_scss',
+      weight: -2,
+    }
+    Blockly.ContextMenuRegistry.registry.register(editScssOption)
+
     // Register "Lock Block" / "Unlock Block" context menu
     const lockBlockOption: Blockly.ContextMenuRegistry.RegistryItem = {
       displayText(scope) {
@@ -211,6 +234,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       Blockly.ContextMenuRegistry.registry.unregister('delete_user_block')
       Blockly.ContextMenuRegistry.registry.unregister('save_as_block')
       Blockly.ContextMenuRegistry.registry.unregister('duplicate_stack')
+      Blockly.ContextMenuRegistry.registry.unregister('edit_scss')
       workspace.dispose()
       workspaceRef.current = null
     }
@@ -243,7 +267,25 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     return () => resizeObserver.disconnect()
   }, [])
 
+  const handleScssSave = (newCode: string) => {
+    if (!scssModal || !workspaceRef.current) return
+    const block = workspaceRef.current.getBlockById(scssModal.blockId)
+    if (block) block.setFieldValue(newCode, 'CODE')
+    setScssModal(null)
+  }
+
   return (
-    <div ref={containerRef} className="w-full h-full" />
+    <>
+      <div ref={containerRef} className="w-full h-full" />
+      {scssModal && (
+        <Suspense fallback={null}>
+          <ScssEditorModal
+            initialCode={scssModal.code}
+            onSave={handleScssSave}
+            onClose={() => setScssModal(null)}
+          />
+        </Suspense>
+      )}
+    </>
   )
 }
