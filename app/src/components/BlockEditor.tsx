@@ -179,6 +179,26 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     }
     Blockly.ContextMenuRegistry.registry.register(duplicateStackOption)
 
+    // Register "Lock Block" / "Unlock Block" context menu
+    const lockBlockOption: Blockly.ContextMenuRegistry.RegistryItem = {
+      displayText(scope) {
+        const block = scope.block
+        return block && !block.isMovable() ? 'Unlock Block' : 'Lock Block'
+      },
+      preconditionFn(scope) {
+        return scope.block ? 'enabled' : 'hidden'
+      },
+      callback(scope) {
+        const block = scope.block
+        if (!block) return
+        block.setMovable(!block.isMovable())
+      },
+      scopeType: Blockly.ContextMenuRegistry.ScopeType.BLOCK,
+      id: 'lock_block',
+      weight: 3,
+    }
+    Blockly.ContextMenuRegistry.registry.register(lockBlockOption)
+
     const listener = () => {
       callbackRef.current(workspace)
     }
