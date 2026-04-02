@@ -323,6 +323,18 @@ export default function Toolbar({
             {/* Divider */}
             <div className="hidden md:block w-px h-6 bg-[#313244]" />
 
+            {/* Shareplace link */}
+            <a
+              href="/shareplace"
+              className={`hidden md:flex ${btn} text-[#a6e3a1] hover:bg-[#313244]`}
+              title="Browse the Shareplace marketplace"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Shareplace
+            </a>
+
             {/* Stats button */}
             <button
               onClick={onOpenStats}

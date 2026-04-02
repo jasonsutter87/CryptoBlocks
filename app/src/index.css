@@ -8,6 +8,14 @@ body,
   overflow: hidden;
 }
 
+/* Shareplace / Dashboard pages override the editor's overflow lock */
+body.scrollable-page,
+body.scrollable-page #root {
+  overflow: auto;
+  height: auto;
+  min-height: 100%;
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
