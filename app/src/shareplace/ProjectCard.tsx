@@ -36,7 +36,7 @@ function CategoryThumbnail({ category }: { category: string }) {
   const gradient = CATEGORY_GRADIENTS[category] ?? 'from-[#313244]/60 to-[#45475a]/40'
   const color = CATEGORY_ICON_COLORS[category] ?? '#6c7086'
 
-  const icons: Record<string, JSX.Element> = {
+  const icons: Record<string, React.ReactNode> = {
     Games: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="w-10 h-10 opacity-60">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12h-3m0 0H9m3 0V9m0 3v3M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
