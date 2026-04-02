@@ -56,6 +56,7 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
           {navLink('/', 'Editor')}
           {navLink('/shareplace', 'Shareplace')}
           {navLink('/dashboard', 'Dashboard')}
+          {navLink('/profile', 'Profile')}
         </div>
       </nav>
 
@@ -84,6 +85,7 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
             <a href="https://github.com/jasonsutter87/CryptoBlocks" target="_blank" rel="noopener noreferrer" className="hover:text-[#cdd6f4] transition-colors">GitHub</a>
             <Link to="/shareplace" className="hover:text-[#cdd6f4] transition-colors">Shareplace</Link>
             <Link to="/dashboard" className="hover:text-[#cdd6f4] transition-colors">Dashboard</Link>
+            <Link to="/profile" className="hover:text-[#cdd6f4] transition-colors">Profile</Link>
           </div>
         </div>
       </footer>

@@ -7,6 +7,7 @@ import './index.css'
 const SharedLayout = lazy(() => import('./components/SharedLayout'))
 const ShareplacePage = lazy(() => import('./shareplace/ShareplacePage'))
 const DashboardPage = lazy(() => import('./dashboard/DashboardPage'))
+const ProfilePage = lazy(() => import('./profile/ProfilePage'))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/" element={<App />} />
           <Route path="/shareplace" element={<SharedLayout><ShareplacePage /></SharedLayout>} />
           <Route path="/dashboard" element={<SharedLayout><DashboardPage /></SharedLayout>} />
+          <Route path="/profile" element={<SharedLayout><ProfilePage /></SharedLayout>} />
         </Routes>
       </Suspense>
     </BrowserRouter>
