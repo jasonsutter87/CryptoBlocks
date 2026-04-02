@@ -42,7 +42,7 @@ export async function loadHistory(projectId: string): Promise<ProjectHistory | n
   })
 }
 
-export async function saveHistory(projectId: string, history: ProjectHistory): Promise<void> {
+export async function saveHistory(_projectId: string, history: ProjectHistory): Promise<void> {
   const db = await openDB()
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite')
