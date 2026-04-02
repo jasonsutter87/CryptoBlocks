@@ -324,7 +324,7 @@ function registerHtmlBlocks() {
       this.setColour(HTML_COLOR)
       this.appendDummyInput().appendField('SCSS')
       this.appendDummyInput()
-        .appendField(new (Blockly as any).FieldMultilineInput('.example {\n  color: red;\n}'), 'CODE')
+        .appendField(new Blockly.FieldTextInput('.example { color: red; }'), 'CODE')
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Write SCSS styles — compiled to CSS automatically')
