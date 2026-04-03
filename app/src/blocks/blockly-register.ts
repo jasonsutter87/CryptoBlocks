@@ -1,4 +1,5 @@
 import * as Blockly from 'blockly'
+import { FieldMultilineInput } from '@blockly/field-multilineinput'
 import { compileString } from 'sass'
 import type { BlockDefinition, Language } from '../types/block'
 import { registry } from './registry'
@@ -541,7 +542,8 @@ function registerAnnotationBlocks() {
       this.setColour(CALLOUT_COLOR)
       this.appendDummyInput()
         .appendField('📌')
-        .appendField(new Blockly.FieldTextInput('Note: '), 'TEXT')
+      this.appendDummyInput()
+        .appendField(new FieldMultilineInput('Note:\n'), 'TEXT')
       this.setTooltip('A visual callout — add notes to your workspace')
       // No connections — standalone floating block
     },
