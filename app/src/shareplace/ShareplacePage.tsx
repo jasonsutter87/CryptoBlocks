@@ -1,6 +1,9 @@
 import { useState, useMemo } from 'react'
 import ProjectCard from './ProjectCard'
 import { MOCK_PROJECTS } from './mock-data'
+import type { SharedProject } from '../types/shareplace'
+import ProjectDetailModal from './ProjectDetailModal'
+import UploadModal from './UploadModal'
 
 const CATEGORIES = ['All', 'Games', 'Art', 'Web', 'Sound', 'Data', 'AI'] as const
 
@@ -10,6 +13,8 @@ export default function ShareplacePage() {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string>('All')
   const [sort, setSort] = useState<SortOption>('newest')
+  const [selectedProject, setSelectedProject] = useState<SharedProject | null>(null)
+  const [showUpload, setShowUpload] = useState(false)
 
   const filtered = useMemo(() => {
     let projects = [...MOCK_PROJECTS]
@@ -53,24 +58,35 @@ export default function ShareplacePage() {
               Discover, share, and remix block projects built by the community.
             </p>
 
-            {/* Search */}
-            <div className="relative">
-              <svg
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6c7086] pointer-events-none"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+            {/* Search + Upload row */}
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <svg
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#6c7086] pointer-events-none"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search projects, authors, tags..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full bg-[#313244] text-[#cdd6f4] placeholder-[#6c7086] pl-11 pr-4 py-3 rounded-xl border border-[#45475a] focus:outline-none focus:border-[#89b4fa] transition-colors text-sm"
+                />
+              </div>
+              <button
+                onClick={() => setShowUpload(true)}
+                className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-[#1e1e2e] bg-[#89b4fa] hover:bg-[#89b4fa]/80 rounded-xl transition-colors shrink-0"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search projects, authors, tags..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[#313244] text-[#cdd6f4] placeholder-[#6c7086] pl-11 pr-4 py-3 rounded-xl border border-[#45475a] focus:outline-none focus:border-[#89b4fa] transition-colors text-sm"
-              />
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+                Upload
+              </button>
             </div>
           </div>
         </div>
@@ -120,7 +136,11 @@ export default function ShareplacePage() {
         {filtered.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {filtered.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard
+                key={project.id}
+                project={project}
+                onClick={() => setSelectedProject(project)}
+              />
             ))}
           </div>
         ) : (
@@ -147,6 +167,19 @@ export default function ShareplacePage() {
           </div>
         )}
       </div>
+
+      {/* Modals */}
+      {selectedProject && (
+        <ProjectDetailModal
+          project={selectedProject}
+          isOwner={false}
+          onClose={() => setSelectedProject(null)}
+        />
+      )}
+
+      {showUpload && (
+        <UploadModal onClose={() => setShowUpload(false)} />
+      )}
     </div>
   )
 }
