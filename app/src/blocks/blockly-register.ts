@@ -36,7 +36,7 @@ const HTML_BLOCKS = new Set([
   'cb_container', 'cb_row', 'cb_column', 'cb_div',
   'cb_heading', 'cb_paragraph', 'cb_image', 'cb_button', 'cb_link',
   'cb_set_style', 'cb_set_color', 'cb_set_background', 'cb_set_size',
-  'cb_set_attribute',
+  'cb_set_attribute', 'cb_set_attribute_by_id',
   'cb_set_text', 'cb_get_text', 'cb_clicked_id',
   'cb_scss_style',
 ])
@@ -314,6 +314,19 @@ function registerHtmlBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Set an attribute (like data-value) on the last created element')
+    },
+  }
+
+  Blockly.Blocks['cb_set_attribute_by_id'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Set Attribute by ID')
+      this.appendValueInput('ID').setCheck('String').appendField('id')
+      this.appendValueInput('NAME').setCheck('String').appendField('name')
+      this.appendValueInput('VALUE').setCheck('String').appendField('value')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Set an attribute on an element by its ID')
     },
   }
 
@@ -1186,6 +1199,13 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
       return `if (__lastEl) { __lastEl.setAttribute(${attrName}, ${attrVal}); }`
     }
 
+    case 'cb_set_attribute_by_id': {
+      const id = htmlVal(block, 'ID', '""', language)
+      const attrName = htmlVal(block, 'NAME', '"data-value"', language)
+      const attrVal = htmlVal(block, 'VALUE', '""', language)
+      return `(function() { var __target = document.getElementById(${id}); if (__target) __target.setAttribute(${attrName}, ${attrVal}); })()`
+    }
+
     // --- Element manipulation by ID ---
     case 'cb_set_text': {
       const id = htmlVal(block, 'ID', '""', language)
@@ -1598,6 +1618,12 @@ function htmlToolboxXml(): string {
   xml += '</block>'
 
   xml += '<block type="cb_set_attribute">'
+  xml += '<value name="NAME"><shadow type="text"><field name="TEXT">data-value</field></shadow></value>'
+  xml += '<value name="VALUE"><shadow type="text"><field name="TEXT"></field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_set_attribute_by_id">'
+  xml += '<value name="ID"><shadow type="text"><field name="TEXT">my-id</field></shadow></value>'
   xml += '<value name="NAME"><shadow type="text"><field name="TEXT">data-value</field></shadow></value>'
   xml += '<value name="VALUE"><shadow type="text"><field name="TEXT"></field></shadow></value>'
   xml += '</block>'
