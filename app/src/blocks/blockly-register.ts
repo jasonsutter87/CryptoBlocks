@@ -36,6 +36,7 @@ const HTML_BLOCKS = new Set([
   'cb_container', 'cb_row', 'cb_column', 'cb_div',
   'cb_heading', 'cb_paragraph', 'cb_image', 'cb_button', 'cb_link',
   'cb_set_style', 'cb_set_color', 'cb_set_background', 'cb_set_size',
+  'cb_set_attribute',
   'cb_set_text', 'cb_get_text', 'cb_clicked_id',
   'cb_scss_style',
 ])
@@ -298,6 +299,18 @@ function registerHtmlBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Set width and height on the last created element')
+    },
+  }
+
+  Blockly.Blocks['cb_set_attribute'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(HTML_COLOR)
+      this.appendDummyInput().appendField('Set Attribute')
+      this.appendValueInput('NAME').setCheck('String').appendField('name')
+      this.appendValueInput('VALUE').setCheck('String').appendField('value')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Set an attribute (like data-value) on the last created element')
     },
   }
 
@@ -610,6 +623,74 @@ export function unregisterBlock(name: string) {
   delete Blockly.Blocks[blockType]
 }
 
+// --- Block Source Map ---
+// Maps block IDs to { startLine, endLine } in the last generated code string.
+// Line numbers are 1-based to match Monaco's convention.
+const _blockSourceMap = new Map<string, { startLine: number; endLine: number }>()
+
+export function getBlockSourceMap(): Map<string, { startLine: number; endLine: number }> {
+  return _blockSourceMap
+}
+
+export function clearBlockSourceMap(): void {
+  _blockSourceMap.clear()
+}
+
+/** Parse marker comments from a generated code string and populate _blockSourceMap.
+ *  Markers look like: /*__cb:BLOCKID*\/
+ *  Each marker's range extends from that line until the line before the next marker (or end of code).
+ *  The marker line itself is not counted — only the lines of actual code after it.
+ */
+function buildBlockSourceMapFromCode(code: string): string {
+  _blockSourceMap.clear()
+  const markerRegex = /\/\*__cb:([^*]+)\*\//g
+  const rawLines = code.split('\n')
+
+  // Find all markers: { blockId, lineIndex (0-based) }
+  const markers: Array<{ blockId: string; lineIndex: number }> = []
+  for (let i = 0; i < rawLines.length; i++) {
+    const match = markerRegex.exec(rawLines[i])
+    if (match) {
+      markers.push({ blockId: match[1], lineIndex: i })
+    }
+    markerRegex.lastIndex = 0
+  }
+
+  // Strip marker lines to produce the final code
+  const markerLineSet = new Set(markers.map((m) => m.lineIndex))
+  const cleanLines: string[] = []
+  const lineMapping: number[] = [] // cleanLines[i] came from rawLines[lineMapping[i]]
+  for (let i = 0; i < rawLines.length; i++) {
+    if (!markerLineSet.has(i)) {
+      lineMapping.push(i)
+      cleanLines.push(rawLines[i])
+    }
+  }
+
+  // For each marker, find the range of clean lines that follow it
+  for (let m = 0; m < markers.length; m++) {
+    const markerRawLine = markers[m].lineIndex
+    const nextMarkerRawLine = m + 1 < markers.length ? markers[m + 1].lineIndex : rawLines.length
+
+    // Clean line indices (0-based) that fall between this marker and the next
+    const start = lineMapping.findIndex((rawIdx) => rawIdx > markerRawLine)
+    const endExclusive = lineMapping.findIndex((rawIdx) => rawIdx >= nextMarkerRawLine)
+
+    const startClean = start === -1 ? cleanLines.length : start
+    const endClean = endExclusive === -1 ? cleanLines.length : endExclusive
+
+    if (startClean < endClean) {
+      // Convert to 1-based Monaco line numbers
+      _blockSourceMap.set(markers[m].blockId, {
+        startLine: startClean + 1,
+        endLine: endClean, // endClean is exclusive (0-based) = last inclusive 1-based line
+      })
+    }
+  }
+
+  return cleanLines.join('\n')
+}
+
 export function generateCode(workspace: Blockly.Workspace, language: Language, traceMode?: boolean): string {
   _loopVarCounter = 0
   _traceMode = !!(traceMode && language === 'javascript')
@@ -692,10 +773,12 @@ export function generateCode(workspace: Blockly.Workspace, language: Language, t
   }
 
   for (const topBlock of topBlocks) {
+    lines.push(`/*__cb:${topBlock.id}*/`)
     lines.push(generateBlockCode(topBlock, language))
   }
 
-  return lines.join('\n')
+  const rawCode = lines.join('\n')
+  return buildBlockSourceMapFromCode(rawCode)
 }
 
 function generateBuiltinCode(block: Blockly.Block, language: Language): string | null {
@@ -1073,6 +1156,12 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
       const w = htmlVal(block, 'WIDTH', '100', language)
       const h = htmlVal(block, 'HEIGHT', '100', language)
       return `if (__lastEl) { __lastEl.style.width = ${w} + 'px'; __lastEl.style.height = ${h} + 'px'; }`
+    }
+
+    case 'cb_set_attribute': {
+      const attrName = htmlVal(block, 'NAME', '"data-value"', language)
+      const attrVal = htmlVal(block, 'VALUE', '""', language)
+      return `if (__lastEl) { __lastEl.setAttribute(${attrName}, ${attrVal}); }`
     }
 
     // --- Element manipulation by ID ---
@@ -1473,6 +1562,11 @@ function htmlToolboxXml(): string {
   xml += '<block type="cb_set_size">'
   xml += '<value name="WIDTH"><shadow type="math_number"><field name="NUM">200</field></shadow></value>'
   xml += '<value name="HEIGHT"><shadow type="math_number"><field name="NUM">100</field></shadow></value>'
+  xml += '</block>'
+
+  xml += '<block type="cb_set_attribute">'
+  xml += '<value name="NAME"><shadow type="text"><field name="TEXT">data-value</field></shadow></value>'
+  xml += '<value name="VALUE"><shadow type="text"><field name="TEXT"></field></shadow></value>'
   xml += '</block>'
 
   xml += '<sep gap="20"></sep>'
