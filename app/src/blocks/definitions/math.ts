@@ -165,4 +165,26 @@ export const mathBlocks: BlockDefinition[] = [
     ],
     color: '#5B80A5',
   },
+  {
+    name: 'modulo',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get the remainder after dividing two numbers',
+    category: 'Math',
+    inputs: [
+      { name: 'a', type: 'number', description: 'Number to divide' },
+      { name: 'b', type: 'number', description: 'Number to divide by' },
+    ],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: `function modulo(a, b) {\n  if (b === 0) return 0;\n  return a % b;\n}`,
+      python: `def modulo(a, b):\n    if b == 0:\n        return 0\n    return a % b`,
+    },
+    tests: [
+      { input: { a: 10, b: 3 }, expected: { result: 1 } },
+      { input: { a: 7, b: 2 }, expected: { result: 1 } },
+      { input: { a: 8, b: 4 }, expected: { result: 0 } },
+    ],
+    color: '#5B80A5',
+  },
 ]
