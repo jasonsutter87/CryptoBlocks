@@ -85,7 +85,7 @@ export default function ProjectDetailModal({
   isOwner = false,
   onClose,
   onRemix,
-  onEdit,
+  onEdit: _onEdit,
   onRemove,
 }: ProjectDetailModalProps) {
   const [subModal, setSubModal] = useState<SubModal>(null)
