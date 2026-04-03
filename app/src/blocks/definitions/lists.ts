@@ -138,4 +138,25 @@ export const listsBlocks: BlockDefinition[] = [
     ],
     color: '#D97706',
   },
+  {
+    name: 'slice_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get a portion of a list by start and end index',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'start', type: 'number', description: 'Start index (inclusive)', default: 0 },
+      { name: 'end', type: 'number', description: 'End index (exclusive)', default: 4 },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function sliceList(name, start, end) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  return list.slice(start, end);\n}`,
+      python: `def slice_list(name, start, end):\n    lst = globals().get(name, [])\n    return lst[int(start):int(end)]`,
+    },
+    tests: [
+      { input: { name: 'myList', start: 0, end: 2 }, expected: { result: 'any' } },
+    ],
+    color: '#D97706',
+  },
 ]
