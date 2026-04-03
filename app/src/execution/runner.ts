@@ -178,6 +178,8 @@ Object.defineProperty(console, 'warn', { value: function() { __sendMsg('log', '[
 Object.defineProperty(console, 'error', { value: function() { __sendMsg('log', '[error] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
 Object.defineProperty(console, 'info', { value: function() { __sendMsg('log', '[info] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
 Object.defineProperty(console, 'debug', { value: function() {}, configurable: false, writable: false });
+window.onerror = function(msg, src, line, col, err) { __sendMsg('log', '[error] ' + (err ? err.message : msg)); };
+window.addEventListener('unhandledrejection', function(e) { __sendMsg('log', '[error] ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))); });
 ${safetyPreamble}
 (async function() {
   try {
