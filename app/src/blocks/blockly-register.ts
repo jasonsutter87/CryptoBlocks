@@ -541,7 +541,7 @@ function registerAnnotationBlocks() {
     init: function (this: Blockly.Block) {
       this.setColour(CALLOUT_COLOR)
       this.appendDummyInput()
-        .appendField('📌')
+        .appendField('📌 Set Comment')
       this.appendDummyInput()
         .appendField(new FieldMultilineInput('Note:\n'), 'TEXT')
       this.setTooltip('A visual callout — add notes to your workspace')
