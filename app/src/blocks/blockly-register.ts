@@ -47,8 +47,11 @@ const FUNCTION_BLOCKS = new Set(['cb_create_function', 'cb_call_function'])
 // --- Event block types ---
 const EVENT_BLOCKS = new Set(['cb_when_key_pressed', 'cb_when_clicked'])
 
+// --- Annotation block types ---
+const ANNOTATION_BLOCKS = new Set(['cb_callout'])
+
 function isNativeBlock(type: string): boolean {
-  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type)
+  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type) || ANNOTATION_BLOCKS.has(type)
 }
 
 /** Register control flow blocks (IF, IF-ELSE, REPEAT) as native Blockly blocks with statement inputs. */
@@ -516,6 +519,22 @@ function registerEventBlocks() {
   }
 }
 
+const CALLOUT_COLOR = '#6c7086'
+
+/** Register annotation/callout blocks for workspace documentation. */
+function registerAnnotationBlocks() {
+  Blockly.Blocks['cb_callout'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(CALLOUT_COLOR)
+      this.appendDummyInput()
+        .appendField('📌')
+        .appendField(new Blockly.FieldTextInput('Note: '), 'TEXT')
+      this.setTooltip('A visual callout — add notes to your workspace')
+      // No connections — standalone floating block
+    },
+  }
+}
+
 export function registerCustomBlocks() {
   // Register control flow blocks first
   registerControlFlowBlocks()
@@ -531,6 +550,9 @@ export function registerCustomBlocks() {
 
   // Register color picker block
   registerColorBlock()
+
+  // Register annotation blocks
+  registerAnnotationBlocks()
 
   const allBlocks = registry.getAll()
 
@@ -1238,6 +1260,17 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
     return code
   }
 
+  // Handle annotation blocks (callout — generates comment only)
+  if (block.type === 'cb_callout') {
+    const text = block.getFieldValue('TEXT') || ''
+    const comment = language === 'javascript'
+      ? `/* ${text} */`
+      : `# ${text}`
+    const nextBlock = block.getNextBlock()
+    if (nextBlock) return comment + '\n' + generateBlockCode(nextBlock, language)
+    return comment
+  }
+
   // Handle event blocks (when_key_pressed, when_clicked)
   const eventCode = generateEventCode(block, language)
   if (eventCode !== null) {
@@ -1635,6 +1668,8 @@ export function getToolboxXml(): string {
   xml += '<block type="text"><field name="TEXT">hello</field></block>'
   xml += '<block type="logic_boolean"><field name="BOOL">TRUE</field></block>'
   xml += '<block type="cb_color"><field name="COLOR">#EF4444</field></block>'
+  xml += '<sep gap="12"></sep>'
+  xml += '<block type="cb_callout"><field name="TEXT">Note: </field></block>'
   xml += '</category>'
 
   xml += '</xml>'
@@ -1689,6 +1724,8 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
   xml += '<block type="text"><field name="TEXT">hello</field></block>'
   xml += '<block type="logic_boolean"><field name="BOOL">TRUE</field></block>'
   xml += '<block type="cb_color"><field name="COLOR">#EF4444</field></block>'
+  xml += '<sep gap="12"></sep>'
+  xml += '<block type="cb_callout"><field name="TEXT">Note: </field></block>'
   xml += '</category>'
 
   xml += '</xml>'
