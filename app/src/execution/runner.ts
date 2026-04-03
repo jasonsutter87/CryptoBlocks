@@ -117,8 +117,8 @@ function tryIframeExecution(
       settled = true
       clearTimeout(probeTimer)
       if (mainTimer) clearTimeout(mainTimer)
-      window.removeEventListener('message', handler)
-      cleanup()
+      // Keep listening for post-execution messages (key events, click handlers, etc.)
+      // but resolve the promise so the UI can show initial results
       resolve({
         result: {
           output: collector.output,
@@ -128,7 +128,10 @@ function tryIframeExecution(
           canvasDataUrl,
           htmlOutput,
         },
-        cleanup: () => {},
+        cleanup: () => {
+          window.removeEventListener('message', handler)
+          cleanup()
+        },
       })
     }
 
@@ -314,6 +317,8 @@ function executeJavaScript(
   // iframes send Origin: null which breaks CORS/WS on most servers
   const needsDirectExec = /\bfetch\s*\(/.test(code) || /\bWebSocket\s*\(/.test(code)
 
+  let iframeCleanup: (() => void) | null = null
+
   const promise = (async (): Promise<ExecutionResult> => {
     if (needsDirectExec) {
       return directExecution(code, collector, start, onTrace)
@@ -323,6 +328,7 @@ function executeJavaScript(
     const iframeResult = await tryIframeExecution(code, collector, start, onTrace)
 
     if (iframeResult) {
+      iframeCleanup = iframeResult.cleanup
       return iframeResult.result
     }
 
@@ -336,7 +342,10 @@ function executeJavaScript(
 
   return {
     promise,
-    abort: () => { aborted = true },
+    abort: () => {
+      aborted = true
+      if (iframeCleanup) { iframeCleanup(); iframeCleanup = null }
+    },
   }
 }
 
