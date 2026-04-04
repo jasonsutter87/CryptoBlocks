@@ -179,4 +179,24 @@ export const listsBlocks: BlockDefinition[] = [
     ],
     color: '#D97706',
   },
+  {
+    name: 'remove_item',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Remove an item from a list at a specific index',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'index', type: 'number', description: 'Index to remove', default: 0 },
+    ],
+    outputs: [{ name: 'removed', type: 'any' }],
+    implementations: {
+      javascript: `function removeItem(name, index) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  if (index < 0 || index >= list.length) return undefined;\n  return list.splice(index, 1)[0];\n}`,
+      python: `def remove_item(name, index):\n    lst = globals().get(name, [])\n    if 0 <= int(index) < len(lst):\n        return lst.pop(int(index))\n    return None`,
+    },
+    tests: [
+      { input: { name: 'myList', index: 1 }, expected: { removed: 'any' } },
+    ],
+    color: '#D97706',
+  },
 ]
