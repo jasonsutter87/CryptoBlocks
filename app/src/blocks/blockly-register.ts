@@ -986,7 +986,12 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
         const fnKeyword = isAsync ? 'async function' : 'function'
         const scopePush = '  window.__localStack = window.__localStack || []; window.__localStack.push({});'
         const scopePop = '  window.__localStack.pop();'
+        const hasReturn = body.includes('returnValue(')
         if (!body && !paramSync) return `${fnKeyword} ${name}(${params}) {\n${scopePush}\n${scopePop}\n}`
+        if (hasReturn) {
+          const tryBody = [paramSync, body ? indent(body, language) : ''].filter(Boolean).join('\n')
+          return `${fnKeyword} ${name}(${params}) {\n${scopePush}\n  try {\n${indent(tryBody, language)}\n  } catch(__e) { if (__e && __e.__cbReturn) return __e.value; throw __e; }\n${scopePop}\n}`
+        }
         const fullBody = [scopePush, paramSync, body ? indent(body, language) : '', scopePop].filter(Boolean).join('\n')
         return `${fnKeyword} ${name}(${params}) {\n${fullBody}\n}`
       } else {
@@ -995,6 +1000,11 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
         const pyScopePush = `    if not hasattr(set_local, '_stack'): set_local._stack = []\n    set_local._stack.append({})`
         const pyScopePop = '    set_local._stack.pop()'
         if (!body && !paramSync) return `def ${pyName}(${params}):\n${pyScopePush}\n${pyScopePop}`
+        const hasReturn = body.includes('return_value(')
+        if (hasReturn) {
+          const tryBody = [paramSync, body ? indent(body, language) : ''].filter(Boolean).join('\n')
+          return `def ${pyName}(${params}):\n${pyScopePush}\n    try:\n${indent(tryBody, language)}\n    except _CBReturn as __e:\n        return __e.value\n    finally:\n${pyScopePop}`
+        }
         const pyFullBody = [pyScopePush, paramSync, body ? indent(body, language) : '', pyScopePop].filter(Boolean).join('\n')
         return `def ${pyName}(${params}):\n${pyFullBody}`
       }

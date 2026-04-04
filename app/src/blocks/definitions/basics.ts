@@ -53,6 +53,26 @@ export const basicsBlocks: BlockDefinition[] = [
     color: '#4C97AF',
   },
   {
+    name: 'return_value',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Return a value from a function',
+    category: 'Basics',
+    inputs: [
+      { name: 'value', type: 'any', description: 'Value to return' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function returnValue(value) {\n  window.__localStack.pop();\n  throw { __cbReturn: true, value: value };\n}`,
+      python: `class _CBReturn(Exception):\n    def __init__(self, value):\n        self.value = value\ndef return_value(value):\n    raise _CBReturn(value)`,
+    },
+    tests: [
+      { input: { value: 42 }, expected: {} },
+    ],
+    color: '#4C97AF',
+    shape: 'statement',
+  },
+  {
     name: 'set_local',
     author: 'CryptoBlocks',
     version: '1.0.0',
