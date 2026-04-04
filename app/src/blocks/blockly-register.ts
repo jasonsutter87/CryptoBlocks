@@ -43,7 +43,7 @@ const HTML_BLOCKS = new Set([
 ])
 
 // --- Function block types ---
-const FUNCTION_BLOCKS = new Set(['cb_create_function', 'cb_call_function'])
+const FUNCTION_BLOCKS = new Set(['cb_create_function', 'cb_call_function', 'cb_call_function_return'])
 
 // --- Event block types ---
 const EVENT_BLOCKS = new Set(['cb_when_key_pressed', 'cb_when_clicked'])
@@ -488,6 +488,21 @@ function registerFunctionBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Call a function by name')
+    },
+  }
+
+  Blockly.Blocks['cb_call_function_return'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(FUNCTION_COLOR)
+      this.appendDummyInput()
+        .appendField('call')
+        .appendField(new Blockly.FieldTextInput('myFunction'), 'NAME')
+        .appendField('=')
+      this.appendValueInput('ARG1').appendField('with')
+      this.appendValueInput('ARG2').appendField('and')
+      this.appendValueInput('ARG3').appendField('and')
+      this.setOutput(true, null)
+      this.setTooltip('Call a function and use its return value')
     },
   }
 }
@@ -1010,7 +1025,8 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
       }
     }
 
-    case 'cb_call_function': {
+    case 'cb_call_function':
+    case 'cb_call_function_return': {
       const name = block.getFieldValue('NAME') ?? 'myFunction'
       const args: string[] = []
       for (const argName of ['ARG1', 'ARG2', 'ARG3']) {
@@ -1019,6 +1035,8 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
       }
 
       if (language === 'javascript') {
+        // Value block (return) omits semicolon so it can be used as expression
+        if (block.type === 'cb_call_function_return') return `${name}(${args.join(', ')})`
         return `${name}(${args.join(', ')});`
       } else {
         const pyName = name.replace(/([A-Z])/g, (m: string) => '_' + m.toLowerCase()).replace(/^_/, '')
@@ -1553,6 +1571,7 @@ function functionsToolboxXml(): string {
   xml += '</block>'
 
   xml += '<block type="cb_call_function"></block>'
+  xml += '<block type="cb_call_function_return"></block>'
 
   xml += '</category>'
   return xml
