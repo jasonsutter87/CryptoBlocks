@@ -1,4 +1,5 @@
 import type { ThemePack } from '../types'
+import { block, workspace } from '../../examples/workspaces'
 
 export const gettingStarted: ThemePack = {
   id: 'getting-started',
@@ -21,6 +22,10 @@ export const gettingStarted: ThemePack = {
       ],
       solution: 'Print → Text "Hello World"',
       allowedCategories: ['Basics', 'Text'],
+      starterBlocks: workspace(
+        block('cb_callout', { TEXT: 'Step 1: Drag a Print block\nfrom the Basics category' }, undefined, 50, 50),
+        block('cb_callout', { TEXT: 'Step 2: Connect a text block\nwith \'Hello World\' to it' }, undefined, 50, 200),
+      ),
     },
     {
       id: 'gs-2',
@@ -36,6 +41,9 @@ export const gettingStarted: ThemePack = {
       ],
       solution: 'Print → 3, Print → 2, Print → 1, Print → Text "GO!"',
       allowedCategories: ['Basics', 'Text', 'Math'],
+      starterBlocks: workspace(
+        block('cb_callout', { TEXT: 'Print 3, 2, 1, GO!\nUse Print blocks for each line' }, undefined, 50, 50),
+      ),
     },
     {
       id: 'gs-3',
@@ -51,6 +59,9 @@ export const gettingStarted: ThemePack = {
       ],
       solution: 'Print → Multiply(7, 8)',
       allowedCategories: ['Basics', 'Math'],
+      starterBlocks: workspace(
+        block('cb_callout', { TEXT: 'Calculate 7 × 8\nUse Print + Multiply blocks' }, undefined, 50, 50),
+      ),
     },
     {
       id: 'gs-4',
