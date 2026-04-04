@@ -159,4 +159,24 @@ export const listsBlocks: BlockDefinition[] = [
     ],
     color: '#D97706',
   },
+  {
+    name: 'get_item',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get an item from an array value by index',
+    category: 'Lists',
+    inputs: [
+      { name: 'array', type: 'any', description: 'An array value' },
+      { name: 'index', type: 'number', description: 'Index to get', default: 0 },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function getItem(array, index) {\n  return Array.isArray(array) ? array[index] : undefined;\n}`,
+      python: `def get_item(array, index):\n    if isinstance(array, list):\n        return array[int(index)] if int(index) < len(array) else None\n    return None`,
+    },
+    tests: [
+      { input: { array: [1, 2, 3], index: 1 }, expected: { result: 2 } },
+    ],
+    color: '#D97706',
+  },
 ]
