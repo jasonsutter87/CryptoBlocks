@@ -49,7 +49,7 @@ const FUNCTION_BLOCKS = new Set(['cb_create_function', 'cb_call_function'])
 const EVENT_BLOCKS = new Set(['cb_when_key_pressed', 'cb_when_clicked'])
 
 // --- Annotation block types ---
-const ANNOTATION_BLOCKS = new Set(['cb_callout'])
+const ANNOTATION_BLOCKS = new Set(['cb_callout', 'cb_inline_comment'])
 
 function isNativeBlock(type: string): boolean {
   return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type) || ANNOTATION_BLOCKS.has(type)
@@ -546,6 +546,18 @@ function registerAnnotationBlocks() {
         .appendField(new FieldMultilineInput('Note:\n'), 'TEXT')
       this.setTooltip('A visual callout — add notes to your workspace')
       // No connections — standalone floating block
+    },
+  }
+
+  Blockly.Blocks['cb_inline_comment'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(CALLOUT_COLOR)
+      this.appendDummyInput()
+        .appendField('💬')
+        .appendField(new Blockly.FieldTextInput('comment'), 'TEXT')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('An inline comment — place between blocks')
     },
   }
 }
@@ -1283,7 +1295,7 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   }
 
   // Handle annotation blocks (callout — generates comment only)
-  if (block.type === 'cb_callout') {
+  if (block.type === 'cb_callout' || block.type === 'cb_inline_comment') {
     const text = block.getFieldValue('TEXT') || ''
     const comment = language === 'javascript'
       ? `/* ${text} */`
@@ -1698,6 +1710,7 @@ export function getToolboxXml(): string {
   xml += '<block type="cb_color"><field name="COLOR">#EF4444</field></block>'
   xml += '<sep gap="12"></sep>'
   xml += '<block type="cb_callout"><field name="TEXT">Note: </field></block>'
+  xml += '<block type="cb_inline_comment"><field name="TEXT">comment</field></block>'
   xml += '</category>'
 
   xml += '</xml>'
@@ -1754,6 +1767,7 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
   xml += '<block type="cb_color"><field name="COLOR">#EF4444</field></block>'
   xml += '<sep gap="12"></sep>'
   xml += '<block type="cb_callout"><field name="TEXT">Note: </field></block>'
+  xml += '<block type="cb_inline_comment"><field name="TEXT">comment</field></block>'
   xml += '</category>'
 
   xml += '</xml>'
