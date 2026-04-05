@@ -199,4 +199,43 @@ export const listsBlocks: BlockDefinition[] = [
     ],
     color: '#D97706',
   },
+  {
+    name: 'reverse_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Reverse a list in place',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list to reverse' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function reverseList(name) {\n  window.__vars = window.__vars || {};\n  if (window.__vars[name]) window.__vars[name].reverse();\n}`,
+      python: `def reverse_list(name):\n    lst = globals().get(name, [])\n    lst.reverse()`,
+    },
+    tests: [
+      { input: { name: 'myList' }, expected: {} },
+    ],
+    color: '#D97706',
+    shape: 'statement',
+  },
+  {
+    name: 'reverse_array',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Return a reversed copy of an array value',
+    category: 'Lists',
+    inputs: [
+      { name: 'array', type: 'any', description: 'An array value to reverse' },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function reverseArray(array) {\n  return Array.isArray(array) ? [...array].reverse() : array;\n}`,
+      python: `def reverse_array(array):\n    return list(reversed(array)) if isinstance(array, list) else array`,
+    },
+    tests: [
+      { input: { array: [1, 2, 3] }, expected: { result: [3, 2, 1] } },
+    ],
+    color: '#D97706',
+  },
 ]
