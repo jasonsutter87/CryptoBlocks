@@ -258,4 +258,65 @@ export const listsBlocks: BlockDefinition[] = [
     color: '#D97706',
     shape: 'statement',
   },
+  {
+    name: 'sort_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Sort a list in ascending or descending order',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list to sort' },
+      { name: 'order', type: 'string', description: 'Sort order: asc or desc', default: 'asc' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function sortList(name, order) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name];\n  if (!Array.isArray(list)) return;\n  list.sort(function(a, b) { return order === 'desc' ? b - a : a - b; });\n}`,
+      python: `def sort_list(name, order='asc'):\n    lst = globals().get(name, [])\n    lst.sort(reverse=(order == 'desc'))`,
+    },
+    tests: [
+      { input: { name: 'myList', order: 'asc' }, expected: {} },
+    ],
+    color: '#D97706',
+    shape: 'statement',
+  },
+  {
+    name: 'index_of',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Find the position of a value in a list (-1 if not found)',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'value', type: 'any', description: 'Value to find' },
+    ],
+    outputs: [{ name: 'index', type: 'number' }],
+    implementations: {
+      javascript: `function indexOf(name, value) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  return list.indexOf(value);\n}`,
+      python: `def index_of(name, value):\n    lst = globals().get(name, [])\n    try:\n        return lst.index(value)\n    except ValueError:\n        return -1`,
+    },
+    tests: [
+      { input: { name: 'myList', value: 'hello' }, expected: { index: -1 } },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'map_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Apply a function to every item in a list and return a new list',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'fn_name', type: 'string', description: 'Name of the function to call on each item', default: 'myFunction' },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function mapList(name, fnName) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  const fn = window[fnName];\n  if (typeof fn !== 'function') return list;\n  return list.map(function(item) { return fn(item); });\n}`,
+      python: `def map_list(name, fn_name):\n    lst = globals().get(name, [])\n    fn = globals().get(fn_name)\n    if callable(fn):\n        return [fn(item) for item in lst]\n    return lst`,
+    },
+    tests: [
+      { input: { name: 'myList', fn_name: 'myFunction' }, expected: { result: 'any' } },
+    ],
+    color: '#D97706',
+  },
 ]

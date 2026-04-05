@@ -146,4 +146,67 @@ export const logicBlocks: BlockDefinition[] = [
     ],
     color: '#059669',
   },
+  {
+    name: 'not_equals',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Check if two values are not equal',
+    category: 'Logic',
+    inputs: [
+      { name: 'a', type: 'any', description: 'First value' },
+      { name: 'b', type: 'any', description: 'Second value' },
+    ],
+    outputs: [{ name: 'result', type: 'boolean' }],
+    implementations: {
+      javascript: `function notEquals(a, b) {\n  return a !== b;\n}`,
+      python: `def not_equals(a, b):\n    return a != b`,
+    },
+    tests: [
+      { input: { a: 1, b: 2 }, expected: { result: true } },
+      { input: { a: 1, b: 1 }, expected: { result: false } },
+    ],
+    color: '#059669',
+  },
+  {
+    name: 'greater_or_equal',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Check if first number is greater than or equal to second',
+    category: 'Logic',
+    inputs: [
+      { name: 'a', type: 'number', description: 'First number' },
+      { name: 'b', type: 'number', description: 'Second number' },
+    ],
+    outputs: [{ name: 'result', type: 'boolean' }],
+    implementations: {
+      javascript: `function greaterOrEqual(a, b) {\n  return a >= b;\n}`,
+      python: `def greater_or_equal(a, b):\n    return a >= b`,
+    },
+    tests: [
+      { input: { a: 5, b: 5 }, expected: { result: true } },
+      { input: { a: 3, b: 5 }, expected: { result: false } },
+    ],
+    color: '#059669',
+  },
+  {
+    name: 'less_or_equal',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Check if first number is less than or equal to second',
+    category: 'Logic',
+    inputs: [
+      { name: 'a', type: 'number', description: 'First number' },
+      { name: 'b', type: 'number', description: 'Second number' },
+    ],
+    outputs: [{ name: 'result', type: 'boolean' }],
+    implementations: {
+      javascript: `function lessOrEqual(a, b) {\n  return a <= b;\n}`,
+      python: `def less_or_equal(a, b):\n    return a <= b`,
+    },
+    tests: [
+      { input: { a: 5, b: 5 }, expected: { result: true } },
+      { input: { a: 6, b: 5 }, expected: { result: false } },
+    ],
+    color: '#059669',
+  },
 ]
