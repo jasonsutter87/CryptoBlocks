@@ -179,4 +179,24 @@ export const listsBlocks: BlockDefinition[] = [
     ],
     color: '#D97706',
   },
+  {
+    name: 'list_contains',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Check if a list contains a specific value',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'value', type: 'any', description: 'Value to search for' },
+    ],
+    outputs: [{ name: 'found', type: 'boolean' }],
+    implementations: {
+      javascript: `function listContains(name, value) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  return list.includes(value);\n}`,
+      python: `def list_contains(name, value):\n    lst = globals().get(name, [])\n    return value in lst`,
+    },
+    tests: [
+      { input: { name: 'myList', value: 'hello' }, expected: { found: false } },
+    ],
+    color: '#D97706',
+  },
 ]
