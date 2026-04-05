@@ -947,7 +947,7 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
         ? generateBlockCode(condBlock, language)
         : (language === 'javascript' ? 'false' : 'False')
       const body = generateStatementCode(block, 'DO', language)
-      const countVar = `__whileCount${block.id.substring(0, 4)}`
+      const countVar = `__whileCount${block.id.substring(0, 4).replace(/[^a-zA-Z0-9]/g, '')}`
 
       if (language === 'javascript') {
         if (!body) return `var ${countVar} = 0;\nwhile (${condition}) {\n  if (++${countVar} > 10000) { console.error("Loop limit reached"); break; }\n}`
