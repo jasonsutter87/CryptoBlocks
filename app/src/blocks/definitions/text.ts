@@ -172,4 +172,25 @@ export const textBlocks: BlockDefinition[] = [
     ],
     color: '#8B5CF6',
   },
+  {
+    name: 'split_text',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Split text into a list by a separator',
+    category: 'Text',
+    inputs: [
+      { name: 'text', type: 'string', description: 'Text to split', default: 'hello world' },
+      { name: 'separator', type: 'string', description: 'Character to split on', default: '' },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function splitText(text, separator) {\n  return String(text).split(separator);\n}`,
+      python: `def split_text(text, separator):\n    return str(text).split(separator) if separator else list(str(text))`,
+    },
+    tests: [
+      { input: { text: 'hello', separator: '' }, expected: { result: ['h', 'e', 'l', 'l', 'o'] } },
+      { input: { text: 'a,b,c', separator: ',' }, expected: { result: ['a', 'b', 'c'] } },
+    ],
+    color: '#8B5CF6',
+  },
 ]
