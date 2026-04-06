@@ -52,7 +52,7 @@ const EVENT_BLOCKS = new Set(['cb_when_key_pressed', 'cb_when_clicked'])
 const ANNOTATION_BLOCKS = new Set(['cb_callout', 'cb_inline_comment'])
 
 // --- Library block types ---
-const LIBRARY_BLOCKS = new Set(['cb_import_library'])
+const LIBRARY_BLOCKS = new Set(['cb_import_library', 'cb_import_prank'])
 
 function isNativeBlock(type: string): boolean {
   return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type) || ANNOTATION_BLOCKS.has(type) || LIBRARY_BLOCKS.has(type)
@@ -592,7 +592,6 @@ const LIBRARY_CDNS: Record<string, string> = {
   tonejs: 'https://cdn.jsdelivr.net/npm/tone',
   animejs: 'https://cdn.jsdelivr.net/npm/animejs',
   confetti: 'https://cdn.jsdelivr.net/npm/canvas-confetti',
-  jumpscare: 'https://jasonsutter87.github.io/jumpscare/jumpscare.js',
 }
 
 /** Register the Import Library block as a native Blockly block with a dropdown. */
@@ -606,7 +605,41 @@ function registerLibraryBlocks() {
     ['Tone.js', 'tonejs'],
     ['Anime.js', 'animejs'],
     ['Confetti', 'confetti'],
-    ['Jumpscare', 'jumpscare'],
+  ]
+
+  const prankOptions: [string, string][] = [
+    ['Rickroll', 'theRickroll'],
+    ['Matrix', 'theMatrix'],
+    ['Nyan Cat', 'theNyan'],
+    ['DVD Logo', 'theDVD'],
+    ['Confetti', 'theConfetti'],
+    ['Sans', 'theSans'],
+    ['Cage', 'theCage'],
+    ['Drift', 'theDrift'],
+    ['Gravity', 'theGravity'],
+    ['Blur', 'theBlur'],
+    ['Rotate', 'theRotate'],
+    ['Swap', 'theSwap'],
+    ['Clipper', 'theClipper'],
+    ['Void', 'theVoid'],
+    ['Flip', 'theFlip'],
+    ['Earthquake', 'theEarthquake'],
+    ['Crash', 'theCrash'],
+    ['Update', 'theUpdate'],
+    ['Coloring', 'theColoring'],
+    ['UwU', 'theUwU'],
+    ['Zoom', 'theZoom'],
+    ['Cursor', 'theCursor'],
+    ['Doge', 'theDoge'],
+    ['Ads', 'theAds'],
+    ['3D', 'the3D'],
+    ['Sound', 'theSound'],
+    ['Snow', 'theSnow'],
+    ['Delay', 'theDelay'],
+    ['Trail', 'theTrail'],
+    ['Snake', 'theSnake'],
+    ['Invaders', 'theInvaders'],
+    ['Pong', 'thePong'],
   ]
 
   Blockly.Blocks['cb_import_library'] = {
@@ -618,6 +651,18 @@ function registerLibraryBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Load a JavaScript library from CDN into the sandbox')
+    },
+  }
+
+  Blockly.Blocks['cb_import_prank'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#f38ba8')
+      this.appendDummyInput()
+        .appendField('🎭 Prank')
+        .appendField(new Blockly.FieldDropdown(prankOptions), 'PRANK')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Load a fun prank effect — use responsibly!')
     },
   }
 }
@@ -1352,6 +1397,20 @@ function generateLibraryCode(block: Blockly.Block, language: Language): string |
     ].join('\n')
   }
 
+  if (block.type === 'cb_import_prank') {
+    const prank = block.getFieldValue('PRANK') ?? 'theRickroll'
+    const url = `https://jasonsutter87.github.io/jumpscare/hacks/${prank}.js`
+    return [
+      `await new Promise(function(resolve, reject) {`,
+      `  var s = document.createElement('script');`,
+      `  s.src = ${JSON.stringify(url)};`,
+      `  s.onload = resolve;`,
+      `  s.onerror = function() { console.error('Failed to load prank'); resolve(); };`,
+      `  document.head.appendChild(s);`,
+      `});`,
+    ].join('\n')
+  }
+
   return null
 }
 
@@ -1902,6 +1961,8 @@ function librariesToolboxXml(): string {
   const hue = hexToHue(LIBRARY_COLOR)
   let xml = `<category name="Libraries" colour="${hue}">`
   xml += '<block type="cb_import_library"><field name="LIBRARY">p5</field></block>'
+  xml += '<sep gap="12"></sep>'
+  xml += '<block type="cb_import_prank"><field name="PRANK">theRickroll</field></block>'
   xml += '</category>'
   return xml
 }
