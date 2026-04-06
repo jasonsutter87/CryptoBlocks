@@ -11,13 +11,14 @@ interface BlockEditorProps {
   onEditBlock?: (block: BlockDefinition) => void
   onDeleteBlock?: (block: BlockDefinition) => void
   onSaveAsBlock?: (jsCode: string, pyCode: string) => void
+  onBlockSelected?: (blockId: string | null) => void
   initialWorkspaceState?: Record<string, unknown> | null
 }
 
 // Register blocks once at module level
 let blocksRegistered = false
 
-export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBlock, onSaveAsBlock, initialWorkspaceState }: BlockEditorProps) {
+export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBlock, onSaveAsBlock, onBlockSelected, initialWorkspaceState }: BlockEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
   const callbackRef = useRef(onWorkspaceChange)
@@ -235,6 +236,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       Blockly.ContextMenuRegistry.registry.unregister('save_as_block')
       Blockly.ContextMenuRegistry.registry.unregister('duplicate_stack')
       Blockly.ContextMenuRegistry.registry.unregister('edit_scss')
+      Blockly.ContextMenuRegistry.registry.unregister('lock_block')
       workspace.dispose()
       workspaceRef.current = null
     }
