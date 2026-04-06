@@ -18,7 +18,7 @@ interface BlockEditorProps {
 // Register blocks once at module level
 let blocksRegistered = false
 
-export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBlock, onSaveAsBlock, onBlockSelected, initialWorkspaceState }: BlockEditorProps) {
+export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBlock, onSaveAsBlock, onBlockSelected: _onBlockSelected, initialWorkspaceState }: BlockEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
   const callbackRef = useRef(onWorkspaceChange)
