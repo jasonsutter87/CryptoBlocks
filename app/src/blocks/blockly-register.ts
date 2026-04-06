@@ -51,8 +51,11 @@ const EVENT_BLOCKS = new Set(['cb_when_key_pressed', 'cb_when_clicked'])
 // --- Annotation block types ---
 const ANNOTATION_BLOCKS = new Set(['cb_callout', 'cb_inline_comment'])
 
+// --- Library block types ---
+const LIBRARY_BLOCKS = new Set(['cb_import_library'])
+
 function isNativeBlock(type: string): boolean {
-  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type) || ANNOTATION_BLOCKS.has(type)
+  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type) || ANNOTATION_BLOCKS.has(type) || LIBRARY_BLOCKS.has(type)
 }
 
 /** Register control flow blocks (IF, IF-ELSE, REPEAT) as native Blockly blocks with statement inputs. */
@@ -578,6 +581,47 @@ function registerAnnotationBlocks() {
   }
 }
 
+const LIBRARY_COLOR = '#7c3aed'
+
+const LIBRARY_CDNS: Record<string, string> = {
+  tensorflow: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs',
+  p5: 'https://cdn.jsdelivr.net/npm/p5',
+  threejs: 'https://cdn.jsdelivr.net/npm/three',
+  chartjs: 'https://cdn.jsdelivr.net/npm/chart.js',
+  phaser: 'https://cdn.jsdelivr.net/npm/phaser',
+  tonejs: 'https://cdn.jsdelivr.net/npm/tone',
+  animejs: 'https://cdn.jsdelivr.net/npm/animejs',
+  confetti: 'https://cdn.jsdelivr.net/npm/canvas-confetti',
+  jumpscare: 'https://jasonsutter87.github.io/jumpscare/jumpscare.js',
+}
+
+/** Register the Import Library block as a native Blockly block with a dropdown. */
+function registerLibraryBlocks() {
+  const libraryOptions: [string, string][] = [
+    ['TensorFlow.js', 'tensorflow'],
+    ['p5.js', 'p5'],
+    ['Three.js', 'threejs'],
+    ['Chart.js', 'chartjs'],
+    ['Phaser', 'phaser'],
+    ['Tone.js', 'tonejs'],
+    ['Anime.js', 'animejs'],
+    ['Confetti', 'confetti'],
+    ['Jumpscare', 'jumpscare'],
+  ]
+
+  Blockly.Blocks['cb_import_library'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(LIBRARY_COLOR)
+      this.appendDummyInput()
+        .appendField('Import Library')
+        .appendField(new Blockly.FieldDropdown(libraryOptions), 'LIBRARY')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Load a JavaScript library from CDN into the sandbox')
+    },
+  }
+}
+
 export function registerCustomBlocks() {
   // Register control flow blocks first
   registerControlFlowBlocks()
@@ -596,6 +640,9 @@ export function registerCustomBlocks() {
 
   // Register annotation blocks
   registerAnnotationBlocks()
+
+  // Register library blocks
+  registerLibraryBlocks()
 
   const allBlocks = registry.getAll()
 
@@ -1280,6 +1327,34 @@ function generateHtmlCode(block: Blockly.Block, language: Language): string | nu
   }
 }
 
+/**
+ * Generate code for library import blocks.
+ * Returns null if the block is not a library block.
+ */
+function generateLibraryCode(block: Blockly.Block, language: Language): string | null {
+  if (!LIBRARY_BLOCKS.has(block.type)) return null
+
+  if (language !== 'javascript') {
+    return `# Import Library block is only available in JavaScript mode`
+  }
+
+  if (block.type === 'cb_import_library') {
+    const lib = block.getFieldValue('LIBRARY') ?? 'p5'
+    const url = LIBRARY_CDNS[lib] ?? ''
+    return [
+      `await new Promise(function(resolve, reject) {`,
+      `  var s = document.createElement('script');`,
+      `  s.src = ${JSON.stringify(url)};`,
+      `  s.onload = resolve;`,
+      `  s.onerror = function() { console.error('Failed to load ${lib}'); resolve(); };`,
+      `  document.head.appendChild(s);`,
+      `});`,
+    ].join('\n')
+  }
+
+  return null
+}
+
 /** Blocks consumed by a button's onclick — skip them in the normal chain. */
 const _consumedByButton = new WeakSet<Blockly.Block>()
 let _loopVarCounter = 0
@@ -1443,6 +1518,17 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
       }
     }
 
+    if (nextBlock) {
+      code += '\n' + generateBlockCode(nextBlock, language)
+    }
+    return code
+  }
+
+  // Handle library import blocks
+  const libraryCode = generateLibraryCode(block, language)
+  if (libraryCode !== null) {
+    let code = traceCall(block) + libraryCode
+    const nextBlock = block.getNextBlock()
     if (nextBlock) {
       code += '\n' + generateBlockCode(nextBlock, language)
     }
@@ -1731,6 +1817,9 @@ export function getToolboxXml(): string {
   // Add HTML category
   xml += htmlToolboxXml()
 
+  // Add Libraries category
+  xml += librariesToolboxXml()
+
   // Add built-in Blockly blocks for values
   xml += '<sep></sep>'
   xml += '<category name="Values" colour="230">'
@@ -1788,6 +1877,11 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
     xml += htmlToolboxXml()
   }
 
+  // Add Libraries category if allowed
+  if (allowedCategories.includes('Libraries')) {
+    xml += librariesToolboxXml()
+  }
+
   // Always include Values category
   xml += '<sep></sep>'
   xml += '<category name="Values" colour="230">'
@@ -1801,6 +1895,14 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
   xml += '</category>'
 
   xml += '</xml>'
+  return xml
+}
+
+function librariesToolboxXml(): string {
+  const hue = hexToHue(LIBRARY_COLOR)
+  let xml = `<category name="Libraries" colour="${hue}">`
+  xml += '<block type="cb_import_library"><field name="LIBRARY">p5</field></block>'
+  xml += '</category>'
   return xml
 }
 
