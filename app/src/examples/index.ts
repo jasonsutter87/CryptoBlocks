@@ -13,6 +13,7 @@ import { weatherDashboardWorkspace } from './weather-dashboard-workspace'
 import { calculatorWorkspace } from './calculator-workspace'
 import { drumsetWorkspace } from './drumset-workspace'
 import { calculatorLeanWorkspace } from './calculator-lean-workspace'
+import { game2048Workspace } from './2048-workspace'
 
 export interface Example {
   id: string
@@ -590,5 +591,13 @@ export const EXAMPLES: Example[] = [
     difficulty: 'pro',
     tags: ['HTML', 'Logic', 'Math', 'Basics', 'Functions'],
     workspace: calculatorLeanWorkspace,
+  },
+  {
+    id: '2048',
+    name: '2048',
+    description: 'The classic 2048 sliding tile game — swipe to merge tiles, SCSS styling, data attributes, and matrix transforms.',
+    difficulty: 'pro',
+    tags: ['HTML', 'Logic', 'Math', 'Lists', 'Functions', 'Games'],
+    workspace: game2048Workspace,
   },
 ]
