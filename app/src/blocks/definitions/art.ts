@@ -16,6 +16,11 @@ export const artBlocks: BlockDefinition[] = [
     implementations: {
       javascript: `function setCanvas(width, height, color) {
   var c = document.getElementById('cb-canvas');
+  if (!c) {
+    c = document.createElement('canvas');
+    c.id = 'cb-canvas';
+    document.body.appendChild(c);
+  }
   c.width = width;
   c.height = height;
   c.style.display = 'block';

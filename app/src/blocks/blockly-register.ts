@@ -1092,10 +1092,11 @@ function generateVisionCode(block: Blockly.Block, language: Language): string | 
       if (language !== 'javascript') return '# animation_loop is only supported in JavaScript'
       const loopName = `__cbLoop_${block.id.substring(0, 4).replace(/[^a-zA-Z0-9]/g, '')}`
       const stream = `var __cv = document.getElementById('cb-canvas');\n  if (__cv && __cv.width > 0 && __cv.style.display !== 'none') {\n    try { parent.postMessage({ __cryptoblocks: true, type: 'canvas', data: __cv.toDataURL('image/png') }, '*'); } catch(e) {}\n  }`
+      const killCheck = `if (window.__cbStopLoop) return;`
       if (!body) {
-        return `(function ${loopName}() {\n  ${stream}\n  requestAnimationFrame(${loopName});\n})()`
+        return `(function ${loopName}() {\n  ${killCheck}\n  ${stream}\n  requestAnimationFrame(${loopName});\n})()`
       }
-      return `(function ${loopName}() {\n${indent(body, language)}\n  ${stream}\n  requestAnimationFrame(${loopName});\n})()`
+      return `(function ${loopName}() {\n  ${killCheck}\n${indent(body, language)}\n  ${stream}\n  requestAnimationFrame(${loopName});\n})()`
     }
 
     default:

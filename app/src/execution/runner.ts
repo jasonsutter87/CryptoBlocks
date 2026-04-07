@@ -96,6 +96,17 @@ function tryIframeExecution(
 
     const cleanup = () => {
       if (iframe) {
+        // Stop any animation loops running in the iframe (allow-same-origin keeps them alive)
+        try {
+          const win = iframe.contentWindow as Window & { __cbStopLoop?: boolean } | null
+          if (win) win.__cbStopLoop = true
+          // Also stop any active camera streams
+          const cam = (win as Window & { __cbCamera?: HTMLVideoElement } | null)?.__cbCamera
+          if (cam && cam.srcObject) {
+            const stream = cam.srcObject as MediaStream
+            stream.getTracks().forEach(t => t.stop())
+          }
+        } catch { /* cross-origin or already gone */ }
         try { document.body.removeChild(iframe) } catch { /* already removed */ }
         iframe = null
       }
