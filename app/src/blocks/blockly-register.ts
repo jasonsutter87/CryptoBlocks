@@ -1095,10 +1095,12 @@ function generateVisionCode(block: Blockly.Block, language: Language): string | 
       const killCheck = `if (window.__cbStopLoop) return;`
       const localScope = `window.__localStack = window.__localStack || []; window.__localStack.push({});`
       const popScope = `window.__localStack.pop();`
+      // Throttle to ~15fps so the loop is more visible and doesn't burn CPU
+      const next = `setTimeout(function() { requestAnimationFrame(${loopName}); }, 60);`
       if (!body) {
-        return `(function ${loopName}() {\n  ${killCheck}\n  ${stream}\n  requestAnimationFrame(${loopName});\n})()`
+        return `(function ${loopName}() {\n  ${killCheck}\n  ${stream}\n  ${next}\n})()`
       }
-      return `(function ${loopName}() {\n  ${killCheck}\n  ${localScope}\n  try {\n${indent(body, language)}\n  } catch(__e) { console.error('Loop error: ' + __e.message); }\n  ${popScope}\n  ${stream}\n  requestAnimationFrame(${loopName});\n})()`
+      return `(function ${loopName}() {\n  ${killCheck}\n  ${localScope}\n  try {\n${indent(body, language)}\n  } catch(__e) { console.error('Loop error: ' + __e.message); }\n  ${popScope}\n  ${stream}\n  ${next}\n})()`
     }
 
     default:
