@@ -103,7 +103,7 @@ function buildTextPortraitWorkspace(): Record<string, unknown> {
     {
       CONDITION: block('cb_greater_than', undefined, {
         a: block('cb_get_local', undefined, { name: textVal('brightness') }),
-        b: numVal(80),
+        b: numVal(40),
       }),
     },
     { DO: drawChar },
