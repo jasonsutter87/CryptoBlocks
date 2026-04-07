@@ -25,6 +25,15 @@ export default function OutputPanel({ result, isRunning, liveOutput, previewCode
     prevHtmlRef.current = result?.htmlOutput
   }, [result?.htmlOutput])
 
+  // Auto-switch to canvas tab when canvas first arrives
+  const prevCanvasRef = useRef<string | undefined>(undefined)
+  useEffect(() => {
+    if (result?.canvasDataUrl && !prevCanvasRef.current) {
+      setTab('canvas')
+    }
+    prevCanvasRef.current = result?.canvasDataUrl
+  }, [result?.canvasDataUrl])
+
   // Resolve active tab (fall back to console if selected tab has no data)
   let activeTab = tab
   if (tab === 'canvas' && !hasCanvas) activeTab = 'console'
