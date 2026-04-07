@@ -92,7 +92,10 @@ function buildTextPortraitWorkspace(): Record<string, unknown> {
     text: block('cb_get_local', undefined, { name: textVal('char') }),
     x: block('cb_get_local', undefined, { name: textVal('x') }),
     y: block('cb_get_local', undefined, { name: textVal('y') }),
-    color: textVal('#00ff41'),
+    color: block('cb_get_pixel_color', undefined, {
+      x: block('cb_get_local', undefined, { name: textVal('x') }),
+      y: block('cb_get_local', undefined, { name: textVal('y') }),
+    }),
     size: numVal(12),
   })
 
@@ -103,7 +106,7 @@ function buildTextPortraitWorkspace(): Record<string, unknown> {
     {
       CONDITION: block('cb_greater_than', undefined, {
         a: block('cb_get_local', undefined, { name: textVal('brightness') }),
-        b: numVal(30),
+        b: numVal(0),
       }),
     },
     { DO: drawChar },
