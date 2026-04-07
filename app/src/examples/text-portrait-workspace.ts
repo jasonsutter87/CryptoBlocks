@@ -12,9 +12,9 @@ import {
 function buildTextPortraitWorkspace(): Record<string, unknown> {
   resetIds()
 
-  // --- Setup: frame counter and the matrix character pool ---
+  // --- Setup: counter and the matrix character pool ---
   const setCounter = block('cb_set_global', undefined, {
-    name: textVal('frameCount'),
+    name: textVal('charCounter'),
     value: numVal(0),
   }, 50, 50)
 
@@ -74,17 +74,14 @@ function buildTextPortraitWorkspace(): Record<string, unknown> {
     }),
   })
 
-  // Pick a character based on (row + frameCount) % 24 — creates falling effect
+  // Pick a random matrix character: get_from_list("matrixChars", random(0, 23))
   const setChar = block('cb_set_local', undefined, {
     name: textVal('char'),
     value: block('cb_get_from_list', undefined, {
       name: textVal('matrixChars'),
-      index: block('cb_modulo', undefined, {
-        a: block('cb_add', undefined, {
-          a: block('cb_get_local', undefined, { name: textVal('row') }),
-          b: block('cb_get_global', undefined, { name: textVal('frameCount') }),
-        }),
-        b: numVal(24),
+      index: block('cb_random_number', undefined, {
+        min: numVal(0),
+        max: numVal(23),
       }),
     }),
   })
@@ -143,17 +140,8 @@ function buildTextPortraitWorkspace(): Record<string, unknown> {
     { DO: chain(setRow, innerRepeat) },
   )
 
-  // Increment frame counter for the falling effect
-  const incFrame = block('cb_set_global', undefined, {
-    name: textVal('frameCount'),
-    value: block('cb_add', undefined, {
-      a: block('cb_get_global', undefined, { name: textVal('frameCount') }),
-      b: numVal(1),
-    }),
-  })
-
-  // Animation loop body: capture → canvas → nested grid → increment frame
-  const loopBody = chain(captureFrame, setCanvas, outerRepeat, incFrame)
+  // Animation loop body: capture → canvas → nested grid
+  const loopBody = chain(captureFrame, setCanvas, outerRepeat)
 
   const animLoop = blockWithStatements(
     'cb_animation_loop',
