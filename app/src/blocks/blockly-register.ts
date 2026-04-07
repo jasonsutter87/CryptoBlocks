@@ -1093,10 +1093,12 @@ function generateVisionCode(block: Blockly.Block, language: Language): string | 
       const loopName = `__cbLoop_${block.id.substring(0, 4).replace(/[^a-zA-Z0-9]/g, '')}`
       const stream = `var __cv = document.getElementById('cb-canvas');\n  if (__cv && __cv.width > 0 && __cv.style.display !== 'none') {\n    try { parent.postMessage({ __cryptoblocks: true, type: 'canvas', data: __cv.toDataURL('image/png') }, '*'); } catch(e) {}\n  }`
       const killCheck = `if (window.__cbStopLoop) return;`
+      const localScope = `window.__localStack = window.__localStack || []; window.__localStack.push({});`
+      const popScope = `window.__localStack.pop();`
       if (!body) {
         return `(function ${loopName}() {\n  ${killCheck}\n  ${stream}\n  requestAnimationFrame(${loopName});\n})()`
       }
-      return `(function ${loopName}() {\n  ${killCheck}\n${indent(body, language)}\n  ${stream}\n  requestAnimationFrame(${loopName});\n})()`
+      return `(function ${loopName}() {\n  ${killCheck}\n  ${localScope}\n  try {\n${indent(body, language)}\n  } catch(__e) { console.error('Loop error: ' + __e.message); }\n  ${popScope}\n  ${stream}\n  requestAnimationFrame(${loopName});\n})()`
     }
 
     default:
