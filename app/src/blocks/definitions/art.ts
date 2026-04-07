@@ -27,6 +27,7 @@ export const artBlocks: BlockDefinition[] = [
   var ctx = c.getContext('2d');
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, width, height);
+  if (!window.__cbCanvasLogged) { window.__cbCanvasLogged = true; console.log('Canvas set: ' + width + 'x' + height); }
 }`,
       python: `def set_canvas(width, height, color):
     print("[Canvas is only available in JavaScript mode]")`,
@@ -144,6 +145,7 @@ export const artBlocks: BlockDefinition[] = [
     outputs: [],
     implementations: {
       javascript: `function drawText(text, x, y, color, size) {
+  if (!window.__cbDrawLogged) { window.__cbDrawLogged = true; console.log('drawText called: ' + text + ' at ' + x + ',' + y + ' color=' + color); }
   var c = document.getElementById('cb-canvas');
   var ctx = c.getContext('2d');
   ctx.fillStyle = color;
