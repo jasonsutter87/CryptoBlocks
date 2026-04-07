@@ -92,7 +92,7 @@ function buildTextPortraitWorkspace(): Record<string, unknown> {
     text: block('cb_get_local', undefined, { name: textVal('char') }),
     x: block('cb_get_local', undefined, { name: textVal('x') }),
     y: block('cb_get_local', undefined, { name: textVal('y') }),
-    color: colorVal('#00ff41'),
+    color: textVal('#00ff41'),
     size: numVal(12),
   })
 
