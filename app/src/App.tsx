@@ -273,7 +273,11 @@ export default function App() {
       setLiveOutput((prev) => [...prev, line])
     }, traceEnabled ? (blockId) => {
       traceLog.push(blockId)
-    } : undefined)
+    } : undefined, (dataUrl) => {
+      setResult((prev) => prev
+        ? { ...prev, canvasDataUrl: dataUrl }
+        : { output: [], error: null, returnValue: undefined, duration: 0, canvasDataUrl: dataUrl })
+    })
     executionHandleRef.current = handle
 
     const execResult = await handle.promise

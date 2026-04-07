@@ -25,6 +25,7 @@ export function executeCode(
   language: Language,
   onOutput?: (line: string) => void,
   onTrace?: (blockId: string) => void,
+  onCanvasUpdate?: (dataUrl: string) => void,
 ): ExecutionHandle {
   // Empty code → instant empty result (no iframe/Pyodide needed)
   if (!code.trim()) {
@@ -40,7 +41,7 @@ export function executeCode(
   }
 
   if (language === 'javascript') {
-    return executeJavaScript(code, onOutput, onTrace)
+    return executeJavaScript(code, onOutput, onTrace, onCanvasUpdate)
   } else {
     return executePython(code, onOutput)
   }
@@ -88,6 +89,7 @@ function tryIframeExecution(
   collector: ReturnType<typeof createOutputCollector>,
   start: number,
   onTrace?: (blockId: string) => void,
+  onCanvasUpdate?: (dataUrl: string) => void,
 ): Promise<{ result: ExecutionResult; cleanup: () => void } | null> {
   return new Promise((resolve) => {
     let iframe: HTMLIFrameElement | null = null
@@ -155,6 +157,7 @@ function tryIframeExecution(
         collector.push(String(msg.data))
       } else if (msg.type === 'canvas') {
         canvasDataUrl = String(msg.data)
+        onCanvasUpdate?.(canvasDataUrl)
       } else if (msg.type === 'html') {
         htmlOutput = String(msg.data)
       } else if (msg.type === 'error') {
@@ -208,6 +211,8 @@ ${safetyPreamble}
     iframe.style.display = 'none'
     iframe.sandbox.add('allow-scripts')
     iframe.sandbox.add('allow-modals')
+    iframe.sandbox.add('allow-same-origin')
+    iframe.setAttribute('allow', 'camera; microphone')
     iframe.srcdoc = html
     document.body.appendChild(iframe)
   })
@@ -308,6 +313,7 @@ function executeJavaScript(
   code: string,
   onOutput?: (line: string) => void,
   onTrace?: (blockId: string) => void,
+  onCanvasUpdate?: (dataUrl: string) => void,
 ): ExecutionHandle {
   const collector = createOutputCollector(onOutput)
   const start = performance.now()
@@ -315,7 +321,7 @@ function executeJavaScript(
 
   // Code that uses fetch() or WebSocket needs direct execution — sandboxed
   // iframes send Origin: null which breaks CORS/WS on most servers
-  const needsDirectExec = /\bfetch\s*\(/.test(code) || /\bWebSocket\s*\(/.test(code) || /getUserMedia/.test(code)
+  const needsDirectExec = /\bfetch\s*\(/.test(code) || /\bWebSocket\s*\(/.test(code)
 
   let iframeCleanup: (() => void) | null = null
 
@@ -325,7 +331,7 @@ function executeJavaScript(
     }
 
     // Try iframe first (sandboxed, most secure)
-    const iframeResult = await tryIframeExecution(code, collector, start, onTrace)
+    const iframeResult = await tryIframeExecution(code, collector, start, onTrace, onCanvasUpdate)
 
     if (iframeResult) {
       iframeCleanup = iframeResult.cleanup
