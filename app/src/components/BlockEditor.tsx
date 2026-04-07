@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 import * as Blockly from 'blockly'
 import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode } from '../blocks/blockly-register'
 import { registry } from '../blocks/registry'
+import { recordBlockCreated } from '../stats/tracker'
 import type { BlockDefinition } from '../types/block'
 
 const ScssEditorModal = lazy(() => import('./ScssEditorModal'))
@@ -223,7 +224,15 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     }
     Blockly.ContextMenuRegistry.registry.register(lockBlockOption)
 
-    const listener = () => {
+    const listener = (event?: Blockly.Events.Abstract) => {
+      // Track block creation (only user actions, not workspace load)
+      if (event && event.type === Blockly.Events.BLOCK_CREATE && !event.recordUndo === false) {
+        const createEvent = event as Blockly.Events.BlockCreate
+        // Only count if it's from a user drag, not a load
+        if (createEvent.group !== '' && !createEvent.isUiEvent) {
+          recordBlockCreated()
+        }
+      }
       callbackRef.current(workspace)
     }
     workspace.addChangeListener(listener)

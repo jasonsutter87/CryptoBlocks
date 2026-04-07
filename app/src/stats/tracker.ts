@@ -74,6 +74,13 @@ function calculateStreak(runsByDate: Record<string, number>, endDate: number): n
   return streak
 }
 
+export function recordBlockCreated(): DevStats {
+  const stats = loadStats()
+  stats.totalBlocks++
+  saveStats(stats)
+  return stats
+}
+
 export function recordRun(opts: {
   language: 'javascript' | 'python' | 'html'
   blockCount: number
@@ -84,7 +91,6 @@ export function recordRun(opts: {
 
   // Increment counters
   stats.totalRuns++
-  stats.totalBlocks += opts.blockCount
   stats.totalLinesGenerated += opts.lineCount
   stats.runsPerLanguage[opts.language]++
 
