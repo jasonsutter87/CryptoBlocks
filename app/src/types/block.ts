@@ -51,6 +51,7 @@ export type BlockCategory =
   | 'Hardware'
   | 'Pen'
   | 'Testing'
+  | 'Vision'
   | '???'
   | 'My Blocks'
 
@@ -73,6 +74,7 @@ export const CATEGORY_COLORS: Record<BlockCategory, string> = {
   Hardware: '#65A30D',
   Pen: '#14B8A6',
   Testing: '#06B6D4',
+  Vision: '#06B6D4',
   '???': '#00ff41',
   'My Blocks': '#F59E0B',
 }

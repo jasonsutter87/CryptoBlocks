@@ -315,7 +315,7 @@ function executeJavaScript(
 
   // Code that uses fetch() or WebSocket needs direct execution — sandboxed
   // iframes send Origin: null which breaks CORS/WS on most servers
-  const needsDirectExec = /\bfetch\s*\(/.test(code) || /\bWebSocket\s*\(/.test(code)
+  const needsDirectExec = /\bfetch\s*\(/.test(code) || /\bWebSocket\s*\(/.test(code) || /getUserMedia/.test(code)
 
   let iframeCleanup: (() => void) | null = null
 

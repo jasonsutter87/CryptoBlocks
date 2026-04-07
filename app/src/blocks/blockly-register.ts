@@ -54,8 +54,11 @@ const ANNOTATION_BLOCKS = new Set(['cb_callout', 'cb_inline_comment'])
 // --- Library block types ---
 const LIBRARY_BLOCKS = new Set(['cb_import_library', 'cb_import_prank'])
 
+// --- Vision block types ---
+const VISION_BLOCKS = new Set(['cb_animation_loop'])
+
 function isNativeBlock(type: string): boolean {
-  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type) || ANNOTATION_BLOCKS.has(type) || LIBRARY_BLOCKS.has(type)
+  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type) || ANNOTATION_BLOCKS.has(type) || LIBRARY_BLOCKS.has(type) || VISION_BLOCKS.has(type)
 }
 
 /** Register control flow blocks (IF, IF-ELSE, REPEAT) as native Blockly blocks with statement inputs. */
@@ -667,6 +670,22 @@ function registerLibraryBlocks() {
   }
 }
 
+const VISION_COLOR = '#06B6D4'
+
+/** Register vision blocks (animation loop) as native Blockly blocks. */
+function registerVisionBlocks() {
+  Blockly.Blocks['cb_animation_loop'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour(VISION_COLOR)
+      this.appendDummyInput().appendField('repeat each frame')
+      this.appendStatementInput('DO').appendField('do')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Run blocks on every animation frame (~60fps) using requestAnimationFrame')
+    },
+  }
+}
+
 export function registerCustomBlocks() {
   // Register control flow blocks first
   registerControlFlowBlocks()
@@ -688,6 +707,9 @@ export function registerCustomBlocks() {
 
   // Register library blocks
   registerLibraryBlocks()
+
+  // Register vision blocks
+  registerVisionBlocks()
 
   const allBlocks = registry.getAll()
 
@@ -1052,6 +1074,27 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
 
     case 'cb_loop_index': {
       return language === 'javascript' ? '__loopIndex' : '__loopIndex'
+    }
+
+    default:
+      return null
+  }
+}
+
+/**
+ * Generate code for vision blocks (animation_loop).
+ * Returns null if the block is not a vision block.
+ */
+function generateVisionCode(block: Blockly.Block, language: Language): string | null {
+  switch (block.type) {
+    case 'cb_animation_loop': {
+      const body = generateStatementCode(block, 'DO', language)
+      if (language !== 'javascript') return '# animation_loop is only supported in JavaScript'
+      const loopName = `__cbLoop_${block.id.substring(0, 4).replace(/[^a-zA-Z0-9]/g, '')}`
+      if (!body) {
+        return `(function ${loopName}() {\n  requestAnimationFrame(${loopName});\n})()`
+      }
+      return `(function ${loopName}() {\n${indent(body, language)}\n  requestAnimationFrame(${loopName});\n})()`
     }
 
     default:
@@ -1439,6 +1482,17 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   const controlFlow = generateControlFlowCode(block, language)
   if (controlFlow !== null) {
     let code = traceCall(block) + controlFlow
+    const nextBlock = block.getNextBlock()
+    if (nextBlock) {
+      code += '\n' + generateBlockCode(nextBlock, language)
+    }
+    return code
+  }
+
+  // Handle vision blocks (animation_loop)
+  const visionCode = generateVisionCode(block, language)
+  if (visionCode !== null) {
+    let code = traceCall(block) + visionCode
     const nextBlock = block.getNextBlock()
     if (nextBlock) {
       code += '\n' + generateBlockCode(nextBlock, language)
@@ -1856,6 +1910,9 @@ export function getToolboxXml(): string {
     // Add control flow blocks at the top of the Logic category
     xml += controlFlowToolboxXml(cat)
 
+    // Add vision native blocks at the top of the Vision category
+    xml += visionToolboxXml(cat)
+
     for (const block of blocks) {
       xml += `<block type="cb_${block.name}">`
       for (const input of block.inputs) {
@@ -1910,6 +1967,9 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
     // Add control flow blocks at the top of the Logic category
     xml += controlFlowToolboxXml(cat)
 
+    // Add vision native blocks at the top of the Vision category
+    xml += visionToolboxXml(cat)
+
     for (const block of blocks) {
       xml += `<block type="cb_${block.name}">`
       for (const input of block.inputs) {
@@ -1955,6 +2015,15 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
 
   xml += '</xml>'
   return xml
+}
+
+/** Inject animation_loop block into the Vision category toolbox. */
+function visionToolboxXml(cat: string): string {
+  if (cat !== 'Vision') return ''
+  return (
+    '<block type="cb_animation_loop"></block>' +
+    '<sep gap="20"></sep>'
+  )
 }
 
 function librariesToolboxXml(): string {

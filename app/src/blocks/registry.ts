@@ -17,6 +17,7 @@ import { hardwareBlocks } from './definitions/hardware'
 import { turtleBlocks } from './definitions/turtle'
 import { secretBlocks } from './definitions/secrets'
 import { testingBlocks } from './definitions/testing'
+import { visionBlocks } from './definitions/vision'
 
 class BlockRegistry {
   private blocks: Map<string, BlockDefinition> = new Map()
@@ -39,6 +40,7 @@ class BlockRegistry {
     this.registerAll(turtleBlocks)
     this.registerAll(secretBlocks)
     this.registerAll(testingBlocks)
+    this.registerAll(visionBlocks)
   }
 
   register(block: BlockDefinition) {
