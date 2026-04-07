@@ -14,6 +14,7 @@ import { calculatorWorkspace } from './calculator-workspace'
 import { drumsetWorkspace } from './drumset-workspace'
 import { calculatorLeanWorkspace } from './calculator-lean-workspace'
 import { game2048Workspace } from './2048-workspace'
+import { textPortraitWorkspace } from './text-portrait-workspace'
 
 export interface Example {
   id: string
@@ -599,5 +600,13 @@ export const EXAMPLES: Example[] = [
     difficulty: 'pro',
     tags: ['HTML', 'Logic', 'Math', 'Lists', 'Functions', 'Games'],
     workspace: game2048Workspace,
+  },
+  {
+    id: 'text-portrait',
+    name: 'Text Portrait',
+    description: 'Live webcam → text art. Your face becomes characters from your favorite word!',
+    difficulty: 'pro',
+    tags: ['Vision', 'Art', 'Lists'],
+    workspace: textPortraitWorkspace,
   },
 ]
