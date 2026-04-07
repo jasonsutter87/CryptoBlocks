@@ -75,7 +75,7 @@ export const visionBlocks: BlockDefinition[] = [
     ],
     outputs: [{ name: 'brightness', type: 'number' }],
     implementations: {
-      javascript: `function getPixelBrightness(x, y) {\n  if (!window.__cbFrameData) return 0;\n  var d = window.__cbFrameData;\n  var i = (Math.floor(y) * d.width + Math.floor(x)) * 4;\n  return Math.round((d.data[i] + d.data[i+1] + d.data[i+2]) / 3);\n}`,
+      javascript: `function getPixelBrightness(x, y) {\n  if (!window.__cbFrameData) return 0;\n  var d = window.__cbFrameData;\n  var px = Math.floor(x), py = Math.floor(y);\n  if (px < 0 || py < 0 || px >= d.width || py >= d.height) return 0;\n  var i = (py * d.width + px) * 4;\n  return Math.round((d.data[i] + d.data[i+1] + d.data[i+2]) / 3);\n}`,
       python: `def get_pixel_brightness(x, y):\n    return 0`,
     },
     tests: [],
@@ -93,7 +93,7 @@ export const visionBlocks: BlockDefinition[] = [
     ],
     outputs: [{ name: 'color', type: 'string' }],
     implementations: {
-      javascript: `function getPixelColor(x, y) {\n  if (!window.__cbFrameData) return '#000000';\n  var d = window.__cbFrameData;\n  var i = (Math.floor(y) * d.width + Math.floor(x)) * 4;\n  var r = d.data[i].toString(16).padStart(2, '0');\n  var g = d.data[i+1].toString(16).padStart(2, '0');\n  var b = d.data[i+2].toString(16).padStart(2, '0');\n  return '#' + r + g + b;\n}`,
+      javascript: `function getPixelColor(x, y) {\n  if (!window.__cbFrameData) return '#000000';\n  var d = window.__cbFrameData;\n  var px = Math.floor(x), py = Math.floor(y);\n  if (px < 0 || py < 0 || px >= d.width || py >= d.height) return '#000000';\n  var i = (py * d.width + px) * 4;\n  var r = (d.data[i] || 0).toString(16).padStart(2, '0');\n  var g = (d.data[i+1] || 0).toString(16).padStart(2, '0');\n  var b = (d.data[i+2] || 0).toString(16).padStart(2, '0');\n  return '#' + r + g + b;\n}`,
       python: `def get_pixel_color(x, y):\n    return '#000000'`,
     },
     tests: [],
