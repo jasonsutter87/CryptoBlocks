@@ -587,11 +587,6 @@ function registerAnnotationBlocks() {
 const LIBRARY_COLOR = '#7c3aed'
 
 const LIBRARY_CDNS: Record<string, string> = {
-  tensorflow: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs',
-  p5: 'https://cdn.jsdelivr.net/npm/p5',
-  threejs: 'https://cdn.jsdelivr.net/npm/three',
-  chartjs: 'https://cdn.jsdelivr.net/npm/chart.js',
-  phaser: 'https://cdn.jsdelivr.net/npm/phaser',
   tonejs: 'https://cdn.jsdelivr.net/npm/tone',
   animejs: 'https://cdn.jsdelivr.net/npm/animejs',
   confetti: 'https://cdn.jsdelivr.net/npm/canvas-confetti',
@@ -600,14 +595,9 @@ const LIBRARY_CDNS: Record<string, string> = {
 /** Register the Import Library block as a native Blockly block with a dropdown. */
 function registerLibraryBlocks() {
   const libraryOptions: [string, string][] = [
-    ['TensorFlow.js', 'tensorflow'],
-    ['p5.js', 'p5'],
-    ['Three.js', 'threejs'],
-    ['Chart.js', 'chartjs'],
-    ['Phaser', 'phaser'],
-    ['Tone.js', 'tonejs'],
-    ['Anime.js', 'animejs'],
     ['Confetti', 'confetti'],
+    ['Anime.js', 'animejs'],
+    ['Tone.js', 'tonejs'],
   ]
 
   const prankOptions: [string, string][] = [
