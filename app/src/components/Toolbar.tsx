@@ -40,6 +40,7 @@ interface ToolbarProps {
   onRedo: () => void
   onFitView: () => void
   onOpenSettings: () => void
+  onOpenTutorial?: () => void
 }
 
 const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
@@ -77,6 +78,7 @@ export default function Toolbar({
   onRedo,
   onFitView,
   onOpenSettings,
+  onOpenTutorial,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
@@ -224,6 +226,12 @@ export default function Toolbar({
                     </svg>
                     Settings
                   </button>
+                  {onOpenTutorial && (
+                    <button onClick={() => { onOpenTutorial(); setOpenMenu(null) }} className={menuItem}>
+                      <span className="text-base leading-none">🎓</span>
+                      Tutorial
+                    </button>
+                  )}
                   <div className={menuDivider} />
                   <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
                     <svg className="w-4 h-4 text-[#f38ba8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

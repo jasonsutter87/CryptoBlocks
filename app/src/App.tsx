@@ -57,6 +57,8 @@ import { useVersionControl } from './version-control/useVersionControl'
 import CheckpointModal from './components/CheckpointModal'
 import HistoryPanel from './components/HistoryPanel'
 import SettingsModal from './components/SettingsModal'
+import WelcomeModal from './components/WelcomeModal'
+import TutorialOverlay from './components/TutorialOverlay'
 import { initEasterEggs } from './easter-eggs'
 import type { Achievement } from './achievements'
 import { checkAchievements } from './achievements'
@@ -73,7 +75,7 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('javascript')
   const [code, setCode] = useState('')
   const [lastExecCode, setLastExecCode] = useState('')
-  const [showCode, setShowCode] = useState(true)
+  const [showCode, setShowCode] = useState(false)
   const [showOutput, setShowOutput] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
   const [result, setResult] = useState<ExecutionResult | null>(null)
@@ -120,6 +122,8 @@ export default function App() {
   const achievementQueue = useRef<Achievement[]>([])
   const [showStats, setShowStats] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('cryptoblocks-tutorial-seen'))
+  const [showTutorial, setShowTutorial] = useState(false)
 
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
@@ -1058,6 +1062,7 @@ export default function App() {
         onRedo={() => workspaceRef.current?.undo(true)}
         onFitView={() => workspaceRef.current?.zoomToFit()}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenTutorial={() => setShowTutorial(true)}
       />
 
       {/* Challenge Browser Mode */}
@@ -1333,6 +1338,25 @@ export default function App() {
         <SettingsModal
           onClose={() => setShowSettings(false)}
           onSettingsChanged={resetAutoSave}
+        />
+      )}
+
+      {/* Welcome Modal — shown on first visit */}
+      {showWelcome && (
+        <WelcomeModal
+          onStartTour={() => {
+            setShowWelcome(false)
+            setShowTutorial(true)
+          }}
+          onSkip={() => setShowWelcome(false)}
+        />
+      )}
+
+      {/* Tutorial Overlay */}
+      {showTutorial && (
+        <TutorialOverlay
+          onFinish={() => setShowTutorial(false)}
+          onSkip={() => setShowTutorial(false)}
         />
       )}
 
