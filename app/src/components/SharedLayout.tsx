@@ -54,6 +54,7 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
         {/* Nav links */}
         <div className="flex items-center gap-1">
           {navLink('/', 'Editor')}
+          {navLink('/learn', 'Learn')}
           {navLink('/shareplace', 'Shareplace')}
           {navLink('/dashboard', 'Dashboard')}
           {navLink('/profile', 'Profile')}
