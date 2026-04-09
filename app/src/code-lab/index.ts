@@ -1,5 +1,15 @@
 import type { LabPack, LabExercise } from './types'
 import { fromBlocksBeginner } from './data/from-blocks-beginner'
+import { fromBlocksPuzzles } from './data/from-blocks-puzzles'
+import { fromBlocksBrainTrainer } from './data/from-blocks-brain-trainer'
+import { fromBlocksCryptoPuzzles } from './data/from-blocks-crypto-puzzles'
+import { fromBlocksDataWizard } from './data/from-blocks-data-wizard'
+import { fromBlocksEuler } from './data/from-blocks-euler'
+import { fromBlocksMinecraft } from './data/from-blocks-minecraft'
+import { fromBlocksScienceLab } from './data/from-blocks-science-lab'
+import { fromBlocksSecretAgent } from './data/from-blocks-secret-agent'
+import { fromBlocksTreasureHunt } from './data/from-blocks-treasure-hunt'
+import { fromBlocksStartupSim } from './data/from-blocks-startup-sim'
 import { beginner } from './data/beginner'
 import { intermediate } from './data/intermediate'
 import { advanced } from './data/advanced'
@@ -30,6 +40,16 @@ import { asyncPromises } from './data/async-promises'
 
 export const allLabPacks: LabPack[] = [
   fromBlocksBeginner,
+  fromBlocksPuzzles,
+  fromBlocksBrainTrainer,
+  fromBlocksCryptoPuzzles,
+  fromBlocksDataWizard,
+  fromBlocksEuler,
+  fromBlocksMinecraft,
+  fromBlocksScienceLab,
+  fromBlocksSecretAgent,
+  fromBlocksTreasureHunt,
+  fromBlocksStartupSim,
   beginner,
   intermediate,
   advanced,
