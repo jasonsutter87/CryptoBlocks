@@ -1,15 +1,17 @@
 export interface LessonBlock {
-  type: 'heading' | 'paragraph' | 'code' | 'callout' | 'exercise'
+  type: 'heading' | 'paragraph' | 'code' | 'callout' | 'exercise' | 'code_with_blocks'
   // For heading
   level?: 1 | 2 | 3
   // For heading, paragraph, callout
   text?: string
   // For callout
   variant?: 'info' | 'tip' | 'warning'
-  // For code
+  // For code / code_with_blocks
   code?: string
   language?: 'javascript' | 'html'
   runnable?: boolean
+  // For code_with_blocks — serialized Blockly workspace JSON shown alongside code
+  blockWorkspace?: Record<string, unknown>
   // For exercise
   exerciseId?: string
 }

@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { ALL_CHAPTERS } from './index'
 import { isLessonComplete, markLessonComplete } from './progress'
 import type { Chapter, Lesson, LessonBlock, LessonExercise } from './types'
+
+const RunnableCode = lazy(() => import('./RunnableCode'))
+const BlockPreview = lazy(() => import('./BlockPreview'))
 
 // ─── Block renderers ─────────────────────────────────────────────────────────
 
@@ -21,6 +24,14 @@ function ParagraphBlock({ block }: { block: LessonBlock }) {
 }
 
 function CodeBlock({ block }: { block: LessonBlock }) {
+  if (block.runnable && block.code) {
+    return (
+      <Suspense fallback={<div className="my-5 h-24 bg-[#11111b] border border-[#313244] rounded-lg animate-pulse" />}>
+        <RunnableCode code={block.code} language={block.language === 'html' ? 'javascript' : (block.language ?? 'javascript')} />
+      </Suspense>
+    )
+  }
+
   return (
     <div className="my-5">
       <pre className="bg-[#11111b] border border-[#313244] rounded-lg px-5 py-4 overflow-x-auto">
@@ -28,17 +39,26 @@ function CodeBlock({ block }: { block: LessonBlock }) {
           {block.code}
         </code>
       </pre>
-      {block.runnable && (
-        <div className="mt-2 flex justify-end">
-          <button
-            className="px-3 py-1.5 bg-[#89b4fa]/10 text-[#89b4fa] border border-[#89b4fa]/30 rounded text-sm font-medium hover:bg-[#89b4fa]/20 transition-colors cursor-not-allowed opacity-60"
-            disabled
-            title="Code runner coming soon"
-          >
-            Run (coming soon)
-          </button>
-        </div>
-      )}
+    </div>
+  )
+}
+
+function CodeWithBlocksBlock({ block }: { block: LessonBlock }) {
+  if (!block.code || !block.blockWorkspace) return null
+  return (
+    <div className="my-5 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+      <div>
+        <div className="mb-1.5 text-[10px] font-mono text-[#6c7086] uppercase tracking-wider">Code</div>
+        <Suspense fallback={<div className="h-24 bg-[#11111b] border border-[#313244] rounded-lg animate-pulse" />}>
+          <RunnableCode code={block.code} language={block.language === 'html' ? 'javascript' : (block.language ?? 'javascript')} />
+        </Suspense>
+      </div>
+      <div>
+        <div className="mb-1.5 text-[10px] font-mono text-[#6c7086] uppercase tracking-wider">As blocks</div>
+        <Suspense fallback={<div className="h-[216px] bg-[#11111b] border border-[#313244] rounded-lg animate-pulse" />}>
+          <BlockPreview workspaceJson={block.blockWorkspace} />
+        </Suspense>
+      </div>
     </div>
   )
 }
@@ -98,6 +118,8 @@ function LessonBlockRenderer({ block, exercises }: { block: LessonBlock; exercis
       return <ParagraphBlock block={block} />
     case 'code':
       return <CodeBlock block={block} />
+    case 'code_with_blocks':
+      return <CodeWithBlocksBlock block={block} />
     case 'callout':
       return <CalloutBlock block={block} />
     case 'exercise': {
@@ -116,7 +138,7 @@ function LessonView({ lesson, onMarkComplete }: { lesson: Lesson; onMarkComplete
   const complete = isLessonComplete(lesson.id)
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8">
+    <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-[#6c7086] font-mono uppercase tracking-wider">
           {lesson.estimatedMinutes} min read

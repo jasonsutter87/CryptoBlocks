@@ -1,4 +1,12 @@
 import type { Chapter } from '../types'
+import { block, textVal, workspace, resetIds } from '../blockHelpers'
+
+function simplePrintPreview(): Record<string, unknown> {
+  resetIds()
+  return workspace(
+    block('cb_print', undefined, { message: textVal('Hi!') }, 20, 20),
+  )
+}
 
 export const chapter1: Chapter = {
   id: 'chapter-1',
@@ -161,10 +169,10 @@ export const chapter1: Chapter = {
           text: 'In JavaScript, you do that with a tool called console.log. It takes whatever you put inside the parentheses and prints it out.',
         },
         {
-          type: 'code',
+          type: 'code_with_blocks',
           language: 'javascript',
           code: 'console.log("Hi!")',
-          runnable: false,
+          blockWorkspace: simplePrintPreview(),
         },
         {
           type: 'paragraph',
