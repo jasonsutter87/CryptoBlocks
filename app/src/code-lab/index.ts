@@ -1,4 +1,5 @@
 import type { LabPack, LabExercise } from './types'
+import { fromBlocksBeginner } from './data/from-blocks-beginner'
 import { beginner } from './data/beginner'
 import { intermediate } from './data/intermediate'
 import { advanced } from './data/advanced'
@@ -28,6 +29,7 @@ import { errorHandling } from './data/error-handling'
 import { asyncPromises } from './data/async-promises'
 
 export const allLabPacks: LabPack[] = [
+  fromBlocksBeginner,
   beginner,
   intermediate,
   advanced,
