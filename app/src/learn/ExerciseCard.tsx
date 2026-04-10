@@ -1,10 +1,66 @@
-import { useState, useRef, lazy, Suspense } from 'react'
+import { useState, useRef, useEffect, lazy, Suspense } from 'react'
 import { executeCode } from '../execution/runner'
 import type { ExecutionHandle } from '../execution/runner'
 import { markExerciseComplete } from './progress'
 import type { LessonExercise } from './types'
 
 const MonacoEditor = lazy(() => import('@monaco-editor/react').then(m => ({ default: m.default })))
+
+function PlainEditor({ code, onChange }: { code: string; onChange: (v: string) => void }) {
+  return (
+    <textarea
+      className="w-full bg-[#1e1e2e] text-[#cdd6f4] font-mono text-sm px-4 py-3 resize-none outline-none border-0"
+      style={{ height: '150px' }}
+      value={code}
+      onChange={e => onChange(e.target.value)}
+      spellCheck={false}
+    />
+  )
+}
+
+function EditorWithFallback({ code, onChange }: { code: string; onChange: (v: string) => void }) {
+  const [useFallback, setUseFallback] = useState(false)
+  const mountedRef = useRef(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!mountedRef.current) setUseFallback(true)
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (useFallback) {
+    return <PlainEditor code={code} onChange={onChange} />
+  }
+
+  return (
+    <Suspense fallback={<PlainEditor code={code} onChange={onChange} />}>
+      <MonacoEditor
+        language="javascript"
+        value={code}
+        theme="vs-dark"
+        height="150px"
+        onChange={(value) => onChange(value ?? '')}
+        onMount={() => { mountedRef.current = true }}
+        options={{
+          minimap: { enabled: false },
+          fontSize: 13,
+          lineNumbers: 'on',
+          scrollBeyondLastLine: false,
+          wordWrap: 'on',
+          padding: { top: 8, bottom: 8 },
+          renderLineHighlight: 'line',
+          overviewRulerLanes: 0,
+          quickSuggestions: true,
+          suggestOnTriggerCharacters: true,
+          tabCompletion: 'on',
+          parameterHints: { enabled: true },
+          scrollbar: { vertical: 'auto', horizontal: 'hidden' },
+        }}
+      />
+    </Suspense>
+  )
+}
 
 export interface ExerciseCardProps {
   exercise: LessonExercise
@@ -134,58 +190,9 @@ export default function ExerciseCard({ exercise, lessonId, isCompleted, onComple
         <p className="text-[#a6adc8] text-sm leading-relaxed">{exercise.prompt}</p>
       </div>
 
-      {/* Monaco Editor */}
+      {/* Code Editor */}
       <div className="mx-4 mb-3 rounded-lg overflow-hidden border border-[#313244]">
-        <Suspense fallback={
-          <textarea
-            className="w-full bg-[#1e1e2e] text-[#cdd6f4] font-mono text-sm px-4 py-3 resize-none outline-none border-0"
-            style={{ height: '150px' }}
-            value={code}
-            onChange={e => setCode(e.target.value)}
-            spellCheck={false}
-          />
-        }>
-          <MonacoEditor
-            language="javascript"
-            value={code}
-            theme="vs-dark"
-            height="150px"
-            onChange={(value) => setCode(value ?? '')}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 13,
-              lineNumbers: 'on',
-              scrollBeyondLastLine: false,
-              wordWrap: 'on',
-              padding: { top: 8, bottom: 8 },
-              renderLineHighlight: 'line',
-              overviewRulerLanes: 0,
-              hideCursorInOverviewRuler: true,
-              overviewRulerBorder: false,
-              scrollbar: {
-                vertical: 'auto',
-                horizontal: 'hidden',
-              },
-              quickSuggestions: true,
-              suggestOnTriggerCharacters: true,
-              tabCompletion: 'on',
-              parameterHints: { enabled: true },
-              suggest: {
-                showMethods: true,
-                showFunctions: true,
-                showConstructors: true,
-                showFields: true,
-                showVariables: true,
-                showClasses: true,
-                showInterfaces: true,
-                showModules: true,
-                showProperties: true,
-                showKeywords: true,
-                showSnippets: true,
-              },
-            }}
-          />
-        </Suspense>
+        <EditorWithFallback code={code} onChange={setCode} />
       </div>
 
       {/* Button row */}
