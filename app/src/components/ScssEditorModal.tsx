@@ -96,7 +96,8 @@ export default function ScssEditorModal({ initialCode, onSave, onClose }: ScssEd
                   overviewRulerBorder: false,
                   quickSuggestions: true,
                   suggestOnTriggerCharacters: true,
-                  tabCompletion: 'on',
+                  tabCompletion: 'off',
+                  acceptSuggestionOnEnter: 'on',
                   parameterHints: { enabled: true },
                   suggest: {
                     showProperties: true,

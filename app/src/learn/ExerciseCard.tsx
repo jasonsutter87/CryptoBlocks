@@ -53,7 +53,8 @@ function EditorWithFallback({ code, onChange }: { code: string; onChange: (v: st
           overviewRulerLanes: 0,
           quickSuggestions: true,
           suggestOnTriggerCharacters: true,
-          tabCompletion: 'on',
+          tabCompletion: 'off',
+          acceptSuggestionOnEnter: 'on',
           parameterHints: { enabled: true },
           scrollbar: { vertical: 'auto', horizontal: 'hidden' },
         }}

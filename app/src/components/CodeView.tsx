@@ -162,9 +162,10 @@ function MonacoEditorWrapper({
           vertical: 'auto',
           horizontal: 'hidden',
         },
-        quickSuggestions: editable ? true : false,
-        suggestOnTriggerCharacters: editable,
-        tabCompletion: editable ? 'on' : 'off',
+        quickSuggestions: editable ? { other: true, strings: true, comments: false } : false,
+        suggestOnTriggerCharacters: !!editable,
+        tabCompletion: 'off',
+        acceptSuggestionOnEnter: 'on',
         parameterHints: { enabled: !!editable },
         suggest: {
           showMethods: true,

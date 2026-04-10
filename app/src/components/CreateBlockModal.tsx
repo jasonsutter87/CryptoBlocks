@@ -472,7 +472,8 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
                       scrollbar: { vertical: 'auto', horizontal: 'hidden' },
                       quickSuggestions: true,
                       suggestOnTriggerCharacters: true,
-                      tabCompletion: 'on',
+                      tabCompletion: 'off',
+                      acceptSuggestionOnEnter: 'on',
                       parameterHints: { enabled: true },
                     }}
                   />
@@ -522,7 +523,8 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
                       scrollbar: { vertical: 'auto', horizontal: 'hidden' },
                       quickSuggestions: true,
                       suggestOnTriggerCharacters: true,
-                      tabCompletion: 'on',
+                      tabCompletion: 'off',
+                      acceptSuggestionOnEnter: 'on',
                       parameterHints: { enabled: true },
                     }}
                   />
