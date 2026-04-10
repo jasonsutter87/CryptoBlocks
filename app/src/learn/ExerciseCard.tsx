@@ -1,10 +1,9 @@
-import { useState, useRef, useEffect, lazy, Suspense } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import Editor from '@monaco-editor/react'
 import { executeCode } from '../execution/runner'
 import type { ExecutionHandle } from '../execution/runner'
 import { markExerciseComplete } from './progress'
 import type { LessonExercise } from './types'
-
-const MonacoEditor = lazy(() => import('@monaco-editor/react').then(m => ({ default: m.default })))
 
 function PlainEditor({ code, onChange }: { code: string; onChange: (v: string) => void }) {
   return (
@@ -37,43 +36,42 @@ function EditorWithFallback({ code, onChange }: { code: string; onChange: (v: st
   }
 
   return (
-    <Suspense fallback={<PlainEditor code={code} onChange={onChange} />}>
-      <MonacoEditor
-        language="javascript"
-        value={code}
-        theme="vs-dark"
-        height="150px"
-        onChange={(value) => onChange(value ?? '')}
-        beforeMount={(monaco) => {
-          monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-            target: monaco.languages.typescript.ScriptTarget.ES2015,
-            allowNonTsExtensions: true,
-            allowJs: true,
-          })
-          monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-            noSemanticValidation: false,
-            noSyntaxValidation: false,
-          })
-        }}
-        onMount={() => { mountedRef.current = true; console.log('Monaco loaded in Learn exercise') }}
-        options={{
-          minimap: { enabled: false },
-          fontSize: 13,
-          lineNumbers: 'on',
-          scrollBeyondLastLine: false,
-          wordWrap: 'on',
-          padding: { top: 8, bottom: 8 },
-          renderLineHighlight: 'line',
-          overviewRulerLanes: 0,
-          quickSuggestions: true,
-          suggestOnTriggerCharacters: true,
-          tabCompletion: 'off',
-          acceptSuggestionOnEnter: 'on',
-          parameterHints: { enabled: true },
-          scrollbar: { vertical: 'auto', horizontal: 'hidden' },
-        }}
-      />
-    </Suspense>
+    <Editor
+      language="javascript"
+      value={code}
+      theme="vs-dark"
+      height="150px"
+      loading={<PlainEditor code={code} onChange={onChange} />}
+      onChange={(value) => onChange(value ?? '')}
+      beforeMount={(monaco) => {
+        monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+          target: monaco.languages.typescript.ScriptTarget.ES2015,
+          allowNonTsExtensions: true,
+          allowJs: true,
+        })
+        monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+          noSemanticValidation: false,
+          noSyntaxValidation: false,
+        })
+      }}
+      onMount={() => { mountedRef.current = true; console.log('Monaco loaded in Learn exercise') }}
+      options={{
+        minimap: { enabled: false },
+        fontSize: 13,
+        lineNumbers: 'on',
+        scrollBeyondLastLine: false,
+        wordWrap: 'on',
+        padding: { top: 8, bottom: 8 },
+        renderLineHighlight: 'line',
+        overviewRulerLanes: 0,
+        quickSuggestions: true,
+        suggestOnTriggerCharacters: true,
+        tabCompletion: 'off',
+        acceptSuggestionOnEnter: 'on',
+        parameterHints: { enabled: true },
+        scrollbar: { vertical: 'auto', horizontal: 'hidden' },
+      }}
+    />
   )
 }
 
