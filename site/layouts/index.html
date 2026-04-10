@@ -88,26 +88,33 @@
   {{/* Block categories */}}
   <section class="bg-white py-8">
     <div class="container">
-      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-2">164 blocks and counting</h2>
-      <p class="text-center text-gray-500 mb-6">16 categories. Two languages. Infinite combinations.</p>
+      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-2">250 blocks and counting</h2>
+      <p class="text-center text-gray-500 mb-6">23 categories. Two languages. Infinite combinations.</p>
 
       <div class="row justify-content-center">
         {{ $categories := slice
-          (dict "name" "Basics" "color" "#4C97AF" "count" "6" "desc" "print, ask, wait, variables")
-          (dict "name" "Math" "color" "#5B80A5" "count" "8" "desc" "add, multiply, random, power")
-          (dict "name" "Text" "color" "#8B5CF6" "count" "7" "desc" "join, reverse, replace, length")
-          (dict "name" "Logic" "color" "#059669" "count" "7" "desc" "if/then, equals, and, or, not")
-          (dict "name" "Lists" "color" "#D97706" "count" "7" "desc" "create, add, sort, filter")
+          (dict "name" "Basics" "color" "#4C97AF" "count" "9" "desc" "print, ask, wait, variables")
+          (dict "name" "Math" "color" "#5B80A5" "count" "10" "desc" "add, multiply, random, power")
+          (dict "name" "Text" "color" "#8B5CF6" "count" "11" "desc" "join, reverse, replace, split")
+          (dict "name" "Logic" "color" "#059669" "count" "16" "desc" "if/else, loops, while, compare")
+          (dict "name" "Lists" "color" "#D97706" "count" "17" "desc" "create, sort, filter, map")
           (dict "name" "Data" "color" "#0891B2" "count" "7" "desc" "objects, properties, JSON")
+          (dict "name" "Database" "color" "#6366F1" "count" "12" "desc" "tables, queries, CRUD")
           (dict "name" "Web" "color" "#DC2626" "count" "8" "desc" "HTTP, WebSocket, API calls")
-          (dict "name" "Crypto" "color" "#4F46E5" "count" "28" "desc" "hash, encrypt, XOR, base64")
           (dict "name" "Art" "color" "#EC4899" "count" "5" "desc" "canvas, draw, shapes, colors")
+          (dict "name" "Crypto" "color" "#4F46E5" "count" "25" "desc" "hash, encrypt, XOR, base64")
           (dict "name" "AI" "color" "#8B5CF6" "count" "12" "desc" "classify, generate, sentiment")
-          (dict "name" "Sound" "color" "#F59E0B" "count" "12" "desc" "tones, speech, recording")
-          (dict "name" "Games" "color" "#22C55E" "count" "11" "desc" "sprites, collision, score")
-          (dict "name" "Turtle" "color" "#14B8A6" "count" "10" "desc" "move, turn, draw, pen")
-          (dict "name" "Hardware" "color" "#EF4444" "count" "10" "desc" "LED, sensors, device info")
-          (dict "name" "Database" "color" "#6366F1" "count" "13" "desc" "tables, queries, CRUD")
+          (dict "name" "Sound" "color" "#F59E0B" "count" "18" "desc" "tones, drums, tracks, patterns")
+          (dict "name" "Games" "color" "#22C55E" "count" "10" "desc" "sprites, collision, score")
+          (dict "name" "Hardware" "color" "#EF4444" "count" "11" "desc" "screen, device, platform")
+          (dict "name" "Pen" "color" "#14B8A6" "count" "9" "desc" "move, turn, draw, color")
+          (dict "name" "Testing" "color" "#795548" "count" "8" "desc" "random, shuffle, assertions")
+          (dict "name" "Vision" "color" "#00BCD4" "count" "7" "desc" "camera, frames, pixels, loop")
+          (dict "name" "Functions" "color" "#FF6B6B" "count" "3" "desc" "create, call, return values")
+          (dict "name" "Events" "color" "#E91E63" "count" "2" "desc" "key press, click handlers")
+          (dict "name" "HTML" "color" "#FF9800" "count" "19" "desc" "layout, elements, styles, SCSS")
+          (dict "name" "Libraries" "color" "#9C27B0" "count" "2" "desc" "import libs, pranks")
+          (dict "name" "Values" "color" "#607D8B" "count" "6" "desc" "numbers, text, booleans, color")
           (dict "name" "Secrets" "color" "#1e1e2e" "count" "13" "desc" "????? unlock in hacker mode")
         }}
         {{ range $categories }}
@@ -160,7 +167,7 @@
   {{/* Challenges */}}
   <section class="bg-white py-8">
     <div class="container">
-      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-2">125 challenges across 24 theme packs</h2>
+      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-2">141 challenges across 27 theme packs</h2>
       <p class="text-center text-gray-500 mb-6">Minecraft, Space, Crypto, Secret Agent — learn to code through stories you care about.</p>
 
       <div class="row">

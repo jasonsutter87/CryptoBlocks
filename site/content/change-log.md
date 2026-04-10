@@ -75,12 +75,12 @@ The initial release. Visual block editor with Blockly, sandboxed execution, chal
 - Google Blockly with Zelos renderer
 - Monaco Editor for code view
 - Sandboxed iframe execution (JS + Python via Pyodide)
-- 180+ blocks across 17 categories
+- 250 blocks across 23 categories
 - HTML/CSS blocks with live preview
 - Sound, Art, Games, Crypto, AI, Database, Hardware blocks
 
 ### Challenges
-- 27 themed challenge packs (145+ challenges)
+- 27 themed challenge packs (141 challenges)
 - Star rating system based on block count vs par
 - Progressive hint system
 - Code Golf mode

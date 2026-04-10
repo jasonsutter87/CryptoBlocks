@@ -35,12 +35,12 @@ CryptoBlocks is the bridge:
 
 ## What's built
 
-- 164 blocks across 16 categories (Basics, Math, Text, Logic, Lists, Data, Web, Crypto, Art, AI, Sound, Games, Hardware, Database, Turtle, Secrets)
+- 250 blocks across 23 categories (Basics, Math, Text, Logic, Lists, Data, Database, Web, Art, Crypto, AI, Sound, Games, Hardware, Pen, Testing, Vision, Functions, Events, HTML, Libraries, Values, Secrets)
 - Dual-language code generation (JavaScript + Python)
 - Sandboxed execution with live output streaming
 - Create-your-own-block editor
 - Save/Load project files
-- 125 coding challenges across 24 themed packs (Minecraft, Space, Crypto, Secret Agent, and more)
+- 141 coding challenges across 27 themed packs (Minecraft, Space, Crypto, Secret Agent, and more)
 - Block Islands — puzzle-style challenges where scattered blocks must be connected like jigsaw pieces
 - Code Golf, Blocksets (guided tutorials), and Code Lab modes
 - 2,766 automated tests

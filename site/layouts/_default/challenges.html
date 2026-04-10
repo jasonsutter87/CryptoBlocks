@@ -4,7 +4,7 @@
     <div class="container text-center" style="max-width: 720px;">
       <h1 class="text-4xl lg:text-5xl font-extrabold text-gray-800 mb-3">Challenge Hub</h1>
       <p class="text-lg text-gray-600 mb-5">
-        65+ coding puzzles across 13 themed packs. Solve challenges, earn stars, and learn real JavaScript and Python along the way.
+        141 coding puzzles across 27 themed packs. Solve challenges, earn stars, and learn real JavaScript and Python along the way.
       </p>
       <a href="{{ .Site.Params.appURL | default "/app" }}" class="bg-primary text-white px-6 py-3 rounded-lg fw-bold text-decoration-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors text-lg">
         Open Challenge Hub
@@ -45,8 +45,8 @@
   {{/* Theme packs grid */}}
   <section class="bg-white py-8">
     <div class="container">
-      <h2 class="text-2xl font-extrabold text-center text-gray-800 mb-2">13 Theme Packs</h2>
-      <p class="text-center text-gray-500 mb-6">Each pack has 5 challenges that tell a story. Complete them all to unlock the next.</p>
+      <h2 class="text-2xl font-extrabold text-center text-gray-800 mb-2">27 Theme Packs</h2>
+      <p class="text-center text-gray-500 mb-6">Each pack has 5–6 challenges that tell a story. Complete them all to unlock the next.</p>
 
       {{ $themes := slice
         (dict "icon" "&#127968;" "name" "Getting Started" "color" "#3B82F6" "diff" "Beginner" "count" "5" "desc" "Hello World, counting, math, loops, and variables. Your first 5 programs." "blog" "/blog/challenge-getting-started/")
@@ -61,7 +61,21 @@
         (dict "icon" "&#127926;" "name" "Music Festival" "color" "#8B5CF6" "diff" "Intermediate" "count" "5" "desc" "Create playlists, calculate ticket prices, and manage festivals." "blog" "/blog/challenge-music-festival/")
         (dict "icon" "&#128300;" "name" "Science Lab" "color" "#0EA5E9" "diff" "Advanced" "count" "5" "desc" "Unit conversions, chemical formulas, and data analysis." "blog" "/blog/challenge-science-lab/")
         (dict "icon" "&#128188;" "name" "Startup Sim" "color" "#F59E0B" "diff" "Advanced" "count" "5" "desc" "Calculate revenue, track growth, and make business decisions." "blog" "/blog/challenge-startup-sim/")
-        (dict "icon" "&#128290;" "name" "Euler Blocks" "color" "#4F46E5" "diff" "Advanced" "count" "10" "desc" "Computational puzzles inspired by Project Euler. Pure math and logic." "blog" "/blog/challenge-euler-blocks/")
+        (dict "icon" "&#128290;" "name" "Euler Blocks" "color" "#4F46E5" "diff" "Advanced" "count" "9" "desc" "Computational puzzles inspired by Project Euler. Pure math and logic." "blog" "/blog/challenge-euler-blocks/")
+        (dict "icon" "&#128270;" "name" "Web Detective" "color" "#0891B2" "diff" "Intermediate" "count" "5" "desc" "Inspect APIs, parse responses, and investigate web data.")
+        (dict "icon" "&#127923;" "name" "Arcade Mode" "color" "#EF4444" "diff" "Intermediate" "count" "5" "desc" "Build classic arcade mechanics with sprites and collision.")
+        (dict "icon" "&#127927;" "name" "Beat Lab" "color" "#A855F7" "diff" "Intermediate" "count" "5" "desc" "Compose beats, layer tracks, and build drum patterns.")
+        (dict "icon" "&#127912;" "name" "Pixel Art" "color" "#EC4899" "diff" "Beginner" "count" "5" "desc" "Draw pixel art on canvas with shapes and colors.")
+        (dict "icon" "&#128272;" "name" "Crypto Puzzles" "color" "#4F46E5" "diff" "Advanced" "count" "5" "desc" "Encode, decode, hash, and crack crypto challenges.")
+        (dict "icon" "&#129504;" "name" "Brain Trainer" "color" "#F97316" "diff" "Intermediate" "count" "5" "desc" "Logic puzzles, pattern matching, and mental math.")
+        (dict "icon" "&#128225;" "name" "Device Scan" "color" "#EF4444" "diff" "Beginner" "count" "5" "desc" "Read device info, screen size, and platform details.")
+        (dict "icon" "&#129520;" "name" "Data Wizard" "color" "#0891B2" "diff" "Intermediate" "count" "5" "desc" "Objects, properties, and data structure puzzles.")
+        (dict "icon" "&#127754;" "name" "Shipwrecked" "color" "#059669" "diff" "Intermediate" "count" "5" "desc" "Survive on a desert island with lists and logic.")
+        (dict "icon" "&#129513;" "name" "Block Puzzles" "color" "#3B82F6" "diff" "Beginner" "count" "5" "desc" "Scattered blocks — connect them like jigsaw pieces.")
+        (dict "icon" "&#128295;" "name" "Code Rescue" "color" "#D97706" "diff" "Intermediate" "count" "5" "desc" "Fix broken programs by finding the missing blocks.")
+        (dict "icon" "&#128274;" "name" "Crypto Master" "color" "#6366F1" "diff" "Advanced" "count" "6" "desc" "Advanced encryption, HMAC, and bitwise operations.")
+        (dict "icon" "&#129302;" "name" "AI Academy" "color" "#8B5CF6" "diff" "Advanced" "count" "6" "desc" "Train classifiers, generate text, and predict data.")
+        (dict "icon" "&#128268;" "name" "WebSocket Relay" "color" "#DC2626" "diff" "Advanced" "count" "5" "desc" "Real-time connections, messages, and event handling.")
       }}
 
       <div class="row">

@@ -9,9 +9,9 @@ priority: 0.8
 
 Multiple ways to learn — pick the style that fits you.
 
-### Challenges (125 puzzles)
+### Challenges (141 puzzles)
 
-Solve coding puzzles with the fewest blocks possible. Earn stars. Progress through **24 themed packs** — Minecraft, Space Explorer, Secret Agent, Crypto Puzzles, and more.
+Solve coding puzzles with the fewest blocks possible. Earn stars. Progress through **27 themed packs** — Minecraft, Space Explorer, Secret Agent, Crypto Puzzles, and more.
 
 ### Block Islands (new)
 
