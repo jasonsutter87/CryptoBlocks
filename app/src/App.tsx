@@ -1085,6 +1085,10 @@ export default function App() {
         onImport={handleImport}
         onImportAsBlock={handleImportAsBlock}
         onExportHtml={handleExportHtml}
+        onExportPwa={async () => {
+          const { exportAsPwa } = await import('./export-html')
+          exportAsPwa(code)
+        }}
         onCopyEmbed={handleCopyEmbed}
         onPublish={() => setShowPublishModal(true)}
         onClear={handleClear}

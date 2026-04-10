@@ -239,6 +239,103 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
+/** Export a project as a PWA-ready ZIP (index.html + manifest.json + sw.js). */
+export async function exportAsPwa(code: string, title = 'My CryptoBlocks App'): Promise<void> {
+  const { default: JSZip } = await import('jszip')
+  const zip = new JSZip()
+
+  const safeName = title.replace(/[^a-zA-Z0-9 ]/g, '').trim() || 'CryptoBlocks App'
+
+  // index.html — standalone HTML with PWA meta tags + service worker registration
+  const html = generateStandaloneHtml(code, { title: safeName, ztaSiteId: false })
+  const pwaHtml = html.replace(
+    '</head>',
+    `  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e1e2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="${escapeHtml(safeName)}">
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js')}</script>
+</head>`
+  )
+  zip.file('index.html', pwaHtml)
+
+  // manifest.json
+  const manifest = {
+    name: safeName,
+    short_name: safeName.slice(0, 12),
+    description: `Built with CryptoBlocks`,
+    start_url: '.',
+    display: 'standalone',
+    background_color: '#1e1e2e',
+    theme_color: '#3B82F6',
+    icons: [
+      { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+      { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+  }
+  zip.file('manifest.json', JSON.stringify(manifest, null, 2))
+
+  // sw.js — minimal service worker for offline support
+  const sw = `const CACHE = 'cb-pwa-v1';
+const ASSETS = ['/', '/index.html'];
+self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS))));
+self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));`
+  zip.file('sw.js', sw)
+
+  // Generate simple icons (canvas-drawn)
+  zip.file('icon-192.png', await generateIcon(192))
+  zip.file('icon-512.png', await generateIcon(512))
+
+  const blob = await zip.generateAsync({ type: 'blob' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${safeName.replace(/\s+/g, '-').toLowerCase()}-pwa.zip`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+/** Generate a simple PWA icon with the CB logo. */
+async function generateIcon(size: number): Promise<Blob> {
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')!
+
+  // Background
+  ctx.fillStyle = '#1e1e2e'
+  ctx.fillRect(0, 0, size, size)
+
+  // Three colored blocks (the CB logo)
+  const blockSize = size * 0.18
+  const gap = size * 0.04
+  const startX = (size - (blockSize * 3 + gap * 2)) / 2
+  const y = size * 0.35
+
+  const colors = ['#89b4fa', '#f9e2af', '#a6e3a1']
+  colors.forEach((color, i) => {
+    ctx.fillStyle = color
+    const r = blockSize * 0.2
+    const x = startX + i * (blockSize + gap)
+    ctx.beginPath()
+    ctx.roundRect(x, y, blockSize, blockSize, r)
+    ctx.fill()
+  })
+
+  // Text
+  ctx.fillStyle = '#cdd6f4'
+  ctx.font = `bold ${size * 0.1}px system-ui, sans-serif`
+  ctx.textAlign = 'center'
+  ctx.fillText('CB', size / 2, size * 0.72)
+
+  return new Promise<Blob>((resolve) => {
+    canvas.toBlob((blob) => resolve(blob!), 'image/png')
+  })
+}
+
 function escapeHtml(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
