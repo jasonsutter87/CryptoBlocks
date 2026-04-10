@@ -3,8 +3,20 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { loader } from '@monaco-editor/react'
 import * as monaco from 'monaco-editor'
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker'
+import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
 import App from './App'
 import './index.css'
+
+// Configure Monaco workers for local bundling
+self.MonacoEnvironment = {
+  getWorker(_: unknown, label: string) {
+    if (label === 'typescript' || label === 'javascript') return new tsWorker()
+    if (label === 'css' || label === 'scss' || label === 'less') return new cssWorker()
+    return new editorWorker()
+  },
+}
 
 // Use locally bundled Monaco instead of CDN
 loader.config({ monaco })
