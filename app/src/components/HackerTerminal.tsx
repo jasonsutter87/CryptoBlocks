@@ -8,6 +8,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { launchSnakeGame } from '../easter-eggs/snake-game'
 import { launchInvadersGame } from '../easter-eggs/invaders-game'
+import { launchMatrixRain } from '../easter-eggs/matrix-rain'
 
 const ASCII_LOGO = `
  ██████╗██████╗ ██╗   ██╗██████╗ ████████╗ ██████╗
@@ -264,20 +265,16 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
         )
         break
 
-      case 'matrix': {
-        const chars = 'ﾊﾐﾋｰｳｼﾅﾓﾆｻﾜﾂｵﾘｱﾎﾃﾏｹﾒｴｶｷﾑﾕﾗｾﾈｽﾀﾇﾍ0123456789'
-        for (let i = 0; i < 15; i++) {
-          let line = '  '
-          for (let j = 0; j < 50; j++) {
-            line += chars[Math.floor(Math.random() * chars.length)]
-          }
-          addLines({ text: line, color: i < 3 ? '#a6e3a1' : i < 8 ? '#059669' : '#064e3b' })
-        }
-        addLines({ text: '', })
-        addLines({ text: '  Wake up, Neo...', color: '#a6e3a1' })
-        addLines({ text: '' })
+      case 'matrix':
+        addLines(
+          { text: '  Entering the Matrix... 💊', color: '#00ff00' },
+          { text: '  Press ESC to unplug.', color: tc.dim },
+        )
+        setTimeout(() => {
+          setOpen(false)
+          launchMatrixRain()
+        }, 500)
         break
-      }
 
       case 'rickroll':
         addLines(
