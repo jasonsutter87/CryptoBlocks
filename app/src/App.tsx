@@ -69,6 +69,7 @@ import StatsPanel from './components/StatsPanel'
 import HackerTerminal from './components/HackerTerminal'
 const CollabModal = lazy(() => import('./collab/CollabModal'))
 const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
+const ScratchImportModal = lazy(() => import('./components/ScratchImportModal'))
 import { useCollabDoc } from './collab/CollabPage'
 import { bindRunBroadcast } from './collab/run-broadcast'
 
@@ -136,6 +137,7 @@ export default function App() {
   const isCollabMode = !!collabDoc
   const [showCollabModal, setShowCollabModal] = useState(false)
   const [collabRoomCreated, setCollabRoomCreated] = useState<{ code: string; name: string } | null>(null)
+  const [showScratchImport, setShowScratchImport] = useState(false)
   const runBroadcastRef = useRef<ReturnType<typeof bindRunBroadcast> | null>(null)
 
   // Store sandbox workspace before entering challenge mode
@@ -1106,6 +1108,7 @@ export default function App() {
         onOpenTutorial={() => setShowTutorial(true)}
         onOpenCollab={() => setShowCollabModal(true)}
         isCollabMode={isCollabMode}
+        onImportScratch={() => setShowScratchImport(true)}
         onRunForEveryone={() => {
           runBroadcastRef.current?.requestRunForEveryone()
           handleRun()
@@ -1396,6 +1399,23 @@ export default function App() {
           }}
           onSkip={() => setShowWelcome(false)}
         />
+      )}
+
+      {/* Scratch Import */}
+      {showScratchImport && (
+        <Suspense fallback={null}>
+          <ScratchImportModal
+            onClose={() => setShowScratchImport(false)}
+            onImport={(ws) => {
+              if (workspaceRef.current) {
+                workspaceRef.current.clear()
+                try {
+                  Blockly.serialization.workspaces.load(ws, workspaceRef.current)
+                } catch { /* partial import is fine */ }
+              }
+            }}
+          />
+        </Suspense>
       )}
 
       {/* Hacker Terminal */}

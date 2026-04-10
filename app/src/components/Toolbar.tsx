@@ -44,6 +44,7 @@ interface ToolbarProps {
   onOpenCollab?: () => void
   onRunForEveryone?: () => void
   isCollabMode?: boolean
+  onImportScratch?: () => void
 }
 
 const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
@@ -85,6 +86,7 @@ export default function Toolbar({
   onOpenCollab,
   onRunForEveryone,
   isCollabMode = false,
+  onImportScratch,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
@@ -207,6 +209,13 @@ export default function Toolbar({
                     </svg>
                     Import as Block
                   </button>
+                  {onImportScratch && (
+                    <button onClick={() => { onImportScratch(); setOpenMenu(null) }} className={menuItem}>
+                      <span className="text-base leading-none">🐱</span>
+                      Import from Scratch
+                      <span className="ml-auto text-xs text-[#6c7086]">.sb3</span>
+                    </button>
+                  )}
                   <div className={menuDivider} />
                   <button onClick={() => { onSaveCheckpoint(); setOpenMenu(null) }} className={menuItem}>
                     <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
