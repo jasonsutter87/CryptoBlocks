@@ -104,15 +104,19 @@ function computePosition(rect: TargetRect | null, pos: TutorialStep['position'])
   switch (pos) {
     case 'right':
       top = rect.top + rect.height / 2 - TOOLTIP_H / 2
-      left = rect.left + rect.width + GAP      break
+      left = rect.left + rect.width + GAP
+      break
     case 'left':
       top = rect.top + rect.height / 2 - TOOLTIP_H / 2
-      left = rect.left - TOOLTIP_W - GAP      break
+      left = rect.left - TOOLTIP_W - GAP
+      break
     case 'bottom':
-      top = rect.top + rect.height + GAP      left = rect.left + rect.width / 2 - TOOLTIP_W / 2
+      top = rect.top + rect.height + GAP
+      left = rect.left + rect.width / 2 - TOOLTIP_W / 2
       break
     case 'top':
-      top = rect.top - TOOLTIP_H - GAP      left = rect.left + rect.width / 2 - TOOLTIP_W / 2
+      top = rect.top - TOOLTIP_H - GAP
+      left = rect.left + rect.width / 2 - TOOLTIP_W / 2
       break
   }
 
