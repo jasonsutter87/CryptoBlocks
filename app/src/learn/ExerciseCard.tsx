@@ -24,8 +24,11 @@ function EditorWithFallback({ code, onChange }: { code: string; onChange: (v: st
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!mountedRef.current) setUseFallback(true)
-    }, 3000)
+      if (!mountedRef.current) {
+        console.warn('Monaco failed to load within 8s — falling back to textarea')
+        setUseFallback(true)
+      }
+    }, 8000)
     return () => clearTimeout(timer)
   }, [])
 
@@ -41,7 +44,18 @@ function EditorWithFallback({ code, onChange }: { code: string; onChange: (v: st
         theme="vs-dark"
         height="150px"
         onChange={(value) => onChange(value ?? '')}
-        onMount={() => { mountedRef.current = true }}
+        beforeMount={(monaco) => {
+          monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+            target: monaco.languages.typescript.ScriptTarget.ES2015,
+            allowNonTsExtensions: true,
+            allowJs: true,
+          })
+          monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+            noSemanticValidation: false,
+            noSyntaxValidation: false,
+          })
+        }}
+        onMount={() => { mountedRef.current = true; console.log('Monaco loaded in Learn exercise') }}
         options={{
           minimap: { enabled: false },
           fontSize: 13,
