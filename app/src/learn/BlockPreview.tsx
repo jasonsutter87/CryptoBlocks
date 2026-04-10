@@ -20,6 +20,7 @@ export default function BlockPreview({ workspaceJson }: BlockPreviewProps) {
     const ws = Blockly.inject(containerRef.current, {
       readOnly: true,
       scrollbars: false,
+      renderer: 'zelos',
       zoom: { controls: false, wheel: false, startScale: 0.9 },
       theme: Blockly.Theme.defineTheme('cryptoblocks_preview', {
         name: 'cryptoblocks_preview',
