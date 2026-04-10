@@ -41,6 +41,7 @@ interface ToolbarProps {
   onFitView: () => void
   onOpenSettings: () => void
   onOpenTutorial?: () => void
+  onOpenCollab?: () => void
 }
 
 const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
@@ -79,6 +80,7 @@ export default function Toolbar({
   onFitView,
   onOpenSettings,
   onOpenTutorial,
+  onOpenCollab,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
@@ -330,6 +332,20 @@ export default function Toolbar({
 
             {/* Divider */}
             <div className="hidden md:block w-px h-6 bg-[#313244]" />
+
+            {/* Code with Friends */}
+            {onOpenCollab && (
+              <button
+                onClick={onOpenCollab}
+                className={`hidden md:flex ${btn} text-[#89b4fa] hover:bg-[#313244]`}
+                title="Code with Friends — real-time collaboration"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Friends
+              </button>
+            )}
 
             {/* Shareplace link */}
             <a

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
 import * as Blockly from 'blockly'
 import type { Language, BlockDefinition } from './types/block'
 import { generateCode, generateHtmlMarkup, registerSingleBlock, unregisterBlock, getToolboxXml, getFilteredToolboxXml } from './blocks/blockly-register'
@@ -66,6 +66,8 @@ import { checkAchievements } from './achievements'
 import { recordRun, recordChallengeComplete, recordGolfComplete, recordLabComplete, recordAchievement } from './stats'
 import { AchievementToast } from './components/AchievementToast'
 import StatsPanel from './components/StatsPanel'
+const CollabModal = lazy(() => import('./collab/CollabModal'))
+const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -125,6 +127,10 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('cryptoblocks-tutorial-seen'))
   const [showTutorial, setShowTutorial] = useState(false)
+
+  // Collab state
+  const [showCollabModal, setShowCollabModal] = useState(false)
+  const [collabRoomCreated, setCollabRoomCreated] = useState<{ code: string; name: string } | null>(null)
 
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
@@ -1075,6 +1081,7 @@ export default function App() {
         onFitView={() => workspaceRef.current?.zoomToFit()}
         onOpenSettings={() => setShowSettings(true)}
         onOpenTutorial={() => setShowTutorial(true)}
+        onOpenCollab={() => setShowCollabModal(true)}
       />
 
       {/* Challenge Browser Mode */}
@@ -1369,6 +1376,37 @@ export default function App() {
           onFinish={() => setShowTutorial(false)}
           onSkip={() => setShowTutorial(false)}
         />
+      )}
+
+      {/* Collab modals */}
+      {showCollabModal && (
+        <Suspense fallback={null}>
+          <CollabModal
+            onClose={() => setShowCollabModal(false)}
+            onCreateRoom={(_roomId, code, name) => {
+              setShowCollabModal(false)
+              setCollabRoomCreated({ code, name })
+              // Navigate to collab room after showing the code
+              setTimeout(() => {
+                window.location.href = `/collab/${code}`
+              }, 100)
+            }}
+            onJoinRoom={(code) => {
+              setShowCollabModal(false)
+              window.location.href = `/collab/${code}`
+            }}
+          />
+        </Suspense>
+      )}
+
+      {collabRoomCreated && (
+        <Suspense fallback={null}>
+          <RoomCreatedModal
+            roomCode={collabRoomCreated.code}
+            roomName={collabRoomCreated.name}
+            onClose={() => setCollabRoomCreated(null)}
+          />
+        </Suspense>
       )}
 
       {/* Achievement Toast */}

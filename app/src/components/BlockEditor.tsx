@@ -4,6 +4,9 @@ import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode } from '../b
 import { registry } from '../blocks/registry'
 import { recordBlockCreated } from '../stats/tracker'
 import type { BlockDefinition } from '../types/block'
+import { useCollabDoc } from '../collab/CollabPage'
+import { bindWorkspaceToYDoc } from '../collab/yjs-blockly-binding'
+import { bindPresence } from '../collab/presence'
 
 const ScssEditorModal = lazy(() => import('./ScssEditorModal'))
 
@@ -26,6 +29,9 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
   const editCallbackRef = useRef(onEditBlock)
   const deleteCallbackRef = useRef(onDeleteBlock)
   const saveAsBlockRef = useRef(onSaveAsBlock)
+
+  // Collab — bind Yjs if we're in a collab room
+  const collabDoc = useCollabDoc()
 
   // SCSS editor modal state
   const [scssModal, setScssModal] = useState<{ blockId: string; code: string } | null>(null)
@@ -238,7 +244,23 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     workspace.addChangeListener(listener)
     listener()
 
+    // Collab: bind Yjs sync + presence if in a collab room
+    let collabBinding: ReturnType<typeof bindWorkspaceToYDoc> | null = null
+    let presenceBinding: ReturnType<typeof bindPresence> | null = null
+    if (collabDoc) {
+      collabBinding = bindWorkspaceToYDoc(workspace, collabDoc)
+      // Presence requires the awareness from the WebSocket provider,
+      // which is set up in use-collab-room. We access it via the doc's
+      // awareness if available (y-partykit attaches it).
+      const provider = (collabDoc as unknown as { wsProvider?: { awareness: import('y-protocols/awareness').Awareness } }).wsProvider
+      if (provider?.awareness) {
+        presenceBinding = bindPresence(workspace, provider.awareness)
+      }
+    }
+
     return () => {
+      collabBinding?.destroy()
+      presenceBinding?.destroy()
       workspace.removeChangeListener(listener)
       Blockly.ContextMenuRegistry.registry.unregister('edit_user_block')
       Blockly.ContextMenuRegistry.registry.unregister('delete_user_block')
