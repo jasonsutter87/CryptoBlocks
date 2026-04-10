@@ -1,10 +1,11 @@
 import { useState, lazy, Suspense } from 'react'
 import { ALL_CHAPTERS } from './index'
-import { isLessonComplete, markLessonComplete } from './progress'
+import { isLessonComplete, markLessonComplete, loadLearnProgress } from './progress'
 import type { Chapter, Lesson, LessonBlock, LessonExercise } from './types'
 
 const RunnableCode = lazy(() => import('./RunnableCode'))
 const BlockPreview = lazy(() => import('./BlockPreview'))
+const ExerciseCard = lazy(() => import('./ExerciseCard'))
 
 // ─── Block renderers ─────────────────────────────────────────────────────────
 
@@ -80,37 +81,17 @@ function CalloutBlock({ block }: { block: LessonBlock }) {
   )
 }
 
-function ExerciseBlock({ exercise }: { exercise: LessonExercise }) {
-  return (
-    <div className="my-6 border border-[#313244] rounded-xl bg-[#181825] overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 bg-[#313244]/50 border-b border-[#313244]">
-        <span className="text-base">✏️</span>
-        <span className="text-sm font-semibold text-[#cdd6f4]">Exercise</span>
-      </div>
-      <div className="px-4 py-4">
-        <p className="text-[#a6adc8] mb-4">{exercise.prompt}</p>
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2 flex-wrap">
-            {exercise.hints.slice(0, 1).map((hint, i) => (
-              <span key={i} className="text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded">
-                Hint: {hint}
-              </span>
-            ))}
-          </div>
-          <button
-            className="px-3 py-1.5 bg-[#89b4fa]/10 text-[#89b4fa] border border-[#89b4fa]/30 rounded text-sm font-medium hover:bg-[#89b4fa]/20 transition-colors cursor-not-allowed opacity-60"
-            disabled
-            title="Exercise runner coming soon"
-          >
-            Open in Editor → (coming soon)
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function LessonBlockRenderer({ block, exercises }: { block: LessonBlock; exercises: LessonExercise[] }) {
+function LessonBlockRenderer({
+  block,
+  exercises,
+  lessonId,
+  onExerciseComplete,
+}: {
+  block: LessonBlock
+  exercises: LessonExercise[]
+  lessonId: string
+  onExerciseComplete: () => void
+}) {
   switch (block.type) {
     case 'heading':
       return <HeadingBlock block={block} />
@@ -125,7 +106,20 @@ function LessonBlockRenderer({ block, exercises }: { block: LessonBlock; exercis
     case 'exercise': {
       const exercise = exercises.find(e => e.id === block.exerciseId)
       if (!exercise) return null
-      return <ExerciseBlock exercise={exercise} />
+      const progress = loadLearnProgress()
+      const isCompleted = progress[lessonId]?.exercisesCompleted?.includes(exercise.id) ?? false
+      return (
+        <Suspense fallback={
+          <div className="my-6 h-48 bg-[#181825] border border-[#313244] rounded-xl animate-pulse" />
+        }>
+          <ExerciseCard
+            exercise={exercise}
+            lessonId={lessonId}
+            isCompleted={isCompleted}
+            onComplete={onExerciseComplete}
+          />
+        </Suspense>
+      )
     }
     default:
       return null
@@ -152,7 +146,13 @@ function LessonView({ lesson, onMarkComplete }: { lesson: Lesson; onMarkComplete
 
       <div>
         {lesson.blocks.map((block, i) => (
-          <LessonBlockRenderer key={i} block={block} exercises={lesson.exercises} />
+          <LessonBlockRenderer
+            key={i}
+            block={block}
+            exercises={lesson.exercises}
+            lessonId={lesson.id}
+            onExerciseComplete={onMarkComplete}
+          />
         ))}
       </div>
 
