@@ -5,6 +5,26 @@ description: 'What is new in CryptoBlocks. Version history, features, fixes, and
 priority: 0.6
 ---
 
+## v0.3 — April 2026
+
+Real-time collaboration. Build programs together with Coding with Friends.
+
+### Coding with Friends
+- **Real-time collaboration** — share a 6-letter room code, edit the same workspace simultaneously
+- **CRDT sync** — block-level conflict-free merging powered by Yjs
+- **Presence** — see colored outlines on blocks your friends are touching
+- **Run for Everyone** — broadcast execution to all peers with one click
+- **Collaborator bar** — avatars, connection status, invite link
+- **Room codes** — no accounts needed, just a code to join
+- **Up to 6 editors** per room with auto-reconnection
+
+### Improvements
+- Share options (Export HTML, Embed Snippet, Publish) moved into File dropdown
+- Auto-save suppressed in collab mode to prevent local/remote conflicts
+- Collab route: `/collab/:roomCode`
+
+---
+
 ## v0.2 — April 2026
 
 The biggest update yet. Functions, local variables, Shareplace, Vision blocks, Learn course, and a complete visual IDE experience.

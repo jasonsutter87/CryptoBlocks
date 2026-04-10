@@ -1,7 +1,7 @@
 ---
 title: "Coding with Friends — Real-Time Collaboration is Here"
 description: "Build programs together in real time. Share a room code, snap blocks side by side, and see each other's changes instantly."
-date: 2026-04-10
+date: 2026-04-09
 type: blog
 tags: ["features", "announcement"]
 priority: 0.7

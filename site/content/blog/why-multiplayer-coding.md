@@ -1,7 +1,7 @@
 ---
 title: "Why Kids Should Code Together"
 description: "Solo coding is how you learn syntax. Collaborative coding is how you learn to think. Here's why we built multiplayer into CryptoBlocks."
-date: 2026-04-10
+date: 2026-04-08
 type: blog
 tags: ["education", "features", "philosophy"]
 priority: 0.5
