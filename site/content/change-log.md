@@ -5,7 +5,8 @@ description: 'What is new in CryptoBlocks. Version history, features, fixes, and
 priority: 0.6
 ---
 
-## v0.3 — April 2026
+<!--
+## v0.3 — May 2026
 
 Real-time collaboration. Build programs together with Coding with Friends.
 
@@ -24,6 +25,7 @@ Real-time collaboration. Build programs together with Coding with Friends.
 - Collab route: `/collab/:roomCode`
 
 ---
+-->
 
 ## v0.2 — April 2026
 
