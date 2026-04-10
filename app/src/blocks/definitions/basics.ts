@@ -165,4 +165,63 @@ export const basicsBlocks: BlockDefinition[] = [
     ],
     color: '#4C97AF',
   },
+  {
+    name: 'console_table',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Print a list or object as a formatted table',
+    category: 'Basics',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list or object to display' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function consoleTable(name) {\n  window.__vars = window.__vars || {};\n  var data = window.__vars[name];\n  if (Array.isArray(data)) {\n    console.log("┌─ " + name + " ─┐");\n    data.forEach(function(item, i) { console.log("│ [" + i + "] " + JSON.stringify(item)); });\n    console.log("└────────────┘");\n  } else if (data && typeof data === 'object') {\n    console.log("┌─ " + name + " ─┐");\n    Object.keys(data).forEach(function(key) { console.log("│ " + key + ": " + JSON.stringify(data[key])); });\n    console.log("└────────────┘");\n  } else {\n    console.log(name + ": " + data);\n  }\n}`,
+      python: `def console_table(name):\n    data = globals().get(name)\n    if isinstance(data, list):\n        print(f"┌─ {name} ─┐")\n        for i, item in enumerate(data):\n            print(f"│ [{i}] {item}")\n        print("└────────────┘")\n    elif isinstance(data, dict):\n        print(f"┌─ {name} ─┐")\n        for key, val in data.items():\n            print(f"│ {key}: {val}")\n        print("└────────────┘")\n    else:\n        print(f"{name}: {data}")`,
+    },
+    tests: [
+      { input: { name: 'myList' }, expected: {} },
+    ],
+    color: '#4C97AF',
+  },
+  {
+    name: 'set_timeout',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Run a function after a delay',
+    category: 'Basics',
+    inputs: [
+      { name: 'fn_name', type: 'string', description: 'Function to call', default: 'myFunction' },
+      { name: 'seconds', type: 'number', description: 'Seconds to wait', default: 1 },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function setTimeout2(fnName, seconds) {\n  var fn = window[fnName];\n  if (typeof fn === 'function') setTimeout(fn, seconds * 1000);\n}`,
+      python: `import threading\ndef set_timeout(fn_name, seconds):\n    fn = globals().get(fn_name)\n    if callable(fn):\n        threading.Timer(seconds, fn).start()`,
+    },
+    tests: [
+      { input: { fn_name: 'myFunction', seconds: 1 }, expected: {} },
+    ],
+    color: '#4C97AF',
+  },
+  {
+    name: 'set_interval',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Run a function repeatedly at a fixed interval',
+    category: 'Basics',
+    inputs: [
+      { name: 'fn_name', type: 'string', description: 'Function to call', default: 'myFunction' },
+      { name: 'seconds', type: 'number', description: 'Seconds between calls', default: 1 },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function setInterval2(fnName, seconds) {\n  var fn = window[fnName];\n  if (typeof fn === 'function') setInterval(fn, seconds * 1000);\n}`,
+      python: `import threading\ndef set_interval(fn_name, seconds):\n    fn = globals().get(fn_name)\n    if callable(fn):\n        def loop():\n            fn()\n            threading.Timer(seconds, loop).start()\n        loop()`,
+    },
+    tests: [
+      { input: { fn_name: 'myFunction', seconds: 1 }, expected: {} },
+    ],
+    color: '#4C97AF',
+  },
 ]

@@ -139,4 +139,61 @@ export const dataBlocks: BlockDefinition[] = [
     ],
     color: '#0891B2',
   },
+  {
+    name: 'object_keys',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get all the property names of an object as a list',
+    category: 'Data',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the object' },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function objectKeys(name) {\n  window.__vars = window.__vars || {};\n  return Object.keys(window.__vars[name] || {});\n}`,
+      python: `def object_keys(name):\n    obj = globals().get(name, {})\n    return list(obj.keys()) if isinstance(obj, dict) else []`,
+    },
+    tests: [
+      { input: { name: 'player' }, expected: { result: 'any' } },
+    ],
+    color: '#0891B2',
+  },
+  {
+    name: 'object_values',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get all the values of an object as a list',
+    category: 'Data',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the object' },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function objectValues(name) {\n  window.__vars = window.__vars || {};\n  return Object.values(window.__vars[name] || {});\n}`,
+      python: `def object_values(name):\n    obj = globals().get(name, {})\n    return list(obj.values()) if isinstance(obj, dict) else []`,
+    },
+    tests: [
+      { input: { name: 'player' }, expected: { result: 'any' } },
+    ],
+    color: '#0891B2',
+  },
+  {
+    name: 'to_json',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Convert an object or list to a JSON text string',
+    category: 'Data',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the variable' },
+    ],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function toJson(name) {\n  window.__vars = window.__vars || {};\n  return JSON.stringify(window.__vars[name], null, 2);\n}`,
+      python: `import json\ndef to_json(name):\n    return json.dumps(globals().get(name, {}), indent=2)`,
+    },
+    tests: [
+      { input: { name: 'player' }, expected: { result: 'any' } },
+    ],
+    color: '#0891B2',
+  },
 ]

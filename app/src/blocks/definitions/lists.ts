@@ -319,4 +319,123 @@ export const listsBlocks: BlockDefinition[] = [
     ],
     color: '#D97706',
   },
+  {
+    name: 'for_each',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Run a function on every item in a list',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'fn_name', type: 'string', description: 'Function to call on each item', default: 'myFunction' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function forEach(name, fnName) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  const fn = window[fnName];\n  if (typeof fn === 'function') list.forEach(function(item, i) { fn(item, i); });\n}`,
+      python: `def for_each(name, fn_name):\n    lst = globals().get(name, [])\n    fn = globals().get(fn_name)\n    if callable(fn):\n        for i, item in enumerate(lst):\n            fn(item, i)`,
+    },
+    tests: [
+      { input: { name: 'myList', fn_name: 'myFunction' }, expected: {} },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'filter_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Keep only items that pass a test function',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'fn_name', type: 'string', description: 'Function that returns true to keep an item', default: 'myFunction' },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function filterList(name, fnName) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  const fn = window[fnName];\n  if (typeof fn !== 'function') return list;\n  return list.filter(function(item) { return fn(item); });\n}`,
+      python: `def filter_list(name, fn_name):\n    lst = globals().get(name, [])\n    fn = globals().get(fn_name)\n    if callable(fn):\n        return [item for item in lst if fn(item)]\n    return lst`,
+    },
+    tests: [
+      { input: { name: 'myList', fn_name: 'myFunction' }, expected: { result: 'any' } },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'find_in_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Find the first item that passes a test function',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'fn_name', type: 'string', description: 'Function that returns true for a match', default: 'myFunction' },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function findInList(name, fnName) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  const fn = window[fnName];\n  if (typeof fn !== 'function') return undefined;\n  return list.find(function(item) { return fn(item); });\n}`,
+      python: `def find_in_list(name, fn_name):\n    lst = globals().get(name, [])\n    fn = globals().get(fn_name)\n    if callable(fn):\n        for item in lst:\n            if fn(item):\n                return item\n    return None`,
+    },
+    tests: [
+      { input: { name: 'myList', fn_name: 'myFunction' }, expected: { result: 'any' } },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'push',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Add an item to the end of a list (push)',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'item', type: 'any', description: 'Item to push' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function push(name, item) {\n  window.__vars = window.__vars || {};\n  if (!window.__vars[name]) window.__vars[name] = [];\n  window.__vars[name].push(item);\n}`,
+      python: `def push(name, item):\n    if name not in globals():\n        globals()[name] = []\n    globals()[name].append(item)`,
+    },
+    tests: [
+      { input: { name: 'myList', item: 42 }, expected: {} },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'pop',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Remove and return the last item from a list (pop)',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function pop(name) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  return list.pop();\n}`,
+      python: `def pop(name):\n    lst = globals().get(name, [])\n    return lst.pop() if lst else None`,
+    },
+    tests: [
+      { input: { name: 'myList' }, expected: { result: 'any' } },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'join_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Join all list items into a single text string',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'separator', type: 'string', description: 'Text between items', default: ', ' },
+    ],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function joinList(name, separator) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  return list.join(separator);\n}`,
+      python: `def join_list(name, separator):\n    lst = globals().get(name, [])\n    return separator.join(str(item) for item in lst)`,
+    },
+    tests: [
+      { input: { name: 'myList', separator: ', ' }, expected: { result: '' } },
+    ],
+    color: '#D97706',
+  },
 ]

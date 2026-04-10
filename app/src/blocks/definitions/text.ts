@@ -193,4 +193,144 @@ export const textBlocks: BlockDefinition[] = [
     ],
     color: '#8B5CF6',
   },
+  {
+    name: 'trim',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Remove spaces from the start and end of text',
+    category: 'Text',
+    inputs: [{ name: 'text', type: 'string', description: 'Text to trim' }],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function trim(text) {\n  return String(text).trim();\n}`,
+      python: `def trim(text):\n    return str(text).strip()`,
+    },
+    tests: [
+      { input: { text: '  hello  ' }, expected: { result: 'hello' } },
+    ],
+    color: '#8B5CF6',
+  },
+  {
+    name: 'starts_with',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Check if text starts with a specific prefix',
+    category: 'Text',
+    inputs: [
+      { name: 'text', type: 'string', description: 'The text to check' },
+      { name: 'prefix', type: 'string', description: 'The prefix to look for' },
+    ],
+    outputs: [{ name: 'result', type: 'boolean' }],
+    implementations: {
+      javascript: `function startsWith(text, prefix) {\n  return String(text).startsWith(prefix);\n}`,
+      python: `def starts_with(text, prefix):\n    return str(text).startswith(prefix)`,
+    },
+    tests: [
+      { input: { text: 'hello world', prefix: 'hello' }, expected: { result: true } },
+      { input: { text: 'hello world', prefix: 'world' }, expected: { result: false } },
+    ],
+    color: '#8B5CF6',
+  },
+  {
+    name: 'ends_with',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Check if text ends with a specific suffix',
+    category: 'Text',
+    inputs: [
+      { name: 'text', type: 'string', description: 'The text to check' },
+      { name: 'suffix', type: 'string', description: 'The suffix to look for' },
+    ],
+    outputs: [{ name: 'result', type: 'boolean' }],
+    implementations: {
+      javascript: `function endsWith(text, suffix) {\n  return String(text).endsWith(suffix);\n}`,
+      python: `def ends_with(text, suffix):\n    return str(text).endswith(suffix)`,
+    },
+    tests: [
+      { input: { text: 'hello world', suffix: 'world' }, expected: { result: true } },
+      { input: { text: 'hello world', suffix: 'hello' }, expected: { result: false } },
+    ],
+    color: '#8B5CF6',
+  },
+  {
+    name: 'char_at',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get a single character from text at a position',
+    category: 'Text',
+    inputs: [
+      { name: 'text', type: 'string', description: 'The text' },
+      { name: 'index', type: 'number', description: 'Position (0 = first)', default: 0 },
+    ],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function charAt(text, index) {\n  return String(text).charAt(index);\n}`,
+      python: `def char_at(text, index):\n    s = str(text)\n    return s[int(index)] if 0 <= int(index) < len(s) else ""`,
+    },
+    tests: [
+      { input: { text: 'hello', index: 0 }, expected: { result: 'h' } },
+      { input: { text: 'hello', index: 4 }, expected: { result: 'o' } },
+    ],
+    color: '#8B5CF6',
+  },
+  {
+    name: 'char_code',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get the character code (ASCII/Unicode) of a character',
+    category: 'Text',
+    inputs: [
+      { name: 'char', type: 'string', description: 'A single character' },
+    ],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: `function charCode(char) {\n  return String(char).charCodeAt(0) || 0;\n}`,
+      python: `def char_code(char):\n    return ord(str(char)[0]) if char else 0`,
+    },
+    tests: [
+      { input: { char: 'A' }, expected: { result: 65 } },
+      { input: { char: 'a' }, expected: { result: 97 } },
+    ],
+    color: '#8B5CF6',
+  },
+  {
+    name: 'repeat_text',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Repeat text a number of times',
+    category: 'Text',
+    inputs: [
+      { name: 'text', type: 'string', description: 'Text to repeat' },
+      { name: 'times', type: 'number', description: 'How many times', default: 3 },
+    ],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function repeatText(text, times) {\n  return String(text).repeat(Math.max(0, Math.floor(times)));\n}`,
+      python: `def repeat_text(text, times):\n    return str(text) * max(0, int(times))`,
+    },
+    tests: [
+      { input: { text: 'ha', times: 3 }, expected: { result: 'hahaha' } },
+      { input: { text: 'ab', times: 0 }, expected: { result: '' } },
+    ],
+    color: '#8B5CF6',
+  },
+  {
+    name: 'template',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Build text with variables using ${name} placeholders',
+    category: 'Text',
+    inputs: [
+      { name: 'text', type: 'string', description: 'Template with ${name} placeholders', default: 'Hello ${name}!' },
+    ],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function template(text) {\n  window.__vars = window.__vars || {};\n  return String(text).replace(/\\$\\{(\\w+)\\}/g, function(_, key) {\n    var v = window.__vars[key];\n    return v !== undefined ? v : window[key] !== undefined ? window[key] : '${' + key + '}';\n  });\n}`,
+      python: `def template(text):\n    import re\n    def replace(m):\n        key = m.group(1)\n        return str(globals().get(key, '${' + key + '}'))\n    return re.sub(r'\\$\\{(\\w+)\\}', replace, str(text))`,
+    },
+    tests: [
+      { input: { text: 'Hello ${name}!' }, expected: { result: 'any' } },
+    ],
+    color: '#8B5CF6',
+  },
 ]

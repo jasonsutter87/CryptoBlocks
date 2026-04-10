@@ -209,4 +209,71 @@ export const logicBlocks: BlockDefinition[] = [
     ],
     color: '#059669',
   },
+  {
+    name: 'typeof_value',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get the type of a value (number, string, boolean, object, etc)',
+    category: 'Logic',
+    inputs: [
+      { name: 'value', type: 'any', description: 'Value to check the type of' },
+    ],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function typeofValue(value) {\n  if (Array.isArray(value)) return "array";\n  return typeof value;\n}`,
+      python: `def typeof_value(value):\n    if isinstance(value, list):\n        return "array"\n    if isinstance(value, dict):\n        return "object"\n    if isinstance(value, bool):\n        return "boolean"\n    if isinstance(value, (int, float)):\n        return "number"\n    if isinstance(value, str):\n        return "string"\n    return type(value).__name__`,
+    },
+    tests: [
+      { input: { value: 42 }, expected: { result: 'number' } },
+      { input: { value: 'hello' }, expected: { result: 'string' } },
+      { input: { value: true }, expected: { result: 'boolean' } },
+    ],
+    color: '#059669',
+  },
+  {
+    name: 'is_null',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Check if a value is null, undefined, or empty',
+    category: 'Logic',
+    inputs: [
+      { name: 'value', type: 'any', description: 'Value to check' },
+    ],
+    outputs: [{ name: 'result', type: 'boolean' }],
+    implementations: {
+      javascript: `function isNull(value) {\n  return value === null || value === undefined;\n}`,
+      python: `def is_null(value):\n    return value is None`,
+    },
+    tests: [
+      { input: { value: null }, expected: { result: true } },
+      { input: { value: 0 }, expected: { result: false } },
+      { input: { value: '' }, expected: { result: false } },
+    ],
+    color: '#059669',
+  },
+  {
+    name: 'switch_value',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Match a value against cases and return the matching result',
+    category: 'Logic',
+    inputs: [
+      { name: 'value', type: 'any', description: 'Value to match' },
+      { name: 'case1', type: 'any', description: 'First case to match' },
+      { name: 'result1', type: 'any', description: 'Result if case 1 matches' },
+      { name: 'case2', type: 'any', description: 'Second case to match' },
+      { name: 'result2', type: 'any', description: 'Result if case 2 matches' },
+      { name: 'default_result', type: 'any', description: 'Result if nothing matches' },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function switchValue(value, case1, result1, case2, result2, defaultResult) {\n  if (value === case1) return result1;\n  if (value === case2) return result2;\n  return defaultResult;\n}`,
+      python: `def switch_value(value, case1, result1, case2, result2, default_result):\n    if value == case1:\n        return result1\n    if value == case2:\n        return result2\n    return default_result`,
+    },
+    tests: [
+      { input: { value: 'a', case1: 'a', result1: 1, case2: 'b', result2: 2, default_result: 0 }, expected: { result: 1 } },
+      { input: { value: 'c', case1: 'a', result1: 1, case2: 'b', result2: 2, default_result: 0 }, expected: { result: 0 } },
+    ],
+    color: '#059669',
+  },
 ]
