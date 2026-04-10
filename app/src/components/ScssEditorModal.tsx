@@ -94,6 +94,15 @@ export default function ScssEditorModal({ initialCode, onSave, onClose }: ScssEd
                   overviewRulerLanes: 0,
                   hideCursorInOverviewRuler: true,
                   overviewRulerBorder: false,
+                  quickSuggestions: true,
+                  suggestOnTriggerCharacters: true,
+                  tabCompletion: 'on',
+                  parameterHints: { enabled: true },
+                  suggest: {
+                    showProperties: true,
+                    showKeywords: true,
+                    showSnippets: true,
+                  },
                   scrollbar: {
                     vertical: 'auto',
                     horizontal: 'hidden',

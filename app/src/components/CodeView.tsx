@@ -162,6 +162,23 @@ function MonacoEditorWrapper({
           vertical: 'auto',
           horizontal: 'hidden',
         },
+        quickSuggestions: editable ? true : false,
+        suggestOnTriggerCharacters: editable,
+        tabCompletion: editable ? 'on' : 'off',
+        parameterHints: { enabled: !!editable },
+        suggest: {
+          showMethods: true,
+          showFunctions: true,
+          showConstructors: true,
+          showFields: true,
+          showVariables: true,
+          showClasses: true,
+          showInterfaces: true,
+          showModules: true,
+          showProperties: true,
+          showKeywords: true,
+          showSnippets: true,
+        },
       }}
     />
   )

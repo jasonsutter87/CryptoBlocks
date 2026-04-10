@@ -106,6 +106,10 @@ export default function CodeToBlocksModal({ onConvert, onClose }: CodeToBlocksMo
                 scrollBeyondLastLine: false,
                 wordWrap: 'on',
                 padding: { top: 12 },
+                quickSuggestions: true,
+                suggestOnTriggerCharacters: true,
+                tabCompletion: 'on',
+                parameterHints: { enabled: true },
               }}
             />
           )}

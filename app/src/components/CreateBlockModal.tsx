@@ -470,6 +470,10 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
                       renderLineHighlight: 'none',
                       overviewRulerLanes: 0,
                       scrollbar: { vertical: 'auto', horizontal: 'hidden' },
+                      quickSuggestions: true,
+                      suggestOnTriggerCharacters: true,
+                      tabCompletion: 'on',
+                      parameterHints: { enabled: true },
                     }}
                   />
                 </div>
@@ -516,6 +520,10 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
                       renderLineHighlight: 'none',
                       overviewRulerLanes: 0,
                       scrollbar: { vertical: 'auto', horizontal: 'hidden' },
+                      quickSuggestions: true,
+                      suggestOnTriggerCharacters: true,
+                      tabCompletion: 'on',
+                      parameterHints: { enabled: true },
                     }}
                   />
                 </div>
