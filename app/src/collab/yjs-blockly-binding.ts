@@ -17,10 +17,13 @@ export interface YjsBlocklyBinding {
   getYDoc: () => Y.Doc
 }
 
+// Use `unknown` for the Y.Map values to avoid Blockly's strict State type
+type BlockState = Blockly.serialization.blocks.State
+
 /** Serialize a top-level block (and its entire connected chain) */
-function serializeTopBlock(block: Blockly.Block): Record<string, unknown> | null {
+function serializeTopBlock(block: Blockly.Block): unknown {
   try {
-    return Blockly.serialization.blocks.save(block) as Record<string, unknown>
+    return Blockly.serialization.blocks.save(block)
   } catch {
     return null
   }
@@ -48,7 +51,7 @@ export function bindWorkspaceToYDoc(
   workspace: Blockly.WorkspaceSvg,
   ydoc: Y.Doc
 ): YjsBlocklyBinding {
-  const yblocks = ydoc.getMap<Record<string, unknown>>('blocks')
+  const yblocks = ydoc.getMap('blocks')
   const yvariables = ydoc.getMap<{ name: string; type: string }>('variables')
 
   let isApplyingRemote = false
@@ -87,8 +90,9 @@ export function bindWorkspaceToYDoc(
       const vars = workspace.getAllVariables()
       const currentVarIds = new Set<string>()
       for (const v of vars) {
-        currentVarIds.add(v.getId())
-        yvariables.set(v.getId(), { name: v.name, type: v.type })
+        const id = v.getId()
+        currentVarIds.add(id)
+        yvariables.set(id, { name: (v as unknown as { name: string }).name, type: (v as unknown as { type: string }).type })
       }
       for (const [key] of yvariables) {
         if (!currentVarIds.has(key)) {
@@ -135,7 +139,7 @@ export function bindWorkspaceToYDoc(
   // --- Yjs → Local ---
 
   /** Apply remote block changes to the workspace */
-  function onYjsBlockChange(event: Y.YMapEvent<Record<string, unknown>>) {
+  function onYjsBlockChange(event: Y.YMapEvent<unknown>) {
     if (event.transaction.local) return
 
     isApplyingRemote = true
@@ -169,7 +173,7 @@ export function bindWorkspaceToYDoc(
           // Append the block
           try {
             Blockly.serialization.blocks.append(
-              serialized as Blockly.serialization.blocks.State,
+              serialized as unknown as BlockState,
               workspace
             )
           } catch {
@@ -228,7 +232,7 @@ export function bindWorkspaceToYDoc(
       for (const [, serialized] of yblocks) {
         try {
           Blockly.serialization.blocks.append(
-            serialized as Blockly.serialization.blocks.State,
+            serialized as unknown as BlockState,
             workspace
           )
         } catch {
