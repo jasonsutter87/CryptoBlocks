@@ -14,7 +14,8 @@
     "test:smoke": "vitest run smoke",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "collab:dev": "npx partykit dev partykit/room.ts"
   },
   "dependencies": {
     "@blockly/field-multilineinput": "^6.0.8",
@@ -30,12 +31,16 @@
     "blockly": "^12.3.1",
     "codemirror": "^6.0.2",
     "monaco-editor": "^0.55.1",
+    "nanoid": "^5.1.7",
+    "partykit": "^0.0.115",
     "pyodide": "^0.29.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.14.0",
     "sass": "^1.98.0",
-    "vite-plugin-monaco-editor": "^1.1.0"
+    "vite-plugin-monaco-editor": "^1.1.0",
+    "y-partykit": "^0.0.33",
+    "yjs": "^13.6.30"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
