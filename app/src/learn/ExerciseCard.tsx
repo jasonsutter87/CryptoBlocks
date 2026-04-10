@@ -30,35 +30,40 @@ export default function ExerciseCard({ exercise, lessonId, isCompleted, onComple
   const completed = isCompleted
 
   function runCode(onResult?: (lines: string[]) => void) {
+    // Abort any previous execution and clear state
     handleRef.current?.abort()
+    handleRef.current = null
     setOutputLines([])
     setErrorMsg(null)
     setCheckMessage(null)
 
-    const collected: string[] = []
-    const handle = executeCode(
-      code,
-      'javascript',
-      (line) => {
-        collected.push(line)
-        setOutputLines(prev => [...prev, line])
-      },
-    )
-    handleRef.current = handle
+    // Small delay to ensure previous iframe is fully cleaned up
+    setTimeout(() => {
+      const collected: string[] = []
+      const handle = executeCode(
+        code,
+        'javascript',
+        (line) => {
+          collected.push(line)
+          setOutputLines(prev => [...prev, line])
+        },
+      )
+      handleRef.current = handle
 
-    handle.promise.then((result) => {
-      if (result.error) {
-        setErrorMsg(result.error)
+      handle.promise.then((result) => {
+        if (result.error) {
+          setErrorMsg(result.error)
+          setRunState('error')
+          setCheckState('idle')
+        } else {
+          onResult?.(collected)
+        }
+      }).catch((err) => {
+        setErrorMsg(String(err))
         setRunState('error')
         setCheckState('idle')
-      } else {
-        onResult?.(collected)
-      }
-    }).catch((err) => {
-      setErrorMsg(String(err))
-      setRunState('error')
-      setCheckState('idle')
-    })
+      })
+    }, 50)
   }
 
   function handleRun() {
