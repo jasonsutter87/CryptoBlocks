@@ -88,7 +88,7 @@ export default function Toolbar({
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
-  const [openMenu, setOpenMenu] = useState<'file' | 'build' | 'share' | 'learn' | 'mobile' | null>(null)
+  const [openMenu, setOpenMenu] = useState<'file' | 'build' | 'learn' | 'mobile' | null>(null)
   const [embedCopied, setEmbedCopied] = useState(false)
   const menuContainerRef = useRef<HTMLDivElement>(null)
 
@@ -239,6 +239,41 @@ export default function Toolbar({
                     </button>
                   )}
                   <div className={menuDivider} />
+                  <button
+                    onClick={() => { onExportHtml(); setOpenMenu(null) }}
+                    className={menuItem}
+                  >
+                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                    Export as HTML
+                    <span className="ml-auto text-xs text-[#6c7086]">.html</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      onCopyEmbed()
+                      setEmbedCopied(true)
+                      setTimeout(() => setEmbedCopied(false), 2000)
+                    }}
+                    className={menuItem}
+                  >
+                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                    </svg>
+                    {embedCopied ? 'Copied!' : 'Copy Embed Snippet'}
+                    <span className="ml-auto text-xs text-[#6c7086]">&lt;/&gt;</span>
+                  </button>
+                  <button
+                    onClick={() => { onPublish(); setOpenMenu(null) }}
+                    className={menuItem}
+                  >
+                    <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Publish to GitHub
+                    <span className="ml-auto text-xs text-[#6c7086]">Live URL</span>
+                  </button>
+                  <div className={menuDivider} />
                   <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
                     <svg className="w-4 h-4 text-[#f38ba8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -275,60 +310,6 @@ export default function Toolbar({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     Code to Blocks
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Share dropdown */}
-            <div className="relative hidden md:block">
-              <button
-                onClick={() => toggleMenu('share')}
-                className={`${btn} bg-[#89b4fa] text-[#1e1e2e] hover:bg-[#89b4fa]/80`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                Share
-                {chevron}
-              </button>
-
-              {openMenu === 'share' && (
-                <div className={menuDropdown}>
-                  <button
-                    onClick={() => { onExportHtml(); setOpenMenu(null) }}
-                    className={menuItem}
-                  >
-                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-                    </svg>
-                    Export as HTML
-                    <span className="ml-auto text-xs text-[#6c7086]">.html</span>
-                  </button>
-                  <button
-                    onClick={async () => {
-                      onCopyEmbed()
-                      setEmbedCopied(true)
-                      setTimeout(() => setEmbedCopied(false), 2000)
-                    }}
-                    className={menuItem}
-                  >
-                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
-                    {embedCopied ? 'Copied!' : 'Copy Embed Snippet'}
-                    <span className="ml-auto text-xs text-[#6c7086]">&lt;/&gt;</span>
-                  </button>
-                  <div className={menuDivider} />
-                  <button
-                    onClick={() => { onPublish(); setOpenMenu(null) }}
-                    className={menuItem}
-                  >
-                    <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Publish to GitHub
-                    <span className="ml-auto text-xs text-[#6c7086]">Live URL</span>
                   </button>
                 </div>
               )}
