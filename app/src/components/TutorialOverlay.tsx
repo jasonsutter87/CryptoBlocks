@@ -238,9 +238,6 @@ export default function TutorialOverlay({ onFinish, onSkip }: TutorialOverlayPro
         <div className="absolute inset-0 bg-black/60" onClick={handleSkip} />
       )}
 
-      {/* Arrow */}
-      <Arrow position={step.position} targetRect={targetRect} tooltipPos={tooltipPos} />
-
       {/* Tooltip card */}
       <div
         className="fixed z-[101] bg-[#1e1e2e] border-2 border-[#313244] rounded-2xl shadow-2xl"
