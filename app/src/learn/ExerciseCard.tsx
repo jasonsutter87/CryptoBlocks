@@ -1,79 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
-import Editor from '@monaco-editor/react'
+import { useState, useRef } from 'react'
+import CodeMirrorEditor from './CodeMirrorEditor'
 import { executeCode } from '../execution/runner'
 import type { ExecutionHandle } from '../execution/runner'
 import { markExerciseComplete } from './progress'
 import type { LessonExercise } from './types'
 
-function PlainEditor({ code, onChange }: { code: string; onChange: (v: string) => void }) {
-  return (
-    <textarea
-      className="w-full bg-[#1e1e2e] text-[#cdd6f4] font-mono text-sm px-4 py-3 resize-none outline-none border-0"
-      style={{ height: '150px' }}
-      value={code}
-      onChange={e => onChange(e.target.value)}
-      spellCheck={false}
-    />
-  )
-}
-
-function EditorWithFallback({ code, onChange }: { code: string; onChange: (v: string) => void }) {
-  const [useFallback, setUseFallback] = useState(false)
-  const mountedRef = useRef(false)
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!mountedRef.current) {
-        console.warn('Monaco failed to load within 8s — falling back to textarea')
-        setUseFallback(true)
-      }
-    }, 8000)
-    return () => clearTimeout(timer)
-  }, [])
-
-  if (useFallback) {
-    return <PlainEditor code={code} onChange={onChange} />
-  }
-
-  return (
-    <Editor
-      language="javascript"
-      value={code}
-      theme="vs-dark"
-      height="150px"
-      loading={<PlainEditor code={code} onChange={onChange} />}
-      onChange={(value) => onChange(value ?? '')}
-      beforeMount={(monaco) => {
-        monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-          target: monaco.languages.typescript.ScriptTarget.ES2015,
-          allowNonTsExtensions: true,
-          allowJs: true,
-        })
-        monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-          noSemanticValidation: false,
-          noSyntaxValidation: false,
-        })
-      }}
-      onMount={() => { mountedRef.current = true; console.log('Monaco loaded in Learn exercise') }}
-      options={{
-        minimap: { enabled: false },
-        fontSize: 13,
-        lineNumbers: 'on',
-        scrollBeyondLastLine: false,
-        wordWrap: 'on',
-        padding: { top: 8, bottom: 8 },
-        renderLineHighlight: 'line',
-        overviewRulerLanes: 0,
-        quickSuggestions: true,
-        suggestOnTriggerCharacters: true,
-        tabCompletion: 'off',
-        acceptSuggestionOnEnter: 'on',
-        parameterHints: { enabled: true },
-        scrollbar: { vertical: 'auto', horizontal: 'hidden' },
-      }}
-    />
-  )
-}
 
 export interface ExerciseCardProps {
   exercise: LessonExercise
@@ -204,8 +135,8 @@ export default function ExerciseCard({ exercise, lessonId, isCompleted, onComple
       </div>
 
       {/* Code Editor */}
-      <div className="mx-4 mb-3 rounded-lg overflow-hidden border border-[#313244]">
-        <EditorWithFallback code={code} onChange={setCode} />
+      <div className="mx-4 mb-3">
+        <CodeMirrorEditor code={code} onChange={setCode} language="javascript" height="150px" />
       </div>
 
       {/* Button row */}
