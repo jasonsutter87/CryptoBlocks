@@ -176,11 +176,13 @@ function ChapterSidebar({
   chapters,
   selectedChapterId,
   selectedLessonId,
+  onSelectChapter,
   onSelectLesson,
 }: {
   chapters: Chapter[]
   selectedChapterId: string
   selectedLessonId: string
+  onSelectChapter: (chapterId: string) => void
   onSelectLesson: (chapterId: string, lessonId: string) => void
 }) {
   return (
@@ -198,7 +200,8 @@ function ChapterSidebar({
             <div key={chapter.id}>
               {/* Chapter header */}
               <div
-                className={`flex items-center gap-3 px-4 py-3 ${
+                onClick={() => onSelectChapter(chapter.id)}
+                className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#313244]/30 transition-colors ${
                   isCurrentChapter ? 'bg-[#313244]/50' : ''
                 }`}
               >
@@ -343,6 +346,7 @@ export default function LearnPage() {
         chapters={ALL_CHAPTERS}
         selectedChapterId={selectedChapterId}
         selectedLessonId={selectedLessonId ?? ''}
+        onSelectChapter={handleSelectChapter}
         onSelectLesson={handleSelectLesson}
       />
 
