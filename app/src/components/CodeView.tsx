@@ -144,6 +144,19 @@ function MonacoEditorWrapper({
       value={code}
       theme="vs-dark"
       loading={<PlainCodeView code={code} language={language} editable={editable} onCodeChange={onCodeChange} />}
+      beforeMount={(monaco) => {
+        if (editable) {
+          monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+            target: monaco.languages.typescript.ScriptTarget.ES2015,
+            allowNonTsExtensions: true,
+            allowJs: true,
+          })
+          monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+            noSemanticValidation: false,
+            noSyntaxValidation: false,
+          })
+        }
+      }}
       onMount={() => { mountedRef.current = true }}
       onChange={editable ? (value) => onCodeChange?.(value || '') : undefined}
       options={{
