@@ -66,6 +66,7 @@ import { checkAchievements } from './achievements'
 import { recordRun, recordChallengeComplete, recordGolfComplete, recordLabComplete, recordAchievement } from './stats'
 import { AchievementToast } from './components/AchievementToast'
 import StatsPanel from './components/StatsPanel'
+import HackerTerminal from './components/HackerTerminal'
 const CollabModal = lazy(() => import('./collab/CollabModal'))
 const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
 import { useCollabDoc } from './collab/CollabPage'
@@ -1396,6 +1397,9 @@ export default function App() {
           onSkip={() => setShowWelcome(false)}
         />
       )}
+
+      {/* Hacker Terminal */}
+      <HackerTerminal blockCount={blockCount} />
 
       {/* Tutorial Overlay */}
       {showTutorial && (

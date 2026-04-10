@@ -26,7 +26,7 @@ export function printConsoleArt(): void {
   )
   // eslint-disable-next-line no-console
   console.log(
-    '%c"The plans were on display in the bottom of a locked filing cabinet\n stuck in a disused lavatory with a sign on the door saying\n \'Beware of the Leopard.\'" — Douglas Adams\n\n💡 Hint: ↑↑↓↓←→←→BA',
+    '%c"The plans were on display in the bottom of a locked filing cabinet\n stuck in a disused lavatory with a sign on the door saying\n \'Beware of the Leopard.\'" — Douglas Adams\n\n💡 Hint: ↑↑↓↓←→←→BA\n🔑 Whatever you do, NEVER click the logo 7 times in a row.\n⌨️  And definitely don\'t press the backtick key.',
     'color: #6c7086; font-size: 11px; font-style: italic;'
   )
 }
