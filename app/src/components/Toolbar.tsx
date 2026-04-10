@@ -42,6 +42,7 @@ interface ToolbarProps {
   onOpenSettings: () => void
   onOpenTutorial?: () => void
   onExportPwa: () => void
+  onOpenSpriteEditor?: () => void
   onOpenCollab?: () => void
   onRunForEveryone?: () => void
   isCollabMode?: boolean
@@ -85,6 +86,7 @@ export default function Toolbar({
   onOpenSettings,
   onOpenTutorial,
   onExportPwa,
+  onOpenSpriteEditor,
   onOpenCollab,
   onRunForEveryone,
   isCollabMode = false,
@@ -332,6 +334,12 @@ export default function Toolbar({
                     </svg>
                     Code to Blocks
                   </button>
+                  {onOpenSpriteEditor && (
+                    <button onClick={() => { onOpenSpriteEditor(); setOpenMenu(null) }} className={menuItem}>
+                      <span className="text-base leading-none">🎨</span>
+                      Sprite Editor
+                    </button>
+                  )}
                 </div>
               )}
             </div>

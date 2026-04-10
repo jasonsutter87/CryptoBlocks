@@ -67,6 +67,7 @@ import { recordRun, recordChallengeComplete, recordGolfComplete, recordLabComple
 import { AchievementToast } from './components/AchievementToast'
 import StatsPanel from './components/StatsPanel'
 import HackerTerminal from './components/HackerTerminal'
+const SpriteEditor = lazy(() => import('./sprite-editor/SpriteEditor'))
 const CollabModal = lazy(() => import('./collab/CollabModal'))
 const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
 const ScratchImportModal = lazy(() => import('./components/ScratchImportModal'))
@@ -138,6 +139,7 @@ export default function App() {
   const [showCollabModal, setShowCollabModal] = useState(false)
   const [collabRoomCreated, setCollabRoomCreated] = useState<{ code: string; name: string } | null>(null)
   const [showScratchImport, setShowScratchImport] = useState(false)
+  const [showSpriteEditor, setShowSpriteEditor] = useState(false)
   const runBroadcastRef = useRef<ReturnType<typeof bindRunBroadcast> | null>(null)
 
   // Store sandbox workspace before entering challenge mode
@@ -1113,6 +1115,7 @@ export default function App() {
         onOpenCollab={() => setShowCollabModal(true)}
         isCollabMode={isCollabMode}
         onImportScratch={() => setShowScratchImport(true)}
+        onOpenSpriteEditor={() => setShowSpriteEditor(true)}
         onRunForEveryone={() => {
           runBroadcastRef.current?.requestRunForEveryone()
           handleRun()
@@ -1417,6 +1420,22 @@ export default function App() {
                   Blockly.serialization.workspaces.load(ws, workspaceRef.current)
                 } catch { /* partial import is fine */ }
               }
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* Sprite Editor */}
+      {showSpriteEditor && (
+        <Suspense fallback={null}>
+          <SpriteEditor
+            onClose={() => setShowSpriteEditor(false)}
+            onSave={(dataUrl, name, frames) => {
+              // Store sprite in localStorage for use with Games blocks
+              const sprites = JSON.parse(localStorage.getItem('cryptoblocks-sprites') || '{}')
+              sprites[name] = { dataUrl, frames, size: 16 }
+              localStorage.setItem('cryptoblocks-sprites', JSON.stringify(sprites))
+              setShowSpriteEditor(false)
             }}
           />
         </Suspense>
