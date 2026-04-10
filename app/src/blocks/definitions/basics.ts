@@ -224,4 +224,94 @@ export const basicsBlocks: BlockDefinition[] = [
     ],
     color: '#4C97AF',
   },
+  {
+    name: 'now',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get the current date and time as text',
+    category: 'Basics',
+    inputs: [],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function now() {\n  return new Date().toLocaleString();\n}`,
+      python: `from datetime import datetime\ndef now():\n    return datetime.now().strftime("%m/%d/%Y, %I:%M:%S %p")`,
+    },
+    tests: [
+      { input: {}, expected: { result: 'any' } },
+    ],
+    color: '#4C97AF',
+  },
+  {
+    name: 'today',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get today\'s date as text (e.g. 2026-04-10)',
+    category: 'Basics',
+    inputs: [],
+    outputs: [{ name: 'result', type: 'string' }],
+    implementations: {
+      javascript: `function today() {\n  return new Date().toISOString().split("T")[0];\n}`,
+      python: `from datetime import date\ndef today():\n    return date.today().isoformat()`,
+    },
+    tests: [
+      { input: {}, expected: { result: 'any' } },
+    ],
+    color: '#4C97AF',
+  },
+  {
+    name: 'date_part',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get a part of the current date (year, month, day, hour, minute, second)',
+    category: 'Basics',
+    inputs: [
+      { name: 'part', type: 'string', description: 'Which part: year, month, day, hour, minute, second', default: 'year', choices: ['year', 'month', 'day', 'hour', 'minute', 'second', 'weekday'] },
+    ],
+    outputs: [{ name: 'result', type: 'any' }],
+    implementations: {
+      javascript: `function datePart(part) {\n  var d = new Date();\n  var days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];\n  switch(part) {\n    case "year": return d.getFullYear();\n    case "month": return d.getMonth() + 1;\n    case "day": return d.getDate();\n    case "hour": return d.getHours();\n    case "minute": return d.getMinutes();\n    case "second": return d.getSeconds();\n    case "weekday": return days[d.getDay()];\n    default: return d.toISOString();\n  }\n}`,
+      python: `from datetime import datetime\ndef date_part(part):\n    d = datetime.now()\n    days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]\n    parts = {"year": d.year, "month": d.month, "day": d.day, "hour": d.hour, "minute": d.minute, "second": d.second, "weekday": days[d.weekday()]}\n    return parts.get(part, d.isoformat())`,
+    },
+    tests: [
+      { input: { part: 'year' }, expected: { result: 'any' } },
+    ],
+    color: '#4C97AF',
+  },
+  {
+    name: 'days_between',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Count the days between two dates (e.g. "2026-01-01" and "2026-12-31")',
+    category: 'Basics',
+    inputs: [
+      { name: 'date1', type: 'string', description: 'First date (YYYY-MM-DD)', default: '2026-01-01' },
+      { name: 'date2', type: 'string', description: 'Second date (YYYY-MM-DD)', default: '2026-12-31' },
+    ],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: `function daysBetween(date1, date2) {\n  var d1 = new Date(date1);\n  var d2 = new Date(date2);\n  var diff = Math.abs(d2 - d1);\n  return Math.floor(diff / (1000 * 60 * 60 * 24));\n}`,
+      python: `from datetime import datetime\ndef days_between(date1, date2):\n    d1 = datetime.strptime(date1, "%Y-%m-%d")\n    d2 = datetime.strptime(date2, "%Y-%m-%d")\n    return abs((d2 - d1).days)`,
+    },
+    tests: [
+      { input: { date1: '2026-01-01', date2: '2026-01-31' }, expected: { result: 30 } },
+    ],
+    color: '#4C97AF',
+  },
+  {
+    name: 'timestamp',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get the current time as a number (milliseconds since 1970)',
+    category: 'Basics',
+    inputs: [],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: `function timestamp() {\n  return Date.now();\n}`,
+      python: `import time\ndef timestamp():\n    return int(time.time() * 1000)`,
+    },
+    tests: [
+      { input: {}, expected: { result: 'number' } },
+    ],
+    color: '#4C97AF',
+  },
 ]
