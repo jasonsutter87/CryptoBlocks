@@ -21,8 +21,9 @@ interface UseCollabRoomOptions {
   enabled?: boolean
 }
 
-interface UseCollabRoomResult {
+export interface UseCollabRoomResult {
   ydoc: Y.Doc | null
+  awareness: import('y-protocols/awareness').Awareness | null
   status: ConnectionStatus
   peers: PresenceState[]
   disconnect: () => void
@@ -96,6 +97,7 @@ export function useCollabRoom({
 
   return {
     ydoc: ydocRef.current,
+    awareness: providerRef.current?.awareness ?? null,
     status,
     peers,
     disconnect,

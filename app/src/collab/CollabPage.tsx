@@ -2,12 +2,13 @@
  * CollabPage — wrapper that connects a collab room, then renders the main App.
  *
  * Reads room code from URL params. Connects to PartyKit.
- * Passes ydoc down to App via context so BlockEditor can bind to it.
+ * Passes ydoc + awareness down to App via context so BlockEditor can bind.
  */
 
-import { useEffect, useState } from 'react'
+import { useState, createContext, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import * as Y from 'yjs'
+import type { Awareness } from 'y-protocols/awareness'
 import { useCollabRoom } from './use-collab-room'
 import CollaboratorBar from './CollaboratorBar'
 import type { CollabUser } from './types'
@@ -31,12 +32,28 @@ function getTempUser(): CollabUser {
   return user
 }
 
+/** Context carrying both ydoc and awareness */
+interface CollabContextValue {
+  ydoc: Y.Doc | null
+  awareness: Awareness | null
+}
+
+export const CollabContext = createContext<CollabContextValue>({ ydoc: null, awareness: null })
+
+export function useCollabDoc(): Y.Doc | null {
+  return useContext(CollabContext).ydoc
+}
+
+export function useCollabAwareness(): Awareness | null {
+  return useContext(CollabContext).awareness
+}
+
 export default function CollabPage() {
   const { roomCode } = useParams<{ roomCode: string }>()
   const navigate = useNavigate()
   const [user] = useState(getTempUser)
 
-  const { ydoc, status, peers, disconnect } = useCollabRoom({
+  const { ydoc, awareness, status, peers, disconnect } = useCollabRoom({
     roomId: roomCode || '',
     user,
     enabled: !!roomCode,
@@ -78,20 +95,12 @@ export default function CollabPage() {
         />
       </div>
 
-      {/* Main app — ydoc will be passed via CollabContext */}
+      {/* Main app */}
       <div className="flex-1 min-h-0">
-        <CollabContext.Provider value={ydoc}>
+        <CollabContext.Provider value={{ ydoc, awareness }}>
           <App />
         </CollabContext.Provider>
       </div>
     </div>
   )
-}
-
-/** Context to pass ydoc down to BlockEditor without threading props through App */
-import { createContext, useContext } from 'react'
-
-export const CollabContext = createContext<Y.Doc | null>(null)
-export function useCollabDoc(): Y.Doc | null {
-  return useContext(CollabContext)
 }

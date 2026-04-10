@@ -68,6 +68,7 @@ import { AchievementToast } from './components/AchievementToast'
 import StatsPanel from './components/StatsPanel'
 const CollabModal = lazy(() => import('./collab/CollabModal'))
 const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
+import { useCollabDoc } from './collab/CollabPage'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -129,6 +130,8 @@ export default function App() {
   const [showTutorial, setShowTutorial] = useState(false)
 
   // Collab state
+  const collabDoc = useCollabDoc()
+  const isCollabMode = !!collabDoc
   const [showCollabModal, setShowCollabModal] = useState(false)
   const [collabRoomCreated, setCollabRoomCreated] = useState<{ code: string; name: string } | null>(null)
 
@@ -237,8 +240,8 @@ export default function App() {
       setCode(generated)
       setBlockCount(countBlocks(workspace))
 
-      // Debounced auto-save workspace (only in sandbox mode)
-      if (modeRef.current === 'sandbox') {
+      // Debounced auto-save workspace (only in sandbox mode, not in collab)
+      if (modeRef.current === 'sandbox' && !isCollabMode) {
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
         saveTimerRef.current = setTimeout(() => {
           saveWorkspaceToLocal(workspace)

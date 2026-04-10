@@ -4,7 +4,7 @@ import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode } from '../b
 import { registry } from '../blocks/registry'
 import { recordBlockCreated } from '../stats/tracker'
 import type { BlockDefinition } from '../types/block'
-import { useCollabDoc } from '../collab/CollabPage'
+import { useCollabDoc, useCollabAwareness } from '../collab/CollabPage'
 import { bindWorkspaceToYDoc } from '../collab/yjs-blockly-binding'
 import { bindPresence } from '../collab/presence'
 
@@ -32,6 +32,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
 
   // Collab — bind Yjs if we're in a collab room
   const collabDoc = useCollabDoc()
+  const collabAwareness = useCollabAwareness()
 
   // SCSS editor modal state
   const [scssModal, setScssModal] = useState<{ blockId: string; code: string } | null>(null)
@@ -249,12 +250,8 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     let presenceBinding: ReturnType<typeof bindPresence> | null = null
     if (collabDoc) {
       collabBinding = bindWorkspaceToYDoc(workspace, collabDoc)
-      // Presence requires the awareness from the WebSocket provider,
-      // which is set up in use-collab-room. We access it via the doc's
-      // awareness if available (y-partykit attaches it).
-      const provider = (collabDoc as unknown as { wsProvider?: { awareness: import('y-protocols/awareness').Awareness } }).wsProvider
-      if (provider?.awareness) {
-        presenceBinding = bindPresence(workspace, provider.awareness)
+      if (collabAwareness) {
+        presenceBinding = bindPresence(workspace, collabAwareness)
       }
     }
 
