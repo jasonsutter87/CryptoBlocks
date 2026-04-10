@@ -1,8 +1,13 @@
 import { lazy, Suspense, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { loader } from '@monaco-editor/react'
+import * as monaco from 'monaco-editor'
 import App from './App'
 import './index.css'
+
+// Use locally bundled Monaco instead of CDN
+loader.config({ monaco })
 
 const SharedLayout = lazy(() => import('./components/SharedLayout'))
 const ShareplacePage = lazy(() => import('./shareplace/ShareplacePage'))
