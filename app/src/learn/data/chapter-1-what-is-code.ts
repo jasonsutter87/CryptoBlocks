@@ -144,13 +144,13 @@ export const chapter1: Chapter = {
         },
         {
           id: 'ex-1-3-2',
-          prompt: 'Print the name "Jason" to the output.',
+          prompt: 'Print "Im now a programmer!" to the output.',
           starterCode: '// Write your code below\n',
-          expectedOutput: ['Jason'],
+          expectedOutput: ['Im now a programmer!'],
           hints: [
             'Use console.log() just like in the example.',
-            'Put the name inside quotes.',
-            'Try: console.log("Jason")',
+            'Put the text inside quotes.',
+            'Try: console.log("Im now a programmer!")',
           ],
         },
       ],
