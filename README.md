@@ -10,528 +10,166 @@ Scratch proved that kids can code when you remove the syntax barrier. CryptoBloc
 
 1. **Start with blocks.** Drag, snap, run. See what happens.
 2. **Peek inside.** Every block is real code. Flip it over, read the JavaScript or Python underneath.
-3. **Write your own.** When you're ready, write a function. If it works, it becomes a block. Your block. With your name on it.
-4. **Share it.** Publish to the marketplace. Other kids snap your block into their projects. You see how many people use it.
+3. **Write your own.** When you're ready, write a function. If it works, it becomes a block — your block, with your name on it.
+4. **Share it.** Publish to the Shareplace marketplace. Other kids snap your block into their projects.
 
 The gap between "visual coding toy" and "real programming" is where most kids quit. CryptoBlocks is the bridge.
 
 ---
 
-## Origin Story
+## What's Built
 
-This started as an attack framework for a security competition. We built reusable "lego" pieces in Python — small functions that each do one thing well. Snap them together in different orders, get different results. One night, staring at the terminal, it hit us:
+### Core Platform
+- **280+ blocks** across **23 categories** (Basics, Math, Text, Logic, Lists, Data, Database, Web, Art, Crypto, AI, Sound, Games, Hardware, Pen, Testing, Vision, Functions, Events, HTML, Libraries, Values, Secrets)
+- **Dual-language code generation** — every block outputs real JavaScript AND Python
+- **Sandboxed execution** — iframe sandbox for JS, Pyodide for Python, both in-browser
+- **HTML/CSS blocks** with live preview in the sandbox
+- **Functions** — create, call, return values, local variables
+- **Events** — key press handlers, click handlers
+- **Monaco Editor** code view (same editor as VS Code)
+- **Tauri desktop app** — offline, cross-platform
 
-> "This is just Scratch for hackers. Why doesn't this exist for everyone?"
+### Learning
+- **141 challenges** across **27 themed packs** (Minecraft, Space, Crypto, Secret Agent, and more)
+- **Block Islands** — jigsaw-style puzzles where scattered blocks must be reconnected
+- **Code Golf** — 18 efficiency puzzles across 3 packs
+- **Blocksets** — 30 step-by-step guided tutorials across 6 packs
+- **Code Labs** — 11 JavaScript packs with CodeMirror editor
+- **Learn** — 10-chapter JavaScript fundamentals course with 41 interactive exercises
 
-The hacking part stays behind. What comes forward is the idea: **small, composable, shareable blocks of real code that kids can see, use, modify, and eventually write themselves.**
+### Creative Tools
+- **Create Block** — write a function, define inputs/outputs, run tests, it becomes a block
+- **Sprite Editor** — visual pixel art canvas (16x16, 24x24, 32x32) with animation frames, tools (draw, erase, fill, color pick), 32-color palette, live preview
+- **Code to Blocks** — paste JavaScript, get blocks on the workspace
+- **Scratch Import** — import .sb3 files, convert Scratch projects to CryptoBlocks with conversion stats
 
----
+### Collaboration
+- **Coding with Friends** — real-time collaborative workspace editing via Yjs CRDTs + PartyKit WebSockets
+- **Room codes** — 6-letter codes to join, no accounts needed
+- **Presence** — see colored outlines on blocks your friends are touching
+- **Run for Everyone** — broadcast execution to all peers
+- **Up to 6 editors** per room
 
-## How It Works
+### Social
+- **Shareplace** — marketplace to browse and discover shared projects
+- **Dashboard** — personal stats and project management
+- **Profile** — user settings and editor config
 
+### Export
+- **Save/Load .blocks** project files
+- **Export as HTML** — standalone HTML file
+- **Export as App (PWA)** — downloadable ZIP with manifest, service worker, icons — installable on phones/desktops
+- **Copy Embed Snippet** — embeddable script tag
+- **Publish to GitHub** — deploy to GitHub Pages
 
+### Easter Eggs
+- **Hacker Mode** — click the logo 7 times, or enter the Konami code
+- **Hacker Terminal** — press backtick (`) for a hidden CLI with commands: `help`, `hack`, `matrix`, `neofetch`, `cowsay`, `fortune`, `rickroll`, theme switching
+- **Snake** — terminal command `snake` launches a game that eats actual page elements
+- **Space Invaders** — terminal command `invaders` launches aliens that abduct your code
+- **Secret Blocks** — 13 hidden blocks in the ??? category (hacker mode only)
 
-### working CTF CODE
-/Users/jasonsutter/Documents/CTF/1Password/ATTACKS/lego
-
-### Phase 1: Snap
-
-Kids start in the visual editor. Blocks snap together left-to-right or top-to-bottom. Each block is a function — it takes inputs on the left and produces outputs on the right. Wire them together.
-
-```
-┌──────────┐    ┌──────────────┐    ┌───────────┐
-│  Ask Name │───▶│  Say "Hello"  │───▶│  Wait 2s  │
-│           │    │  + name       │    │           │
-└──────────┘    └──────────────┘    └───────────┘
-```
-
-Hit play. See it run. Change a block. Run again. Instant feedback loop.
-
-### Phase 2: Peek
-
-Every block has a "view code" toggle. Flip it:
-
-```
-┌──────────────────────────────┐
-│  Say "Hello" + name          │
-│  ─────────────────────────── │
-│  function greet(name) {      │
-│    return "Hello, " + name;  │
-│  }                           │
-└──────────────────────────────┘
-```
-
-The code IS the block. There's no abstraction hiding "the real stuff." The visual editor is just a different view of the same program. Kids learn to read code by seeing what their blocks actually do.
-
-Toggle between JavaScript and Python with one click:
-
-```javascript
-// JavaScript
-function greet(name) {
-  return "Hello, " + name;
-}
-```
-
-```python
-# Python
-def greet(name):
-    return "Hello, " + name
-```
-
-Same block. Two languages. Kids see that programming concepts are universal — syntax is just spelling.
-
-### Phase 3: Write
-
-The "Create Block" editor is where it gets real:
-
-1. **Write a function** in JS or Python (or both)
-2. **Define inputs and outputs** (what goes in, what comes out)
-3. **Write a test** — at least one example of input → expected output
-4. **Hit "Build"** — if the tests pass, it becomes a block
-5. **Name it, color it, describe it** — it's yours
-
-If the code doesn't work, it doesn't become a block. Period. This teaches:
-- **Testing is not optional.** Your code has to prove it works.
-- **Inputs and outputs matter.** If you can't define them, you don't understand your own function.
-- **Working code is the standard.** Not "almost working." Not "works on my machine." Green tests or no block.
-
-### Phase 4: Share
-
-Publish your block to the marketplace. Other users can:
-- **Use it** — snap it into their projects
-- **Star it** — show appreciation
-- **Fork it** — copy it, modify it, publish their version
-- **View the code** — learn from your implementation
-
-You can see:
-- How many people use your block
-- What projects include it
-- Comments and questions from other users
-
----
-
-## The Marketplace
-
-### Browsing
-
-Blocks are organized by category:
-
-| Category | Blocks | Examples |
-|----------|--------|----------|
-| **Basics** | 6 | Print, ask, wait, set/get global variables |
-| **Math** | 8 | Add, multiply, random, power, fibonacci |
-| **Text** | 7 | Uppercase, join, reverse, replace, contains, length |
-| **Logic** | 7 | If/then, equals, greater/less than, AND, OR, NOT |
-| **Lists** | 7 | Create, add, get, remove, sort, filter |
-| **Data** | 7 | Objects, set/get property, has/delete property |
-| **Web** | 8 | HTTP GET/POST, WebSocket, JSON parsing |
-| **Crypto** | 28 | Hash, AES encrypt/decrypt, XOR cipher, base64, hex, HMAC, bitwise ops |
-| **Art** | 5 | Canvas, draw rect/circle/line, clear |
-| **AI** | 12 | Classify, generate, sentiment, summarize |
-| **Sound** | 12 | Play tone, speech, recording, audio effects |
-| **Games** | 11 | Sprites, collision, score, keyboard input |
-| **Pen** | 10 | Move, turn, pen up/down, draw shapes |
-| **Hardware** | 10 | Device info, battery, screen, geolocation |
-| **Database** | 13 | Tables, insert, query, update, delete |
-| **???** | 13 | Secret blocks — unlock in hacker mode |
-
-Categories grow as the community builds. If enough blocks cluster around a new topic, it becomes a category.
-
-### Quality Tiers
-
-Not all blocks are equal:
-
-- **Official** — Built by the CryptoBlocks team. Tested, documented, guaranteed to work.
-- **Verified** — Community-built, reviewed by moderators. Code is clean, tests pass, description is accurate.
-- **Community** — Published by users. Tests pass (required), but not reviewed. Use at your own risk.
-- **Experimental** — Marked by the creator as "work in progress." May break. Learning in public.
-
-### Trading and Remix Culture
-
-- Blocks are free to use (this is an educational platform, not a paywall)
-- **Credits** are earned by publishing popular blocks, helping others, writing tutorials
-- Credits unlock cosmetic features: block colors, profile badges, custom themes
-- **Remix chains** show lineage: "This block was forked from @maya's `sort-by-color`, which was forked from @dev_kid's `basic-sort`"
-- Attribution is automatic and permanent. You always get credit.
-
----
-
-## User Profiles
-
-Every user gets:
-
-### Profile Page
-- **Username and avatar**
-- **Bio** — "I'm 14, I like making games and breaking things (safely)"
-- **Stats** — blocks published, projects built, blocks used by others
-- **Badges** — earned through milestones (first block, first 100 uses, first tutorial, etc.)
-- **Pinned projects** — showcase your best work
-
-### Workspace
-- **My Projects** — folders of block programs you've built
-- **My Blocks** — blocks you've created and published
-- **Starred** — blocks and projects you've saved from others
-- **Drafts** — work in progress (private until you publish)
-
-### Folders
-Organize however you want:
-```
-My Projects/
-├── Games/
-│   ├── Space Invaders
-│   └── Tic Tac Toe
-├── School/
-│   ├── Math Quiz
-│   └── Science Fair Data
-├── Experiments/
-│   └── Trying Sorting Algorithms
-└── Tutorials I'm Following/
-    └── Build a Chatbot
-```
-
-Folders can be **public** (anyone can see) or **private** (just you). Public folders become shareable portfolios — kids can show parents, teachers, or future employers what they've built.
-
----
-
-## The Learning Hub
-
-### Blog / Teaching Section
-
-Not a boring docs site. A living, growing collection of "how to think like a programmer" content:
-
-#### How to Code
-- **"Your First Block"** — 5-minute walkthrough from zero to running program
-- **"Variables Are Boxes"** — mental models that stick
-- **"Loops: Doing Things Again (Without Copying)"** — why repetition is the enemy
-- **"If/Else: Teaching Your Code to Make Decisions"** — branching logic for 10-year-olds
-- **"Functions: Giving Your Code a Name"** — the gateway to writing blocks
-
-#### How to Think
-- **"Break Big Problems Into Small Ones"** — decomposition is the #1 skill
-- **"What Does 'Done' Look Like?"** — defining success before you start
-- **"When Your Code Doesn't Work"** — debugging as detective work, not failure
-- **"Reading Other People's Code"** — the skill nobody teaches but everyone needs
-- **"Asking Good Questions"** — how to get help without "it doesn't work plz help"
-
-#### How to Keep DRY
-- **"Don't Repeat Yourself (and Why)"** — the first engineering principle kids should learn
-- **"When You Copy-Paste, You Should Feel Bad"** — recognizing the smell
-- **"Turn Repeated Code Into a Block"** — the practical escape from copy-paste
-- **"One Job Per Block"** — single responsibility for kids
-- **"Naming Things So Future-You Understands"** — the hardest problem in CS, accessible
-
-#### How to Share
-- **"Writing a Block Description People Actually Read"**
-- **"Good Tests = Trust"** — why testing your block matters for others
-- **"Forking Without Being Rude"** — remix culture and attribution
-- **"Code Review for Kids"** — giving feedback that helps, not hurts
-
-### Community Tutorials
-Users can publish their own tutorials. Same quality tiers as blocks:
-- Walk someone through building a project step by step
-- Embed live block editors in the tutorial (readers can modify and run inline)
-- Tutorials that use your blocks naturally drive adoption
+### Version Control
+- **Save Checkpoint** — snapshot workspace to IndexedDB
+- **History Panel** — timeline of checkpoints with rollback
+- **Auto-save** — configurable interval (1/2/5/10 min)
 
 ---
 
 ## Tech Stack
 
-### App (Built)
-- **React 19** + **TypeScript** — component-based UI
-- **Vite 7** — dev server + bundler
-- **Tailwind CSS 4** — styling
-- **Google Blockly** (Zelos renderer) — visual block editor engine (same core as Scratch)
-- **Monaco Editor** — code view (same editor as VS Code)
+| Layer | Tech |
+|-------|------|
+| Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 4 |
+| Block Editor | Google Blockly (Zelos renderer) |
+| Code View | Monaco Editor |
+| JS Execution | Sandboxed iframe (blob URL + allow-scripts) |
+| Python Execution | Pyodide (CPython → WebAssembly) |
+| Collaboration | Yjs (CRDT) + PartyKit (edge WebSockets) |
+| Sprite Editor | Canvas API, custom pixel grid |
+| Desktop | Tauri v2 (Rust) |
+| Testing | Vitest (2,766+ tests) + Playwright E2E |
+| Site | Hugo + Tailwind + SCSS, Netlify |
 
-### Execution (Built)
-- **JavaScript** — sandboxed iframe (blob URL + `allow-scripts allow-modals allow-same-origin`)
-- **Python** — Pyodide (CPython compiled to WebAssembly, runs entirely in browser)
-- **Dual execution** — same block definition, both languages, user picks which to view/run
-- **Async support** — blocks starting with `async` automatically get `await` in generated code
-- **Live streaming** — output streams to UI in real-time via `postMessage`
-
-### Testing (Built)
-- **Vitest** — 2,766 unit + smoke tests (jsdom environment)
-- **Playwright** — E2E browser tests (Chromium)
-- **Smoke suite** — validates every block in the registry has valid name, category, color, and implementations
-
-### Auth (Planned)
-- **Clerk** — authentication and user management
-
-### Backend (Planned)
-- **PostgreSQL** — users, blocks, projects, marketplace
-- **S3/R2** — block assets, project snapshots
-
-### Desktop App (Future)
-- **Tauri** (Rust + web frontend) — lightweight, fast, cross-platform
-- Same UI as web, but local file system access
-- Offline mode — build and run without internet
-- Sync to cloud when back online
-
-### Block Definition Format
-```json
-{
-  "name": "reverse-text",
-  "author": "code_kid_42",
-  "version": "1.0.0",
-  "description": "Reverses any text string",
-  "category": "Text",
-  "inputs": [
-    { "name": "text", "type": "string", "description": "The text to reverse" }
-  ],
-  "outputs": [
-    { "name": "reversed", "type": "string" }
-  ],
-  "implementations": {
-    "javascript": "function reverseText(text) {\n  return text.split('').reverse().join('');\n}",
-    "python": "def reverse_text(text):\n    return text[::-1]"
-  },
-  "tests": [
-    { "input": { "text": "hello" }, "expected": { "reversed": "olleh" } },
-    { "input": { "text": "12345" }, "expected": { "reversed": "54321" } },
-    { "input": { "text": "" }, "expected": { "reversed": "" } }
-  ],
-  "color": "#4A90D9",
-  "icon": "arrow-left-right"
-}
-```
-
-This is the universal format. Visual editor reads it. Code editor reads it. Marketplace indexes it. Test runner validates it. One definition, everywhere.
+### Auth & Backend (Setting Up)
+- **Clerk** — authentication
+- **Turso** — SQLite edge database
+- **PartyKit** — real-time collab rooms
 
 ---
 
-## What Makes This Different From Scratch
+## What Makes This Different
 
-| | Scratch | CryptoBlocks |
-|---|---|---|
-| **Target age** | 8-12 | 10-18 (and curious adults) |
-| **Code visibility** | Hidden | Every block shows its code |
-| **Languages** | Scratch-only | JavaScript + Python (real languages) |
-| **User-created blocks** | Limited (custom blocks, no sharing) | First-class: write, test, publish, trade |
-| **Marketplace** | Project sharing only | Block-level sharing + remix |
-| **Path to "real" coding** | Dead end (must switch tools) | Smooth gradient (blocks → code → both) |
-| **Testing** | None | Required for block publishing |
-| **Desktop app** | Yes (Electron) | Yes (Tauri, lighter) |
-| **Offline** | Yes | Yes |
-
-The key difference: **Scratch is a destination. CryptoBlocks is a bridge.** Kids don't "graduate" from CryptoBlocks — they gradually shift from visual to code as they get comfortable. The tool grows with them.
-
----
-
-## Monetization
-
-### The Line: High School vs College
-
-Everything up to and including high school level is **free. Forever.** The visual editor, all blocks, themed challenges, Code Golf, Block Islands, Blocksets — free.
-
-The paywall kicks in at **college-level CS content**:
-
-### Free Tier (K-12)
-- All 164+ blocks across every category
-- Visual snap editor + code peek + dual-language output
-- Create-your-own-block editor
-- All themed challenge packs (Minecraft, Space, Crypto, etc.)
-- Block Islands, Blocksets, Code Golf
-- Save/Load projects, export HTML, publish to GitHub Pages
-
-### Premium Tier (College-Level CS)
-- **Big O & Complexity** — analyze algorithm efficiency, time/space complexity challenges
-- **Data Structures** — trees, graphs, hash maps, heaps, linked lists — build and visualize them
-- **Algorithm Challenges** — sorting, searching, dynamic programming, recursion deep dives
-- **Systems Concepts** — concurrency, memory models, networking fundamentals
-- **CS Theory** — formal logic, automata, computational thinking at the academic level
-- **Structured Courses** — guided curriculum with progression, certificates
-
-### Additional Revenue
-- **School/classroom licenses** — teacher dashboard, assignment system, progress tracking
-- **Premium cosmetics** — custom block themes, profile frames, workspace skins
-- **Certification program** — "CryptoBlocks Certified" badges for completing skill paths
-- **API access** — let schools/companies embed the block editor in their own platforms
-- **Sponsored block categories** — "Robotics blocks powered by Arduino" (not ads, integrations)
-
-### What we will NOT do
-- Paywall the visual editor or any blocks
-- Gate K-12 level content behind a subscription
-- Show ads to kids
-- Sell user data
-- Charge for core creative/building features
-
----
-
-## Existing Assets (From the Lego Framework)
-
-The CTF project already produced production-tested primitives that demonstrate the block architecture:
-
-### Session Blocks (Python, proven)
-- `login()` — authenticate and establish session
-- `load_session()` — restore from saved state
-- `save_session()` — persist for later
-
-### Crypto Blocks (Python, proven)
-- `encrypt_field()` / `decrypt_field()` — AES-256-GCM
-- `generate_mac()` — HMAC-SHA256 request signing
-- `decode_base64url()` / `encode_base64url()` — encoding
-- `hash_password()` — PBKDF2 key derivation
-
-### API Blocks (Python, proven)
-- `get()` / `post()` / `patch()` — HTTP with auto-auth
-- `parse_response()` — JSON handling + error extraction
-
-### Data Blocks (Python, proven)
-- `safe_serialize()` — convert anything to JSON-safe format
-- `compare_runs()` — structural diff between two sequences
-
-These won't ship as-is (they're CTF-specific), but they prove the architecture: small functions with clear inputs/outputs that compose into larger programs. That's exactly the block model.
+| | Scratch | Snap! | CryptoBlocks |
+|---|---|---|---|
+| **Code output** | None (dead end) | None | Real JS + Python |
+| **Block count** | ~120 | ~80 | **280+** |
+| **Categories** | 8 | 8 | **23** |
+| **Custom blocks** | Limited | Yes | Write code → becomes a block |
+| **Collaboration** | No | No | **Real-time (Yjs)** |
+| **Challenges** | No | No | **141 across 27 packs** |
+| **Sprite editor** | Built-in | No | **Built-in** |
+| **PWA export** | No | No | **Yes** |
+| **Scratch import** | N/A | No | **Yes (.sb3)** |
+| **Desktop app** | Electron | Browser only | **Tauri** |
+| **Target age** | 8-12 | University | **10-18** |
 
 ---
 
 ## Roadmap
 
-### Phase 0: Prototype — DONE
-- [x] Blockly integration with custom block definitions (Zelos renderer)
-- [x] Dual JS/Python execution in browser (sandboxed iframe + Pyodide)
-- [x] 164 blocks across 16 categories (Basics, Math, Text, Logic, Lists, Data, Web, Crypto, Art, AI, Sound, Games, Hardware, Database, Turtle, Secrets)
-- [x] "Peek Code" toggle — Monaco Editor showing generated JS or Python
-- [x] Live output streaming with async/await support
-- [x] Single-user, no accounts, local only
+### Done
+- [x] 280+ blocks across 23 categories with dual JS/Python generation
+- [x] 141 challenges, 30 blocksets, 18 golf puzzles, 11 code labs
+- [x] 10-chapter Learn JavaScript course with 41 exercises
+- [x] Create Block editor (write code → becomes a block)
+- [x] Sprite Editor (pixel art canvas with animation frames)
+- [x] Coding with Friends (real-time collab via Yjs + PartyKit)
+- [x] Scratch .sb3 import with conversion stats
+- [x] PWA export (installable web app)
+- [x] Shareplace marketplace, Dashboard, Profile pages
+- [x] Hacker Terminal with Snake & Space Invaders
+- [x] Version control (checkpoints, history, auto-save)
+- [x] Tauri desktop app
+- [x] Hugo marketing site with blog
 
-### Phase 1: Create — DONE
-- [x] "Create Block" editor (define inputs, outputs, implementations)
-- [x] Block definition format finalized (JSON with dual-language implementations)
-- [x] Save/Load .blocks project files
-- [x] Block shape system (value vs statement blocks)
-- [x] Web/API blocks (HTTP GET/POST, WebSocket, JSON parsing)
-- [x] Testing infrastructure (2,766 unit tests, smoke tests, Playwright E2E)
+### Next Up
+- [ ] **Clerk + Turso** — auth and database wiring
+- [ ] **Teacher Dashboard** — assignments, progress tracking, grading (unlocks school sales)
+- [ ] **Bi-directional editing** — edit code AND blocks, changes sync both ways (the moat)
+- [ ] **Shareplace backend** — real uploads, browsing, remixing with Turso
+- [ ] **Ranks & Badges** — CoD-style prestige system for challenge completion
 
-### Phase 1.5: Challenge Hub — DONE
-> *"Your cousin will only care about this if it's Minecraft or objects based"* — Mom, at dinner
-
-Gamified coding challenges. Solve them with the fewest blocks possible.
-
-- [x] Challenge data model (description, par block count, validator, theme)
-- [x] Challenge browser/selector UI
-- [x] Block counter on workspace
-- [x] Output validator (compare actual vs expected)
-- [x] Star rating (par, birdie, eagle based on block count)
-- [x] "Show Solution" after 3 attempts
-- [x] **24 Theme packs** (125 challenges):
-  - [x] Getting Started — Hello World, countdown, variables
-  - [x] Minecraft — crafting, mining, enchanting
-  - [x] Pet Simulator — name, feed, level up, evolve
-  - [x] Space Explorer — asteroids, shields, warp speed
-  - [x] Robot Factory — assembly line, quality control
-  - [x] Secret Agent — ciphers, encoding, decoding
-  - [x] Treasure Hunt — lists, inventory, loot management
-  - [x] Game Builder — objects, health bars, character sheets
-  - [x] Hacker Terminal — logic gates, boolean expressions
-  - [x] Music Festival — loops, math patterns, beat drops
-  - [x] Science Lab — formulas, growth, cell division
-  - [x] Startup Sim — capstone: combine all skills
-  - [x] Euler Blocks — 10 Project Euler-style computational puzzles
-  - [x] Web Detective — HTTP, JSON, API challenges
-  - [x] Arcade Mode — game logic, scoring, combos
-  - [x] Beat Lab — rhythm, timing, frequency puzzles
-  - [x] Pixel Art — drawing, patterns, canvas
-  - [x] Crypto Puzzles — hashing, encoding, ciphers
-  - [x] Brain Trainer — memory, sequence, logic drills
-  - [x] Device Scan — hardware info, sensors, system data
-  - [x] Data Wizard — objects, properties, JSON manipulation
-  - [x] **Shipwrecked** — island puzzle: reconnect scattered blocks (beginner)
-  - [x] **Block Puzzles** — island puzzle: logic and variables (intermediate)
-  - [x] **Code Rescue** — island puzzle: crypto + text blocks (advanced)
-- [x] **Block Islands** — preset puzzle challenges where blocks float on the workspace and users must connect them (jigsaw-style)
-  - [x] Starter blocks load scattered at different positions
-  - [x] Starter blocks are undeletable (user must use them)
-  - [x] Retry reloads the original scattered layout
-  - [x] "Island" badge shown on challenge panel
-- [x] Leaderboard (fewest blocks wins)
-
-### Phase 1.6: Blocksets — DONE
-
-Step-by-step guided tutorials — "LEGO instruction sets" that walk you through building programs block by block.
-
-- [x] Blockset data model (steps with instructions + hints, allowed categories, expected output)
-- [x] Blockset browser with pack cards and progress bars
-- [x] Step-by-step panel with navigation, hints, and solution checking
-- [x] Completion overlay with next-blockset flow
-- [x] **6 Packs (30 blocksets)**:
-  - [x] Basics 101 — First Print, Number Crunch, Variables 101, First Loop, Making Decisions
-  - [x] Loops & Logic — Count to Five, Even or Odd, Fizz Buzz Mini, Find the Max, Nested Loops
-  - [x] Text Tricks — Join Names, Shout It Out, How Long?, Text Search, Mad Libs
-  - [x] List Builder — Shopping List, List Length, Sum a List, Get By Index, Remove Item
-  - [x] Data Structures — First Object, Player Card, Update Score, Has Property, Delete & Print
-  - [x] Creative Coding — Draw a Square, Traffic Light, Hash Your Name, Secret Message, Pixel Art
-- [x] Progress saved to localStorage (per-blockset completion tracking)
-
-### Phase 1.7: Code Golf — DONE
-
-Competitive efficiency puzzles — solve problems with the FEWEST blocks possible. No hints, no solutions.
-
-- [x] Golf problem data model (expected output, par score, efficiency tracking)
-- [x] Golf browser with efficiency badges (green/yellow/red)
-- [x] Problem panel with live block count vs par
-- [x] Completion with efficiency rating (Under Par / On Par / Over Par)
-- [x] Personal best tracking (keeps minimum block count across attempts)
-- [x] **3 Packs (18 problems)**:
-  - [x] Warmup — One Hundred, Triple Echo, Quick Math, ABC, Sum Two, Repeat Five
-  - [x] Brain Teasers — Countdown, Powers of Two, Reverse It, Factorial, FizzBuzz, Biggest of Three
-  - [x] Mind Benders — Fibonacci Ten, Collatz, Triangle, Diamond, Digital Root, Caesar Cipher
-- [x] Stats dashboard (problems solved, average efficiency, under-par count)
-
-### Phase 1.8: Polish & Accessibility — DONE
-
-- [x] **Toolbar consolidation** — 12+ buttons → 4 dropdown menus (File, Build, Share, Learn)
-- [x] **Mobile-responsive layout** — touch-friendly toolbar with overflow menu
-- [x] **Delete custom blocks** — right-click context menu to remove user-created blocks
-- [x] **Code-to-Blocks converter** — paste JavaScript, get blocks on the workspace
-- [x] **Monaco Editor fallback** — graceful degradation for Brave/restricted browsers
-- [x] **ADA/Accessibility fixes**:
-  - [x] Toolbox category label contrast (black text default, white on active)
-  - [x] Dropdown menu dark theme with readable text
-  - [x] Color picker block — luminance-based dynamic text contrast
-  - [x] Input fields and comment text visibility
-  - [x] Flyout background for block visibility
-
-### Phase 2: Share
-- [ ] User accounts and authentication (Clerk)
-- [ ] Personal workspace with folders
-- [ ] Marketplace launch (browse, use, star)
-- [ ] User profiles and public portfolios
-- [ ] Fork and remix with attribution chain
-- [ ] Quality tiers (Official, Verified, Community)
-- [ ] Search and category filtering
-
-### Phase 3: Learn
-- [ ] Learning Hub with blog/tutorial system
-- [ ] Community tutorials with embedded editors
-- [ ] Skill paths ("Beginner → Variables → Loops → Functions → Your First Block")
-- [ ] Achievement badges
-
-### Phase 4: Scale
-- [ ] Desktop app (Tauri — scaffolded, not yet shipped)
-- [ ] Classroom/teacher features
-- [ ] API for embedding
-- [x] Mobile-friendly web editor
-- [ ] Localization (blocks and tutorials in multiple languages)
+### Future
+- [ ] Scratch project import improvements (more opcode coverage)
+- [ ] Classroom licenses and school onboarding
+- [ ] Voice chat in collab rooms
+- [ ] Room history / replay
+- [ ] Mobile-native app
+- [ ] Localization (multi-language blocks + tutorials)
+- [ ] API for embedding the block editor in external platforms
 
 ---
 
-## The Name
+## Monetization
 
-"CryptoBlocks" is a working title. It nods to the project's origin in cryptography, but the platform is general-purpose. Open to better names. Requirements:
-- Short
-- Memorable
-- Not already taken
-- Doesn't sound like cryptocurrency/blockchain (different thing entirely)
-- Works as a verb: "I cryptoblocked it" / "just block it together"
+**Free forever:** All blocks, visual editor, challenges, blocksets, code golf, sprite editor, collab, examples.
+
+**Premium:** Code Labs, guided curriculum, advanced CS courses, teacher dashboard, classroom licenses.
+
+**The line:** The sandbox + challenges = free hook. Guided curriculum + builder tools + institutional features = premium.
+
+**What we will NOT do:** Paywall blocks, gate K-12 content, show ads to kids, sell user data.
 
 ---
 
-## One More Thing
+## Origin Story
 
-The best programmers we know didn't learn from textbooks. They learned by building things they cared about, breaking things that confused them, and showing things to people who got excited.
+CryptoBlocks started as an attack framework for a security competition. Reusable "lego" pieces in Python — small functions that each do one thing well. Snap them together in different orders, get different results. One night, staring at the terminal:
 
-CryptoBlocks doesn't teach programming. It creates the conditions where programming teaches itself.
+> "This is just Scratch for hackers. Why doesn't this exist for everyone?"
+
+The hacking part stays behind. What comes forward is the idea: **small, composable, shareable blocks of real code that kids can see, use, modify, and eventually write themselves.**
 
 ---
 
