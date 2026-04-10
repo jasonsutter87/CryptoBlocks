@@ -42,6 +42,8 @@ interface ToolbarProps {
   onOpenSettings: () => void
   onOpenTutorial?: () => void
   onOpenCollab?: () => void
+  onRunForEveryone?: () => void
+  isCollabMode?: boolean
 }
 
 const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
@@ -81,6 +83,8 @@ export default function Toolbar({
   onOpenSettings,
   onOpenTutorial,
   onOpenCollab,
+  onRunForEveryone,
+  isCollabMode = false,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
@@ -560,6 +564,22 @@ export default function Toolbar({
                   <polygon points="5,3 19,12 5,21" />
                 </svg>
                 Run
+              </button>
+            )}
+
+            {/* Run for Everyone — collab only */}
+            {isCollabMode && !isRunning && onRunForEveryone && (
+              <button
+                onClick={onRunForEveryone}
+                className={`${btn} bg-[#89b4fa] text-[#1e1e2e] hover:bg-[#89b4fa]/80 font-semibold px-2 md:px-3`}
+                title="Run on everyone's screen"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <svg className="w-3 h-3 -ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <polygon points="5,3 19,12 5,21" />
+                </svg>
               </button>
             )}
           </>

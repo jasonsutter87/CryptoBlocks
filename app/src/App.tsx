@@ -69,6 +69,7 @@ import StatsPanel from './components/StatsPanel'
 const CollabModal = lazy(() => import('./collab/CollabModal'))
 const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
 import { useCollabDoc } from './collab/CollabPage'
+import { bindRunBroadcast } from './collab/run-broadcast'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -134,6 +135,7 @@ export default function App() {
   const isCollabMode = !!collabDoc
   const [showCollabModal, setShowCollabModal] = useState(false)
   const [collabRoomCreated, setCollabRoomCreated] = useState<{ code: string; name: string } | null>(null)
+  const runBroadcastRef = useRef<ReturnType<typeof bindRunBroadcast> | null>(null)
 
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
@@ -229,6 +231,20 @@ export default function App() {
     }
     return Array.from(cats)
   }, [])
+
+  // Collab: bind "Run for Everyone" broadcast
+  const handleRunRef = useRef<() => void>(() => {})
+  useEffect(() => {
+    if (!collabDoc) return
+    const binding = bindRunBroadcast(collabDoc, () => {
+      handleRunRef.current()
+    })
+    runBroadcastRef.current = binding
+    return () => {
+      binding.destroy()
+      runBroadcastRef.current = null
+    }
+  }, [collabDoc])
 
   const handleWorkspaceChange = useCallback(
     (workspace: Blockly.WorkspaceSvg) => {
@@ -327,6 +343,9 @@ export default function App() {
     })
     processAchievements(newAchievements)
   }, [code, language, slowMo, processAchievements, getUsedCategories])
+
+  // Keep run ref up to date for collab broadcast
+  handleRunRef.current = handleRun
 
   // Split pane drag handler
   const handleSplitMouseDown = useCallback((e: React.MouseEvent) => {
@@ -1085,6 +1104,11 @@ export default function App() {
         onOpenSettings={() => setShowSettings(true)}
         onOpenTutorial={() => setShowTutorial(true)}
         onOpenCollab={() => setShowCollabModal(true)}
+        isCollabMode={isCollabMode}
+        onRunForEveryone={() => {
+          runBroadcastRef.current?.requestRunForEveryone()
+          handleRun()
+        }}
       />
 
       {/* Challenge Browser Mode */}
@@ -1389,10 +1413,7 @@ export default function App() {
             onCreateRoom={(_roomId, code, name) => {
               setShowCollabModal(false)
               setCollabRoomCreated({ code, name })
-              // Navigate to collab room after showing the code
-              setTimeout(() => {
-                window.location.href = `/collab/${code}`
-              }, 100)
+              localStorage.setItem(`collab-room-name-${code}`, name)
             }}
             onJoinRoom={(code) => {
               setShowCollabModal(false)
@@ -1407,7 +1428,10 @@ export default function App() {
           <RoomCreatedModal
             roomCode={collabRoomCreated.code}
             roomName={collabRoomCreated.name}
-            onClose={() => setCollabRoomCreated(null)}
+            onClose={() => {
+              setCollabRoomCreated(null)
+              window.location.href = `/collab/${collabRoomCreated.code}`
+            }}
           />
         </Suspense>
       )}
