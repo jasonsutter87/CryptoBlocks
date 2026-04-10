@@ -108,11 +108,9 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
     }
   }, [lines])
 
-  // Show welcome on first open
-  const welcomed = useRef(false)
+  // Show welcome every time the terminal opens
   useEffect(() => {
-    if (open && !welcomed.current) {
-      welcomed.current = true
+    if (open) {
       setLines([
         { text: ASCII_LOGO, color: tc.prompt },
         { text: '' },

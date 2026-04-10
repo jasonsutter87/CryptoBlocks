@@ -47,7 +47,7 @@ interface CBBlock {
   x?: number
   y?: number
   fields?: Record<string, unknown>
-  inputs?: Record<string, { block: CBBlock | null; shadow?: CBBlock }>
+  inputs?: Record<string, { block?: CBBlock | null; shadow?: CBBlock }>
   next?: { block: CBBlock | null }
 }
 
@@ -374,19 +374,19 @@ function getInputValue(block: ScratchBlock, inputName: string, allBlocks: Record
   return undefined
 }
 
-function conditionInput(block: ScratchBlock, inputName: string, allBlocks: Record<string, ScratchBlock>, ctx: ConvertContext): Record<string, unknown> {
+function conditionInput(block: ScratchBlock, inputName: string, allBlocks: Record<string, ScratchBlock>, ctx: ConvertContext): Record<string, { block?: CBBlock | null; shadow?: CBBlock }> {
   const input = block.inputs?.[inputName]
   if (!input) return {}
 
   const val = input[1]
   if (typeof val === 'string' && allBlocks[val]) {
     const converted = convertBlock(val, allBlocks, ctx)
-    if (converted) return { block: converted }
+    if (converted) return { [inputName]: { block: converted } }
   }
   return {}
 }
 
-function statementsInput(inputName: string, block: ScratchBlock, allBlocks: Record<string, ScratchBlock>, ctx: ConvertContext): Record<string, { block: CBBlock | null }> {
+function statementsInput(inputName: string, block: ScratchBlock, allBlocks: Record<string, ScratchBlock>, ctx: ConvertContext): Record<string, { block?: CBBlock | null }> {
   const input = block.inputs?.[inputName]
   if (!input) return {}
 
