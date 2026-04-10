@@ -83,7 +83,6 @@ const TOOLTIP_W = 380
 const TOOLTIP_H = 220
 const GAP = 16
 const PAD = 12
-const ARROW_SIZE = 12
 
 function getTargetRect(selector: string | null): TargetRect | null {
   if (!selector) return null
@@ -124,52 +123,6 @@ function computePosition(rect: TargetRect | null, pos: TutorialStep['position'])
   top = Math.max(PAD, Math.min(top, vh - TOOLTIP_H - PAD))
   left = Math.max(PAD, Math.min(left, vw - TOOLTIP_W - PAD))
   return { top, left }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function _Arrow({ position, targetRect, tooltipPos }: { position: string; targetRect: TargetRect | null; tooltipPos: { top: number; left: number } }) {
-  if (!targetRect || position === 'center') return null
-
-  const style: React.CSSProperties = {
-    position: 'fixed',
-    width: 0,
-    height: 0,
-    zIndex: 102,
-  }
-
-  const s = ARROW_SIZE
-  switch (position) {
-    case 'right':
-      style.top = targetRect.top + targetRect.height / 2 - s
-      style.left = tooltipPos.left - s * 2
-      style.borderTop = `${s}px solid transparent`
-      style.borderBottom = `${s}px solid transparent`
-      style.borderRight = `${s * 2}px solid #313244`
-      break
-    case 'left':
-      style.top = targetRect.top + targetRect.height / 2 - s
-      style.left = tooltipPos.left + TOOLTIP_W
-      style.borderTop = `${s}px solid transparent`
-      style.borderBottom = `${s}px solid transparent`
-      style.borderLeft = `${s * 2}px solid #313244`
-      break
-    case 'bottom':
-      style.top = tooltipPos.top - s * 2
-      style.left = targetRect.left + targetRect.width / 2 - s
-      style.borderLeft = `${s}px solid transparent`
-      style.borderRight = `${s}px solid transparent`
-      style.borderBottom = `${s * 2}px solid #313244`
-      break
-    case 'top':
-      style.top = tooltipPos.top + TOOLTIP_H
-      style.left = targetRect.left + targetRect.width / 2 - s
-      style.borderLeft = `${s}px solid transparent`
-      style.borderRight = `${s}px solid transparent`
-      style.borderTop = `${s * 2}px solid #313244`
-      break
-  }
-
-  return <div style={style} />
 }
 
 interface TutorialOverlayProps {
