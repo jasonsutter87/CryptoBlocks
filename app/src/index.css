@@ -165,3 +165,9 @@ body {
   color: var(--hm-green) !important;
   background-color: var(--hm-dim) !important;
 }
+
+/* Toolbox category rows — red pill background for readability */
+.hacker-mode .blocklyTreeRow {
+  background-color: #991b1b !important;
+  border-radius: 6px;
+}
