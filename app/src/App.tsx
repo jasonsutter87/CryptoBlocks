@@ -34,6 +34,7 @@ import { saveLabProgress } from './code-lab/progress'
 import Toolbar from './components/Toolbar'
 import BlockEditor from './components/BlockEditor'
 import CodeView from './components/CodeView'
+import CodeMirrorEditor from './learn/CodeMirrorEditor'
 import OutputPanel from './components/OutputPanel'
 import CreateBlockModal from './components/CreateBlockModal'
 import ChallengeBrowser from './components/ChallengeBrowser'
@@ -1117,12 +1118,11 @@ export default function App() {
                 <span className="text-xs text-[#f9e2af] bg-[#313244] px-2 py-0.5 rounded">JavaScript</span>
               </div>
               <div className="flex-1 min-h-0">
-                <CodeView
+                <CodeMirrorEditor
                   code={labCode}
+                  onChange={handleLabCodeChange}
                   language="javascript"
-                  onLanguageChange={() => {}}
-                  editable
-                  onCodeChange={handleLabCodeChange}
+                  height="100%"
                 />
               </div>
             </div>
