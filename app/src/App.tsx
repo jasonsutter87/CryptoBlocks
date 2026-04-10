@@ -777,6 +777,13 @@ export default function App() {
   const handleSelectExample = useCallback((example: Example) => {
     setShowExamples(false)
 
+    // Kill any running execution (camera, animation loops, etc.)
+    executionHandleRef.current?.abort()
+    executionHandleRef.current = null
+    setIsRunning(false)
+    setResult(null)
+    setLiveOutput([])
+
     // Ensure we're in sandbox mode
     if (modeRef.current !== 'sandbox') {
       setMode('sandbox')
@@ -909,6 +916,10 @@ export default function App() {
   }, [])
 
   const handleClear = useCallback(() => {
+    // Kill any running execution
+    executionHandleRef.current?.abort()
+    executionHandleRef.current = null
+    setIsRunning(false)
     if (workspaceRef.current) {
       workspaceRef.current.clear()
     }

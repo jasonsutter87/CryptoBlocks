@@ -46,7 +46,7 @@ interface ToolbarProps {
 const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
 
 export default function Toolbar({
-  language,
+  language: _language,
   isRunning,
   onRun,
   onStop,
@@ -155,7 +155,7 @@ export default function Toolbar({
           CryptoBlocks
         </h1>
         <span className="hidden md:inline text-[10px] text-[#6c7086] bg-[#313244] px-1.5 py-0.5 rounded font-mono">
-          v0.1
+          v0.2
         </span>
       </div>
 

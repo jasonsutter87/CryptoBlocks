@@ -126,7 +126,8 @@ function computePosition(rect: TargetRect | null, pos: TutorialStep['position'])
   return { top, left }
 }
 
-function Arrow({ position, targetRect, tooltipPos }: { position: string; targetRect: TargetRect | null; tooltipPos: { top: number; left: number } }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _Arrow({ position, targetRect, tooltipPos }: { position: string; targetRect: TargetRect | null; tooltipPos: { top: number; left: number } }) {
   if (!targetRect || position === 'center') return null
 
   const style: React.CSSProperties = {
