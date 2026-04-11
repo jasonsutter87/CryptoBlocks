@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import type { Language } from '../types/block'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
+import MicrobitStatus from './MicrobitStatus'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -500,6 +501,13 @@ export default function Toolbar({
               <rect x="14" y="14" width="7" height="7" rx="1" />
             </svg>
             {blockCount}
+          </div>
+        )}
+
+        {/* micro:bit Bluetooth connection — desktop only, sandbox mode */}
+        {mode === 'sandbox' && (
+          <div className="hidden md:block">
+            <MicrobitStatus />
           </div>
         )}
 

@@ -49,6 +49,7 @@ export type BlockCategory =
   | 'Crypto'
   | 'AI'
   | 'Hardware'
+  | 'micro:bit'
   | 'Pen'
   | 'Testing'
   | 'Vision'
@@ -72,6 +73,7 @@ export const CATEGORY_COLORS: Record<BlockCategory, string> = {
   Crypto: '#4F46E5',
   AI: '#7C3AED',
   Hardware: '#65A30D',
+  'micro:bit': '#00c4aa',
   Pen: '#14B8A6',
   Testing: '#06B6D4',
   Vision: '#06B6D4',

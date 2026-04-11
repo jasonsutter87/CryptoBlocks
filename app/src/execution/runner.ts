@@ -331,8 +331,13 @@ function executeJavaScript(
   let aborted = false
 
   // Code that uses fetch() or WebSocket needs direct execution — sandboxed
-  // iframes send Origin: null which breaks CORS/WS on most servers
-  const needsDirectExec = /\bfetch\s*\(/.test(code) || /\bWebSocket\s*\(/.test(code)
+  // iframes send Origin: null which breaks CORS/WS on most servers.
+  // micro:bit blocks touch the BLE connection held in the parent window,
+  // so they also need direct execution (the iframe is a separate context).
+  const needsDirectExec =
+    /\bfetch\s*\(/.test(code) ||
+    /\bWebSocket\s*\(/.test(code) ||
+    /\b__microbit\b/.test(code)
 
   let iframeCleanup: (() => void) | null = null
 

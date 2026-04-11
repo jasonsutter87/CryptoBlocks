@@ -14,6 +14,7 @@ import { aiBlocks } from './definitions/ai'
 import { soundBlocks } from './definitions/sound'
 import { gamesBlocks } from './definitions/games'
 import { hardwareBlocks } from './definitions/hardware'
+import { microbitBlocks } from './definitions/microbit'
 import { turtleBlocks } from './definitions/turtle'
 import { secretBlocks } from './definitions/secrets'
 import { testingBlocks } from './definitions/testing'
@@ -37,6 +38,7 @@ class BlockRegistry {
     this.registerAll(soundBlocks)
     this.registerAll(gamesBlocks)
     this.registerAll(hardwareBlocks)
+    this.registerAll(microbitBlocks)
     this.registerAll(turtleBlocks)
     this.registerAll(secretBlocks)
     this.registerAll(testingBlocks)
