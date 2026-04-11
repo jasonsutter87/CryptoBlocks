@@ -43,6 +43,37 @@ export type MicrobitEvent =
   | { type: 'connected' }
   | { type: 'disconnected' }
 
+/**
+ * Cached sensor state, updated ~10× per second by streaming frames from
+ * the firmware. Read blocks return whatever's in here at the moment they
+ * execute, so they're synchronous and cheap.
+ */
+export interface SensorState {
+  temperature: number  // °C
+  lightLevel: number   // 0..255
+  accelX: number       // milli-g
+  accelY: number
+  accelZ: number
+  compassHeading: number  // 0..359°
+  buttonA: boolean
+  buttonB: boolean
+}
+
+const sensorState: SensorState = {
+  temperature: 0,
+  lightLevel: 0,
+  accelX: 0,
+  accelY: 0,
+  accelZ: 0,
+  compassHeading: 0,
+  buttonA: false,
+  buttonB: false,
+}
+
+export function getSensorState(): Readonly<SensorState> {
+  return sensorState
+}
+
 export type MicrobitListener = (event: MicrobitEvent) => void
 
 interface MicrobitState {
@@ -170,7 +201,7 @@ function handleRxNotification(event: Event): void {
 }
 
 function handleRxMessage(msg: string): void {
-  // B:<button>:<1|0>  → button event
+  // B:<button>:<1|0>  → button event (edge-triggered)
   if (msg.startsWith('B:')) {
     const [, button, pressed] = msg.split(':')
     if (button === 'A' || button === 'B' || button === 'AB') {
@@ -181,6 +212,28 @@ function handleRxMessage(msg: string): void {
   // M:S → shake
   if (msg === 'M:S') {
     emit({ type: 'shake' })
+    return
+  }
+  // S:<key>:<val>:<key>:<val>...  → sensor frame (streamed periodically)
+  // Example: S:t:23:l:180:ax:-50:ay:12:az:-1024:h:234:ba:0:bb:1
+  if (msg.startsWith('S:')) {
+    const parts = msg.slice(2).split(':')
+    for (let i = 0; i + 1 < parts.length; i += 2) {
+      const key = parts[i]
+      const raw = parts[i + 1]
+      const num = Number(raw)
+      if (Number.isNaN(num)) continue
+      switch (key) {
+        case 't':  sensorState.temperature = num; break
+        case 'l':  sensorState.lightLevel = num; break
+        case 'ax': sensorState.accelX = num; break
+        case 'ay': sensorState.accelY = num; break
+        case 'az': sensorState.accelZ = num; break
+        case 'h':  sensorState.compassHeading = num; break
+        case 'ba': sensorState.buttonA = num === 1; break
+        case 'bb': sensorState.buttonB = num === 1; break
+      }
+    }
     return
   }
   // Unknown messages are ignored (future-compatible)
@@ -246,6 +299,77 @@ export async function setLed(x: number, y: number, on: boolean): Promise<void> {
   await sendCommand(`L:${cx}:${cy}:${on ? 1 : 0}`)
 }
 
+/**
+ * Drive a servo attached to the given pin to an angle (0..180).
+ *
+ * For the Parallax cyber:bot, the left wheel is on P13 and the right wheel
+ * is on P12 by default. 90 is stop (for continuous-rotation servos),
+ * 0 is full reverse, 180 is full forward.
+ */
+export async function setServo(pin: number, angle: number): Promise<void> {
+  const p = Math.max(0, Math.min(20, Math.floor(pin)))
+  const a = Math.max(0, Math.min(180, Math.floor(angle)))
+  await sendCommand(`V:${p}:${a}`)
+}
+
+/**
+ * Write a digital value (0 or 1) to a pin. Useful for LEDs, buzzers,
+ * and whisker bump switches on the cyber:bot.
+ */
+export async function digitalWrite(pin: number, value: 0 | 1): Promise<void> {
+  const p = Math.max(0, Math.min(20, Math.floor(pin)))
+  await sendCommand(`D:${p}:${value}`)
+}
+
+/**
+ * High-level cyber:bot drive helper.
+ *
+ * Assumes continuous-rotation servos on pins P13 (left) and P12 (right)
+ * — the Parallax cyber:bot wiring. Sends both servo commands, waits for
+ * the given duration, then stops both wheels.
+ *
+ * direction: 'forward' | 'back' | 'left' | 'right' | 'stop'
+ */
+export async function drive(direction: string, seconds: number): Promise<void> {
+  const LEFT_PIN = 13
+  const RIGHT_PIN = 12
+  // Continuous-rotation servos: 0 = full reverse, 90 = stop, 180 = full forward.
+  // Left and right wheels face opposite directions, so "forward" is 180 on one
+  // and 0 on the other.
+  let leftAngle = 90
+  let rightAngle = 90
+  switch (direction) {
+    case 'forward':
+      leftAngle = 180
+      rightAngle = 0
+      break
+    case 'back':
+      leftAngle = 0
+      rightAngle = 180
+      break
+    case 'left':
+      leftAngle = 0
+      rightAngle = 0
+      break
+    case 'right':
+      leftAngle = 180
+      rightAngle = 180
+      break
+    case 'stop':
+    default:
+      leftAngle = 90
+      rightAngle = 90
+  }
+  await setServo(LEFT_PIN, leftAngle)
+  await setServo(RIGHT_PIN, rightAngle)
+  if (direction !== 'stop' && seconds > 0) {
+    const ms = Math.max(0, Math.min(60_000, Math.floor(seconds * 1000)))
+    await new Promise((resolve) => setTimeout(resolve, ms))
+    await setServo(LEFT_PIN, 90)
+    await setServo(RIGHT_PIN, 90)
+  }
+}
+
 // -----------------------------------------------------------------------------
 // Global installation — blocks compile to code that calls `__microbit.*`
 // -----------------------------------------------------------------------------
@@ -257,8 +381,19 @@ export interface MicrobitGlobal {
   playTone: (hz: number, ms: number) => Promise<void>
   clearScreen: () => Promise<void>
   setLed: (x: number, y: number, on: boolean) => Promise<void>
+  setServo: (pin: number, angle: number) => Promise<void>
+  digitalWrite: (pin: number, value: 0 | 1) => Promise<void>
+  drive: (direction: string, seconds: number) => Promise<void>
   onButton: (button: ButtonName, handler: () => void | Promise<void>) => () => void
   onShake: (handler: () => void | Promise<void>) => () => void
+  // Synchronous sensor readers — return whatever's in the latest streamed frame
+  getTemperature: () => number
+  getLightLevel: () => number
+  getAccelX: () => number
+  getAccelY: () => number
+  getAccelZ: () => number
+  getCompassHeading: () => number
+  isButtonPressed: (button: 'A' | 'B') => boolean
 }
 
 let globalInstalled = false
@@ -281,6 +416,16 @@ export function ensureMicrobitGlobal(): void {
     playTone,
     clearScreen,
     setLed,
+    setServo,
+    digitalWrite,
+    drive,
+    getTemperature: () => sensorState.temperature,
+    getLightLevel: () => sensorState.lightLevel,
+    getAccelX: () => sensorState.accelX,
+    getAccelY: () => sensorState.accelY,
+    getAccelZ: () => sensorState.accelZ,
+    getCompassHeading: () => sensorState.compassHeading,
+    isButtonPressed: (button) => (button === 'A' ? sensorState.buttonA : sensorState.buttonB),
     onButton(button, handler) {
       const unsubscribe = subscribe((event) => {
         if (event.type === 'buttonDown' && event.button === button) {
