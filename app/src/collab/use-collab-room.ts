@@ -12,8 +12,10 @@ import type { ConnectionStatus, CollabUser, PresenceState } from './types'
 import { COLLAB_COLORS } from './types'
 
 // Dev: local PartyKit server. Prod: deployed PartyKit URL.
+// Must be host only (no scheme) — e.g. "localhost:1999" or "cryptoblocks-collab.you.partykit.dev"
 const PARTYKIT_HOST =
-  import.meta.env.VITE_PARTYKIT_HOST || 'localhost:1999'
+  import.meta.env.VITE_PARTYKIT_HOST ||
+  (import.meta.env.DEV ? 'localhost:1999' : '')
 
 interface UseCollabRoomOptions {
   roomId: string
@@ -41,6 +43,16 @@ export function useCollabRoom({
 
   useEffect(() => {
     if (!enabled || !roomId) return
+
+    if (!PARTYKIT_HOST) {
+      // eslint-disable-next-line no-console
+      console.error(
+        '[collab] VITE_PARTYKIT_HOST is not set. Collab is disabled. ' +
+        'Deploy partykit and set VITE_PARTYKIT_HOST in your build env.'
+      )
+      setStatus('disconnected')
+      return
+    }
 
     const ydoc = new Y.Doc()
     ydocRef.current = ydoc
