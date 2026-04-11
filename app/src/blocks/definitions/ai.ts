@@ -406,6 +406,153 @@ export const aiBlocks: BlockDefinition[] = [
     color: '#7C3AED',
     shape: 'value',
   },
+  // ---------------------------------------------------------------------------
+  // Speech + Audio Input — backed by window.__speech (Web Speech / Web Audio).
+  // See src/speech/speech.ts.
+  // ---------------------------------------------------------------------------
+
+  {
+    name: 'ai_say',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Make the computer say something out loud',
+    category: 'AI',
+    inputs: [
+      { name: 'text', type: 'string', description: 'What to say', default: 'Hello!' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function ai_say(text) {
+  if (typeof window === 'undefined' || !window.__speech) return;
+  window.__speech.say(String(text));
+}`,
+      python: `def ai_say(text):
+    print("[Speech only works in JavaScript mode]")`,
+    },
+    tests: [
+      { input: { text: 'Hello!' }, expected: {} },
+    ],
+    color: '#7C3AED',
+    shape: 'statement',
+  },
+
+  {
+    name: 'ai_say_and_wait',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Say something and wait until speaking finishes',
+    category: 'AI',
+    inputs: [
+      { name: 'text', type: 'string', description: 'What to say', default: 'Hello!' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `async function ai_say_and_wait(text) {
+  if (typeof window === 'undefined' || !window.__speech) return;
+  await window.__speech.say(String(text), true);
+}`,
+      python: `def ai_say_and_wait(text):
+    print("[Speech only works in JavaScript mode]")`,
+    },
+    tests: [
+      { input: { text: 'Hello!' }, expected: {} },
+    ],
+    color: '#7C3AED',
+    shape: 'statement',
+  },
+
+  {
+    name: 'ai_stop_speaking',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Stop whatever is currently being said',
+    category: 'AI',
+    inputs: [],
+    outputs: [],
+    implementations: {
+      javascript: `function ai_stop_speaking() {
+  if (typeof window === 'undefined' || !window.__speech) return;
+  window.__speech.stopSpeaking();
+}`,
+      python: `def ai_stop_speaking():
+    print("[Speech only works in JavaScript mode]")`,
+    },
+    tests: [
+      { input: {}, expected: {} },
+    ],
+    color: '#7C3AED',
+    shape: 'statement',
+  },
+
+  {
+    name: 'ai_listen',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Listen for a single spoken phrase and return the text',
+    category: 'AI',
+    inputs: [],
+    outputs: [{ name: 'text', type: 'string' }],
+    implementations: {
+      javascript: `async function ai_listen() {
+  if (typeof window === 'undefined' || !window.__speech) return "";
+  return await window.__speech.listen();
+}`,
+      python: `def ai_listen():
+    return ""`,
+    },
+    tests: [
+      { input: {}, expected: { text: 'string' } },
+    ],
+    color: '#7C3AED',
+    shape: 'value',
+  },
+
+  {
+    name: 'ai_start_microphone',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Turn on the microphone so volume can be read. Asks permission the first time.',
+    category: 'AI',
+    inputs: [],
+    outputs: [{ name: 'ok', type: 'boolean' }],
+    implementations: {
+      javascript: `async function ai_start_microphone() {
+  if (typeof window === 'undefined' || !window.__speech) return false;
+  return await window.__speech.startMic();
+}`,
+      python: `def ai_start_microphone():
+    return False`,
+    },
+    tests: [
+      { input: {}, expected: { ok: 'boolean' } },
+    ],
+    color: '#7C3AED',
+    shape: 'value',
+  },
+
+  {
+    name: 'ai_microphone_volume',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Current microphone volume (0 = silent, 100 = very loud). Call start microphone first.',
+    category: 'AI',
+    inputs: [],
+    outputs: [{ name: 'volume', type: 'number' }],
+    implementations: {
+      javascript: `function ai_microphone_volume() {
+  if (typeof window === 'undefined' || !window.__speech) return 0;
+  return window.__speech.getMicVolume();
+}`,
+      python: `def ai_microphone_volume():
+    return 0`,
+    },
+    tests: [
+      { input: {}, expected: { volume: 'number' } },
+    ],
+    color: '#7C3AED',
+    shape: 'value',
+  },
+
   {
     name: 'ai_summary',
     author: 'CryptoBlocks',
