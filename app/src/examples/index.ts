@@ -15,6 +15,7 @@ import { drumsetWorkspace } from './drumset-workspace'
 import { calculatorLeanWorkspace } from './calculator-lean-workspace'
 import { game2048Workspace } from './2048-workspace'
 import { textPortraitWorkspace } from './text-portrait-workspace'
+import { moodBuddyWorkspace } from './mood-buddy-workspace'
 
 export interface Example {
   id: string
@@ -608,5 +609,13 @@ export const EXAMPLES: Example[] = [
     difficulty: 'pro',
     tags: ['Vision', 'Art', 'Lists'],
     workspace: textPortraitWorkspace,
+  },
+  {
+    id: 'mood-buddy',
+    name: 'Mood Buddy (AI Kitchen Sink)',
+    description: 'Speaks, listens, classifies, analyzes sentiment, remixes words with a Markov chain, and predicts your next mood — touches every AI block.',
+    difficulty: 'pro',
+    tags: ['AI', 'Basics', 'Logic', 'Text'],
+    workspace: moodBuddyWorkspace(),
   },
 ]
