@@ -33,6 +33,8 @@ interface ToolbarProps {
   onOpenStats: () => void
   slowMo: boolean
   onToggleSlowMo: () => void
+  onEnterTimeTravel?: () => void
+  timeTravelAvailable?: boolean
   blockCount?: number
   onSaveCheckpoint: () => void
   onOpenHistory: () => void
@@ -77,6 +79,8 @@ export default function Toolbar({
   onOpenStats,
   slowMo,
   onToggleSlowMo,
+  onEnterTimeTravel,
+  timeTravelAvailable = false,
   blockCount = 0,
   onSaveCheckpoint,
   onOpenHistory,
@@ -509,6 +513,19 @@ export default function Toolbar({
           <div className="hidden md:block">
             <MicrobitStatus />
           </div>
+        )}
+
+        {/* Time Travel toggle */}
+        {mode === 'sandbox' && onEnterTimeTravel && (
+          <button
+            onClick={onEnterTimeTravel}
+            disabled={!timeTravelAvailable}
+            className={`${btn} text-[#6c7086] hover:bg-[#313244] transition-colors ${!timeTravelAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
+            title="Time Travel: scrub through your recent history"
+          >
+            <span className="text-base leading-none">🕰️</span>
+            <span className="hidden md:inline">Time Travel</span>
+          </button>
         )}
 
         {/* Slow-Mo toggle */}

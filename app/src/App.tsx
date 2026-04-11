@@ -77,6 +77,8 @@ import ChallengeBanner from './daily/ChallengeBanner'
 import { getTodaysPuzzle } from './daily/getTodaysPuzzle'
 import { matchesTarget } from './daily/puzzles'
 import { markSolved, loadDailyState } from './daily/state'
+import { useTimeTravel } from './time-travel/useTimeTravel'
+import TimeTravelBar from './components/TimeTravelBar'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -164,6 +166,9 @@ export default function App() {
   const executionHandleRef = useRef<ExecutionHandle | null>(null)
 
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
+
+  // Time Travel — continuous scrubbable history of workspace changes
+  const timeTravel = useTimeTravel({ workspaceRef })
 
   // Version control
   const {
@@ -1104,6 +1109,18 @@ export default function App() {
           solvedBlocks={dailySolvedBlocks}
         />
       )}
+      {timeTravel.isActive && (
+        <TimeTravelBar
+          currentIndex={timeTravel.currentIndex}
+          snapshotCount={timeTravel.snapshotCount}
+          currentLabel={timeTravel.currentLabel}
+          onScrub={timeTravel.scrubTo}
+          onStepBack={timeTravel.stepBack}
+          onStepForward={timeTravel.stepForward}
+          onForkHere={timeTravel.forkHere}
+          onExit={timeTravel.exitTimeTravel}
+        />
+      )}
       <Toolbar
         language={language}
         isRunning={isRunning}
@@ -1133,6 +1150,8 @@ export default function App() {
         onOpenStats={() => setShowStats(true)}
         slowMo={slowMo}
         onToggleSlowMo={() => setSlowMo(s => !s)}
+        onEnterTimeTravel={timeTravel.enterTimeTravel}
+        timeTravelAvailable={timeTravel.snapshotCount > 1}
         blockCount={blockCount}
         onSaveCheckpoint={() => setShowCheckpointModal(true)}
         onOpenHistory={() => setShowHistory(true)}
