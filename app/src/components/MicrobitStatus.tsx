@@ -83,7 +83,7 @@ export default function MicrobitStatus() {
           connected ? 'bg-[#a6e3a1] animate-pulse' : busy ? 'bg-[#f9e2af]' : 'bg-[#6c7086]'
         }`}
       />
-      <span className="whitespace-nowrap">
+      <span className="hidden xl:inline whitespace-nowrap">
         {connected ? 'micro:bit' : busy ? 'Pairing…' : 'micro:bit'}
       </span>
       {error && <span className="sr-only">{error}</span>}
