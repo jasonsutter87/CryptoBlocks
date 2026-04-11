@@ -73,6 +73,10 @@ const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
 const ScratchImportModal = lazy(() => import('./components/ScratchImportModal'))
 import { useCollabDoc } from './collab/CollabPage'
 import { bindRunBroadcast } from './collab/run-broadcast'
+import ChallengeBanner from './daily/ChallengeBanner'
+import { getTodaysPuzzle } from './daily/getTodaysPuzzle'
+import { matchesTarget } from './daily/puzzles'
+import { markSolved, loadDailyState } from './daily/state'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -144,6 +148,17 @@ export default function App() {
 
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
+
+  // Daily Challenge state (read-only URL param; banner shown if active)
+  const isDailyChallenge =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('daily') === '1'
+  const dailyInfo = isDailyChallenge ? getTodaysPuzzle() : null
+  const [dailySolvedBlocks, setDailySolvedBlocks] = useState<number | null>(() => {
+    if (!isDailyChallenge || !dailyInfo) return null
+    const state = loadDailyState()
+    const entry = state.solved[dailyInfo.dayNumber]
+    return entry ? entry.blocks : null
+  })
 
   // Execution handle for stop button (CB-R2-002)
   const executionHandleRef = useRef<ExecutionHandle | null>(null)
@@ -347,7 +362,15 @@ export default function App() {
       language: language,
     })
     processAchievements(newAchievements)
-  }, [code, language, slowMo, processAchievements, getUsedCategories])
+
+    // Daily Challenge: check if the run matches today's target output
+    if (isDailyChallenge && dailyInfo && !execResult.error) {
+      if (matchesTarget(execResult.output, dailyInfo.puzzle)) {
+        markSolved(dailyInfo.dayNumber, blocks)
+        setDailySolvedBlocks(blocks)
+      }
+    }
+  }, [code, language, slowMo, processAchievements, getUsedCategories, isDailyChallenge, dailyInfo])
 
   // Keep run ref up to date for collab broadcast
   handleRunRef.current = handleRun
@@ -1073,7 +1096,14 @@ export default function App() {
   if (!restored) return null
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full relative">
+      {isDailyChallenge && dailyInfo && (
+        <ChallengeBanner
+          puzzle={dailyInfo.puzzle}
+          dayNumber={dailyInfo.dayNumber}
+          solvedBlocks={dailySolvedBlocks}
+        />
+      )}
       <Toolbar
         language={language}
         isRunning={isRunning}
