@@ -31,10 +31,6 @@ interface ToolbarProps {
   onOpenLab: () => void
   onOpenExamples: () => void
   onOpenStats: () => void
-  slowMo: boolean
-  onToggleSlowMo: () => void
-  onEnterTimeTravel?: () => void
-  timeTravelAvailable?: boolean
   blockCount?: number
   onSaveCheckpoint: () => void
   onOpenHistory: () => void
@@ -77,10 +73,6 @@ export default function Toolbar({
   onOpenLab,
   onOpenExamples,
   onOpenStats,
-  slowMo,
-  onToggleSlowMo,
-  onEnterTimeTravel,
-  timeTravelAvailable = false,
   blockCount = 0,
   onSaveCheckpoint,
   onOpenHistory,
@@ -477,37 +469,6 @@ export default function Toolbar({
           </div>
         )}
 
-        {/* Time Travel toggle */}
-        {mode === 'sandbox' && onEnterTimeTravel && (
-          <button
-            onClick={onEnterTimeTravel}
-            disabled={!timeTravelAvailable}
-            className={`${btn} text-[#6c7086] hover:bg-[#313244] transition-colors ${!timeTravelAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
-            title="Time Travel: scrub through your recent history"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <circle cx="12" cy="12" r="9" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 7v5l3 2" />
-            </svg>
-            <span className="hidden xl:inline">Time Travel</span>
-          </button>
-        )}
-
-        {/* Slow-Mo toggle */}
-        {mode === 'sandbox' && (
-          <button
-            onClick={onToggleSlowMo}
-            disabled={isRunning}
-            className={`${btn} ${slowMo ? 'bg-[#f9e2af] text-[#1e1e2e]' : 'text-[#6c7086] hover:bg-[#313244]'} transition-colors ${isRunning && slowMo ? 'animate-pulse' : ''} ${isRunning ? 'opacity-60 cursor-not-allowed' : ''}`}
-            title="Slow-Mo: highlight blocks as they run"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-            <span className="hidden xl:inline">Slow-Mo</span>
-          </button>
-        )}
 
         {/* Undo / Redo / Fit View — sandbox only, desktop */}
         {mode === 'sandbox' && (

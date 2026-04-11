@@ -73,6 +73,7 @@ const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
 const ScratchImportModal = lazy(() => import('./components/ScratchImportModal'))
 import { useCollabDoc } from './collab/CollabPage'
 import { bindRunBroadcast } from './collab/run-broadcast'
+import WorkspaceFloatingControls from './components/WorkspaceFloatingControls'
 import ChallengeBanner from './daily/ChallengeBanner'
 import { getTodaysPuzzle } from './daily/getTodaysPuzzle'
 import { matchesTarget } from './daily/puzzles'
@@ -1148,10 +1149,6 @@ export default function App() {
         onOpenLab={handleOpenLab}
         onOpenExamples={() => setShowExamples(true)}
         onOpenStats={() => setShowStats(true)}
-        slowMo={slowMo}
-        onToggleSlowMo={() => setSlowMo(s => !s)}
-        onEnterTimeTravel={timeTravel.enterTimeTravel}
-        timeTravelAvailable={timeTravel.snapshotCount > 1}
         blockCount={blockCount}
         onSaveCheckpoint={() => setShowCheckpointModal(true)}
         onOpenHistory={() => setShowHistory(true)}
@@ -1281,7 +1278,7 @@ export default function App() {
           <div className="flex-1 flex flex-col md:flex-row min-h-0">
             {/* Block Editor */}
             <div
-              className="h-1/2 md:h-full border-b md:border-b-0 md:border-r border-[#313244]"
+              className="relative h-1/2 md:h-full border-b md:border-b-0 md:border-r border-[#313244]"
               style={(showCode || showOutput) ? { width: `${splitPercent}%` } : { width: '100%' }}
             >
               <BlockEditor
@@ -1291,6 +1288,15 @@ export default function App() {
                 onSaveAsBlock={handleSaveAsBlock}
                 initialWorkspaceState={initialWorkspaceState}
               />
+              {mode === 'sandbox' && (
+                <WorkspaceFloatingControls
+                  slowMo={slowMo}
+                  onToggleSlowMo={() => setSlowMo((s) => !s)}
+                  slowMoDisabled={isRunning}
+                  onEnterTimeTravel={timeTravel.enterTimeTravel}
+                  timeTravelAvailable={timeTravel.snapshotCount > 1}
+                />
+              )}
             </div>
 
             {/* Drag handle */}
