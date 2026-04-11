@@ -99,7 +99,7 @@ export default function Toolbar({
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
-  const [openMenu, setOpenMenu] = useState<'file' | 'build' | 'learn' | 'mobile' | null>(null)
+  const [openMenu, setOpenMenu] = useState<'file' | 'build' | 'menu' | 'mobile' | null>(null)
   const [embedCopied, setEmbedCopied] = useState(false)
   const menuContainerRef = useRef<HTMLDivElement>(null)
 
@@ -352,63 +352,51 @@ export default function Toolbar({
             {/* Divider */}
             <div className="hidden md:block w-px h-6 bg-[#313244]" />
 
-            {/* Code with Friends */}
-            {onOpenCollab && (
-              <button
-                onClick={onOpenCollab}
-                className={`hidden md:flex ${btn} text-[#89b4fa] hover:bg-[#313244]`}
-                title="Code with Friends — real-time collaboration"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                Friends
-              </button>
-            )}
-
-            {/* Shareplace link */}
-            <a
-              href="/shareplace"
-              className={`hidden md:flex ${btn} text-[#a6e3a1] hover:bg-[#313244]`}
-              title="Browse the Shareplace marketplace"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Shareplace
-            </a>
-
-            {/* Stats button */}
-            <button
-              onClick={onOpenStats}
-              className={`hidden md:flex ${btn} text-[#cdd6f4] hover:bg-[#313244]`}
-              title="Developer Stats"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              Stats
-            </button>
-
-            {/* Learn dropdown */}
+            {/* Combined "Menu" dropdown — replaces Friends / Shareplace / Stats / Learn */}
             <div className="relative hidden md:block">
               <button
-                onClick={() => toggleMenu('learn')}
+                onClick={() => toggleMenu('menu')}
                 className={
                   ['challenges', 'blocksets', 'code-golf', 'code-lab'].includes(mode)
                     ? `${btn} bg-[#f9e2af] text-[#1e1e2e]`
                     : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
                 }
+                title="Friends, Shareplace, Stats, Learn"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
-                Learn
+                Menu
                 {chevron}
               </button>
 
-              {openMenu === 'learn' && (
+              {openMenu === 'menu' && (
                 <div className={menuDropdown}>
+                  {onOpenCollab && (
+                    <button onClick={() => { onOpenCollab(); setOpenMenu(null) }} className={menuItem}>
+                      <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Code with Friends
+                    </button>
+                  )}
+                  <a href="/shareplace" onClick={() => setOpenMenu(null)} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Shareplace
+                  </a>
+                  <a href="/daily" onClick={() => setOpenMenu(null)} className={menuItem}>
+                    <span className="w-4 h-4 flex items-center justify-center text-[#fab387] text-base">🎯</span>
+                    Daily Challenge
+                  </a>
+                  <button onClick={() => { onOpenStats(); setOpenMenu(null) }} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#cdd6f4]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Stats
+                  </button>
+                  <div className={menuDivider} />
                   <a href="/learn" onClick={() => setOpenMenu(null)} className={menuItem}>
                     <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 7l-9-5 9-5 9 5-9 5z" />
@@ -473,25 +461,6 @@ export default function Toolbar({
           </button>
         )}
 
-        {/* Peek / Hide Code */}
-        {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && mode !== 'code-lab' && mode !== 'active-lab' && (
-          <button
-            onClick={onToggleCode}
-            className={
-              showCode
-                ? `${btn} bg-[#cba6f7] text-[#1e1e2e]`
-                : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
-            }
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-            </svg>
-            <span className="hidden sm:inline">{showCode ? 'Hide Code' : 'Peek Code'}</span>
-          </button>
-        )}
-
-        {/* Language indicator removed — was confusing */}
-
         {/* Block counter */}
         {mode === 'sandbox' && (
           <div
@@ -505,13 +474,6 @@ export default function Toolbar({
               <rect x="14" y="14" width="7" height="7" rx="1" />
             </svg>
             {blockCount}
-          </div>
-        )}
-
-        {/* micro:bit Bluetooth connection — desktop only, sandbox mode */}
-        {mode === 'sandbox' && (
-          <div className="hidden md:block">
-            <MicrobitStatus />
           </div>
         )}
 
@@ -577,6 +539,30 @@ export default function Toolbar({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V5a1 1 0 011-1h3M4 16v3a1 1 0 001 1h3m10-11V5a1 1 0 00-1-1h-3m4 11v3a1 1 0 01-1 1h-3" />
               </svg>
             </button>
+          </div>
+        )}
+
+        {/* Peek / Hide Code — moved next to Run */}
+        {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && mode !== 'code-lab' && mode !== 'active-lab' && (
+          <button
+            onClick={onToggleCode}
+            className={
+              showCode
+                ? `${btn} bg-[#cba6f7] text-[#1e1e2e]`
+                : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
+            }
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            </svg>
+            <span className="hidden sm:inline">{showCode ? 'Hide Code' : 'Peek Code'}</span>
+          </button>
+        )}
+
+        {/* micro:bit Bluetooth connection — moved next to Run */}
+        {mode === 'sandbox' && (
+          <div className="hidden md:block">
+            <MicrobitStatus />
           </div>
         )}
 
