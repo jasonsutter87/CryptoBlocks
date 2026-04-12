@@ -5,6 +5,91 @@ description: 'What is new in CryptoBlocks. Version history, features, fixes, and
 priority: 0.6
 ---
 
+## v0.3.1 — April 2026
+
+Polish, monetization, and power tools. Assignments, notifications, level editor, global leaderboards, Stripe billing, light theme, and 22 new achievements.
+
+### Billing & Monetization
+- **Stripe integration** — $10/month Pro subscription with Checkout + Customer Portal
+- **Premium gates** on: Import from Scratch, Export HTML/PWA/Embed, Create Block, Code to Blocks, Sprite Editor, Level Editor, Classrooms, Code Golf, Code Lab
+- **Free forever**: all blocks, editor, collab, challenges, daily, Shareplace, AI, games, hardware, time travel
+- **Admin override** via `VITE_ADMIN_EMAILS` env var — full Pro without a subscription
+- **Subscription management** in Profile — shows plan status, upgrade CTA, or Manage Subscription (Stripe Portal)
+
+### Assignments
+- **Teacher creates assignments** — title + description, posted to a classroom
+- **Students submit work** — reads workspace from localStorage, POSTs to API
+- **Teacher reviews** — inline feedback per submission, status badges (submitted/reviewed)
+- **Submission count** on each assignment card
+
+### Notifications
+- **Bell icon** in toolbar with unread count badge
+- **Auto-notifications** on like ("Someone liked your project") and remix ("Your project was remixed")
+- **Dropdown** with recent notifications, type icons, relative timestamps
+- **Mark all read** — clears badge
+- **60-second polling** when signed in
+
+### Level Editor
+- **Visual drag-and-drop** platformer level designer (Build → Level Editor)
+- **20px snap grid** on 800×480 canvas
+- **Click+drag** to draw platforms, 7 color options
+- **Spawn point tool** (🦊) — click to place player start
+- **Erase tool** — click platforms to delete
+- **Export to Editor** — generates set_canvas, set_gravity, create_sprite, and add_platform blocks
+
+### Daily Challenge Global Leaderboard
+- **daily_scores table** in Turso — tracks solves with best-score upsert
+- **Syncs to server** when a challenge is solved (via ChallengeBanner)
+- **🏆 Top Solvers** (all-time) + **🎯 Today's Solvers** (fewest blocks) on /daily
+
+### Shareplace Moderation
+- **Banned word scan** — profanity + slurs rejected on upload
+- **URL blocking** — http/https/www links rejected in name and description
+- **Report button** — flag a project for review with a reason (auth required)
+
+### Procedural Generation
+- **spawn_random_platform** — place a platform at X with random Y in range
+- **spawn_pipe_pair** — Flappy Bird-style top+bottom pipes with random gap
+- **remove_offscreen_platforms** — garbage-collect platforms behind the camera
+
+### Achievements Expanded (14 → 36)
+- **Collab**: Team Player, Teacher Mode
+- **Games**: Game On, Level Designer, Pixel Artist
+- **AI**: Voice Activated, I See You
+- **Hardware**: Hardware Hacker
+- **Daily**: Daily Starter, Three-peat (3-day), On Fire (7-day), Unstoppable (30-day)
+- **Shareplace**: First Share, Popular (10 likes), Remixer, Inspiration
+- **Prestige**: Marathon (500 runs), Millennial (1000 runs), Block Master (100+), Renaissance Coder (10+ categories)
+- **Secret**: Time Traveler, Red Pill
+
+### Share Cards
+- **Auto-generated branded PNG** (1200×630 Twitter/OG standard)
+- Project name, author, category, stats, CryptoBlocks URL
+- **"Share Card" button** in project detail modal
+
+### Light Theme
+- **Full light mode** via Profile → Settings → Theme
+- CSS overrides for backgrounds, text, borders, Blockly workspace, toolbar
+- Persists in localStorage, applied on mount
+
+### UI & Navigation
+- **Menu dropdown** now includes Dashboard, Profile & Settings, Classrooms links
+- **Classroom invite links** — `/teacher?join=CODE` auto-opens the join modal
+- **Daily streak** shown in Menu dropdown next to Daily Challenge link
+- **Leaderboard** link added to Menu dropdown
+- **Remix badge** on project cards (🔀 remix tag when parentId exists)
+- **Download count tracking** — increments in Turso on every .blocks download
+- **Auth-protected likes** — Clerk JWT required server-side
+
+### Bug Fixes
+- Block counter only counts manual drags from toolbox, not workspace loads
+- Flappy Bird tuned — wider gaps, more pipe spacing, lighter gravity
+- Open in Editor uses full page reload so workspace loads correctly
+- Remix modal uses full page reload too
+- Collab avatar fallback color when peer.user.color is empty
+
+---
+
 ## v0.3 — April 2026
 
 The collaboration + platform update. Real-time multiplayer, teacher classrooms, a 2D game engine, AI speech/vision blocks, hardware support, and a real database-backed marketplace.
