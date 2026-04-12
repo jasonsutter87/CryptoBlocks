@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
 import {
   fetchClassrooms,
@@ -21,6 +22,7 @@ import {
 
 export default function TeacherDashboard() {
   const { getToken } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [classrooms, setClassrooms] = useState<Classroom[]>([])
   const [selectedClassroom, setSelectedClassroom] = useState<ClassroomDetail | null>(null)
   const [loading, setLoading] = useState(true)
@@ -38,6 +40,16 @@ export default function TeacherDashboard() {
 
   // Newly created classroom code to show
   const [createdCode, setCreatedCode] = useState<string | null>(null)
+
+  // Auto-open join modal if ?join=CODE is in the URL (shareable invite link)
+  useEffect(() => {
+    const code = searchParams.get('join')
+    if (code) {
+      setJoinCode(code.toUpperCase())
+      setShowJoin(true)
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -133,15 +145,27 @@ export default function TeacherDashboard() {
                 <div className="text-sm text-[#a6adc8]">Classroom created! Share this code with your students:</div>
                 <div className="text-3xl font-mono font-bold text-[#a6e3a1] tracking-widest mt-1">{createdCode}</div>
               </div>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(createdCode)
-                  setCreatedCode(null)
-                }}
-                className="px-4 py-2 bg-[#a6e3a1] text-[#1e1e2e] rounded-lg text-sm font-bold"
-              >
-                Copy & Dismiss
-              </button>
+              <div className="flex flex-col gap-2 items-end">
+                <button
+                  onClick={() => {
+                    const link = `${window.location.origin}/teacher?join=${createdCode}`
+                    navigator.clipboard.writeText(link)
+                    setCreatedCode(null)
+                  }}
+                  className="px-4 py-2 bg-[#a6e3a1] text-[#1e1e2e] rounded-lg text-sm font-bold"
+                >
+                  Copy Invite Link
+                </button>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(createdCode!)
+                    setCreatedCode(null)
+                  }}
+                  className="text-xs text-[#6c7086] hover:text-[#a6adc8]"
+                >
+                  or copy code only
+                </button>
+              </div>
             </div>
           )}
 
