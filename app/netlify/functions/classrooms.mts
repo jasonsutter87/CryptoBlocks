@@ -341,10 +341,11 @@ export default async function handler(req: Request) {
     }
 
     // POST /api/classrooms/:classroomId/assignments/:assignmentId/submit — student submits work
-    if (req.method === 'POST' && segments.length === 3 && segments[2] === 'submit') {
+    // segments: ['classroomId', 'assignments', 'assignmentId', 'submit']
+    if (req.method === 'POST' && segments.length === 4 && segments[1] === 'assignments' && segments[3] === 'submit') {
       if (!user) return json({ error: 'Sign in to submit' }, 401)
 
-      const assignmentId = segments[1]
+      const assignmentId = segments[2]
       const body = await req.json()
       const { workspaceJson, blockCount } = body
       if (!workspaceJson) return json({ error: 'workspaceJson is required' }, 400)
@@ -361,8 +362,9 @@ export default async function handler(req: Request) {
     }
 
     // GET /api/classrooms/:classroomId/assignments/:assignmentId/submissions — list submissions
-    if (req.method === 'GET' && segments.length === 3 && segments[2] === 'submissions') {
-      const assignmentId = segments[1]
+    // segments: ['classroomId', 'assignments', 'assignmentId', 'submissions']
+    if (req.method === 'GET' && segments.length === 4 && segments[1] === 'assignments' && segments[3] === 'submissions') {
+      const assignmentId = segments[2]
 
       const subs = await tursoExecute(
         'SELECT id, student_id, student_name, block_count, submitted_at, feedback, status FROM submissions WHERE assignment_id = ? ORDER BY submitted_at DESC',
@@ -383,10 +385,11 @@ export default async function handler(req: Request) {
     }
 
     // POST /api/classrooms/:classroomId/assignments/:assignmentId/feedback/:submissionId — teacher feedback
-    if (req.method === 'POST' && segments.length === 4 && segments[2] === 'feedback') {
+    // segments: ['classroomId', 'assignments', 'assignmentId', 'feedback', 'submissionId']
+    if (req.method === 'POST' && segments.length === 5 && segments[1] === 'assignments' && segments[3] === 'feedback') {
       if (!user) return json({ error: 'Sign in to give feedback' }, 401)
 
-      const submissionId = segments[3]
+      const submissionId = segments[4]
       const body = await req.json()
       const { feedback, status } = body
 
@@ -446,23 +449,26 @@ export default async function handler(req: Request) {
     }
 
     // POST /api/classrooms/:classroomId/discussions/:discussionId/reply — add a reply
-    if (req.method === 'POST' && segments.length === 3 && segments[2] === 'reply') {
+    // segments: ['classroomId', 'discussions', 'discussionId', 'reply']
+    if (req.method === 'POST' && segments.length === 4 && segments[1] === 'discussions' && segments[3] === 'reply') {
       if (!user) return json({ error: 'Sign in to reply' }, 401)
       const body = await req.json()
       if (!body.body) return json({ error: 'body required' }, 400)
       const id = crypto.randomUUID()
+      const discussionId = segments[2]
       await tursoExecute(
         'INSERT INTO replies (id, discussion_id, author_id, author_name, author_avatar, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [id, segments[1], user.sub, String(user.name || 'Student').slice(0, 50), user.avatar || '', String(body.body).slice(0, 5000), Date.now()],
+        [id, discussionId, user.sub, String(user.name || 'Student').slice(0, 50), user.avatar || '', String(body.body).slice(0, 5000), Date.now()],
       )
       return json({ id }, 201)
     }
 
     // GET /api/classrooms/:classroomId/discussions/:discussionId/replies — get replies
-    if (req.method === 'GET' && segments.length === 3 && segments[2] === 'replies') {
+    // segments: ['classroomId', 'discussions', 'discussionId', 'replies']
+    if (req.method === 'GET' && segments.length === 4 && segments[1] === 'discussions' && segments[3] === 'replies') {
       const result = await tursoExecute(
         'SELECT * FROM replies WHERE discussion_id = ? ORDER BY created_at ASC',
-        [segments[1]],
+        [segments[2]],
       )
       return json({
         replies: result.rows.map((r) => ({
@@ -511,10 +517,11 @@ export default async function handler(req: Request) {
     // --- Download submission ---
 
     // GET /api/classrooms/:classroomId/submissions/:submissionId/download
-    if (req.method === 'GET' && segments.length === 3 && segments[2] === 'download') {
+    // segments: ['classroomId', 'submissions', 'submissionId', 'download']
+    if (req.method === 'GET' && segments.length === 4 && segments[1] === 'submissions' && segments[3] === 'download') {
       const sub = await tursoExecute(
         'SELECT workspace_json, student_name FROM submissions WHERE id = ?',
-        [segments[1]],
+        [segments[2]],
       )
       if (sub.rows.length === 0) return json({ error: 'Not found' }, 404)
       return new Response(String(sub.rows[0].workspace_json), {
