@@ -312,6 +312,14 @@ export default function App() {
   )
 
   const handleRun = useCallback(async () => {
+    // Cancel any leftover game loop from a previous run so two Runs don't
+    // pile up requestAnimationFrame callbacks on the same canvas.
+    const w = window as unknown as { __cbGameLoopId?: number }
+    if (w.__cbGameLoopId) {
+      cancelAnimationFrame(w.__cbGameLoopId)
+      w.__cbGameLoopId = 0
+    }
+
     setIsRunning(true)
     setShowOutput(true)
     setResult(null)

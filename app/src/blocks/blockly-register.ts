@@ -46,7 +46,7 @@ const HTML_BLOCKS = new Set([
 const FUNCTION_BLOCKS = new Set(['cb_create_function', 'cb_call_function', 'cb_call_function_return'])
 
 // --- Event block types ---
-const EVENT_BLOCKS = new Set(['cb_when_key_pressed', 'cb_when_clicked'])
+const EVENT_BLOCKS = new Set(['cb_when_key_pressed', 'cb_when_clicked', 'cb_game_loop'])
 
 // --- Annotation block types ---
 const ANNOTATION_BLOCKS = new Set(['cb_callout', 'cb_inline_comment'])
@@ -550,6 +550,17 @@ function registerEventBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Run blocks when an element is clicked')
+    },
+  }
+
+  Blockly.Blocks['cb_game_loop'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#EA580C')
+      this.appendDummyInput().appendField('game loop — every frame')
+      this.appendStatementInput('DO').appendField('do')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip('Run blocks once per frame using requestAnimationFrame (~60fps). Auto-cancels on next Run.')
     },
   }
 }
@@ -1198,6 +1209,30 @@ function generateEventCode(block: Blockly.Block, language: Language): string | n
       return `document.addEventListener('keydown', ${fnKeyword}(e) {\n  if (e.key === ${JSON.stringify(key)}) {${bodyIndented}  }\n});`
     }
 
+    case 'cb_game_loop': {
+      if (language !== 'javascript') {
+        return `# Game loop is only available in JavaScript mode`
+      }
+      const body = generateStatementCode(block, 'DO', language)
+      const indented = body ? indent(body, language) : ''
+      // Cancels any previous loop first so clicking Run twice doesn't pile
+      // them up. __cbGameLoopId is shared parent-window state.
+      return [
+        `(function() {`,
+        `  if (window.__cbGameLoopId) { cancelAnimationFrame(window.__cbGameLoopId); window.__cbGameLoopId = 0; }`,
+        `  var __cbLoopActive = true;`,
+        `  var __cbLoop = async function() {`,
+        `    if (!__cbLoopActive) return;`,
+        `    try {`,
+        indented || '      // (empty loop body)',
+        `    } catch (e) { console.error('game loop error:', e && e.message ? e.message : e); __cbLoopActive = false; return; }`,
+        `    if (__cbLoopActive) { window.__cbGameLoopId = requestAnimationFrame(__cbLoop); }`,
+        `  };`,
+        `  window.__cbGameLoopId = requestAnimationFrame(__cbLoop);`,
+        `})();`,
+      ].join('\n')
+    }
+
     case 'cb_when_clicked': {
       if (language !== 'javascript') {
         return `# Click events are only available in JavaScript mode`
@@ -1782,6 +1817,8 @@ function eventsToolboxXml(): string {
   xml += '<block type="cb_when_clicked">'
   xml += '<value name="ID"><shadow type="text"><field name="TEXT">my-button</field></shadow></value>'
   xml += '</block>'
+
+  xml += '<block type="cb_game_loop"></block>'
 
   xml += '</category>'
   return xml
