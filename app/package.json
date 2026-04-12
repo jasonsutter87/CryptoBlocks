@@ -42,6 +42,7 @@
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.14.0",
     "sass": "^1.98.0",
+    "stripe": "^22.0.1",
     "vite-plugin-monaco-editor": "^1.1.0",
     "y-partykit": "^0.0.33",
     "yjs": "^13.6.30"

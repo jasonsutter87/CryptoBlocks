@@ -4,6 +4,7 @@ import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
 import NotificationBell from './NotificationBell'
+import { ProBadge } from '../billing/UpgradeGate'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
 
@@ -441,14 +442,14 @@ export default function Toolbar({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11m16-11v11" />
                     </svg>
                     Code Golf
-                    {mode === 'code-golf' && <span className="ml-auto text-xs text-[#a6e3a1] font-bold">Active</span>}
+                    {mode === 'code-golf' ? <span className="ml-auto text-xs text-[#a6e3a1] font-bold">Active</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button onClick={() => { onOpenLab(); setOpenMenu(null) }} className={menuItem}>
                     <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                     Code Lab
-                    {mode === 'code-lab' && <span className="ml-auto text-xs text-[#cba6f7] font-bold">Active</span>}
+                    {mode === 'code-lab' ? <span className="ml-auto text-xs text-[#cba6f7] font-bold">Active</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                 </div>
               )}
