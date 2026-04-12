@@ -4,14 +4,23 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth, useUser } from '@clerk/clerk-react'
+
+const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean)
 
 const CACHE_KEY = 'cb-pro-status'
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
-export function useIsPro(): { isPro: boolean; loading: boolean; refresh: () => void } {
+export function useIsPro(): { isPro: boolean; loading: boolean; isAdmin: boolean; refresh: () => void } {
   const { getToken, isSignedIn } = useAuth()
+  const { user } = useUser()
+
+  // Admin check — admins always get Pro
+  const email = user?.primaryEmailAddress?.emailAddress || ''
+  const isAdmin = ADMIN_EMAILS.includes(email.toLowerCase())
+
   const [isPro, setIsPro] = useState(() => {
+    if (isAdmin) return true
     try {
       const cached = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}')
       if (cached.ts && Date.now() - cached.ts < CACHE_TTL) return cached.isPro === true
@@ -21,6 +30,7 @@ export function useIsPro(): { isPro: boolean; loading: boolean; refresh: () => v
   const [loading, setLoading] = useState(false)
 
   const check = async () => {
+    if (isAdmin) { setIsPro(true); return }
     if (!isSignedIn) {
       setIsPro(false)
       return
@@ -41,9 +51,9 @@ export function useIsPro(): { isPro: boolean; loading: boolean; refresh: () => v
     setLoading(false)
   }
 
-  useEffect(() => { check() }, [isSignedIn]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { check() }, [isSignedIn, isAdmin]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { isPro, loading, refresh: check }
+  return { isPro: isPro || isAdmin, loading, isAdmin, refresh: check }
 }
 
 export async function openCheckout(getToken: () => Promise<string | null>): Promise<void> {
