@@ -2,6 +2,9 @@
   command = "npm run build"
   publish = "dist"
 
+[functions]
+  directory = "netlify/functions"
+
 # Explicit Permissions-Policy so Chrome/Edge allow Web Bluetooth, USB, and
 # Serial from the top-level document. Needed for the micro:bit hardware
 # blocks. Brave Shields may still block these independently — tell users

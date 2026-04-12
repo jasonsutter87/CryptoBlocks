@@ -1,16 +1,37 @@
 import { useState, useEffect } from 'react'
+import { publishProject } from './api'
 
 interface UploadModalProps {
   onClose: () => void
+  onPublished?: () => void
 }
 
 const CATEGORIES = ['Games', 'Art', 'Web', 'Sound', 'Data', 'AI'] as const
 
-export default function UploadModal({ onClose }: UploadModalProps) {
+export default function UploadModal({ onClose, onPublished }: UploadModalProps) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<string>('Games')
   const [tags, setTags] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Read workspace from localStorage so kid doesn't have to pass it in
+  const workspaceJson = (() => {
+    try {
+      return localStorage.getItem('cryptoblocks_workspace') || ''
+    } catch {
+      return ''
+    }
+  })()
+  const blockCount = (() => {
+    try {
+      const ws = JSON.parse(workspaceJson)
+      return ws?.blocks?.blocks?.length ?? 0
+    } catch {
+      return 0
+    }
+  })()
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -20,12 +41,31 @@ export default function UploadModal({ onClose }: UploadModalProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  const handleUpload = () => {
-    console.log('Upload to Shareplace (coming soon):', { name, description, category, tags })
-    onClose()
+  const handleUpload = async () => {
+    if (!workspaceJson) {
+      setError('No workspace to upload — build something in the editor first!')
+      return
+    }
+    setUploading(true)
+    setError(null)
+    const result = await publishProject({
+      name: name.trim(),
+      description: description.trim(),
+      category,
+      workspaceJson,
+      tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+      blockCount,
+    })
+    setUploading(false)
+    if (result) {
+      onPublished?.()
+      onClose()
+    } else {
+      setError('Upload failed — try again in a moment.')
+    }
   }
 
-  const isValid = name.trim().length > 0 && description.trim().length > 0
+  const isValid = name.trim().length > 0 && description.trim().length > 0 && !!workspaceJson
 
   return (
     <div
@@ -111,8 +151,8 @@ export default function UploadModal({ onClose }: UploadModalProps) {
               <p className="text-xs text-[#6c7086]">Current workspace</p>
               <p className="text-sm text-[#cdd6f4] font-medium">Ready to upload</p>
             </div>
-            <span className="ml-auto text-xs text-[#a6adc8] bg-[#313244] px-2 py-1 rounded font-mono">
-              Coming Soon
+            <span className="ml-auto text-xs text-[#a6e3a1] bg-[#313244] px-2 py-1 rounded font-mono">
+              {blockCount} blocks
             </span>
           </div>
         </div>
@@ -127,11 +167,14 @@ export default function UploadModal({ onClose }: UploadModalProps) {
           </button>
           <button
             onClick={handleUpload}
-            disabled={!isValid}
+            disabled={!isValid || uploading}
             className="px-4 py-2 text-sm font-semibold text-[#1e1e2e] bg-[#89b4fa] hover:bg-[#89b4fa]/80 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Upload
+            {uploading ? 'Uploading...' : 'Upload'}
           </button>
+          {error && (
+            <p className="text-xs text-[#f38ba8] mt-1">{error}</p>
+          )}
         </div>
       </div>
     </div>

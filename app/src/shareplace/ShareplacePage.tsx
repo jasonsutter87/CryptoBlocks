@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import ProjectCard from './ProjectCard'
 import { MOCK_PROJECTS } from './mock-data'
 import type { SharedProject } from '../types/shareplace'
 import ProjectDetailModal from './ProjectDetailModal'
 import UploadModal from './UploadModal'
+import { fetchProjects } from './api'
 
 const CATEGORIES = ['All', 'Games', 'Art', 'Web', 'Sound', 'Data', 'AI'] as const
 
@@ -15,23 +16,39 @@ export default function ShareplacePage() {
   const [sort, setSort] = useState<SortOption>('newest')
   const [selectedProject, setSelectedProject] = useState<SharedProject | null>(null)
   const [showUpload, setShowUpload] = useState(false)
+  const [liveProjects, setLiveProjects] = useState<SharedProject[] | null>(null)
+
+  const loadProjects = useCallback(async () => {
+    const projects = await fetchProjects({ category: activeCategory, search: search.trim() || undefined })
+    setLiveProjects(projects.length > 0 ? projects : null)
+  }, [activeCategory, search])
+
+  useEffect(() => {
+    loadProjects()
+  }, [loadProjects])
+
+  // Use live API data when available, fall back to mock data
+  const baseProjects = liveProjects ?? MOCK_PROJECTS
 
   const filtered = useMemo(() => {
-    let projects = [...MOCK_PROJECTS]
+    let projects = [...baseProjects]
 
-    if (activeCategory !== 'All') {
-      projects = projects.filter((p) => p.category === activeCategory)
-    }
+    // Client-side filtering only needed for mock data (API handles it server-side)
+    if (!liveProjects) {
+      if (activeCategory !== 'All') {
+        projects = projects.filter((p) => p.category === activeCategory)
+      }
 
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      projects = projects.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q) ||
-          p.author.toLowerCase().includes(q) ||
-          p.tags.some((t) => t.toLowerCase().includes(q))
-      )
+      if (search.trim()) {
+        const q = search.trim().toLowerCase()
+        projects = projects.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.description.toLowerCase().includes(q) ||
+            p.author.toLowerCase().includes(q) ||
+            p.tags.some((t) => t.toLowerCase().includes(q))
+        )
+      }
     }
 
     if (sort === 'newest') {
@@ -43,7 +60,7 @@ export default function ShareplacePage() {
     }
 
     return projects
-  }, [search, activeCategory, sort])
+  }, [baseProjects, search, activeCategory, sort, liveProjects])
 
   return (
     <div className="min-h-full bg-[#1e1e2e]">
@@ -178,7 +195,7 @@ export default function ShareplacePage() {
       )}
 
       {showUpload && (
-        <UploadModal onClose={() => setShowUpload(false)} />
+        <UploadModal onClose={() => setShowUpload(false)} onPublished={loadProjects} />
       )}
     </div>
   )
