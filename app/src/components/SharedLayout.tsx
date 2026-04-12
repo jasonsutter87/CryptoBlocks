@@ -13,6 +13,14 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
   const { isPro } = useIsPro()
   const { getToken } = useAuth()
 
+  // Apply theme
+  useEffect(() => {
+    try {
+      const settings = JSON.parse(localStorage.getItem('cryptoblocks-settings') || '{}')
+      if (settings.theme) document.documentElement.setAttribute('data-theme', settings.theme)
+    } catch {}
+  }, [])
+
   // Unlock scrolling for non-editor pages; restore overflow lock on unmount
   useEffect(() => {
     document.body.classList.add('scrollable-page')

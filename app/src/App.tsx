@@ -61,6 +61,7 @@ import SettingsModal from './components/SettingsModal'
 import WelcomeModal from './components/WelcomeModal'
 import TutorialOverlay from './components/TutorialOverlay'
 import { initEasterEggs } from './easter-eggs'
+import { loadSettings } from './settings'
 import type { Achievement } from './achievements'
 import { checkAchievements } from './achievements'
 import { recordRun, recordChallengeComplete, recordGolfComplete, recordLabComplete, recordAchievement } from './stats'
@@ -199,6 +200,10 @@ export default function App() {
     initEasterEggs()
     ensureSpeechGlobal()
     ensureVisionGlobal()
+
+    // Apply theme from settings
+    const settings = loadSettings()
+    document.documentElement.setAttribute('data-theme', settings.theme || 'dark')
 
     const { customBlocks: saved, workspaceState } = loadFromLocalStorage()
     if (saved.length > 0) {

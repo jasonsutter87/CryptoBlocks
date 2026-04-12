@@ -3,11 +3,13 @@ const SETTINGS_KEY = 'cryptoblocks-settings'
 export interface UserSettings {
   autoSaveEnabled: boolean
   autoSaveIntervalMinutes: number
+  theme: 'dark' | 'light'
 }
 
 const DEFAULTS: UserSettings = {
   autoSaveEnabled: true,
   autoSaveIntervalMinutes: 5,
+  theme: 'dark',
 }
 
 export function loadSettings(): UserSettings {

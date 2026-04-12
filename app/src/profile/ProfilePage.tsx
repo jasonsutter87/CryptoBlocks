@@ -310,9 +310,17 @@ export default function ProfilePage() {
 
         {/* Theme selector */}
         <Field label="Theme">
-          <select className={`${inputClass} cursor-not-allowed opacity-60`} disabled>
+          <select
+            className={inputClass}
+            value={settings.theme || 'dark'}
+            onChange={(e) => {
+              const theme = e.target.value as 'dark' | 'light'
+              updateSettings({ theme })
+              document.documentElement.setAttribute('data-theme', theme)
+            }}
+          >
             <option value="dark">Dark</option>
-            <option value="light">Light (Coming Soon)</option>
+            <option value="light">Light</option>
           </select>
         </Field>
       </SectionCard>
