@@ -58,10 +58,22 @@ export async function fetchProjects(opts: FetchProjectsOptions = {}): Promise<Sh
 
     const url = `${API_BASE}${params.toString() ? '?' + params : ''}`
     const res = await fetch(url)
-    if (!res.ok) return []
+    if (!res.ok) {
+      // eslint-disable-next-line no-console
+      console.warn('[shareplace] fetch failed:', res.status, res.statusText)
+      return []
+    }
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('json')) {
+      // eslint-disable-next-line no-console
+      console.warn('[shareplace] unexpected content-type:', contentType, '— is the API redirect working?')
+      return []
+    }
     const data = await res.json()
     return (data.projects ?? []).map(toSharedProject)
-  } catch {
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[shareplace] fetch error:', err)
     return []
   }
 }
