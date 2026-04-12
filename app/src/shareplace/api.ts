@@ -100,11 +100,14 @@ export interface PublishPayload {
   parentId?: string
 }
 
-export async function publishProject(payload: PublishPayload): Promise<{ id: string } | null> {
+export async function publishProject(payload: PublishPayload, clerkToken?: string): Promise<{ id: string } | null> {
   try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`
+
     const res = await fetch(API_BASE, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(payload),
     })
     if (!res.ok) return null

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { SharedProject } from '../types/shareplace'
 import RemixModal from './RemixModal'
 import EditListingModal from './EditListingModal'
@@ -102,7 +103,40 @@ export default function ProjectDetailModal({
   const iconColor = CATEGORY_ICON_COLORS[project.category] ?? '#6c7086'
   const pillClass = CATEGORY_PILL_COLORS[project.category] ?? 'bg-[#45475a]/40 text-[#a6adc8]'
 
+  const navigate = useNavigate()
   const [downloading, setDownloading] = useState(false)
+  const [opening, setOpening] = useState(false)
+  const [liked, setLiked] = useState(false)
+  const [likeCount, setLikeCount] = useState(project.likes)
+
+  const handleLike = async () => {
+    if (liked) return
+    setLiked(true)
+    setLikeCount((c) => c + 1)
+    try {
+      await fetch(`/api/projects/${project.id}/like`, { method: 'POST' })
+    } catch {
+      setLiked(false)
+      setLikeCount((c) => c - 1)
+    }
+  }
+
+  const handleOpenInEditor = async () => {
+    setOpening(true)
+    try {
+      const res = await fetch(`/api/projects/${project.id}`)
+      if (!res.ok) throw new Error('Failed to fetch')
+      const data = await res.json()
+      const workspaceJson = data.workspaceJson || '{}'
+      localStorage.setItem('cryptoblocks_workspace', workspaceJson)
+      onClose()
+      navigate('/')
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Open in editor failed:', err)
+    }
+    setOpening(false)
+  }
 
   const handleDownload = async () => {
     setDownloading(true)
@@ -178,13 +212,18 @@ export default function ProjectDetailModal({
                 <span className="text-[#cdd6f4] font-semibold text-sm">{project.downloads.toLocaleString()}</span>
                 <span className="text-[10px] text-[#6c7086]">downloads</span>
               </div>
-              <div className="bg-[#181825] rounded-lg px-3 py-2.5 flex flex-col items-center gap-1">
-                <svg className="w-4 h-4 text-[#f38ba8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <button
+                onClick={handleLike}
+                disabled={liked}
+                className={`bg-[#181825] rounded-lg px-3 py-2.5 flex flex-col items-center gap-1 transition-colors ${liked ? 'ring-1 ring-[#f38ba8]' : 'hover:bg-[#1e1e2e] cursor-pointer'}`}
+                title={liked ? 'Liked!' : 'Like this project'}
+              >
+                <svg className="w-4 h-4 text-[#f38ba8]" fill={liked ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
                 </svg>
-                <span className="text-[#cdd6f4] font-semibold text-sm">{project.likes}</span>
-                <span className="text-[10px] text-[#6c7086]">likes</span>
-              </div>
+                <span className="text-[#cdd6f4] font-semibold text-sm">{likeCount}</span>
+                <span className="text-[10px] text-[#6c7086]">{liked ? 'liked!' : 'likes'}</span>
+              </button>
               <div className="bg-[#181825] rounded-lg px-3 py-2.5 flex flex-col items-center gap-1">
                 <svg className="w-4 h-4 text-[#fab387]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
@@ -223,6 +262,16 @@ export default function ProjectDetailModal({
           {/* Footer actions */}
           <div className="px-6 pb-6 pt-4 border-t border-[#313244] flex flex-wrap gap-2 shrink-0">
             {/* Primary actions */}
+            <button
+              onClick={handleOpenInEditor}
+              disabled={opening}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#1e1e2e] bg-[#f9e2af] hover:bg-[#f9e2af]/80 rounded-lg transition-colors disabled:opacity-60"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+              </svg>
+              {opening ? 'Loading...' : 'Open in Editor'}
+            </button>
             <button
               onClick={handleDownload}
               disabled={downloading}

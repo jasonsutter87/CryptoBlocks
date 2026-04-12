@@ -11,6 +11,34 @@
  *   POST /api/projects/:id/like → increment likes
  */
 
+// -- Clerk JWT verification (lightweight, no SDK dependency) ----------------
+
+interface ClerkTokenPayload {
+  sub: string
+  name?: string
+  email?: string
+}
+
+async function verifyClerkToken(token: string): Promise<ClerkTokenPayload | null> {
+  if (!token || !process.env.CLERK_SECRET_KEY) return null
+  try {
+    // Use Clerk's Backend API to verify the session token
+    const res = await fetch('https://api.clerk.com/v1/tokens/verify', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ token }),
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    return { sub: data.sub || data.user_id || '', name: data.name, email: data.email }
+  } catch {
+    return null
+  }
+}
+
 // -- Minimal Turso HTTP client via fetch -----------------------------------
 
 interface TursoRow {
@@ -119,8 +147,17 @@ export default async function handler(req: Request) {
       return json({ error: 'Database not configured' }, 500)
     }
 
-    // POST /api/projects — publish a project
+    // POST /api/projects — publish a project (requires Clerk auth)
     if (req.method === 'POST' && segments.length === 0) {
+      // Verify Clerk JWT from Authorization header
+      const authHeader = req.headers.get('Authorization') || ''
+      const token = authHeader.replace('Bearer ', '')
+      const clerkUser = await verifyClerkToken(token)
+
+      if (!clerkUser && process.env.CLERK_SECRET_KEY) {
+        return json({ error: 'Sign in to upload projects' }, 401)
+      }
+
       const body = await req.json()
       const { name, authorName, description, category, workspaceJson, tags, blockCount, parentId } = body
 
@@ -132,12 +169,13 @@ export default async function handler(req: Request) {
       const now = Date.now()
 
       await tursoExecute(
-        `INSERT INTO projects (id, name, author_name, description, category, workspace_json, tags, block_count, parent_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO projects (id, name, author_id, author_name, description, category, workspace_json, tags, block_count, parent_id, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           String(name).slice(0, 100),
-          String(authorName || 'Anonymous').slice(0, 50),
+          clerkUser?.sub || 'anonymous',
+          String(authorName || clerkUser?.name || 'Anonymous').slice(0, 50),
           String(description || '').slice(0, 500),
           String(category || 'General').slice(0, 50),
           String(workspaceJson),

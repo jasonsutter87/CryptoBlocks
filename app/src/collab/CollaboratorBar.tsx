@@ -38,14 +38,24 @@ export default function CollaboratorBar({ peers, status, roomCode, onLeave, onCo
       {peers.length > 0 && (
         <div className="flex items-center -space-x-1.5">
           {peers.map((peer, i) => (
-            <div
-              key={peer.user.id || i}
-              className="w-6 h-6 rounded-full border-2 border-[#313244] flex items-center justify-center text-[10px] font-bold text-white"
-              style={{ backgroundColor: peer.user.color }}
-              title={peer.user.name}
-            >
-              {peer.user.name.charAt(0).toUpperCase()}
-            </div>
+            peer.user.avatar ? (
+              <img
+                key={peer.user.id || i}
+                src={peer.user.avatar}
+                alt={peer.user.name}
+                title={peer.user.name}
+                className="w-6 h-6 rounded-full border-2 border-[#313244] object-cover"
+              />
+            ) : (
+              <div
+                key={peer.user.id || i}
+                className="w-6 h-6 rounded-full border-2 border-[#313244] flex items-center justify-center text-[10px] font-bold text-white"
+                style={{ backgroundColor: peer.user.color }}
+                title={peer.user.name}
+              >
+                {peer.user.name.charAt(0).toUpperCase()}
+              </div>
+            )
           ))}
         </div>
       )}

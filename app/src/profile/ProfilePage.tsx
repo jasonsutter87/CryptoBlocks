@@ -1,6 +1,9 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
 import { loadProfile, saveProfile, type UserProfile } from './profile-storage'
 import { loadSettings, saveSettings, type UserSettings } from '../settings'
+import { fetchProjects } from '../shareplace/api'
+import type { SharedProject } from '../types/shareplace'
 
 function getInitials(displayName: string, username: string): string {
   const source = displayName.trim() || username.trim()
@@ -41,11 +44,22 @@ const inputClass =
   'w-full bg-[#1e1e2e] border border-[#45475a] rounded-lg px-3 py-2 text-sm text-[#cdd6f4] placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa] transition-colors'
 
 export default function ProfilePage() {
+  const { user: clerkUser } = useUser()
   const [profile, setProfile] = useState<UserProfile>(loadProfile)
   const [settings, setSettings] = useState<UserSettings>(loadSettings)
   const [profileSaved, setProfileSaved] = useState(false)
   const [clearCheckpointConfirm, setClearCheckpointConfirm] = useState(false)
   const [clearWorkspaceConfirm, setClearWorkspaceConfirm] = useState(false)
+  const [myProjects, setMyProjects] = useState<SharedProject[]>([])
+
+  useEffect(() => {
+    fetchProjects().then((all) => {
+      const authorName = clerkUser?.fullName || clerkUser?.username || profile.displayName
+      if (authorName) {
+        setMyProjects(all.filter((p) => p.author === authorName))
+      }
+    })
+  }, [clerkUser, profile.displayName])
 
   // Profile handlers
   const updateProfile = useCallback((patch: Partial<UserProfile>) => {
@@ -96,6 +110,56 @@ export default function ProfilePage() {
         <h1 className="text-2xl font-bold text-[#cdd6f4]">Profile & Settings</h1>
         <p className="text-sm text-[#6c7086]">Manage your identity, preferences, and data.</p>
       </div>
+
+      {/* Clerk identity card */}
+      <SignedIn>
+        {clerkUser && (
+          <div className="bg-[#313244] rounded-xl p-6 flex items-center gap-4">
+            {clerkUser.imageUrl ? (
+              <img src={clerkUser.imageUrl} alt="" className="w-14 h-14 rounded-full" />
+            ) : (
+              <div className="w-14 h-14 rounded-full bg-[#89b4fa] flex items-center justify-center text-xl font-bold text-[#1e1e2e]">
+                {(clerkUser.fullName || clerkUser.username || '?').charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <div className="text-lg font-bold text-[#cdd6f4]">{clerkUser.fullName || clerkUser.username}</div>
+              <div className="text-sm text-[#6c7086]">{clerkUser.primaryEmailAddress?.emailAddress}</div>
+              <div className="text-xs text-[#a6e3a1] mt-1">{myProjects.length} shared project{myProjects.length !== 1 ? 's' : ''}</div>
+            </div>
+          </div>
+        )}
+      </SignedIn>
+      <SignedOut>
+        <div className="bg-[#313244] rounded-xl p-6 flex items-center justify-between">
+          <div>
+            <div className="text-[#cdd6f4] font-semibold">Sign in to save your identity</div>
+            <div className="text-sm text-[#6c7086]">Your name and avatar will appear in collab and on shared projects.</div>
+          </div>
+          <SignInButton mode="modal">
+            <button className="px-4 py-2 bg-[#cba6f7] text-[#1e1e2e] rounded-lg text-sm font-bold hover:bg-[#cba6f7]/80 transition-colors">
+              Sign In
+            </button>
+          </SignInButton>
+        </div>
+      </SignedOut>
+
+      {/* My shared projects */}
+      {myProjects.length > 0 && (
+        <SectionCard title="My Shared Projects">
+          <div className="flex flex-col gap-2">
+            {myProjects.map((p) => (
+              <div key={p.id} className="flex items-center justify-between bg-[#1e1e2e] rounded-lg px-4 py-3">
+                <div>
+                  <div className="text-sm font-semibold text-[#cdd6f4]">{p.name}</div>
+                  <div className="text-xs text-[#6c7086]">{p.category} · {p.blockCount} blocks · {p.likes} likes</div>
+                </div>
+                <a href="/shareplace" className="text-xs text-[#89b4fa] hover:text-[#74c7ec]">View</a>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
 
       {/* Profile section */}
       <SectionCard title="Profile">

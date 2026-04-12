@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/clerk-react'
+import { useUser, useAuth } from '@clerk/clerk-react'
 import { publishProject } from './api'
 
 interface UploadModalProps {
@@ -11,6 +11,7 @@ const CATEGORIES = ['Games', 'Art', 'Web', 'Sound', 'Data', 'AI'] as const
 
 export default function UploadModal({ onClose, onPublished }: UploadModalProps) {
   const { user } = useUser()
+  const { getToken } = useAuth()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<string>('Games')
@@ -50,6 +51,7 @@ export default function UploadModal({ onClose, onPublished }: UploadModalProps) 
     }
     setUploading(true)
     setError(null)
+    const token = await getToken() || undefined
     const result = await publishProject({
       name: name.trim(),
       authorName: user?.fullName || user?.username || 'Anonymous',
@@ -58,7 +60,7 @@ export default function UploadModal({ onClose, onPublished }: UploadModalProps) 
       workspaceJson,
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       blockCount,
-    })
+    }, token)
     setUploading(false)
     if (result) {
       onPublished?.()
