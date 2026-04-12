@@ -50,7 +50,7 @@ export default function CollaboratorBar({ peers, status, roomCode, onLeave, onCo
               <div
                 key={peer.user.id || i}
                 className="w-6 h-6 rounded-full border-2 border-[#313244] flex items-center justify-center text-[10px] font-bold text-white"
-                style={{ backgroundColor: peer.user.color }}
+                style={{ backgroundColor: peer.user.color || '#89b4fa' }}
                 title={peer.user.name}
               >
                 {peer.user.name.charAt(0).toUpperCase()}
