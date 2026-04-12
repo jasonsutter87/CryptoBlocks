@@ -1,8 +1,10 @@
-import { useRef, useState, useEffect, useCallback } from 'react'
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import type { Language } from '../types/block'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
+import { loadDailyState, getEffectiveStreak } from '../daily/state'
+import { getDayNumber } from '../daily/getTodaysPuzzle'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -93,6 +95,7 @@ export default function Toolbar({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
   const [openMenu, setOpenMenu] = useState<'file' | 'build' | 'menu' | 'mobile' | null>(null)
+  const dailyStreak = useMemo(() => getEffectiveStreak(loadDailyState(), getDayNumber()), [])
   const [embedCopied, setEmbedCopied] = useState(false)
   const menuContainerRef = useRef<HTMLDivElement>(null)
 
@@ -382,6 +385,9 @@ export default function Toolbar({
                   <a href="/daily" onClick={() => setOpenMenu(null)} className={menuItem}>
                     <span className="w-4 h-4 flex items-center justify-center text-[#fab387] text-base">🎯</span>
                     Daily Challenge
+                    {dailyStreak > 0 && (
+                      <span className="ml-auto text-xs text-[#fab387] font-bold">{dailyStreak}🔥</span>
+                    )}
                   </a>
                   <button onClick={() => { onOpenStats(); setOpenMenu(null) }} className={menuItem}>
                     <svg className="w-4 h-4 text-[#cdd6f4]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
