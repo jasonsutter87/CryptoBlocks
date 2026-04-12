@@ -27,6 +27,7 @@ const LearnPage = lazy(() => import('./learn/LearnPage'))
 const CollabPage = lazy(() => import('./collab/CollabPage'))
 const DailyChallengePage = lazy(() => import('./daily/DailyChallengePage'))
 const TeacherDashboard = lazy(() => import('./teacher/TeacherDashboard'))
+const LeaderboardPage = lazy(() => import('./leaderboard/LeaderboardPage'))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -42,6 +43,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/profile" element={<SharedLayout><ProfilePage /></SharedLayout>} />
             <Route path="/daily" element={<SharedLayout><DailyChallengePage /></SharedLayout>} />
           <Route path="/teacher" element={<SharedLayout><TeacherDashboard /></SharedLayout>} />
+          <Route path="/leaderboard" element={<SharedLayout><LeaderboardPage /></SharedLayout>} />
           </Routes>
         </Suspense>
       </BrowserRouter>
