@@ -340,6 +340,36 @@ export const gamesBlocks: BlockDefinition[] = [
     shape: 'value',
   },
 
+  {
+    name: 'sprite_editor_image',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Look up a sprite you saved in the Sprite Editor by name. Returns an image URL you can pass to create_sprite.',
+    category: 'Games',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the sprite you saved in the Sprite Editor', default: 'my-sprite' },
+    ],
+    outputs: [{ name: 'image', type: 'string' }],
+    implementations: {
+      javascript: `function spriteEditorImage(name) {
+  try {
+    var all = JSON.parse(localStorage.getItem('cryptoblocks-sprites') || '{}');
+    var entry = all[String(name)];
+    return entry && entry.dataUrl ? entry.dataUrl : '';
+  } catch (e) {
+    return '';
+  }
+}`,
+      python: `def sprite_editor_image(name):
+    return ''`,
+    },
+    tests: [
+      { input: { name: 'my-sprite' }, expected: { image: 'string' } },
+    ],
+    color: '#EA580C',
+    shape: 'value',
+  },
+
   // ---------------------------------------------------------------------------
   // Side-scroller additions: gravity, platforms, physics, camera, backgrounds
   // ---------------------------------------------------------------------------
