@@ -382,6 +382,10 @@ export default function Toolbar({
                     </svg>
                     Shareplace
                   </a>
+                  <a href="/leaderboard" onClick={() => setOpenMenu(null)} className={menuItem}>
+                    <span className="w-4 h-4 flex items-center justify-center text-[#f9e2af] text-base">🏆</span>
+                    Leaderboard
+                  </a>
                   <a href="/daily" onClick={() => setOpenMenu(null)} className={menuItem}>
                     <span className="w-4 h-4 flex items-center justify-center text-[#fab387] text-base">🎯</span>
                     Daily Challenge
