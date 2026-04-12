@@ -218,6 +218,20 @@ export default async function handler(req: Request) {
         ],
       )
 
+      // Notify the original author if this is a remix
+      if (parentId && clerkUser) {
+        const parent = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [parentId])
+        const parentAuthor = parent.rows[0]?.author_id
+        if (parentAuthor && parentAuthor !== clerkUser.sub) {
+          await createNotificationDirect(
+            String(parentAuthor), 'remix',
+            'Your project was remixed!',
+            `Someone remixed "${parent.rows[0]?.name}" into "${String(name).slice(0, 50)}"`,
+            `/shareplace`,
+          )
+        }
+      }
+
       return json({ id, name, createdAt: now }, 201)
     }
 
@@ -256,6 +270,19 @@ export default async function handler(req: Request) {
         'UPDATE projects SET likes = likes + 1 WHERE id = ?',
         [segments[0]],
       )
+      // Notify the project author
+      if (likeUser) {
+        const project = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [segments[0]])
+        const authorId = project.rows[0]?.author_id
+        if (authorId && authorId !== likeUser.sub) {
+          await createNotificationDirect(
+            String(authorId), 'like',
+            'New like!',
+            `Someone liked your project "${project.rows[0]?.name}"`,
+            `/shareplace`,
+          )
+        }
+      }
       return json({ ok: true })
     }
 
@@ -378,4 +405,16 @@ function formatTreeNode(row: TursoRow) {
 
 function tryParse(s: string): unknown {
   try { return JSON.parse(s) } catch { return [] }
+}
+
+async function createNotificationDirect(userId: string, type: string, title: string, body: string, link: string): Promise<void> {
+  try {
+    const baseUrl = (process.env.TURSO_URL || '').replace('libsql://', 'https://')
+    const token = process.env.TURSO_AUTH_TOKEN || ''
+    if (!baseUrl || !token) return
+    await tursoExecute(
+      'INSERT INTO notifications (id, user_id, type, title, body, link, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [crypto.randomUUID(), userId, type, title, body, link, Date.now()],
+    )
+  } catch {}
 }

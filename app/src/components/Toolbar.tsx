@@ -3,6 +3,7 @@ import type { Language } from '../types/block'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
+import NotificationBell from './NotificationBell'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
 
@@ -590,6 +591,7 @@ export default function Toolbar({
           </SignInButton>
         </SignedOut>
         <SignedIn>
+          <NotificationBell />
           <UserButton
             appearance={{
               elements: {
