@@ -20,7 +20,7 @@ The gap between "visual coding toy" and "real programming" is where most kids qu
 ## What's Built
 
 ### Core Platform
-- **280+ blocks** across **23 categories** (Basics, Math, Text, Logic, Lists, Data, Database, Web, Art, Crypto, AI, Sound, Games, Hardware, Pen, Testing, Vision, Functions, Events, HTML, Libraries, Values, Secrets)
+- **320+ blocks** across **24 categories** (Basics, Math, Text, Logic, Lists, Data, Database, Web, Art, Crypto, AI, Sound, Games, Hardware, micro:bit, Pen, Testing, Vision, Functions, Events, HTML, Libraries, Values, Secrets)
 - **Dual-language code generation** — every block outputs real JavaScript AND Python
 - **Sandboxed execution** — iframe sandbox for JS, Pyodide for Python, both in-browser
 - **HTML/CSS blocks** with live preview in the sandbox
@@ -45,15 +45,44 @@ The gap between "visual coding toy" and "real programming" is where most kids qu
 
 ### Collaboration
 - **Coding with Friends** — real-time collaborative workspace editing via Yjs CRDTs + PartyKit WebSockets
-- **Room codes** — 6-letter codes to join, no accounts needed
-- **Presence** — see colored outlines on blocks your friends are touching
+- **Room codes** — 6-letter codes to join
+- **Presence** — see real names and profile photos via Clerk auth
 - **Run for Everyone** — broadcast execution to all peers
 - **Up to 6 editors** per room
 
+### Authentication & Classrooms
+- **Clerk auth** — sign in with Google or GitHub (one-click OAuth)
+- **Teacher Dashboard** — create classrooms, share join codes, view student projects
+- **Student join flow** — enter a 6-character code to join a class
+- **Real identity** — your name and avatar flow into collab, Shareplace, and classrooms
+
 ### Social
-- **Shareplace** — marketplace to browse and discover shared projects
+- **Shareplace** — real database-backed marketplace (Turso + Netlify Functions)
+- **Upload, download, like, remix** — full project lifecycle
+- **Remix tree** — visual lineage showing who remixed whose project
 - **Dashboard** — personal stats and project management
-- **Profile** — user settings and editor config
+- **Profile** — Clerk identity, shared projects, editor config
+- **Daily Challenge** — one puzzle per day, streak tracking, shareable results
+
+### 2D Game Engine
+- **Physics** — gravity, velocity, AABB platform collision
+- **Camera** — viewport follows player, parallax backgrounds
+- **Sprite images** — use pixel art from the Sprite Editor in games
+- **`game_loop` block** — requestAnimationFrame-based, auto-cancels on re-run
+- **Examples** — Side Scroller 🦊 and Flappy Bird 🐤
+
+### AI & Speech (All Client-Side)
+- **Speech** — say, listen, stop speaking (Web Speech API)
+- **Microphone** — live volume level (getUserMedia + AnalyserNode)
+- **Image classifier** — MobileNet, lazy-loaded (~5MB), 1000 ImageNet classes
+- **Hand tracking** — MediaPipe Hands, finger position, pinch detection, finger count
+- **Sentiment, classifier, Markov chain, regression** — educational ML primitives
+
+### Hardware
+- **micro:bit WebBluetooth** — 15 blocks for LED, speaker, sensors, servos
+- **Cyber:bot drive helper** — forward/back/left/right with timed servo control
+- **Sensor streaming** — temperature, light, accelerometer, compass at 10fps
+- **Time Travel** — scrubbable timeline over workspace history with fork-from-any-point
 
 ### Export
 - **Save/Load .blocks** project files
@@ -65,6 +94,7 @@ The gap between "visual coding toy" and "real programming" is where most kids qu
 ### Easter Eggs
 - **Hacker Mode** — click the logo 7 times, or enter the Konami code
 - **Hacker Terminal** — press backtick (`) for a hidden CLI with commands: `help`, `hack`, `matrix`, `neofetch`, `cowsay`, `fortune`, `rickroll`, theme switching
+- **Matrix Rain** — terminal command `matrix` launches fullscreen animated digital rain with "Wake up, Neo..." intro
 - **Snake** — terminal command `snake` launches a game that eats actual page elements
 - **Space Invaders** — terminal command `invaders` launches aliens that abduct your code
 - **Secret Blocks** — 13 hidden blocks in the ??? category (hacker mode only)
