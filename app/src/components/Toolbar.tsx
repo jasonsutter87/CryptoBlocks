@@ -287,9 +287,11 @@ export default function Toolbar({
                   </button>
                   <button
                     onClick={async () => {
-                      onCopyEmbed()
-                      setEmbedCopied(true)
-                      setTimeout(() => setEmbedCopied(false), 2000)
+                      requirePro(() => {
+                        onCopyEmbed()
+                        setEmbedCopied(true)
+                        setTimeout(() => setEmbedCopied(false), 2000)
+                      })
                     }}
                     className={menuItem}
                   >
@@ -297,7 +299,7 @@ export default function Toolbar({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                     </svg>
                     {embedCopied ? 'Copied!' : 'Copy Embed Snippet'}
-                    <span className="ml-auto text-xs text-[#6c7086]">&lt;/&gt;</span>
+                    {isPro ? <span className="ml-auto text-xs text-[#6c7086]">&lt;/&gt;</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button
                     onClick={() => { onPublish(); setOpenMenu(null) }}
