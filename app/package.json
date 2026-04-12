@@ -27,6 +27,7 @@
     "@codemirror/view": "^6.41.0",
     "@libsql/client": "^0.17.2",
     "@monaco-editor/react": "^4.7.0",
+    "@netlify/functions": "^5.2.0",
     "@tauri-apps/api": "^2.10.1",
     "acorn": "^8.15.0",
     "blockly": "^12.3.1",

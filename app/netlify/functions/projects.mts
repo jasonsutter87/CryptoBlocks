@@ -12,7 +12,7 @@
  *   TURSO_AUTH_TOKEN    — JWT from `turso db tokens create`
  */
 
-import { createClient } from '@libsql/client/web'
+import { createClient } from '@libsql/client'
 import type { Context } from '@netlify/functions'
 
 function getDb() {
@@ -49,7 +49,12 @@ export default async function handler(req: Request, context: Context) {
   if (req.method === 'OPTIONS') return cors()
 
   const url = new URL(req.url)
-  const segments = url.pathname.replace('/api/projects', '').split('/').filter(Boolean)
+  // Netlify rewrites /api/projects/x → /.netlify/functions/projects/x
+  // Strip both possible prefixes so we get the meaningful path segments.
+  const cleanPath = url.pathname
+    .replace('/.netlify/functions/projects', '')
+    .replace('/api/projects', '')
+  const segments = cleanPath.split('/').filter(Boolean)
   const db = getDb()
 
   try {
@@ -171,6 +176,3 @@ function tryParse(s: string): unknown {
   try { return JSON.parse(s) } catch { return [] }
 }
 
-export const config = {
-  path: '/api/projects/*',
-}
