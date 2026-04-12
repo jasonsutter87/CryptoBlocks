@@ -16,6 +16,8 @@ import { calculatorLeanWorkspace } from './calculator-lean-workspace'
 import { game2048Workspace } from './2048-workspace'
 import { textPortraitWorkspace } from './text-portrait-workspace'
 import { moodBuddyWorkspace } from './mood-buddy-workspace'
+import { sideScrollerWorkspace } from './side-scroller-workspace'
+import { flappyBirdWorkspace } from './flappy-bird-workspace'
 
 export interface Example {
   id: string
@@ -617,5 +619,21 @@ export const EXAMPLES: Example[] = [
     difficulty: 'pro',
     tags: ['AI', 'Basics', 'Logic', 'Text'],
     workspace: moodBuddyWorkspace(),
+  },
+  {
+    id: 'side-scroller',
+    name: 'Side Scroller 🦊',
+    description: 'A tiny Mario-style game: the fox runs, jumps, and lands on platforms while the camera scrolls through a 1800-wide world. Arrows to move, space to jump.',
+    difficulty: 'pro',
+    tags: ['Games', 'Logic', 'Events'],
+    workspace: sideScrollerWorkspace(),
+  },
+  {
+    id: 'flappy-bird',
+    name: 'Flappy Bird 🐤',
+    description: 'The classic one-tap game. Gravity pulls the bird down, space flaps it up, and pipes scroll past. Built from the same physics + camera + platform blocks as the side scroller.',
+    difficulty: 'pro',
+    tags: ['Games', 'Logic', 'Events'],
+    workspace: flappyBirdWorkspace(),
   },
 ]
