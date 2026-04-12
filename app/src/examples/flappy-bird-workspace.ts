@@ -34,7 +34,7 @@ function pipePair(x: number, gapY: number): {
   })
   const bottom = block('cb_add_platform', undefined, {
     x: numVal(x),
-    y: numVal(gapY + 160),
+    y: numVal(gapY + 180),
     width: numVal(60),
     height: numVal(400),
     color: textVal('#22c55e'),
@@ -75,7 +75,7 @@ export function flappyBirdWorkspace(): Record<string, unknown> {
   }, 40, 160)
 
   const setGravity = block('cb_set_gravity', undefined, {
-    value: numVal(0.35),
+    value: numVal(0.3),
   })
 
   const createBird = block('cb_create_sprite', undefined, {
@@ -100,14 +100,14 @@ export function flappyBirdWorkspace(): Record<string, unknown> {
 
   // Pipe pairs: [worldX, topGapBottomY]
   const pipes = [
-    pipePair(320, 140),
-    pipePair(520, 220),
-    pipePair(720, 100),
-    pipePair(920, 200),
-    pipePair(1120, 160),
-    pipePair(1320, 240),
-    pipePair(1520, 120),
-    pipePair(1720, 180),
+    pipePair(400, 140),
+    pipePair(650, 200),
+    pipePair(900, 100),
+    pipePair(1150, 180),
+    pipePair(1400, 130),
+    pipePair(1650, 210),
+    pipePair(1900, 150),
+    pipePair(2150, 190),
   ]
   const pipeBlocks = pipes.flatMap((p) => [p.top, p.bottom])
 
