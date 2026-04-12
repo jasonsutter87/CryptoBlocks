@@ -423,6 +423,27 @@ export default function Toolbar({
                     </svg>
                     Stats
                   </button>
+                  <a href="/dashboard" onClick={() => setOpenMenu(null)} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#fab387]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zm0 9.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
+                    </svg>
+                    Dashboard
+                  </a>
+                  <a href="/profile" onClick={() => setOpenMenu(null)} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
+                    </svg>
+                    Profile & Settings
+                  </a>
+                  <a
+                    href={isPro ? '/teacher' : '#'}
+                    onClick={(e) => { if (!isPro) { e.preventDefault(); requirePro(() => {}) } else { setOpenMenu(null) } }}
+                    className={menuItem}
+                  >
+                    <span className="w-4 h-4 flex items-center justify-center text-base">🏫</span>
+                    Classrooms
+                    {!isPro && <span className="ml-auto"><ProBadge /></span>}
+                  </a>
                   <div className={menuDivider} />
                   <a href="/learn" onClick={() => setOpenMenu(null)} className={menuItem}>
                     <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
