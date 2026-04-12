@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import type { SharedProject } from '../types/shareplace'
 import { fetchRemixTree, type RemixTree } from './api'
 import RemixModal from './RemixModal'
@@ -105,7 +104,6 @@ export default function ProjectDetailModal({
   const iconColor = CATEGORY_ICON_COLORS[project.category] ?? '#6c7086'
   const pillClass = CATEGORY_PILL_COLORS[project.category] ?? 'bg-[#45475a]/40 text-[#a6adc8]'
 
-  const navigate = useNavigate()
   const [downloading, setDownloading] = useState(false)
   const [opening, setOpening] = useState(false)
   const [liked, setLiked] = useState(false)

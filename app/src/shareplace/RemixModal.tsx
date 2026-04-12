@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import type { SharedProject } from '../types/shareplace'
 
 interface RemixModalProps {
@@ -9,7 +8,6 @@ interface RemixModalProps {
 }
 
 export default function RemixModal({ project, onClose, onConfirm }: RemixModalProps) {
-  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -38,7 +36,7 @@ export default function RemixModal({ project, onClose, onConfirm }: RemixModalPr
 
       onConfirm?.()
       onClose()
-      navigate('/')
+      window.location.href = '/'
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Remix failed:', err)
