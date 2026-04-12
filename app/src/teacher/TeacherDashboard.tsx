@@ -1,0 +1,293 @@
+/**
+ * Teacher Dashboard — create classrooms, share join codes, view student work.
+ *
+ * Teachers create a classroom → get a 6-character join code → share it
+ * with students. Students sign in and enter the code. Teacher sees all
+ * members + their shared projects in one place.
+ *
+ * Students see the classrooms they've joined and can enter new codes.
+ */
+
+import { useState, useEffect, useCallback } from 'react'
+import { useAuth, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
+import {
+  fetchClassrooms,
+  fetchClassroom,
+  createClassroom,
+  joinClassroom,
+  type Classroom,
+  type ClassroomDetail,
+} from './api'
+
+export default function TeacherDashboard() {
+  const { getToken } = useAuth()
+  const [classrooms, setClassrooms] = useState<Classroom[]>([])
+  const [selectedClassroom, setSelectedClassroom] = useState<ClassroomDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  // Create classroom form
+  const [showCreate, setShowCreate] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [creating, setCreating] = useState(false)
+
+  // Join classroom form
+  const [showJoin, setShowJoin] = useState(false)
+  const [joinCode, setJoinCode] = useState('')
+  const [joining, setJoining] = useState(false)
+  const [joinError, setJoinError] = useState<string | null>(null)
+
+  // Newly created classroom code to show
+  const [createdCode, setCreatedCode] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    const list = await fetchClassrooms(getToken)
+    setClassrooms(list)
+    setLoading(false)
+  }, [getToken])
+
+  useEffect(() => { load() }, [load])
+
+  const handleCreate = async () => {
+    if (!newName.trim()) return
+    setCreating(true)
+    const result = await createClassroom(newName.trim(), getToken)
+    if (result) {
+      setCreatedCode(result.joinCode)
+      setNewName('')
+      setShowCreate(false)
+      await load()
+    }
+    setCreating(false)
+  }
+
+  const handleJoin = async () => {
+    if (!joinCode.trim()) return
+    setJoining(true)
+    setJoinError(null)
+    const result = await joinClassroom(joinCode.trim(), getToken)
+    if (result) {
+      setJoinCode('')
+      setShowJoin(false)
+      await load()
+    } else {
+      setJoinError('Invalid code — check and try again')
+    }
+    setJoining(false)
+  }
+
+  const handleSelectClassroom = async (id: string) => {
+    const detail = await fetchClassroom(id)
+    setSelectedClassroom(detail)
+  }
+
+  return (
+    <div className="min-h-full bg-[#1e1e2e]">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-[#cdd6f4] tracking-tight mb-1">
+              Classrooms
+            </h1>
+            <p className="text-[#a6adc8]">
+              Create a classroom and share the join code with your students.
+            </p>
+          </div>
+          <SignedIn>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowJoin(true)}
+                className="px-4 py-2.5 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-lg text-sm font-semibold transition-colors"
+              >
+                Join Class
+              </button>
+              <button
+                onClick={() => setShowCreate(true)}
+                className="px-4 py-2.5 bg-[#89b4fa] hover:bg-[#74c7ec] text-[#1e1e2e] rounded-lg text-sm font-bold transition-colors"
+              >
+                + New Classroom
+              </button>
+            </div>
+          </SignedIn>
+        </div>
+
+        <SignedOut>
+          <div className="bg-[#313244] rounded-xl p-8 text-center">
+            <span className="text-4xl mb-4 block">🏫</span>
+            <h2 className="text-xl font-bold text-[#cdd6f4] mb-2">Sign in to get started</h2>
+            <p className="text-[#6c7086] mb-4">Teachers create classrooms. Students join with a code.</p>
+            <SignInButton mode="modal">
+              <button className="px-5 py-2.5 bg-[#cba6f7] text-[#1e1e2e] rounded-lg font-bold hover:bg-[#cba6f7]/80 transition-colors">
+                Sign In
+              </button>
+            </SignInButton>
+          </div>
+        </SignedOut>
+
+        <SignedIn>
+          {/* Created code banner */}
+          {createdCode && (
+            <div className="mb-6 bg-[#a6e3a1]/10 border border-[#a6e3a1]/30 rounded-xl p-5 flex items-center justify-between">
+              <div>
+                <div className="text-sm text-[#a6adc8]">Classroom created! Share this code with your students:</div>
+                <div className="text-3xl font-mono font-bold text-[#a6e3a1] tracking-widest mt-1">{createdCode}</div>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(createdCode)
+                  setCreatedCode(null)
+                }}
+                className="px-4 py-2 bg-[#a6e3a1] text-[#1e1e2e] rounded-lg text-sm font-bold"
+              >
+                Copy & Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* Create classroom modal */}
+          {showCreate && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) setShowCreate(false) }}>
+              <div className="bg-[#1e1e2e] border border-[#313244] rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+                <h2 className="text-[#cdd6f4] font-semibold text-base mb-4">Create a Classroom</h2>
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g. Period 3 — Intro to Coding"
+                  className="w-full bg-[#313244] border border-[#45475a] text-[#cdd6f4] text-sm rounded-lg px-3 py-2.5 placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa] mb-4"
+                  onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                  autoFocus
+                />
+                <div className="flex gap-2 justify-end">
+                  <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-[#cdd6f4] bg-[#313244] hover:bg-[#45475a] rounded-lg">Cancel</button>
+                  <button onClick={handleCreate} disabled={creating || !newName.trim()} className="px-4 py-2 text-sm font-bold text-[#1e1e2e] bg-[#89b4fa] hover:bg-[#74c7ec] rounded-lg disabled:opacity-40">
+                    {creating ? 'Creating...' : 'Create'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Join classroom modal */}
+          {showJoin && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) setShowJoin(false) }}>
+              <div className="bg-[#1e1e2e] border border-[#313244] rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+                <h2 className="text-[#cdd6f4] font-semibold text-base mb-2">Join a Classroom</h2>
+                <p className="text-[#6c7086] text-sm mb-4">Enter the 6-character code your teacher gave you.</p>
+                <input
+                  type="text"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
+                  placeholder="ABC123"
+                  className="w-full bg-[#313244] border border-[#45475a] text-[#cdd6f4] text-2xl font-mono text-center tracking-[0.3em] rounded-lg px-3 py-3 placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa] mb-2"
+                  onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
+                  autoFocus
+                  maxLength={6}
+                />
+                {joinError && <p className="text-xs text-[#f38ba8] mb-2">{joinError}</p>}
+                <div className="flex gap-2 justify-end mt-3">
+                  <button onClick={() => setShowJoin(false)} className="px-4 py-2 text-sm text-[#cdd6f4] bg-[#313244] hover:bg-[#45475a] rounded-lg">Cancel</button>
+                  <button onClick={handleJoin} disabled={joining || joinCode.length < 4} className="px-4 py-2 text-sm font-bold text-[#1e1e2e] bg-[#a6e3a1] hover:bg-[#a6e3a1]/80 rounded-lg disabled:opacity-40">
+                    {joining ? 'Joining...' : 'Join'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Classroom list */}
+          {loading ? (
+            <div className="text-[#6c7086] animate-pulse py-12 text-center">Loading classrooms...</div>
+          ) : classrooms.length === 0 ? (
+            <div className="bg-[#181825] border border-[#313244] rounded-xl p-12 text-center">
+              <span className="text-5xl block mb-4">🏫</span>
+              <p className="text-[#cdd6f4] font-semibold text-lg mb-1">No classrooms yet</p>
+              <p className="text-[#6c7086] text-sm">Create one to get started, or enter a join code from your teacher.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+              {classrooms.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => handleSelectClassroom(c.id)}
+                  className="bg-[#181825] border border-[#313244] rounded-xl p-5 text-left hover:border-[#45475a] transition-colors"
+                >
+                  <div className="text-lg font-bold text-[#cdd6f4] mb-1">{c.name}</div>
+                  <div className="text-xs text-[#6c7086] mb-3">by {c.teacherName}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-[#89b4fa] font-mono tracking-wider">{c.joinCode}</span>
+                    <span className="text-xs text-[#6c7086]">{c.memberCount} member{c.memberCount !== 1 ? 's' : ''}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Selected classroom detail */}
+          {selectedClassroom && (
+            <div className="bg-[#181825] border border-[#313244] rounded-xl overflow-hidden">
+              <div className="px-6 py-5 border-b border-[#313244] flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-[#cdd6f4]">{selectedClassroom.name}</h2>
+                  <div className="text-sm text-[#6c7086] mt-0.5">
+                    Join code: <span className="font-mono text-[#89b4fa] tracking-wider">{selectedClassroom.joinCode}</span>
+                    <span className="ml-3">{selectedClassroom.members.length} member{selectedClassroom.members.length !== 1 ? 's' : ''}</span>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedClassroom(null)} className="text-[#6c7086] hover:text-[#cdd6f4] p-1">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Members */}
+              <div className="px-6 py-4 border-b border-[#313244]">
+                <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">Members</h3>
+                <div className="flex flex-wrap gap-3">
+                  {selectedClassroom.members.map((m) => (
+                    <div key={m.userId} className="flex items-center gap-2 bg-[#1e1e2e] rounded-lg px-3 py-2">
+                      {m.userAvatar ? (
+                        <img src={m.userAvatar} alt="" className="w-6 h-6 rounded-full" />
+                      ) : (
+                        <div className="w-6 h-6 rounded-full bg-[#89b4fa] flex items-center justify-center text-[10px] font-bold text-[#1e1e2e]">
+                          {m.userName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="text-sm text-[#cdd6f4]">{m.userName}</span>
+                      {m.role === 'teacher' && (
+                        <span className="text-[10px] text-[#f9e2af] bg-[#f9e2af]/10 px-1.5 py-0.5 rounded font-semibold">Teacher</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Student projects */}
+              <div className="px-6 py-4">
+                <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">
+                  Student Projects ({selectedClassroom.projects.length})
+                </h3>
+                {selectedClassroom.projects.length === 0 ? (
+                  <p className="text-sm text-[#6c7086] italic">No projects shared yet. Students can upload from the editor.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {selectedClassroom.projects.map((p) => (
+                      <div key={p.id} className="bg-[#1e1e2e] rounded-lg px-4 py-3">
+                        <div className="text-sm font-semibold text-[#cdd6f4]">{p.name}</div>
+                        <div className="text-xs text-[#6c7086] mt-0.5">
+                          by {p.authorName} · {p.category} · {p.blockCount} blocks · {p.likes} likes
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </SignedIn>
+      </div>
+    </div>
+  )
+}

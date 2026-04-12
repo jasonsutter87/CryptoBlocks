@@ -14,7 +14,7 @@
   [headers.values]
     Permissions-Policy = "bluetooth=*, usb=*, serial=*, camera=*, microphone=*"
 
-# Route /api/projects to the Netlify Function (must come before SPA catch-all)
+# Route API endpoints to Netlify Functions (must come before SPA catch-all)
 [[redirects]]
   from = "/api/projects"
   to = "/.netlify/functions/projects"
@@ -23,6 +23,16 @@
 [[redirects]]
   from = "/api/projects/*"
   to = "/.netlify/functions/projects/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api/classrooms"
+  to = "/.netlify/functions/classrooms"
+  status = 200
+
+[[redirects]]
+  from = "/api/classrooms/*"
+  to = "/.netlify/functions/classrooms/:splat"
   status = 200
 
 # SPA — all other routes serve index.html
