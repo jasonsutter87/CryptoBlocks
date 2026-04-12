@@ -1,6 +1,8 @@
 import { type ReactNode, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '@clerk/clerk-react'
+import { useIsPro, openCheckout } from '../billing/useIsPro'
+import { ProBadge } from '../billing/UpgradeGate'
 
 interface SharedLayoutProps {
   children: ReactNode
@@ -8,6 +10,8 @@ interface SharedLayoutProps {
 
 export default function SharedLayout({ children }: SharedLayoutProps) {
   const { pathname } = useLocation()
+  const { isPro } = useIsPro()
+  const { getToken } = useAuth()
 
   // Unlock scrolling for non-editor pages; restore overflow lock on unmount
   useEffect(() => {
@@ -59,7 +63,16 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
           {navLink('/learn', 'Learn')}
           {navLink('/shareplace', 'Shareplace')}
           {navLink('/leaderboard', '🏆')}
-          {navLink('/teacher', 'Classrooms')}
+          <a
+            href={isPro ? '/teacher' : '#'}
+            onClick={(e) => { if (!isPro) { e.preventDefault(); openCheckout(getToken) } }}
+            className={`px-2.5 py-1 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
+              pathname === '/teacher' ? 'bg-[#313244] text-[#cdd6f4]' : 'text-[#6c7086] hover:text-[#a6adc8]'
+            }`}
+          >
+            Classrooms
+            {!isPro && <ProBadge />}
+          </a>
           {navLink('/dashboard', 'Dashboard')}
           {navLink('/profile', 'Profile')}
         </div>

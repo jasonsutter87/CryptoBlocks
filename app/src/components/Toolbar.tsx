@@ -2,9 +2,10 @@ import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import type { Language } from '../types/block'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '@clerk/clerk-react'
 import NotificationBell from './NotificationBell'
 import { ProBadge } from '../billing/UpgradeGate'
+import { useIsPro, openCheckout } from '../billing/useIsPro'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
 
@@ -100,6 +101,13 @@ export default function Toolbar({
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
   const [openMenu, setOpenMenu] = useState<'file' | 'build' | 'menu' | 'mobile' | null>(null)
   const dailyStreak = useMemo(() => getEffectiveStreak(loadDailyState(), getDayNumber()), [])
+  const { isPro } = useIsPro()
+  const { getToken } = useAuth()
+
+  const requirePro = (action: () => void) => {
+    if (isPro) { action(); return }
+    openCheckout(getToken)
+  }
   const [embedCopied, setEmbedCopied] = useState(false)
   const menuContainerRef = useRef<HTMLDivElement>(null)
 
@@ -219,10 +227,10 @@ export default function Toolbar({
                     Import as Block
                   </button>
                   {onImportScratch && (
-                    <button onClick={() => { onImportScratch(); setOpenMenu(null) }} className={menuItem}>
+                    <button onClick={() => { requirePro(() => { onImportScratch(); setOpenMenu(null) }) }} className={menuItem}>
                       <span className="text-base leading-none">🐱</span>
                       Import from Scratch
-                      <span className="ml-auto text-xs text-[#6c7086]">.sb3</span>
+                      {isPro ? <span className="ml-auto text-xs text-[#6c7086]">.sb3</span> : <span className="ml-auto"><ProBadge /></span>}
                     </button>
                   )}
                   <div className={menuDivider} />
@@ -258,24 +266,24 @@ export default function Toolbar({
                   )}
                   <div className={menuDivider} />
                   <button
-                    onClick={() => { onExportHtml(); setOpenMenu(null) }}
+                    onClick={() => requirePro(() => { onExportHtml(); setOpenMenu(null) })}
                     className={menuItem}
                   >
                     <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
                     </svg>
                     Export as HTML
-                    <span className="ml-auto text-xs text-[#6c7086]">.html</span>
+                    {isPro ? <span className="ml-auto text-xs text-[#6c7086]">.html</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button
-                    onClick={() => { onExportPwa(); setOpenMenu(null) }}
+                    onClick={() => requirePro(() => { onExportPwa(); setOpenMenu(null) })}
                     className={menuItem}
                   >
                     <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                     Export as App (PWA)
-                    <span className="ml-auto text-xs text-[#6c7086]">.zip</span>
+                    {isPro ? <span className="ml-auto text-xs text-[#6c7086]">.zip</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button
                     onClick={async () => {
@@ -327,28 +335,32 @@ export default function Toolbar({
 
               {openMenu === 'build' && (
                 <div className={menuDropdown}>
-                  <button onClick={() => { onCreateBlock(); setOpenMenu(null) }} className={menuItem}>
+                  <button onClick={() => requirePro(() => { onCreateBlock(); setOpenMenu(null) })} className={menuItem}>
                     <svg className="w-4 h-4 text-[#f9e2af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                     Create Block
+                    {!isPro && <span className="ml-auto"><ProBadge /></span>}
                   </button>
-                  <button onClick={() => { onCodeToBlocks(); setOpenMenu(null) }} className={menuItem}>
+                  <button onClick={() => requirePro(() => { onCodeToBlocks(); setOpenMenu(null) })} className={menuItem}>
                     <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     Code to Blocks
+                    {!isPro && <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   {onOpenSpriteEditor && (
-                    <button onClick={() => { onOpenSpriteEditor(); setOpenMenu(null) }} className={menuItem}>
+                    <button onClick={() => requirePro(() => { onOpenSpriteEditor(); setOpenMenu(null) })} className={menuItem}>
                       <span className="text-base leading-none">🎨</span>
                       Sprite Editor
+                      {!isPro && <span className="ml-auto"><ProBadge /></span>}
                     </button>
                   )}
                   {onOpenLevelEditor && (
-                    <button onClick={() => { onOpenLevelEditor(); setOpenMenu(null) }} className={menuItem}>
+                    <button onClick={() => requirePro(() => { onOpenLevelEditor(); setOpenMenu(null) })} className={menuItem}>
                       <span className="text-base leading-none">🗺️</span>
                       Level Editor
+                      {!isPro && <span className="ml-auto"><ProBadge /></span>}
                     </button>
                   )}
                 </div>
@@ -379,11 +391,12 @@ export default function Toolbar({
               {openMenu === 'menu' && (
                 <div className={menuDropdown}>
                   {onOpenCollab && (
-                    <button onClick={() => { onOpenCollab(); setOpenMenu(null) }} className={menuItem}>
+                    <button onClick={() => requirePro(() => { onOpenCollab(); setOpenMenu(null) })} className={menuItem}>
                       <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       Code with Friends
+                      {!isPro && <span className="ml-auto"><ProBadge /></span>}
                     </button>
                   )}
                   <a href="/shareplace" onClick={() => setOpenMenu(null)} className={menuItem}>
