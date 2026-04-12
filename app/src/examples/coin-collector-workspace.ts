@@ -200,52 +200,12 @@ export function coinCollectorWorkspace(): Record<string, unknown> {
     )
   }
 
-  // Win check — player touches goal
-  const winCheck = (() => {
-    const touching = block('cb_sprites_touching', undefined, {
-      name_a: textVal('player'),
-      name_b: textVal('goal'),
-    })
-    const winPrint = block('cb_print', undefined, {
-      message: block('cb_join_text', undefined, {
-        first: textVal('🏆 You won! Score: '),
-        second: block('cb_get_score', undefined, undefined),
-      }),
-    })
-    const winSound = block('cb_play_tone', undefined, {
-      frequency: numVal(1200),
-      duration: numVal(500),
-    })
-    return blockWithStatements(
-      'cb_if', undefined,
-      { CONDITION: touching },
-      { DO: chain(winPrint, winSound) },
-    )
-  })()
-
-  // Fall off screen — respawn
-  const fellCheck = (() => {
-    const fell = block('cb_greater_than', undefined, {
-      a: block('cb_get_sprite_y', undefined, { name: textVal('player') }),
-      b: numVal(500),
-    })
-    const respawn = block('cb_set_sprite_position', undefined, {
-      name: textVal('player'),
-      x: numVal(60),
-      y: numVal(200),
-    })
-    return blockWithStatements(
-      'cb_if', undefined,
-      { CONDITION: fell },
-      { DO: respawn },
-    )
-  })()
-
   const draw = block('cb_draw_all_sprites', undefined, undefined)
 
   const loopBody = chain(
     physicsStep,
     cameraFollow,
+    draw,
     collectCoin('coin1'),
     collectCoin('coin2'),
     collectCoin('coin3'),
@@ -253,9 +213,6 @@ export function coinCollectorWorkspace(): Record<string, unknown> {
     collectCoin('coin5'),
     spikeCheck('spike1'),
     spikeCheck('spike2'),
-    winCheck,
-    fellCheck,
-    draw,
   )
 
   const gameLoop = blockWithStatements(
