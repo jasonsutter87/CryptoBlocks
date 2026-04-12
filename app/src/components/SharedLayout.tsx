@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
 
 interface SharedLayoutProps {
   children: ReactNode
@@ -59,6 +60,24 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
           {navLink('/shareplace', 'Shareplace')}
           {navLink('/dashboard', 'Dashboard')}
           {navLink('/profile', 'Profile')}
+        </div>
+
+        {/* Auth */}
+        <div className="flex items-center gap-2">
+          <SignedOut>
+            <SignInButton mode="modal">
+              <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#cba6f7] text-[#1e1e2e] hover:bg-[#cba6f7]/80 transition-colors">
+                Sign In
+              </button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton
+              appearance={{
+                elements: { avatarBox: 'w-8 h-8' },
+              }}
+            />
+          </SignedIn>
         </div>
       </nav>
 

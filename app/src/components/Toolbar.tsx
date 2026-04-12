@@ -2,6 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react'
 import type { Language } from '../types/block'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react'
 
 type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
   | 'blocksets' | 'active-blockset'
@@ -569,6 +570,24 @@ export default function Toolbar({
             )}
           </>
         )}
+
+        {/* Auth — Sign In / User Avatar */}
+        <SignedOut>
+          <SignInButton mode="modal">
+            <button className={`${btn} bg-[#cba6f7] text-[#1e1e2e] hover:bg-[#cba6f7]/80 font-semibold px-3`}>
+              Sign In
+            </button>
+          </SignInButton>
+        </SignedOut>
+        <SignedIn>
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: 'w-8 h-8',
+              },
+            }}
+          />
+        </SignedIn>
 
         {/* === Mobile overflow menu === */}
         {!inChallenge && (

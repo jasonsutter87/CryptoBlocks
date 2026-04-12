@@ -5,8 +5,9 @@
  * Passes ydoc + awareness down to App via context so BlockEditor can bind.
  */
 
-import { useState, createContext, useContext } from 'react'
+import { createContext, useContext, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useUser } from '@clerk/clerk-react'
 import * as Y from 'yjs'
 import type { Awareness } from 'y-protocols/awareness'
 import { useCollabRoom } from './use-collab-room'
@@ -14,22 +15,37 @@ import CollaboratorBar from './CollaboratorBar'
 import type { CollabUser } from './types'
 import App from '../App'
 
-/** Temporary user until Clerk is wired up */
-function getTempUser(): CollabUser {
-  let stored = localStorage.getItem('cryptoblocks-collab-user')
-  if (stored) {
-    try {
-      return JSON.parse(stored)
-    } catch { /* regenerate */ }
-  }
-  const user: CollabUser = {
-    id: crypto.randomUUID(),
-    name: `Coder${Math.floor(Math.random() * 9000) + 1000}`,
-    avatar: '',
-    color: '',
-  }
-  localStorage.setItem('cryptoblocks-collab-user', JSON.stringify(user))
-  return user
+/** Build a CollabUser from Clerk auth state, falling back to a random temp user. */
+function useTempOrClerkUser(): CollabUser {
+  const { user: clerkUser, isLoaded } = useUser()
+
+  return useMemo(() => {
+    // Clerk user is signed in — use their real identity
+    if (isLoaded && clerkUser) {
+      return {
+        id: clerkUser.id,
+        name: clerkUser.fullName || clerkUser.username || 'Coder',
+        avatar: clerkUser.imageUrl || '',
+        color: '',
+      }
+    }
+
+    // Not signed in — fall back to localStorage temp user
+    let stored = localStorage.getItem('cryptoblocks-collab-user')
+    if (stored) {
+      try {
+        return JSON.parse(stored) as CollabUser
+      } catch { /* regenerate */ }
+    }
+    const temp: CollabUser = {
+      id: crypto.randomUUID(),
+      name: `Coder${Math.floor(Math.random() * 9000) + 1000}`,
+      avatar: '',
+      color: '',
+    }
+    localStorage.setItem('cryptoblocks-collab-user', JSON.stringify(temp))
+    return temp
+  }, [clerkUser, isLoaded])
 }
 
 /** Context carrying both ydoc and awareness */
@@ -51,7 +67,7 @@ export function useCollabAwareness(): Awareness | null {
 export default function CollabPage() {
   const { roomCode } = useParams<{ roomCode: string }>()
   const navigate = useNavigate()
-  const [user] = useState(getTempUser)
+  const user = useTempOrClerkUser()
 
   const { ydoc, awareness, status, peers, disconnect } = useCollabRoom({
     roomId: roomCode || '',

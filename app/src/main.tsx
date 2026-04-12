@@ -1,8 +1,11 @@
 import { lazy, Suspense, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { ClerkProvider } from '@clerk/clerk-react'
 import App from './App'
 import './index.css'
+
+const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
 
 const SharedLayout = lazy(() => import('./components/SharedLayout'))
 const ShareplacePage = lazy(() => import('./shareplace/ShareplacePage'))
@@ -14,18 +17,20 @@ const DailyChallengePage = lazy(() => import('./daily/DailyChallengePage'))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <Suspense fallback={<div className="h-full w-full bg-[#1e1e2e]" />}>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/collab/:roomCode" element={<CollabPage />} />
-          <Route path="/learn" element={<SharedLayout><LearnPage /></SharedLayout>} />
-          <Route path="/shareplace" element={<SharedLayout><ShareplacePage /></SharedLayout>} />
-          <Route path="/dashboard" element={<SharedLayout><DashboardPage /></SharedLayout>} />
-          <Route path="/profile" element={<SharedLayout><ProfilePage /></SharedLayout>} />
-          <Route path="/daily" element={<SharedLayout><DailyChallengePage /></SharedLayout>} />
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+    <ClerkProvider publishableKey={CLERK_KEY} afterSignOutUrl="/">
+      <BrowserRouter>
+        <Suspense fallback={<div className="h-full w-full bg-[#1e1e2e]" />}>
+          <Routes>
+            <Route path="/" element={<App />} />
+            <Route path="/collab/:roomCode" element={<CollabPage />} />
+            <Route path="/learn" element={<SharedLayout><LearnPage /></SharedLayout>} />
+            <Route path="/shareplace" element={<SharedLayout><ShareplacePage /></SharedLayout>} />
+            <Route path="/dashboard" element={<SharedLayout><DashboardPage /></SharedLayout>} />
+            <Route path="/profile" element={<SharedLayout><ProfilePage /></SharedLayout>} />
+            <Route path="/daily" element={<SharedLayout><DailyChallengePage /></SharedLayout>} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </ClerkProvider>
   </StrictMode>
 )
