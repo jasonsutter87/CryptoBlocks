@@ -15,7 +15,7 @@ import {
   fetchChat, sendChat, updateDescription,
 } from './api'
 
-type Tab = 'overview' | 'discussions' | 'chat' | 'assignments' | 'projects'
+type Tab = 'overview' | 'students' | 'discussions' | 'chat' | 'assignments' | 'projects'
 
 interface ClassroomDetailProps {
   classroom: ClassroomDetailType
@@ -138,6 +138,7 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
       {/* Tabs */}
       <div className="px-6 py-2 border-b border-[#313244] flex gap-2 bg-[#1e1e2e]">
         {tabBtn('overview', 'Overview')}
+        {tabBtn('students', `Students (${classroom.members.filter(m => m.role === 'student').length})`)}
         {tabBtn('discussions', `Discussions (${discussions.length})`)}
         {tabBtn('chat', 'Chat')}
         {tabBtn('assignments', `Assignments (${assignments.length})`)}
@@ -149,6 +150,28 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
         {/* === Overview === */}
         {tab === 'overview' && (
           <div className="px-6 py-4 flex flex-col gap-4">
+            {/* Class-wide stats */}
+            {isTeacher && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
+                  <div className="text-xl font-bold text-[#89b4fa]">{classroom.members.filter(m => m.role === 'student').length}</div>
+                  <div className="text-[10px] text-[#6c7086]">Students</div>
+                </div>
+                <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
+                  <div className="text-xl font-bold text-[#a6e3a1]">{assignments.length}</div>
+                  <div className="text-[10px] text-[#6c7086]">Assignments</div>
+                </div>
+                <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
+                  <div className="text-xl font-bold text-[#f9e2af]">{classroom.projects.length}</div>
+                  <div className="text-[10px] text-[#6c7086]">Projects Shared</div>
+                </div>
+                <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
+                  <div className="text-xl font-bold text-[#cba6f7]">{discussions.length}</div>
+                  <div className="text-[10px] text-[#6c7086]">Discussions</div>
+                </div>
+              </div>
+            )}
+
             {/* Course description */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -218,6 +241,70 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* === Students (teacher view) === */}
+        {tab === 'students' && (
+          <div className="px-6 py-4">
+            <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">Student Progress</h3>
+            {classroom.members.filter(m => m.role === 'student').length === 0 ? (
+              <p className="text-sm text-[#6c7086] italic">No students have joined yet. Share the join code: <span className="font-mono text-[#89b4fa]">{classroom.joinCode}</span></p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {classroom.members.filter(m => m.role === 'student').map((student) => {
+                  const studentProjects = classroom.projects.filter(p => p.authorId === student.userId)
+                  const totalBlocks = studentProjects.reduce((sum, p) => sum + Number(p.blockCount), 0)
+                  const totalLikes = studentProjects.reduce((sum, p) => sum + Number(p.likes), 0)
+
+                  return (
+                    <div key={student.userId} className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
+                      <div className="flex items-center gap-3 mb-3">
+                        {student.userAvatar ? (
+                          <img src={student.userAvatar} alt="" className="w-10 h-10 rounded-full" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-[#89b4fa] flex items-center justify-center text-sm font-bold text-[#1e1e2e]">
+                            {student.userName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <div className="text-sm font-bold text-[#cdd6f4]">{student.userName}</div>
+                          <div className="text-[10px] text-[#6c7086]">
+                            Joined {new Date(Number(student.joinedAt)).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="bg-[#181825] rounded-lg p-2 text-center">
+                          <div className="text-lg font-bold text-[#89b4fa]">{studentProjects.length}</div>
+                          <div className="text-[9px] text-[#6c7086]">Projects</div>
+                        </div>
+                        <div className="bg-[#181825] rounded-lg p-2 text-center">
+                          <div className="text-lg font-bold text-[#a6e3a1]">{totalBlocks}</div>
+                          <div className="text-[9px] text-[#6c7086]">Total Blocks</div>
+                        </div>
+                        <div className="bg-[#181825] rounded-lg p-2 text-center">
+                          <div className="text-lg font-bold text-[#f38ba8]">{totalLikes}</div>
+                          <div className="text-[9px] text-[#6c7086]">Likes Earned</div>
+                        </div>
+                      </div>
+
+                      {studentProjects.length > 0 && (
+                        <div className="mt-3">
+                          <div className="text-[10px] text-[#6c7086] uppercase tracking-wider mb-1">Recent Projects</div>
+                          {studentProjects.slice(0, 3).map(p => (
+                            <div key={p.id} className="text-xs text-[#a6adc8] py-0.5">
+                              {p.name} <span className="text-[#6c7086]">· {p.category} · {p.blockCount} blocks</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 
