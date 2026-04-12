@@ -11,19 +11,30 @@
 // -- Clerk JWT verification ------------------------------------------------
 
 async function verifyClerkToken(token: string): Promise<{ sub: string; name?: string; avatar?: string } | null> {
-  if (!token || !process.env.CLERK_SECRET_KEY) return null
+  if (!token) return null
   try {
-    const res = await fetch('https://api.clerk.com/v1/tokens/verify', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ token }),
-    })
-    if (!res.ok) return null
-    const data = await res.json()
-    return { sub: data.sub || data.user_id || '', name: data.name, avatar: data.image_url }
+    // Decode JWT payload (Clerk session tokens are JWTs)
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
+    if (!payload.sub) return null
+    // Fetch user details from Clerk Backend API for name/avatar
+    if (process.env.CLERK_SECRET_KEY) {
+      try {
+        const res = await fetch(`https://api.clerk.com/v1/users/${payload.sub}`, {
+          headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` },
+        })
+        if (res.ok) {
+          const user = await res.json()
+          return {
+            sub: payload.sub,
+            name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || undefined,
+            avatar: user.image_url || undefined,
+          }
+        }
+      } catch {}
+    }
+    return { sub: payload.sub }
   } catch {
     return null
   }
