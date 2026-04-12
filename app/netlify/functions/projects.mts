@@ -189,6 +189,15 @@ export default async function handler(req: Request) {
       return json({ id, name, createdAt: now }, 201)
     }
 
+    // POST /api/projects/:id/download — increment download count
+    if (req.method === 'POST' && segments.length === 2 && segments[1] === 'download') {
+      await tursoExecute(
+        'UPDATE projects SET downloads = downloads + 1 WHERE id = ?',
+        [segments[0]],
+      )
+      return json({ ok: true })
+    }
+
     // POST /api/projects/:id/like
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'like') {
       await tursoExecute(

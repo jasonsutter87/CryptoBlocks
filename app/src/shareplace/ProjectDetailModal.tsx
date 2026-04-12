@@ -153,6 +153,9 @@ export default function ProjectDetailModal({
       const data = await res.json()
       const workspaceJson = data.workspaceJson || '{}'
 
+      // Increment download count in the background
+      fetch(`/api/projects/${project.id}/download`, { method: 'POST' }).catch(() => {})
+
       const blob = new Blob([workspaceJson], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
