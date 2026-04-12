@@ -58,6 +58,15 @@ export default async function handler(req: Request, context: Context) {
   const db = getDb()
 
   try {
+    // Verify env vars are present
+    if (!process.env.TURSO_URL || !process.env.TURSO_AUTH_TOKEN) {
+      console.error('Missing env vars:', {
+        hasTursoUrl: !!process.env.TURSO_URL,
+        hasTursoToken: !!process.env.TURSO_AUTH_TOKEN,
+      })
+      return json({ error: 'Database not configured — check TURSO_URL and TURSO_AUTH_TOKEN env vars' }, 500)
+    }
+
     // POST /api/projects — publish a project
     if (req.method === 'POST' && segments.length === 0) {
       const body = await req.json()
@@ -149,8 +158,10 @@ export default async function handler(req: Request, context: Context) {
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    console.error('Projects API error:', err)
-    return json({ error: 'Internal server error' }, 500)
+    const message = err instanceof Error ? err.message : String(err)
+    const stack = err instanceof Error ? err.stack : ''
+    console.error('Projects API error:', message, stack)
+    return json({ error: 'Internal server error', detail: message }, 500)
   }
 }
 
