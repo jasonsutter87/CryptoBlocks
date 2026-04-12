@@ -760,6 +760,277 @@ export const gamesBlocks: BlockDefinition[] = [
   },
 
   {
+    name: 'start_pokemon',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'A Pokemon-style RPG! Walk around the overworld, find creatures in tall grass, battle them with turn-based combat.',
+    category: 'Games',
+    inputs: [],
+    outputs: [],
+    implementations: {
+      javascript: `function start_pokemon() {
+  window.__game = window.__game || {};
+  (function() {
+    var c = document.getElementById('cb-canvas');
+    c.width = 480; c.height = 320; c.style.display = 'block';
+    var ctx = c.getContext('2d');
+    var TILE = 32;
+    // Map: 0=grass, 1=path, 2=tree, 3=tall_grass, 4=water, 5=building
+    var MAP = [
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+      [2,1,1,1,3,3,3,1,1,5,5,1,3,3,2],
+      [2,1,2,1,3,3,3,1,2,1,1,1,3,3,2],
+      [2,1,1,1,1,1,1,1,2,1,2,1,1,1,2],
+      [2,3,3,1,2,2,1,1,1,1,2,1,2,1,2],
+      [2,3,3,1,1,1,1,2,1,3,3,1,1,1,2],
+      [2,1,1,1,2,1,3,3,1,3,3,3,1,2,2],
+      [2,1,2,1,1,1,3,3,1,1,1,1,1,1,2],
+      [2,1,1,1,1,2,1,1,1,2,1,3,3,1,2],
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],
+    ];
+    var COLORS = {0:'#4ade80',1:'#d4a574',2:'#166534',3:'#15803d',4:'#3b82f6',5:'#78716c'};
+    var CREATURES = [
+      {name:'Flamepup',emoji:'🐕',hp:30,atk:8,color:'#f38ba8'},
+      {name:'Leafling',emoji:'🌿',hp:35,atk:6,color:'#a6e3a1'},
+      {name:'Zapbird',emoji:'🐦',hp:25,atk:10,color:'#f9e2af'},
+      {name:'Bubblefish',emoji:'🐟',hp:40,atk:5,color:'#89b4fa'},
+      {name:'Shadowcat',emoji:'🐱',hp:28,atk:9,color:'#cba6f7'},
+    ];
+    var px=1,py=1,mode='overworld',steps=0;
+    var myTeam=[{name:'Sparkpup',emoji:'⚡',hp:40,maxHp:40,atk:9,xp:0,lvl:1}];
+    var battle={enemy:null,myHp:0,eHp:0,msg:'',turn:'player',log:[]};
+
+    function draw() {
+      ctx.fillStyle='#1e1e2e'; ctx.fillRect(0,0,c.width,c.height);
+      if (mode==='overworld') drawWorld();
+      else if (mode==='battle') drawBattle();
+    }
+
+    function drawWorld() {
+      var camX=Math.max(0,Math.min(MAP[0].length*TILE-c.width, px*TILE-c.width/2+TILE/2));
+      var camY=Math.max(0,Math.min(MAP.length*TILE-c.height, py*TILE-c.height/2+TILE/2));
+      for(var y=0;y<MAP.length;y++) for(var x=0;x<MAP[y].length;x++){
+        var sx=x*TILE-camX, sy=y*TILE-camY;
+        if(sx<-TILE||sx>c.width||sy<-TILE||sy>c.height) continue;
+        ctx.fillStyle=COLORS[MAP[y][x]]||'#333';
+        ctx.fillRect(sx,sy,TILE,TILE);
+        if(MAP[y][x]===3){ctx.fillStyle='#166534';for(var i=0;i<3;i++){var gx=sx+4+i*10,gy=sy+TILE-8;ctx.fillRect(gx,gy,2,8);ctx.fillRect(gx-2,gy,6,2)}}
+        if(MAP[y][x]===5){ctx.fillStyle='#a8a29e';ctx.fillRect(sx+2,sy+2,TILE-4,TILE-4);ctx.fillStyle='#57534e';ctx.fillRect(sx+12,sy+18,8,14)}
+      }
+      // Player
+      ctx.font=TILE*0.8+'px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('🧑',px*TILE+TILE/2-camX,py*TILE+TILE/2-camY);
+      // HUD
+      ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(0,0,c.width,24);
+      ctx.fillStyle='#cdd6f4';ctx.font='bold 12px sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
+      var p=myTeam[0];
+      ctx.fillText(p.emoji+' '+p.name+' Lv'+p.lvl+' HP:'+p.hp+'/'+p.maxHp+' | Steps:'+steps,5,5);
+      ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    }
+
+    function drawBattle() {
+      var e=battle.enemy, p=myTeam[0];
+      // BG
+      ctx.fillStyle='#181825';ctx.fillRect(0,0,c.width,c.height);
+      ctx.fillStyle='#313244';ctx.fillRect(0,c.height/2-2,c.width,4);
+      // Enemy
+      ctx.font='64px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(e.emoji,c.width*0.65,c.height*0.3);
+      ctx.fillStyle=e.color;ctx.font='bold 16px sans-serif';ctx.textBaseline='top';
+      ctx.fillText(e.name,c.width*0.65,c.height*0.3+40);
+      // Enemy HP bar
+      ctx.fillStyle='#313244';ctx.fillRect(c.width*0.4,c.height*0.3+60,150,12);
+      ctx.fillStyle=battle.eHp>e.hp*0.3?'#a6e3a1':'#f38ba8';
+      ctx.fillRect(c.width*0.4,c.height*0.3+60,Math.max(0,150*(battle.eHp/e.hp)),12);
+      ctx.fillStyle='#cdd6f4';ctx.font='10px sans-serif';ctx.fillText('HP '+battle.eHp+'/'+e.hp,c.width*0.65,c.height*0.3+75);
+      // Player
+      ctx.font='48px sans-serif';ctx.textBaseline='middle';
+      ctx.fillText(p.emoji,c.width*0.25,c.height*0.65);
+      ctx.fillStyle='#cdd6f4';ctx.font='bold 14px sans-serif';ctx.textBaseline='top';
+      ctx.fillText(p.name+' Lv'+p.lvl,c.width*0.25,c.height*0.65+30);
+      // Player HP bar
+      ctx.fillStyle='#313244';ctx.fillRect(c.width*0.1,c.height*0.65+50,150,12);
+      ctx.fillStyle=battle.myHp>p.maxHp*0.3?'#a6e3a1':'#f38ba8';
+      ctx.fillRect(c.width*0.1,c.height*0.65+50,Math.max(0,150*(battle.myHp/p.maxHp)),12);
+      ctx.fillStyle='#cdd6f4';ctx.font='10px sans-serif';ctx.fillText('HP '+battle.myHp+'/'+p.maxHp,c.width*0.25,c.height*0.65+65);
+      // Message box
+      ctx.fillStyle='#313244';ctx.fillRect(10,c.height-70,c.width-20,60);ctx.strokeStyle='#45475a';ctx.strokeRect(10,c.height-70,c.width-20,60);
+      ctx.fillStyle='#cdd6f4';ctx.font='14px sans-serif';ctx.textAlign='left';ctx.textBaseline='top';
+      ctx.fillText(battle.msg,20,c.height-60);
+      if(battle.turn==='player'){ctx.fillStyle='#f9e2af';ctx.fillText('[A] Attack  [R] Run',20,c.height-40)}
+      ctx.textAlign='left';ctx.textBaseline='alphabetic';
+    }
+
+    function startBattle() {
+      var e=CREATURES[Math.floor(Math.random()*CREATURES.length)];
+      battle.enemy={...e,hp:e.hp+Math.floor(Math.random()*10)};
+      battle.eHp=battle.enemy.hp;
+      battle.myHp=myTeam[0].hp;
+      battle.msg='A wild '+e.emoji+' '+e.name+' appeared!';
+      battle.turn='wait';
+      mode='battle';
+      try{var a=window.__audio||new(window.AudioContext||window.webkitAudioContext)();window.__audio=a;var o=a.createOscillator();var g=a.createGain();o.frequency.value=300;g.gain.setValueAtTime(0.2,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.3);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+0.3)}catch(e){}
+      setTimeout(function(){battle.turn='player';battle.msg='What will '+myTeam[0].name+' do?';draw()},1500);
+      draw();
+    }
+
+    function playerAttack() {
+      var p=myTeam[0],e=battle.enemy;
+      var dmg=Math.floor(p.atk*(0.8+Math.random()*0.4));
+      battle.eHp=Math.max(0,battle.eHp-dmg);
+      battle.msg=p.name+' dealt '+dmg+' damage!';
+      battle.turn='wait';
+      draw();
+      if(battle.eHp<=0){
+        setTimeout(function(){
+          battle.msg=e.name+' fainted! +'+e.atk*3+' XP';
+          p.xp+=e.atk*3;
+          if(p.xp>=p.lvl*20){p.lvl++;p.maxHp+=5;p.hp=p.maxHp;p.atk+=2;battle.msg+=' LEVEL UP! Lv'+p.lvl+'!'}
+          else{p.hp=Math.min(p.maxHp,p.hp+2)}
+          draw();
+          setTimeout(function(){mode='overworld';draw()},2000);
+        },1000);
+      } else {
+        setTimeout(function(){
+          var edmg=Math.floor(e.atk*(0.7+Math.random()*0.4));
+          battle.myHp=Math.max(0,battle.myHp-edmg);
+          battle.msg=e.name+' dealt '+edmg+' damage!';
+          draw();
+          if(battle.myHp<=0){
+            setTimeout(function(){battle.msg=p.name+' fainted... You blacked out!';draw();
+              setTimeout(function(){p.hp=p.maxHp;px=1;py=1;mode='overworld';draw()},2000)},1000);
+          } else {
+            setTimeout(function(){battle.turn='player';battle.msg='What will '+p.name+' do?';myTeam[0].hp=battle.myHp;draw()},1000);
+          }
+        },1000);
+      }
+    }
+
+    document.addEventListener('keydown',function(e){
+      if(mode==='overworld'){
+        var nx=px,ny=py;
+        if(e.key==='ArrowUp')ny--;else if(e.key==='ArrowDown')ny++;
+        else if(e.key==='ArrowLeft')nx--;else if(e.key==='ArrowRight')nx++;else return;
+        e.preventDefault();
+        if(ny>=0&&ny<MAP.length&&nx>=0&&nx<MAP[ny].length&&MAP[ny][nx]!==2&&MAP[ny][nx]!==4&&MAP[ny][nx]!==5){
+          px=nx;py=ny;steps++;
+          if(MAP[ny][nx]===3&&Math.random()<0.25)startBattle();
+          else draw();
+        }
+      } else if(mode==='battle'&&battle.turn==='player'){
+        if(e.key==='a'||e.key==='A'){playerAttack();e.preventDefault()}
+        else if(e.key==='r'||e.key==='R'){battle.msg='Got away safely!';draw();setTimeout(function(){mode='overworld';draw()},1000);e.preventDefault()}
+      }
+    });
+    draw();
+    console.log('🎮 Pokemon-style RPG! Arrow keys to walk. Dark green = tall grass (encounters). [A]ttack [R]un in battle.');
+  })();
+}`,
+      python: `def start_pokemon():
+    print("[Pokemon RPG only works in JavaScript mode]")`,
+    },
+    tests: [
+      { input: {}, expected: {} },
+    ],
+    color: '#EA580C',
+    shape: 'statement',
+  },
+
+  {
+    name: 'start_maze',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Generate and play a random maze! Arrow keys to navigate. Reach the green exit to win. New maze every time.',
+    category: 'Games',
+    inputs: [
+      { name: 'size', type: 'number', description: 'Maze size (5-20, bigger = harder)', default: 10 },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function start_maze(size) {
+  window.__game = window.__game || {};
+  (function() {
+    var N = Math.max(5, Math.min(20, Math.floor(Number(size) || 10)));
+    var CELL = Math.floor(Math.min(600, 400) / N);
+    var c = document.getElementById('cb-canvas');
+    c.width = N * CELL; c.height = N * CELL; c.style.display = 'block';
+    var ctx = c.getContext('2d');
+
+    // Generate maze using recursive backtracker
+    var cells = [];
+    for (var y = 0; y < N; y++) { cells[y] = []; for (var x = 0; x < N; x++) cells[y][x] = { visited: false, walls: [true,true,true,true] }; } // top,right,bottom,left
+    var stack = [{x:0,y:0}]; cells[0][0].visited = true;
+    while (stack.length > 0) {
+      var cur = stack[stack.length - 1];
+      var neighbors = [];
+      if (cur.y > 0 && !cells[cur.y-1][cur.x].visited) neighbors.push({x:cur.x,y:cur.y-1,d:0});
+      if (cur.x < N-1 && !cells[cur.y][cur.x+1].visited) neighbors.push({x:cur.x+1,y:cur.y,d:1});
+      if (cur.y < N-1 && !cells[cur.y+1][cur.x].visited) neighbors.push({x:cur.x,y:cur.y+1,d:2});
+      if (cur.x > 0 && !cells[cur.y][cur.x-1].visited) neighbors.push({x:cur.x-1,y:cur.y,d:3});
+      if (neighbors.length === 0) { stack.pop(); continue; }
+      var next = neighbors[Math.floor(Math.random() * neighbors.length)];
+      cells[cur.y][cur.x].walls[next.d] = false;
+      cells[next.y][next.x].walls[(next.d + 2) % 4] = false;
+      cells[next.y][next.x].visited = true;
+      stack.push(next);
+    }
+
+    var px = 0, py = 0, won = false, moves = 0, startTime = Date.now();
+
+    function draw() {
+      ctx.fillStyle = '#1e1e2e'; ctx.fillRect(0, 0, c.width, c.height);
+      for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+        var cx = x * CELL, cy = y * CELL, w = cells[y][x].walls;
+        ctx.strokeStyle = '#89b4fa'; ctx.lineWidth = 2;
+        if (w[0]) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + CELL, cy); ctx.stroke(); }
+        if (w[1]) { ctx.beginPath(); ctx.moveTo(cx + CELL, cy); ctx.lineTo(cx + CELL, cy + CELL); ctx.stroke(); }
+        if (w[2]) { ctx.beginPath(); ctx.moveTo(cx, cy + CELL); ctx.lineTo(cx + CELL, cy + CELL); ctx.stroke(); }
+        if (w[3]) { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy + CELL); ctx.stroke(); }
+      }
+      // Exit
+      ctx.fillStyle = '#a6e3a1'; ctx.fillRect((N-1)*CELL+4, (N-1)*CELL+4, CELL-8, CELL-8);
+      ctx.fillStyle = '#1e1e2e'; ctx.font = (CELL*0.5)+'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('🏁', (N-1)*CELL+CELL/2, (N-1)*CELL+CELL/2);
+      // Player
+      ctx.font = (CELL*0.6)+'px sans-serif'; ctx.fillText('🦊', px*CELL+CELL/2, py*CELL+CELL/2);
+      ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+      // HUD
+      ctx.fillStyle = '#6c7086'; ctx.font = '12px sans-serif';
+      ctx.fillText('Moves: ' + moves, 5, c.height - 5);
+      if (won) {
+        var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(0, c.height/2-30, c.width, 60);
+        ctx.fillStyle = '#a6e3a1'; ctx.font = 'bold 22px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('You escaped in ' + moves + ' moves! (' + elapsed + 's)', c.width/2, c.height/2+8);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (won) return;
+      var w = cells[py][px].walls;
+      if (e.key === 'ArrowUp' && !w[0]) { py--; moves++; e.preventDefault(); }
+      else if (e.key === 'ArrowRight' && !w[1]) { px++; moves++; e.preventDefault(); }
+      else if (e.key === 'ArrowDown' && !w[2]) { py++; moves++; e.preventDefault(); }
+      else if (e.key === 'ArrowLeft' && !w[3]) { px--; moves++; e.preventDefault(); }
+      if (px === N-1 && py === N-1) { won = true; try{var a=window.__audio||new(window.AudioContext||window.webkitAudioContext)();window.__audio=a;var o=a.createOscillator();var g=a.createGain();o.frequency.value=880;g.gain.setValueAtTime(0.3,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.5);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+0.5)}catch(e){} }
+      draw();
+    });
+    draw();
+    console.log('🏁 Navigate the maze! Arrow keys to move. Reach the green exit.');
+  })();
+}`,
+      python: `def start_maze(size):
+    print("[Maze only works in JavaScript mode]")`,
+    },
+    tests: [
+      { input: { size: 10 }, expected: {} },
+    ],
+    color: '#EA580C',
+    shape: 'statement',
+  },
+
+  {
     name: 'start_tetris',
     author: 'CryptoBlocks',
     version: '1.0.0',
