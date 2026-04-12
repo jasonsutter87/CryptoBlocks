@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import ProjectCard from './ProjectCard'
-import { MOCK_PROJECTS } from './mock-data'
 import type { SharedProject } from '../types/shareplace'
 import ProjectDetailModal from './ProjectDetailModal'
 import UploadModal from './UploadModal'
@@ -16,51 +15,31 @@ export default function ShareplacePage() {
   const [sort, setSort] = useState<SortOption>('newest')
   const [selectedProject, setSelectedProject] = useState<SharedProject | null>(null)
   const [showUpload, setShowUpload] = useState(false)
-  const [liveProjects, setLiveProjects] = useState<SharedProject[] | null>(null)
+  const [projects, setProjects] = useState<SharedProject[]>([])
+  const [loading, setLoading] = useState(true)
 
   const loadProjects = useCallback(async () => {
-    const projects = await fetchProjects({ category: activeCategory, search: search.trim() || undefined })
-    setLiveProjects(projects.length > 0 ? projects : null)
+    setLoading(true)
+    const result = await fetchProjects({ category: activeCategory, search: search.trim() || undefined })
+    setProjects(result)
+    setLoading(false)
   }, [activeCategory, search])
 
   useEffect(() => {
     loadProjects()
   }, [loadProjects])
 
-  // Use live API data when available, fall back to mock data
-  const baseProjects = liveProjects ?? MOCK_PROJECTS
-
   const filtered = useMemo(() => {
-    let projects = [...baseProjects]
-
-    // Client-side filtering only needed for mock data (API handles it server-side)
-    if (!liveProjects) {
-      if (activeCategory !== 'All') {
-        projects = projects.filter((p) => p.category === activeCategory)
-      }
-
-      if (search.trim()) {
-        const q = search.trim().toLowerCase()
-        projects = projects.filter(
-          (p) =>
-            p.name.toLowerCase().includes(q) ||
-            p.description.toLowerCase().includes(q) ||
-            p.author.toLowerCase().includes(q) ||
-            p.tags.some((t) => t.toLowerCase().includes(q))
-        )
-      }
-    }
-
+    const sorted = [...projects]
     if (sort === 'newest') {
-      projects.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     } else if (sort === 'downloads') {
-      projects.sort((a, b) => b.downloads - a.downloads)
+      sorted.sort((a, b) => b.downloads - a.downloads)
     } else if (sort === 'likes') {
-      projects.sort((a, b) => b.likes - a.likes)
+      sorted.sort((a, b) => b.likes - a.likes)
     }
-
-    return projects
-  }, [baseProjects, search, activeCategory, sort, liveProjects])
+    return sorted
+  }, [projects, sort])
 
   return (
     <div className="min-h-full bg-[#1e1e2e]">
@@ -143,45 +122,58 @@ export default function ShareplacePage() {
         </div>
 
         {/* Result count */}
-        <p className="text-xs text-[#6c7086] mb-6">
-          {filtered.length} project{filtered.length !== 1 ? 's' : ''}
-          {activeCategory !== 'All' && ` in ${activeCategory}`}
-          {search.trim() && ` matching "${search.trim()}"`}
-        </p>
-
-        {/* Grid */}
-        {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filtered.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onClick={() => setSelectedProject(project)}
-              />
-            ))}
+        {loading ? (
+          <div className="flex items-center justify-center py-24">
+            <span className="text-[#6c7086] animate-pulse">Loading projects...</span>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <svg
-              className="w-16 h-16 text-[#45475a]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <p className="text-[#6c7086] text-lg font-medium">No projects found</p>
-            <p className="text-[#45475a] text-sm">
-              Try a different search or category filter
+          <>
+            <p className="text-xs text-[#6c7086] mb-6">
+              {filtered.length} project{filtered.length !== 1 ? 's' : ''}
+              {activeCategory !== 'All' && ` in ${activeCategory}`}
+              {search.trim() && ` matching "${search.trim()}"`}
             </p>
-            <button
-              onClick={() => { setSearch(''); setActiveCategory('All') }}
-              className="mt-2 px-4 py-2 bg-[#313244] text-[#a6adc8] rounded-lg text-sm hover:bg-[#45475a] transition-colors"
-            >
-              Clear filters
-            </button>
-          </div>
+
+            {/* Grid */}
+            {filtered.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                {filtered.map((project) => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    onClick={() => setSelectedProject(project)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-24 gap-4">
+                <span className="text-6xl">🧱</span>
+                <p className="text-[#cdd6f4] text-lg font-medium">
+                  {search.trim() || activeCategory !== 'All' ? 'No projects found' : 'Be the first to share!'}
+                </p>
+                <p className="text-[#6c7086] text-sm text-center max-w-md">
+                  {search.trim() || activeCategory !== 'All'
+                    ? 'Try a different search or category filter'
+                    : 'Build something in the editor, then come back here and hit Upload to share it with the community.'}
+                </p>
+                {(search.trim() || activeCategory !== 'All') ? (
+                  <button
+                    onClick={() => { setSearch(''); setActiveCategory('All') }}
+                    className="mt-2 px-4 py-2 bg-[#313244] text-[#a6adc8] rounded-lg text-sm hover:bg-[#45475a] transition-colors"
+                  >
+                    Clear filters
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setShowUpload(true)}
+                    className="mt-2 px-5 py-2.5 bg-[#89b4fa] text-[#1e1e2e] rounded-lg text-sm font-bold hover:bg-[#74c7ec] transition-colors"
+                  >
+                    Upload your first project
+                  </button>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
