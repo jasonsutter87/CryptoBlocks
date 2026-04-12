@@ -46,6 +46,7 @@ interface ToolbarProps {
   onOpenTutorial?: () => void
   onExportPwa: () => void
   onOpenSpriteEditor?: () => void
+  onOpenLevelEditor?: () => void
   onOpenCollab?: () => void
   onRunForEveryone?: () => void
   isCollabMode?: boolean
@@ -88,6 +89,7 @@ export default function Toolbar({
   onOpenTutorial,
   onExportPwa,
   onOpenSpriteEditor,
+  onOpenLevelEditor,
   onOpenCollab,
   onRunForEveryone,
   isCollabMode = false,
@@ -340,6 +342,12 @@ export default function Toolbar({
                     <button onClick={() => { onOpenSpriteEditor(); setOpenMenu(null) }} className={menuItem}>
                       <span className="text-base leading-none">🎨</span>
                       Sprite Editor
+                    </button>
+                  )}
+                  {onOpenLevelEditor && (
+                    <button onClick={() => { onOpenLevelEditor(); setOpenMenu(null) }} className={menuItem}>
+                      <span className="text-base leading-none">🗺️</span>
+                      Level Editor
                     </button>
                   )}
                 </div>

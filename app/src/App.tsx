@@ -68,6 +68,7 @@ import { AchievementToast } from './components/AchievementToast'
 import StatsPanel from './components/StatsPanel'
 import HackerTerminal from './components/HackerTerminal'
 const SpriteEditor = lazy(() => import('./sprite-editor/SpriteEditor'))
+const LevelEditor = lazy(() => import('./level-editor/LevelEditor'))
 const CollabModal = lazy(() => import('./collab/CollabModal'))
 const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
 const ScratchImportModal = lazy(() => import('./components/ScratchImportModal'))
@@ -149,6 +150,7 @@ export default function App() {
   const [collabRoomCreated, setCollabRoomCreated] = useState<{ code: string; name: string } | null>(null)
   const [showScratchImport, setShowScratchImport] = useState(false)
   const [showSpriteEditor, setShowSpriteEditor] = useState(false)
+  const [showLevelEditor, setShowLevelEditor] = useState(false)
   const runBroadcastRef = useRef<ReturnType<typeof bindRunBroadcast> | null>(null)
 
   // Store sandbox workspace before entering challenge mode
@@ -1174,6 +1176,7 @@ export default function App() {
         isCollabMode={isCollabMode}
         onImportScratch={() => setShowScratchImport(true)}
         onOpenSpriteEditor={() => setShowSpriteEditor(true)}
+        onOpenLevelEditor={() => setShowLevelEditor(true)}
         onRunForEveryone={() => {
           runBroadcastRef.current?.requestRunForEveryone()
           handleRun()
@@ -1503,6 +1506,62 @@ export default function App() {
               sprites[name] = { dataUrl, frames, size: 16 }
               localStorage.setItem('cryptoblocks-sprites', JSON.stringify(sprites))
               setShowSpriteEditor(false)
+            }}
+          />
+        </Suspense>
+      )}
+
+      {showLevelEditor && (
+        <Suspense fallback={null}>
+          <LevelEditor
+            onClose={() => setShowLevelEditor(false)}
+            onExport={(platforms, spawnX, spawnY) => {
+              if (!workspaceRef.current) return
+              const Bs = Blockly.serialization.workspaces
+              // Build workspace JSON for the level
+              const blocks: Record<string, unknown>[] = []
+              let id = 0
+              const nextId = () => `lvl_${++id}`
+
+              // set_canvas
+              blocks.push({ type: 'cb_set_canvas', id: nextId(), x: 50, y: 50, inputs: {
+                width: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: 640 } } },
+                height: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: 400 } } },
+                color: { shadow: { type: 'text', id: nextId(), fields: { TEXT: '#1e1e2e' } } },
+              }})
+
+              // set_gravity
+              blocks.push({ type: 'cb_set_gravity', id: nextId(), x: 50, y: 120, inputs: {
+                value: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: 0.4 } } },
+              }})
+
+              // create_sprite for player
+              blocks.push({ type: 'cb_create_sprite', id: nextId(), x: 50, y: 170, inputs: {
+                name: { shadow: { type: 'text', id: nextId(), fields: { TEXT: 'player' } } },
+                x: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: spawnX } } },
+                y: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: spawnY } } },
+                width: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: 40 } } },
+                height: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: 40 } } },
+                color: { shadow: { type: 'text', id: nextId(), fields: { TEXT: '#f9e2af' } } },
+                emoji: { shadow: { type: 'text', id: nextId(), fields: { TEXT: '🦊' } } },
+                image: { shadow: { type: 'text', id: nextId(), fields: { TEXT: '' } } },
+              }})
+
+              // add_platform for each platform
+              platforms.forEach((p, i) => {
+                blocks.push({ type: 'cb_add_platform', id: nextId(), x: 50, y: 350 + i * 80, inputs: {
+                  x: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: p.x } } },
+                  y: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: p.y } } },
+                  width: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: p.w } } },
+                  height: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: p.h } } },
+                  color: { shadow: { type: 'text', id: nextId(), fields: { TEXT: p.color } } },
+                }})
+              })
+
+              // Load into workspace
+              workspaceRef.current.clear()
+              Bs.load({ blocks: { languageVersion: 0, blocks } }, workspaceRef.current)
+              setShowLevelEditor(false)
             }}
           />
         </Suspense>
