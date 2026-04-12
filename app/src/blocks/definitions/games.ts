@@ -635,6 +635,98 @@ export const gamesBlocks: BlockDefinition[] = [
   },
 
   {
+    name: 'spawn_random_platform',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Spawn a random platform at a given X position. Great for infinite runners and procedural levels.',
+    category: 'Games',
+    inputs: [
+      { name: 'x', type: 'number', description: 'X position for the platform', default: 800 },
+      { name: 'min_y', type: 'number', description: 'Minimum Y for random placement', default: 150 },
+      { name: 'max_y', type: 'number', description: 'Maximum Y for random placement', default: 350 },
+      { name: 'width', type: 'number', description: 'Platform width', default: 100 },
+      { name: 'height', type: 'number', description: 'Platform height', default: 16 },
+      { name: 'color', type: 'string', description: 'Platform color', default: '#a6e3a1' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function spawnRandomPlatform(x, minY, maxY, width, height, color) {
+  window.__game = window.__game || { sprites: {}, platforms: [], backgrounds: [], camera: { x: 0, y: 0 }, gravity: 0, score: 0 };
+  if (!window.__game.platforms) window.__game.platforms = [];
+  var y = Math.floor(Math.random() * (Number(maxY) - Number(minY))) + Number(minY);
+  window.__game.platforms.push({ x: Number(x), y: y, w: Number(width), h: Number(height), color: String(color) });
+}`,
+      python: `def spawn_random_platform(x, min_y, max_y, width, height, color):
+    print("[Games are only available in JavaScript mode]")`,
+    },
+    tests: [
+      { input: { x: 800, min_y: 150, max_y: 350, width: 100, height: 16, color: '#a6e3a1' }, expected: {} },
+    ],
+    color: '#EA580C',
+  },
+
+  {
+    name: 'spawn_pipe_pair',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Spawn a Flappy Bird-style pipe pair (top + bottom with a gap) at the given X. Gap position is random.',
+    category: 'Games',
+    inputs: [
+      { name: 'x', type: 'number', description: 'X position', default: 800 },
+      { name: 'gap_size', type: 'number', description: 'Size of the gap between pipes', default: 180 },
+      { name: 'min_gap_y', type: 'number', description: 'Minimum gap top position', default: 80 },
+      { name: 'max_gap_y', type: 'number', description: 'Maximum gap top position', default: 280 },
+      { name: 'pipe_width', type: 'number', description: 'Width of each pipe', default: 60 },
+      { name: 'color', type: 'string', description: 'Pipe color', default: '#22c55e' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function spawnPipePair(x, gapSize, minGapY, maxGapY, pipeWidth, color) {
+  window.__game = window.__game || { sprites: {}, platforms: [], backgrounds: [], camera: { x: 0, y: 0 }, gravity: 0, score: 0 };
+  if (!window.__game.platforms) window.__game.platforms = [];
+  var gapY = Math.floor(Math.random() * (Number(maxGapY) - Number(minGapY))) + Number(minGapY);
+  var pw = Number(pipeWidth);
+  var gs = Number(gapSize);
+  var px = Number(x);
+  window.__game.platforms.push({ x: px, y: 0, w: pw, h: gapY, color: String(color) });
+  window.__game.platforms.push({ x: px, y: gapY + gs, w: pw, h: 600, color: String(color) });
+}`,
+      python: `def spawn_pipe_pair(x, gap_size, min_gap_y, max_gap_y, pipe_width, color):
+    print("[Games are only available in JavaScript mode]")`,
+    },
+    tests: [
+      { input: { x: 800, gap_size: 180, min_gap_y: 80, max_gap_y: 280, pipe_width: 60, color: '#22c55e' }, expected: {} },
+    ],
+    color: '#EA580C',
+  },
+
+  {
+    name: 'remove_offscreen_platforms',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Remove platforms that have scrolled past the left edge of the camera. Keeps the game from slowing down.',
+    category: 'Games',
+    inputs: [],
+    outputs: [],
+    implementations: {
+      javascript: `function removeOffscreenPlatforms() {
+  window.__game = window.__game || { sprites: {}, platforms: [] };
+  if (!window.__game.platforms || !window.__game.camera) return;
+  var camX = window.__game.camera.x || 0;
+  window.__game.platforms = window.__game.platforms.filter(function(p) {
+    return p.x + p.w > camX - 200;
+  });
+}`,
+      python: `def remove_offscreen_platforms():
+    print("[Games are only available in JavaScript mode]")`,
+    },
+    tests: [
+      { input: {}, expected: {} },
+    ],
+    color: '#EA580C',
+  },
+
+  {
     name: 'add_background',
     author: 'CryptoBlocks',
     version: '1.0.0',
