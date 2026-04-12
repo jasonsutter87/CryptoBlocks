@@ -4,6 +4,7 @@ import type { SharedProject } from '../types/shareplace'
 import { fetchRemixTree, type RemixTree } from './api'
 import RemixModal from './RemixModal'
 import RemixTreeView from './RemixTreeView'
+import ShareCardButton from './ShareCard'
 import EditListingModal from './EditListingModal'
 import RemoveListingModal from './RemoveListingModal'
 
@@ -364,6 +365,9 @@ export default function ProjectDetailModal({
                 </button>
               </>
             )}
+
+            {/* Share Card */}
+            <ShareCardButton project={project} />
 
             {/* Report */}
             {!isOwner && (
