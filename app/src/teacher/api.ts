@@ -36,6 +36,7 @@ export interface StudentProject {
 export interface ClassroomDetail {
   id: string
   name: string
+  description: string
   joinCode: string
   teacherId: string
   teacherName: string
@@ -196,6 +197,119 @@ export async function sendFeedback(
   } catch {
     return false
   }
+}
+
+// -- Discussions --
+
+export interface Discussion {
+  id: string
+  title: string
+  body: string
+  authorName: string
+  authorAvatar: string
+  replyCount: number
+  createdAt: number
+}
+
+export interface Reply {
+  id: string
+  body: string
+  authorName: string
+  authorAvatar: string
+  createdAt: number
+}
+
+export async function fetchDiscussions(classroomId: string): Promise<Discussion[]> {
+  try {
+    const res = await fetch(`${API}/${classroomId}/discussions`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.discussions ?? []
+  } catch { return [] }
+}
+
+export async function createDiscussion(
+  classroomId: string, title: string, body: string,
+  getToken: () => Promise<string | null>,
+): Promise<{ id: string } | null> {
+  try {
+    const headers = await authHeaders(getToken)
+    const res = await fetch(`${API}/${classroomId}/discussions`, {
+      method: 'POST', headers, body: JSON.stringify({ title, body }),
+    })
+    return res.ok ? await res.json() : null
+  } catch { return null }
+}
+
+export async function fetchReplies(classroomId: string, discussionId: string): Promise<Reply[]> {
+  try {
+    const res = await fetch(`${API}/${classroomId}/discussions/${discussionId}/replies`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.replies ?? []
+  } catch { return [] }
+}
+
+export async function postReply(
+  classroomId: string, discussionId: string, body: string,
+  getToken: () => Promise<string | null>,
+): Promise<{ id: string } | null> {
+  try {
+    const headers = await authHeaders(getToken)
+    const res = await fetch(`${API}/${classroomId}/discussions/${discussionId}/reply`, {
+      method: 'POST', headers, body: JSON.stringify({ body }),
+    })
+    return res.ok ? await res.json() : null
+  } catch { return null }
+}
+
+// -- Chat --
+
+export interface ChatMessage {
+  id: string
+  body: string
+  authorName: string
+  authorAvatar: string
+  authorId: string
+  createdAt: number
+}
+
+export async function fetchChat(classroomId: string, after?: number): Promise<ChatMessage[]> {
+  try {
+    const params = after ? `?after=${after}` : ''
+    const res = await fetch(`${API}/${classroomId}/chat${params}`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.messages ?? []
+  } catch { return [] }
+}
+
+export async function sendChat(
+  classroomId: string, message: string,
+  getToken: () => Promise<string | null>,
+): Promise<boolean> {
+  try {
+    const headers = await authHeaders(getToken)
+    const res = await fetch(`${API}/${classroomId}/chat`, {
+      method: 'POST', headers, body: JSON.stringify({ message }),
+    })
+    return res.ok
+  } catch { return false }
+}
+
+// -- Description --
+
+export async function updateDescription(
+  classroomId: string, description: string,
+  getToken: () => Promise<string | null>,
+): Promise<boolean> {
+  try {
+    const headers = await authHeaders(getToken)
+    const res = await fetch(`${API}/${classroomId}/description`, {
+      method: 'POST', headers, body: JSON.stringify({ description }),
+    })
+    return res.ok
+  } catch { return false }
 }
 
 export async function joinClassroom(

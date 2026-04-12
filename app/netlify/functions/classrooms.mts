@@ -228,6 +228,7 @@ export default async function handler(req: Request) {
       return json({
         id: c.id,
         name: c.name,
+        description: c.description || '',
         joinCode: c.join_code,
         teacherId: c.teacher_id,
         teacherName: c.teacher_name,
@@ -384,6 +385,134 @@ export default async function handler(req: Request) {
       )
 
       return json({ ok: true })
+    }
+
+    // POST /api/classrooms/:id/description — update classroom description (teacher)
+    if (req.method === 'POST' && segments.length === 2 && segments[1] === 'description') {
+      if (!user) return json({ error: 'Sign in' }, 401)
+      const body = await req.json()
+      await tursoExecute(
+        'UPDATE classrooms SET description = ? WHERE id = ?',
+        [String(body.description || '').slice(0, 2000), segments[0]],
+      )
+      return json({ ok: true })
+    }
+
+    // --- Discussions ---
+
+    // POST /api/classrooms/:id/discussions — create a discussion post
+    if (req.method === 'POST' && segments.length === 2 && segments[1] === 'discussions') {
+      if (!user) return json({ error: 'Sign in to post' }, 401)
+      const body = await req.json()
+      if (!body.title || !body.body) return json({ error: 'title and body required' }, 400)
+      const id = crypto.randomUUID()
+      await tursoExecute(
+        'INSERT INTO discussions (id, classroom_id, author_id, author_name, author_avatar, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [id, segments[0], user.sub, String(user.name || 'Student').slice(0, 50), user.avatar || '', String(body.title).slice(0, 200), String(body.body).slice(0, 5000), Date.now()],
+      )
+      return json({ id }, 201)
+    }
+
+    // GET /api/classrooms/:id/discussions — list discussions
+    if (req.method === 'GET' && segments.length === 2 && segments[1] === 'discussions') {
+      const result = await tursoExecute(
+        `SELECT d.*, (SELECT COUNT(*) FROM replies WHERE discussion_id = d.id) as reply_count
+         FROM discussions d WHERE d.classroom_id = ? ORDER BY d.created_at DESC LIMIT 50`,
+        [segments[0]],
+      )
+      return json({
+        discussions: result.rows.map((d) => ({
+          id: d.id, title: d.title, body: d.body,
+          authorName: d.author_name, authorAvatar: d.author_avatar,
+          replyCount: Number(d.reply_count), createdAt: d.created_at,
+        })),
+      })
+    }
+
+    // GET /api/classrooms/:classroomId/discussions/:discussionId — get discussion + replies
+    if (req.method === 'GET' && segments.length === 2 && segments[0] !== 'join' && !['assignments', 'discussions', 'chat', 'description'].includes(segments[1])) {
+      // This is handled by the existing /:id route above
+    }
+
+    // POST /api/classrooms/:classroomId/discussions/:discussionId/reply — add a reply
+    if (req.method === 'POST' && segments.length === 3 && segments[2] === 'reply') {
+      if (!user) return json({ error: 'Sign in to reply' }, 401)
+      const body = await req.json()
+      if (!body.body) return json({ error: 'body required' }, 400)
+      const id = crypto.randomUUID()
+      await tursoExecute(
+        'INSERT INTO replies (id, discussion_id, author_id, author_name, author_avatar, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, segments[1], user.sub, String(user.name || 'Student').slice(0, 50), user.avatar || '', String(body.body).slice(0, 5000), Date.now()],
+      )
+      return json({ id }, 201)
+    }
+
+    // GET /api/classrooms/:classroomId/discussions/:discussionId/replies — get replies
+    if (req.method === 'GET' && segments.length === 3 && segments[2] === 'replies') {
+      const result = await tursoExecute(
+        'SELECT * FROM replies WHERE discussion_id = ? ORDER BY created_at ASC',
+        [segments[1]],
+      )
+      return json({
+        replies: result.rows.map((r) => ({
+          id: r.id, body: r.body,
+          authorName: r.author_name, authorAvatar: r.author_avatar,
+          createdAt: r.created_at,
+        })),
+      })
+    }
+
+    // --- Chat ---
+
+    // POST /api/classrooms/:id/chat — send a message
+    if (req.method === 'POST' && segments.length === 2 && segments[1] === 'chat') {
+      if (!user) return json({ error: 'Sign in to chat' }, 401)
+      const body = await req.json()
+      if (!body.message) return json({ error: 'message required' }, 400)
+      const id = crypto.randomUUID()
+      await tursoExecute(
+        'INSERT INTO chat_messages (id, classroom_id, author_id, author_name, author_avatar, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, segments[0], user.sub, String(user.name || 'Student').slice(0, 50), user.avatar || '', String(body.message).slice(0, 1000), Date.now()],
+      )
+      return json({ id }, 201)
+    }
+
+    // GET /api/classrooms/:id/chat — get recent messages
+    if (req.method === 'GET' && segments.length === 2 && segments[1] === 'chat') {
+      const after = url.searchParams.get('after')
+      let sql = 'SELECT * FROM chat_messages WHERE classroom_id = ?'
+      const args: (string | number)[] = [segments[0]]
+      if (after) {
+        sql += ' AND created_at > ?'
+        args.push(Number(after))
+      }
+      sql += ' ORDER BY created_at DESC LIMIT 100'
+      const result = await tursoExecute(sql, args)
+      return json({
+        messages: result.rows.reverse().map((m) => ({
+          id: m.id, body: m.body,
+          authorName: m.author_name, authorAvatar: m.author_avatar,
+          authorId: m.author_id, createdAt: m.created_at,
+        })),
+      })
+    }
+
+    // --- Download submission ---
+
+    // GET /api/classrooms/:classroomId/submissions/:submissionId/download
+    if (req.method === 'GET' && segments.length === 3 && segments[2] === 'download') {
+      const sub = await tursoExecute(
+        'SELECT workspace_json, student_name FROM submissions WHERE id = ?',
+        [segments[1]],
+      )
+      if (sub.rows.length === 0) return json({ error: 'Not found' }, 404)
+      return new Response(String(sub.rows[0].workspace_json), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="${String(sub.rows[0].student_name).replace(/[^a-zA-Z0-9]/g, '_')}-submission.blocks"`,
+          'Access-Control-Allow-Origin': '*',
+        },
+      })
     }
 
     return json({ error: 'Not found' }, 404)
