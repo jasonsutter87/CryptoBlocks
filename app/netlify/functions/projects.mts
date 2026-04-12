@@ -12,12 +12,13 @@
  *   TURSO_AUTH_TOKEN    — JWT from `turso db tokens create`
  */
 
-import { createClient } from '@libsql/client'
+import { createClient } from '@libsql/client/http'
 import type { Context } from '@netlify/functions'
 
 function getDb() {
+  const url = process.env.TURSO_URL!.replace('libsql://', 'https://')
   return createClient({
-    url: process.env.TURSO_URL!,
+    url,
     authToken: process.env.TURSO_AUTH_TOKEN!,
   })
 }
