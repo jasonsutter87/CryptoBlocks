@@ -1,46 +1,11 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
 import { loadStats } from '../stats'
 import ProjectCard from '../shareplace/ProjectCard'
 import type { SharedProject } from '../types/shareplace'
-
-const MY_PROJECTS: SharedProject[] = [
-  {
-    id: 'mine-1',
-    name: 'My Calculator',
-    author: 'you',
-    description: 'A four-function calculator with keyboard shortcuts and a history log.',
-    category: 'Web',
-    blockCount: 84,
-    downloads: 12,
-    likes: 3,
-    createdAt: '2026-03-29',
-    tags: ['math', 'utility'],
-  },
-  {
-    id: 'mine-2',
-    name: 'Bounce Ball',
-    author: 'you',
-    description: 'A canvas animation with a bouncing ball that changes color on wall hits.',
-    category: 'Art',
-    blockCount: 47,
-    downloads: 5,
-    likes: 1,
-    createdAt: '2026-03-25',
-    tags: ['animation', 'canvas'],
-  },
-  {
-    id: 'mine-3',
-    name: 'Countdown Timer',
-    author: 'you',
-    description: 'Set a duration in seconds and watch it tick down. Plays a beep when done.',
-    category: 'Web',
-    blockCount: 61,
-    downloads: 8,
-    likes: 2,
-    createdAt: '2026-03-20',
-    tags: ['time', 'utility', 'audio'],
-  },
-]
+import { fetchProjects } from '../shareplace/api'
+import { loadDailyState, getEffectiveStreak } from '../daily/state'
+import { getDayNumber } from '../daily/getTodaysPuzzle'
 
 interface StatCardProps {
   label: string
@@ -62,7 +27,23 @@ function daysActive(runsByDate: Record<string, number>): number {
 }
 
 export default function DashboardPage() {
+  const { user } = useUser()
   const stats = useMemo(() => loadStats(), [])
+  const dailyState = useMemo(() => loadDailyState(), [])
+  const currentDay = useMemo(() => getDayNumber(), [])
+  const dailyStreak = getEffectiveStreak(dailyState, currentDay)
+  const [myProjects, setMyProjects] = useState<SharedProject[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchProjects().then((all) => {
+      const authorName = user?.fullName || user?.username
+      if (authorName) {
+        setMyProjects(all.filter((p) => p.author === authorName))
+      }
+      setLoading(false)
+    })
+  }, [user])
 
   const statCards = [
     {
@@ -72,13 +53,13 @@ export default function DashboardPage() {
     },
     {
       label: 'Projects Shared',
-      value: MY_PROJECTS.length,
+      value: myProjects.length,
       color: '#a6e3a1',
     },
     {
-      label: 'Total Downloads',
-      value: MY_PROJECTS.reduce((acc, p) => acc + p.downloads, 0),
-      color: '#fab387',
+      label: 'Total Likes',
+      value: myProjects.reduce((acc, p) => acc + p.likes, 0),
+      color: '#f38ba8',
     },
     {
       label: 'Days Active',
@@ -116,32 +97,59 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold text-[#f9e2af]">{stats.challengesCompleted}</div>
           </div>
           <div className="bg-[#181825] rounded-xl p-4 border border-[#313244]">
-            <div className="text-xs text-[#6c7086] mb-1">Best Streak</div>
-            <div className="text-2xl font-bold text-[#f38ba8]">{stats.bestStreak} day{stats.bestStreak !== 1 ? 's' : ''}</div>
+            <div className="text-xs text-[#6c7086] mb-1">Daily Challenge Streak</div>
+            <div className="text-2xl font-bold text-[#fab387]">
+              {dailyStreak} day{dailyStreak !== 1 ? 's' : ''} 🔥
+            </div>
+            <div className="text-[10px] text-[#6c7086] mt-0.5">
+              {dailyState.totalSolved} solved · longest: {dailyState.longestStreak}
+            </div>
           </div>
         </div>
 
         {/* My Projects */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-[#cdd6f4]">My Projects</h2>
-          <button
-            disabled
-            title="Coming Soon"
-            className="flex items-center gap-2 px-4 py-2 bg-[#313244] text-[#6c7086] rounded-lg text-sm font-medium cursor-not-allowed border border-[#45475a]/50"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Upload to Shareplace
-            <span className="text-xs bg-[#45475a]/60 px-1.5 py-0.5 rounded text-[#6c7086]">Soon</span>
-          </button>
-        </div>
+        <SignedIn>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-[#cdd6f4]">My Shared Projects</h2>
+            <a
+              href="/shareplace"
+              className="flex items-center gap-2 px-4 py-2 bg-[#89b4fa] hover:bg-[#74c7ec] text-[#1e1e2e] rounded-lg text-sm font-semibold transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Go to Shareplace
+            </a>
+          </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {MY_PROJECTS.map((project) => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </div>
+          {loading ? (
+            <div className="text-[#6c7086] animate-pulse py-8 text-center">Loading projects...</div>
+          ) : myProjects.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {myProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#181825] border border-[#313244] rounded-xl p-12 text-center">
+              <span className="text-4xl block mb-3">🧱</span>
+              <p className="text-[#cdd6f4] font-semibold mb-1">No shared projects yet</p>
+              <p className="text-sm text-[#6c7086]">Build something in the editor, then upload it to Shareplace!</p>
+            </div>
+          )}
+        </SignedIn>
+
+        <SignedOut>
+          <div className="bg-[#313244] rounded-xl p-8 text-center">
+            <span className="text-4xl block mb-3">🔐</span>
+            <p className="text-[#cdd6f4] font-semibold mb-2">Sign in to see your projects</p>
+            <SignInButton mode="modal">
+              <button className="px-5 py-2.5 bg-[#cba6f7] text-[#1e1e2e] rounded-lg font-bold hover:bg-[#cba6f7]/80 transition-colors">
+                Sign In
+              </button>
+            </SignInButton>
+          </div>
+        </SignedOut>
       </div>
     </div>
   )
