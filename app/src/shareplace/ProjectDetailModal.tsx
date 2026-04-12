@@ -136,13 +136,15 @@ export default function ProjectDetailModal({
       const data = await res.json()
       const workspaceJson = data.workspaceJson || '{}'
       localStorage.setItem('cryptoblocks_workspace', workspaceJson)
-      onClose()
-      navigate('/')
+      // Force a full page reload so the editor picks up the new workspace
+      // from localStorage (React Router navigate doesn't re-run the
+      // loadFromLocalStorage effect on the App component)
+      window.location.href = '/'
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error('Open in editor failed:', err)
+      setOpening(false)
     }
-    setOpening(false)
   }
 
   const handleDownload = async () => {
