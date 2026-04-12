@@ -70,8 +70,9 @@ export function coinCollectorWorkspace(): Record<string, unknown> {
     value: numVal(0.4),
   })
 
-  // Player — uses sprite_editor_image so kids can swap in their own art!
-  // Falls back to 🦊 emoji if no sprite named "hero" is saved.
+  // Player — swap the emoji for your own pixel art by saving a sprite
+  // named "hero" in the Sprite Editor, then plugging sprite_editor_image
+  // into the image input!
   const createPlayer = block('cb_create_sprite', undefined, {
     name: textVal('player'),
     x: numVal(60),
@@ -80,9 +81,7 @@ export function coinCollectorWorkspace(): Record<string, unknown> {
     height: numVal(32),
     color: textVal('#f9e2af'),
     emoji: textVal('🦊'),
-    image: block('cb_sprite_editor_image', undefined, {
-      name: textVal('hero'),
-    }),
+    image: textVal(''),
   })
 
   // === PLATFORMS (from Level Editor export) ===

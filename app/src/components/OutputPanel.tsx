@@ -34,12 +34,20 @@ export default function OutputPanel({ result, isRunning, liveOutput, previewCode
     prevCanvasRef.current = result?.canvasDataUrl
   }, [result?.canvasDataUrl])
 
-  // Auto-switch to canvas tab when a new run starts IF a game is active
-  // (detected by window.__game existing in the parent — games write to it).
+  // Auto-switch to canvas tab when a game starts. Check immediately
+  // (for re-runs where __game already exists) and again after 200ms
+  // (for first runs where __game is created by the code).
   useEffect(() => {
     if (!isRunning) return
-    const hasActiveGame = typeof window !== 'undefined' && (window as unknown as { __game?: unknown }).__game != null
-    if (hasActiveGame) setTab('canvas')
+    const check = () => {
+      const w = window as unknown as { __game?: unknown }
+      if (w.__game != null) setTab('canvas')
+      const canvas = document.getElementById('cb-canvas')
+      if (canvas && canvas.style.display === 'block') setTab('canvas')
+    }
+    check()
+    const timer = setTimeout(check, 300)
+    return () => clearTimeout(timer)
   }, [isRunning])
 
   // Clear the live canvas at the start of each run so leftover frames
