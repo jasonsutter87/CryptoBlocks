@@ -91,6 +91,113 @@ export async function createClassroom(
   }
 }
 
+// -- Assignments --
+
+export interface Assignment {
+  id: string
+  classroomId: string
+  title: string
+  description: string
+  dueDate: number | null
+  createdAt: number
+  submissionCount: number
+}
+
+export interface Submission {
+  id: string
+  studentId: string
+  studentName: string
+  blockCount: number
+  submittedAt: number
+  feedback: string
+  status: string
+}
+
+export async function fetchAssignments(classroomId: string): Promise<Assignment[]> {
+  try {
+    const res = await fetch(`${API}/${classroomId}/assignments`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.assignments ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function createAssignment(
+  classroomId: string,
+  title: string,
+  description: string,
+  dueDate: number | null,
+  getToken: () => Promise<string | null>,
+): Promise<{ id: string } | null> {
+  try {
+    const headers = await authHeaders(getToken)
+    const res = await fetch(`${API}/${classroomId}/assignments`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ title, description, dueDate }),
+    })
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
+  }
+}
+
+export async function submitAssignment(
+  classroomId: string,
+  assignmentId: string,
+  workspaceJson: string,
+  blockCount: number,
+  getToken: () => Promise<string | null>,
+): Promise<{ id: string } | null> {
+  try {
+    const headers = await authHeaders(getToken)
+    const res = await fetch(`${API}/${classroomId}/assignments/${assignmentId}/submit`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ workspaceJson, blockCount }),
+    })
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
+  }
+}
+
+export async function fetchSubmissions(classroomId: string, assignmentId: string): Promise<Submission[]> {
+  try {
+    const res = await fetch(`${API}/${classroomId}/assignments/${assignmentId}/submissions`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.submissions ?? []
+  } catch {
+    return []
+  }
+}
+
+export async function sendFeedback(
+  classroomId: string,
+  assignmentId: string,
+  submissionId: string,
+  feedback: string,
+  status: string,
+  getToken: () => Promise<string | null>,
+): Promise<boolean> {
+  try {
+    const headers = await authHeaders(getToken)
+    const res = await fetch(`${API}/${classroomId}/assignments/${assignmentId}/feedback/${submissionId}`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ feedback, status }),
+    })
+    return res.ok
+  } catch {
+    return false
+  }
+}
+
 export async function joinClassroom(
   code: string,
   getToken: () => Promise<string | null>,

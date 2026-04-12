@@ -278,6 +278,114 @@ export default async function handler(req: Request) {
       })
     }
 
+    // POST /api/classrooms/:id/assignments — create an assignment (teacher only)
+    if (req.method === 'POST' && segments.length === 2 && segments[1] === 'assignments') {
+      if (!user) return json({ error: 'Sign in to create assignments' }, 401)
+
+      const classroomId = segments[0]
+      const body = await req.json()
+      const { title, description, dueDate } = body
+      if (!title) return json({ error: 'title is required' }, 400)
+
+      const id = crypto.randomUUID()
+      const now = Date.now()
+
+      await tursoExecute(
+        'INSERT INTO assignments (id, classroom_id, title, description, due_date, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, classroomId, String(title).slice(0, 200), String(description || '').slice(0, 1000), dueDate || null, now],
+      )
+
+      return json({ id, title, createdAt: now }, 201)
+    }
+
+    // GET /api/classrooms/:id/assignments — list assignments for a classroom
+    if (req.method === 'GET' && segments.length === 2 && segments[1] === 'assignments') {
+      const classroomId = segments[0]
+
+      const assignments = await tursoExecute(
+        'SELECT * FROM assignments WHERE classroom_id = ? ORDER BY created_at DESC',
+        [classroomId],
+      )
+
+      // For each assignment, get submission count
+      const result = []
+      for (const a of assignments.rows) {
+        const subs = await tursoExecute(
+          'SELECT COUNT(*) as count FROM submissions WHERE assignment_id = ?',
+          [String(a.id)],
+        )
+        result.push({
+          id: a.id,
+          classroomId: a.classroom_id,
+          title: a.title,
+          description: a.description,
+          dueDate: a.due_date,
+          createdAt: a.created_at,
+          submissionCount: Number(subs.rows[0]?.count ?? 0),
+        })
+      }
+
+      return json({ assignments: result })
+    }
+
+    // POST /api/classrooms/:classroomId/assignments/:assignmentId/submit — student submits work
+    if (req.method === 'POST' && segments.length === 3 && segments[2] === 'submit') {
+      if (!user) return json({ error: 'Sign in to submit' }, 401)
+
+      const assignmentId = segments[1]
+      const body = await req.json()
+      const { workspaceJson, blockCount } = body
+      if (!workspaceJson) return json({ error: 'workspaceJson is required' }, 400)
+
+      const id = crypto.randomUUID()
+      const now = Date.now()
+
+      await tursoExecute(
+        'INSERT INTO submissions (id, assignment_id, student_id, student_name, workspace_json, block_count, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [id, assignmentId, user.sub, String(user.name || 'Student').slice(0, 50), String(workspaceJson), Number(blockCount) || 0, now],
+      )
+
+      return json({ id, submittedAt: now }, 201)
+    }
+
+    // GET /api/classrooms/:classroomId/assignments/:assignmentId/submissions — list submissions
+    if (req.method === 'GET' && segments.length === 3 && segments[2] === 'submissions') {
+      const assignmentId = segments[1]
+
+      const subs = await tursoExecute(
+        'SELECT id, student_id, student_name, block_count, submitted_at, feedback, status FROM submissions WHERE assignment_id = ? ORDER BY submitted_at DESC',
+        [assignmentId],
+      )
+
+      return json({
+        submissions: subs.rows.map((s) => ({
+          id: s.id,
+          studentId: s.student_id,
+          studentName: s.student_name,
+          blockCount: Number(s.block_count),
+          submittedAt: s.submitted_at,
+          feedback: s.feedback,
+          status: s.status,
+        })),
+      })
+    }
+
+    // POST /api/classrooms/:classroomId/assignments/:assignmentId/feedback/:submissionId — teacher feedback
+    if (req.method === 'POST' && segments.length === 4 && segments[2] === 'feedback') {
+      if (!user) return json({ error: 'Sign in to give feedback' }, 401)
+
+      const submissionId = segments[3]
+      const body = await req.json()
+      const { feedback, status } = body
+
+      await tursoExecute(
+        'UPDATE submissions SET feedback = ?, status = ? WHERE id = ?',
+        [String(feedback || '').slice(0, 500), String(status || 'reviewed'), submissionId],
+      )
+
+      return json({ ok: true })
+    }
+
     return json({ error: 'Not found' }, 404)
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

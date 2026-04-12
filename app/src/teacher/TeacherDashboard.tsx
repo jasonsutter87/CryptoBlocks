@@ -16,8 +16,15 @@ import {
   fetchClassroom,
   createClassroom,
   joinClassroom,
+  fetchAssignments,
+  createAssignment,
+  submitAssignment,
+  fetchSubmissions,
+  sendFeedback,
   type Classroom,
   type ClassroomDetail,
+  type Assignment,
+  type Submission,
 } from './api'
 
 export default function TeacherDashboard() {
@@ -40,6 +47,18 @@ export default function TeacherDashboard() {
 
   // Newly created classroom code to show
   const [createdCode, setCreatedCode] = useState<string | null>(null)
+
+  // Assignments
+  const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [showCreateAssignment, setShowCreateAssignment] = useState(false)
+  const [newAssignmentTitle, setNewAssignmentTitle] = useState('')
+  const [newAssignmentDesc, setNewAssignmentDesc] = useState('')
+  const [creatingAssignment, setCreatingAssignment] = useState(false)
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null)
+  const [submissions, setSubmissions] = useState<Submission[]>([])
+  const [submitting, setSubmitting] = useState(false)
+  const [feedbackText, setFeedbackText] = useState('')
+  const [feedbackSubmissionId, setFeedbackSubmissionId] = useState<string | null>(null)
 
   // Auto-open join modal if ?join=CODE is in the URL (shareable invite link)
   useEffect(() => {
@@ -91,6 +110,52 @@ export default function TeacherDashboard() {
   const handleSelectClassroom = async (id: string) => {
     const detail = await fetchClassroom(id)
     setSelectedClassroom(detail)
+    setSelectedAssignment(null)
+    if (detail) {
+      const a = await fetchAssignments(id)
+      setAssignments(a)
+    }
+  }
+
+  const handleCreateAssignment = async () => {
+    if (!selectedClassroom || !newAssignmentTitle.trim()) return
+    setCreatingAssignment(true)
+    await createAssignment(selectedClassroom.id, newAssignmentTitle.trim(), newAssignmentDesc.trim(), null, getToken)
+    const a = await fetchAssignments(selectedClassroom.id)
+    setAssignments(a)
+    setNewAssignmentTitle('')
+    setNewAssignmentDesc('')
+    setShowCreateAssignment(false)
+    setCreatingAssignment(false)
+  }
+
+  const handleSelectAssignment = async (a: Assignment) => {
+    setSelectedAssignment(a)
+    if (selectedClassroom) {
+      const subs = await fetchSubmissions(selectedClassroom.id, a.id)
+      setSubmissions(subs)
+    }
+  }
+
+  const handleSubmitWork = async () => {
+    if (!selectedClassroom || !selectedAssignment) return
+    setSubmitting(true)
+    const workspaceJson = localStorage.getItem('cryptoblocks_workspace') || '{}'
+    let blockCount = 0
+    try { blockCount = JSON.parse(workspaceJson)?.blocks?.blocks?.length ?? 0 } catch {}
+    await submitAssignment(selectedClassroom.id, selectedAssignment.id, workspaceJson, blockCount, getToken)
+    const subs = await fetchSubmissions(selectedClassroom.id, selectedAssignment.id)
+    setSubmissions(subs)
+    setSubmitting(false)
+  }
+
+  const handleSendFeedback = async (submissionId: string) => {
+    if (!selectedClassroom || !selectedAssignment || !feedbackText.trim()) return
+    await sendFeedback(selectedClassroom.id, selectedAssignment.id, submissionId, feedbackText.trim(), 'reviewed', getToken)
+    const subs = await fetchSubmissions(selectedClassroom.id, selectedAssignment.id)
+    setSubmissions(subs)
+    setFeedbackText('')
+    setFeedbackSubmissionId(null)
   }
 
   return (
@@ -286,6 +351,144 @@ export default function TeacherDashboard() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Assignments */}
+              <div className="px-6 py-4 border-b border-[#313244]">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider">
+                    Assignments ({assignments.length})
+                  </h3>
+                  <button
+                    onClick={() => setShowCreateAssignment(true)}
+                    className="text-xs text-[#89b4fa] hover:text-[#74c7ec] font-semibold"
+                  >
+                    + New Assignment
+                  </button>
+                </div>
+
+                {/* Create assignment inline form */}
+                {showCreateAssignment && (
+                  <div className="bg-[#1e1e2e] rounded-lg p-4 mb-3 border border-[#313244]">
+                    <input
+                      type="text"
+                      value={newAssignmentTitle}
+                      onChange={(e) => setNewAssignmentTitle(e.target.value)}
+                      placeholder="Assignment title (e.g. Build a Calculator)"
+                      className="w-full bg-[#313244] border border-[#45475a] text-[#cdd6f4] text-sm rounded-lg px-3 py-2 placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa] mb-2"
+                      autoFocus
+                    />
+                    <textarea
+                      value={newAssignmentDesc}
+                      onChange={(e) => setNewAssignmentDesc(e.target.value)}
+                      placeholder="Instructions for students (optional)"
+                      rows={2}
+                      className="w-full bg-[#313244] border border-[#45475a] text-[#cdd6f4] text-sm rounded-lg px-3 py-2 placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa] mb-2 resize-none"
+                    />
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => setShowCreateAssignment(false)} className="px-3 py-1.5 text-xs text-[#6c7086] hover:text-[#cdd6f4]">Cancel</button>
+                      <button onClick={handleCreateAssignment} disabled={creatingAssignment || !newAssignmentTitle.trim()} className="px-3 py-1.5 text-xs font-bold text-[#1e1e2e] bg-[#89b4fa] rounded-lg disabled:opacity-40">
+                        {creatingAssignment ? 'Creating...' : 'Create'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Assignment list */}
+                {assignments.length === 0 ? (
+                  <p className="text-sm text-[#6c7086] italic">No assignments yet.</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {assignments.map((a) => (
+                      <button
+                        key={a.id}
+                        onClick={() => handleSelectAssignment(a)}
+                        className={`text-left bg-[#1e1e2e] rounded-lg px-4 py-3 hover:border-[#45475a] border transition-colors ${
+                          selectedAssignment?.id === a.id ? 'border-[#89b4fa]' : 'border-[#313244]'
+                        }`}
+                      >
+                        <div className="text-sm font-semibold text-[#cdd6f4]">{a.title}</div>
+                        <div className="text-xs text-[#6c7086] mt-0.5">
+                          {a.submissionCount} submission{a.submissionCount !== 1 ? 's' : ''}
+                          {a.description && ` · ${a.description.slice(0, 60)}${a.description.length > 60 ? '...' : ''}`}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Selected assignment — submissions + submit button */}
+                {selectedAssignment && (
+                  <div className="mt-4 bg-[#11111b] rounded-lg p-4 border border-[#313244]">
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="text-sm font-bold text-[#cdd6f4]">{selectedAssignment.title}</div>
+                        {selectedAssignment.description && (
+                          <p className="text-xs text-[#a6adc8] mt-1">{selectedAssignment.description}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={handleSubmitWork}
+                        disabled={submitting}
+                        className="px-3 py-1.5 text-xs font-bold text-[#1e1e2e] bg-[#a6e3a1] hover:bg-[#a6e3a1]/80 rounded-lg disabled:opacity-40 shrink-0"
+                      >
+                        {submitting ? 'Submitting...' : 'Submit My Work'}
+                      </button>
+                    </div>
+
+                    {submissions.length === 0 ? (
+                      <p className="text-xs text-[#6c7086] italic">No submissions yet.</p>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {submissions.map((s) => (
+                          <div key={s.id} className="bg-[#1e1e2e] rounded-lg px-3 py-2.5">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-sm text-[#cdd6f4] font-medium">{s.studentName}</span>
+                                <span className="text-xs text-[#6c7086] ml-2">{s.blockCount} blocks</span>
+                                <span className={`text-[10px] ml-2 px-1.5 py-0.5 rounded font-semibold ${
+                                  s.status === 'reviewed' ? 'bg-[#a6e3a1]/10 text-[#a6e3a1]' : 'bg-[#f9e2af]/10 text-[#f9e2af]'
+                                }`}>
+                                  {s.status}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => { setFeedbackSubmissionId(s.id); setFeedbackText(s.feedback || '') }}
+                                className="text-xs text-[#89b4fa] hover:text-[#74c7ec]"
+                              >
+                                {s.feedback ? 'Edit Feedback' : 'Give Feedback'}
+                              </button>
+                            </div>
+                            {s.feedback && (
+                              <div className="mt-1 text-xs text-[#a6adc8] bg-[#181825] rounded px-2 py-1">
+                                💬 {s.feedback}
+                              </div>
+                            )}
+                            {feedbackSubmissionId === s.id && (
+                              <div className="mt-2 flex gap-2">
+                                <input
+                                  type="text"
+                                  value={feedbackText}
+                                  onChange={(e) => setFeedbackText(e.target.value)}
+                                  placeholder="Write feedback..."
+                                  className="flex-1 bg-[#313244] border border-[#45475a] text-[#cdd6f4] text-xs rounded px-2 py-1.5 focus:outline-none focus:border-[#89b4fa]"
+                                  onKeyDown={(e) => e.key === 'Enter' && handleSendFeedback(s.id)}
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleSendFeedback(s.id)}
+                                  className="px-2 py-1.5 text-xs font-bold text-[#1e1e2e] bg-[#89b4fa] rounded"
+                                >
+                                  Send
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Student projects */}
