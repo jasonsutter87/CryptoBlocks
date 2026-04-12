@@ -232,13 +232,14 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     Blockly.ContextMenuRegistry.registry.register(lockBlockOption)
 
     const listener = (event?: Blockly.Events.Abstract) => {
-      // Track block creation (only user actions, not workspace load)
-      if (event && event.type === Blockly.Events.BLOCK_CREATE && !event.recordUndo === false) {
-        const createEvent = event as Blockly.Events.BlockCreate
-        // Only count if it's from a user drag, not a load
-        if (createEvent.group !== '' && !createEvent.isUiEvent) {
-          recordBlockCreated()
-        }
+      // Track block creation — only manual user drags from the toolbox,
+      // NOT workspace loads (examples, Open in Editor, history rollback).
+      // recordUndo is false during programmatic loads.
+      if (event &&
+          event.type === Blockly.Events.BLOCK_CREATE &&
+          event.recordUndo === true &&
+          !event.isUiEvent) {
+        recordBlockCreated()
       }
       callbackRef.current(workspace)
     }
