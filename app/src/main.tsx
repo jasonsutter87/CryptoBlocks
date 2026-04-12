@@ -7,6 +7,18 @@ import './index.css'
 
 const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
 
+// Wrapper that skips ClerkProvider when the key isn't set (local dev without .env.local)
+function AuthWrapper({ children }: { children: React.ReactNode }) {
+  if (!CLERK_KEY) {
+    return <>{children}</>
+  }
+  return (
+    <ClerkProvider publishableKey={CLERK_KEY} afterSignOutUrl="/">
+      {children}
+    </ClerkProvider>
+  )
+}
+
 const SharedLayout = lazy(() => import('./components/SharedLayout'))
 const ShareplacePage = lazy(() => import('./shareplace/ShareplacePage'))
 const DashboardPage = lazy(() => import('./dashboard/DashboardPage'))
@@ -18,7 +30,7 @@ const TeacherDashboard = lazy(() => import('./teacher/TeacherDashboard'))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ClerkProvider publishableKey={CLERK_KEY} afterSignOutUrl="/">
+    <AuthWrapper>
       <BrowserRouter>
         <Suspense fallback={<div className="h-full w-full bg-[#1e1e2e]" />}>
           <Routes>
@@ -33,6 +45,6 @@ createRoot(document.getElementById('root')!).render(
           </Routes>
         </Suspense>
       </BrowserRouter>
-    </ClerkProvider>
+    </AuthWrapper>
   </StrictMode>
 )
