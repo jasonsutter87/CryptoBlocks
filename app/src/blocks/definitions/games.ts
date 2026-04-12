@@ -758,4 +758,69 @@ export const gamesBlocks: BlockDefinition[] = [
     ],
     color: '#EA580C',
   },
+
+  {
+    name: 'start_tetris',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Launch a full Tetris game on the canvas — with Korobeiniki background music! ← → move, ↑ rotate, ↓ soft drop, Space hard drop.',
+    category: 'Games',
+    inputs: [],
+    outputs: [],
+    implementations: {
+      javascript: `function start_tetris() {
+  window.__game = window.__game || {};
+  (function() {
+    var W = 10, H = 20, SZ = 30;
+    var c = document.getElementById('cb-canvas');
+    c.width = W * SZ; c.height = H * SZ; c.style.display = 'block';
+    var ctx = c.getContext('2d');
+    var grid = []; for (var y = 0; y < H; y++) { grid[y] = []; for (var x = 0; x < W; x++) grid[y][x] = 0; }
+    var PIECES = [
+      {s:[[1,1,1,1]],c:'#89b4fa'},{s:[[1,1],[1,1]],c:'#f9e2af'},
+      {s:[[0,1,0],[1,1,1]],c:'#cba6f7'},{s:[[1,0,0],[1,1,1]],c:'#89b4fa'},
+      {s:[[0,0,1],[1,1,1]],c:'#fab387'},{s:[[0,1,1],[1,1,0]],c:'#a6e3a1'},
+      {s:[[1,1,0],[0,1,1]],c:'#f38ba8'}
+    ];
+    var score=0,lines=0,level=1,over=false,piece,px,py,pc,di=500,ld=0;
+    function rot(s){var r=s.length,cl=s[0].length,n=[];for(var c2=0;c2<cl;c2++){n[c2]=[];for(var r2=r-1;r2>=0;r2--)n[c2].push(s[r2][c2])}return n}
+    function fits(s,tx,ty){for(var y=0;y<s.length;y++)for(var x=0;x<s[y].length;x++)if(s[y][x]){var gx=tx+x,gy=ty+y;if(gx<0||gx>=W||gy>=H)return false;if(gy>=0&&grid[gy][gx])return false}return true}
+    function lock(){for(var y=0;y<piece.length;y++)for(var x=0;x<piece[y].length;x++)if(piece[y][x]){var gy=py+y;if(gy<0){over=true;return}grid[gy][px+x]=pc}
+      var cl=0;for(var y=H-1;y>=0;y--){if(grid[y].every(function(v){return v!==0})){grid.splice(y,1);grid.unshift(Array(W).fill(0));cl++;y++}}
+      if(cl>0){lines+=cl;score+=[0,100,300,500,800][cl]*level;level=Math.floor(lines/10)+1;di=Math.max(100,500-(level-1)*40);
+        try{var a=window.__audio||new(window.AudioContext||window.webkitAudioContext)();window.__audio=a;var o=a.createOscillator();var g=a.createGain();o.frequency.value=600+cl*200;g.gain.setValueAtTime(0.3,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+0.2);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+0.2)}catch(e){}}
+      spawn()}
+    function spawn(){var p=PIECES[Math.floor(Math.random()*PIECES.length)];piece=p.s.map(function(r){return r.slice()});pc=p.c;px=Math.floor((W-piece[0].length)/2);py=-1;if(!fits(piece,px,py))over=true}
+    function draw(){ctx.fillStyle='#11111b';ctx.fillRect(0,0,c.width,c.height);
+      ctx.strokeStyle='#1e1e2e';ctx.lineWidth=0.5;
+      for(var x=0;x<=W;x++){ctx.beginPath();ctx.moveTo(x*SZ,0);ctx.lineTo(x*SZ,H*SZ);ctx.stroke()}
+      for(var y=0;y<=H;y++){ctx.beginPath();ctx.moveTo(0,y*SZ);ctx.lineTo(W*SZ,y*SZ);ctx.stroke()}
+      for(var y=0;y<H;y++)for(var x=0;x<W;x++)if(grid[y][x]){ctx.fillStyle=grid[y][x];ctx.fillRect(x*SZ+1,y*SZ+1,SZ-2,SZ-2);ctx.fillStyle='rgba(255,255,255,0.1)';ctx.fillRect(x*SZ+1,y*SZ+1,SZ-2,3)}
+      if(piece&&!over)for(var y=0;y<piece.length;y++)for(var x=0;x<piece[y].length;x++)if(piece[y][x]){var dy=py+y;if(dy>=0){ctx.fillStyle=pc;ctx.fillRect((px+x)*SZ+1,dy*SZ+1,SZ-2,SZ-2);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect((px+x)*SZ+1,dy*SZ+1,SZ-2,3)}}
+      ctx.fillStyle='#cdd6f4';ctx.font='bold 14px sans-serif';ctx.textAlign='left';ctx.fillText('Score: '+score,5,18);ctx.textAlign='right';ctx.fillText('Lvl '+level,c.width-5,18);ctx.textAlign='left';
+      if(over){ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,c.height/2-40,c.width,80);ctx.fillStyle='#f38ba8';ctx.font='bold 28px sans-serif';ctx.textAlign='center';ctx.fillText('GAME OVER',c.width/2,c.height/2);ctx.fillStyle='#6c7086';ctx.font='14px sans-serif';ctx.fillText('Score: '+score+' | Lines: '+lines,c.width/2,c.height/2+25);ctx.textAlign='left'}}
+    document.addEventListener('keydown',function(e){if(over)return;
+      if(e.key==='ArrowLeft'){if(fits(piece,px-1,py))px--;e.preventDefault()}
+      else if(e.key==='ArrowRight'){if(fits(piece,px+1,py))px++;e.preventDefault()}
+      else if(e.key==='ArrowUp'){var r=rot(piece);if(fits(r,px,py))piece=r;else if(fits(r,px-1,py)){piece=r;px--}else if(fits(r,px+1,py)){piece=r;px++};e.preventDefault()}
+      else if(e.key==='ArrowDown'){if(fits(piece,px,py+1)){py++;score+=1}e.preventDefault()}
+      else if(e.key===' '){while(fits(piece,px,py+1)){py++;score+=2}lock();e.preventDefault()}});
+    var mel=[[659,400],[494,200],[523,200],[587,400],[523,200],[494,200],[440,400],[440,200],[523,200],[659,400],[587,200],[523,200],[494,400],[494,200],[523,200],[587,400],[659,400],[523,400],[440,400],[440,400],[0,400],[587,400],[698,200],[880,400],[784,200],[698,200],[659,400],[523,200],[659,400],[587,200],[523,200],[494,400],[494,200],[523,200],[587,400],[659,400],[523,400],[440,400],[440,400],[0,400]];
+    var mi=0;function playN(){if(over)return;try{var a=window.__audio||new(window.AudioContext||window.webkitAudioContext)();window.__audio=a;var n=mel[mi%mel.length];mi++;if(n[0]>0){var o=a.createOscillator();var g=a.createGain();o.type='square';o.frequency.value=n[0];g.gain.setValueAtTime(0.06,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+n[1]/1000*0.9);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+n[1]/1000)}setTimeout(playN,n[1])}catch(e){setTimeout(playN,500)}}
+    setTimeout(playN,300);
+    spawn();
+    function tick(t){if(!t)t=0;if(over){draw();return}if(t-ld>di){if(fits(piece,px,py+1))py++;else lock();ld=t}draw();window.__cbGameLoopId=requestAnimationFrame(tick)}
+    window.__cbGameLoopId=requestAnimationFrame(tick);
+    console.log('🧱 Tetris! ← → move, ↑ rotate, ↓ soft drop, Space hard drop');
+  })();
+}`,
+      python: `def start_tetris():
+    print("[Tetris only works in JavaScript mode]")`,
+    },
+    tests: [
+      { input: {}, expected: {} },
+    ],
+    color: '#EA580C',
+    shape: 'statement',
+  },
 ]

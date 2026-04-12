@@ -18,6 +18,7 @@ import { textPortraitWorkspace } from './text-portrait-workspace'
 import { moodBuddyWorkspace } from './mood-buddy-workspace'
 import { sideScrollerWorkspace } from './side-scroller-workspace'
 import { flappyBirdWorkspace } from './flappy-bird-workspace'
+import { tetrisWorkspace } from './tetris-workspace'
 
 export interface Example {
   id: string
@@ -635,5 +636,13 @@ export const EXAMPLES: Example[] = [
     difficulty: 'pro',
     tags: ['Games', 'Logic', 'Events'],
     workspace: flappyBirdWorkspace(),
+  },
+  {
+    id: 'tetris',
+    name: 'Tetris 🧱',
+    description: 'The classic block-dropping game with 7 tetrominoes, rotation, line clearing, scoring, levels, and the Korobeiniki melody as background music!',
+    difficulty: 'pro',
+    tags: ['Games', 'Sound'],
+    workspace: tetrisWorkspace(),
   },
 ]
