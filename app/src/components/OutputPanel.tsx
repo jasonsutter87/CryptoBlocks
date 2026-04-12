@@ -12,10 +12,10 @@ interface OutputPanelProps {
 
 export default function OutputPanel({ result, isRunning, liveOutput, previewCode }: OutputPanelProps) {
   const lines = isRunning ? liveOutput : result?.output ?? []
-  const hasCanvas = !!result?.canvasDataUrl
   const hasHtml = !!result?.htmlOutput
   const [tab, setTab] = useState<OutputTab>('console')
   const prevHtmlRef = useRef<string | undefined>(undefined)
+  const liveCanvasRef = useRef<HTMLCanvasElement>(null)
 
   // Auto-switch to preview tab when htmlOutput first arrives
   useEffect(() => {
@@ -34,9 +34,43 @@ export default function OutputPanel({ result, isRunning, liveOutput, previewCode
     prevCanvasRef.current = result?.canvasDataUrl
   }, [result?.canvasDataUrl])
 
+  // Auto-switch to canvas tab when a new run starts IF a game is active
+  // (detected by window.__game existing in the parent — games write to it).
+  useEffect(() => {
+    if (!isRunning) return
+    const hasActiveGame = typeof window !== 'undefined' && (window as unknown as { __game?: unknown }).__game != null
+    if (hasActiveGame) setTab('canvas')
+  }, [isRunning])
+
+  // Clear the live canvas at the start of each run so leftover frames
+  // from the previous run don't bleed into the new one.
+  useEffect(() => {
+    if (!isRunning) return
+    const canvas = liveCanvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    ctx?.clearRect(0, 0, canvas.width, canvas.height)
+  }, [isRunning])
+
+  // When the iframe path finishes and returns a canvasDataUrl, paint it
+  // onto the live canvas so the static result is visible in the same tab.
+  useEffect(() => {
+    const canvas = liveCanvasRef.current
+    if (!canvas || !result?.canvasDataUrl) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const img = new Image()
+    img.onload = () => {
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, 0, 0)
+    }
+    img.src = result.canvasDataUrl
+  }, [result?.canvasDataUrl])
+
   // Resolve active tab (fall back to console if selected tab has no data)
   let activeTab = tab
-  if (tab === 'canvas' && !hasCanvas) activeTab = 'console'
   if (tab === 'preview' && !hasHtml) activeTab = 'console'
 
   return (
@@ -60,11 +94,8 @@ export default function OutputPanel({ result, isRunning, liveOutput, previewCode
             className={`text-xs uppercase tracking-wide font-semibold px-2 py-0.5 rounded ${
               activeTab === 'canvas'
                 ? 'text-[#cdd6f4] bg-[#313244]'
-                : hasCanvas
-                  ? 'text-[#cba6f7] hover:text-[#cba6f7]/80'
-                  : 'text-[#6c7086]/40 cursor-not-allowed'
+                : 'text-[#cba6f7] hover:text-[#cba6f7]/80'
             }`}
-            disabled={!hasCanvas}
           >
             Canvas
           </button>
@@ -125,23 +156,23 @@ export default function OutputPanel({ result, isRunning, liveOutput, previewCode
         </div>
       )}
 
-      {/* Canvas tab */}
-      {activeTab === 'canvas' && (
-        <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-[#1e1e2e]">
-          {hasCanvas ? (
-            <img
-              src={result!.canvasDataUrl}
-              alt="Canvas output"
-              className="max-w-full max-h-full rounded-lg shadow-lg border border-[#313244]"
-              style={{ imageRendering: 'pixelated' }}
-            />
-          ) : (
-            <div className="text-[#6c7086] italic text-sm">
-              Use Art blocks to draw on the canvas
-            </div>
-          )}
-        </div>
-      )}
+      {/* Canvas tab — the canvas is always mounted (even when another tab is
+          active) so direct-execution code can find #cb-canvas and draw live.
+          We just hide the container with CSS when a different tab is selected. */}
+      <div
+        className={`flex-1 overflow-auto p-4 items-center justify-center bg-[#1e1e2e] ${
+          activeTab === 'canvas' ? 'flex' : 'hidden'
+        }`}
+      >
+        <canvas
+          ref={liveCanvasRef}
+          id="cb-canvas"
+          width={640}
+          height={400}
+          className="max-w-full max-h-full rounded-lg shadow-lg border border-[#313244] bg-[#11111b]"
+          style={{ imageRendering: 'pixelated' }}
+        />
+      </div>
 
       {/* Preview tab — executes full generated code so event handlers work */}
       {activeTab === 'preview' && (
