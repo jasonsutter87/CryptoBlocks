@@ -488,7 +488,41 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
         {/* === Projects === */}
         {tab === 'projects' && (
           <div className="px-6 py-4">
-            <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">Student Projects</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider">Student Projects</h3>
+              <button
+                onClick={async () => {
+                  const ws = localStorage.getItem('cryptoblocks_workspace')
+                  if (!ws || ws === '{}') {
+                    alert('Build something in the editor first, then come back to upload.')
+                    return
+                  }
+                  const name = prompt('Project name:')
+                  if (!name) return
+                  try {
+                    const token = await getToken()
+                    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+                    if (token) headers['Authorization'] = `Bearer ${token}`
+                    const res = await fetch('/api/projects', {
+                      method: 'POST', headers,
+                      body: JSON.stringify({
+                        name,
+                        authorName: user?.fullName || user?.username || 'Student',
+                        description: `Shared in classroom: ${classroom.name}`,
+                        category: 'General',
+                        workspaceJson: ws,
+                        tags: ['classroom'],
+                        blockCount: (() => { try { return JSON.parse(ws)?.blocks?.blocks?.length ?? 0 } catch { return 0 } })(),
+                      }),
+                    })
+                    if (res.ok) alert('Project uploaded! Refresh to see it.')
+                  } catch { alert('Upload failed — try again.') }
+                }}
+                className="px-3 py-1.5 text-xs font-bold text-[#1e1e2e] bg-[#a6e3a1] hover:bg-[#a6e3a1]/80 rounded-lg"
+              >
+                Upload from Editor
+              </button>
+            </div>
             {classroom.projects.length === 0 ? (
               <p className="text-sm text-[#6c7086] italic">No projects shared yet.</p>
             ) : (
