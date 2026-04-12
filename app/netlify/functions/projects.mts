@@ -39,6 +39,32 @@ async function verifyClerkToken(token: string): Promise<ClerkTokenPayload | null
   }
 }
 
+// -- Content moderation -----------------------------------------------------
+
+const BANNED_WORDS = [
+  'fuck', 'shit', 'bitch', 'ass', 'damn', 'dick', 'pussy', 'cock', 'cunt',
+  'nigger', 'nigga', 'faggot', 'retard', 'slut', 'whore', 'porn', 'xxx',
+  'kill yourself', 'kys',
+]
+
+const URL_PATTERN = /https?:\/\/[^\s]+|www\.[^\s]+/gi
+
+function moderateContent(name: string, description: string): string | null {
+  const combined = `${name} ${description}`.toLowerCase()
+
+  for (const word of BANNED_WORDS) {
+    if (combined.includes(word)) {
+      return 'Project contains inappropriate language. Please edit and try again.'
+    }
+  }
+
+  if (URL_PATTERN.test(name) || URL_PATTERN.test(description)) {
+    return 'URLs are not allowed in project names or descriptions.'
+  }
+
+  return null
+}
+
 // -- Minimal Turso HTTP client via fetch -----------------------------------
 
 interface TursoRow {
@@ -165,6 +191,12 @@ export default async function handler(req: Request) {
         return json({ error: 'name and workspaceJson are required' }, 400)
       }
 
+      // --- Content moderation ---
+      const moderationError = moderateContent(String(name), String(description || ''))
+      if (moderationError) {
+        return json({ error: moderationError }, 400)
+      }
+
       const id = crypto.randomUUID()
       const now = Date.now()
 
@@ -187,6 +219,20 @@ export default async function handler(req: Request) {
       )
 
       return json({ id, name, createdAt: now }, 201)
+    }
+
+    // POST /api/projects/:id/report — flag a project for review
+    if (req.method === 'POST' && segments.length === 2 && segments[1] === 'report') {
+      const reportAuth = req.headers.get('Authorization') || ''
+      const reportUser = await verifyClerkToken(reportAuth.replace('Bearer ', ''))
+      if (!reportUser && process.env.CLERK_SECRET_KEY) {
+        return json({ error: 'Sign in to report' }, 401)
+      }
+      const body = await req.json()
+      const reason = String(body.reason || 'No reason given').slice(0, 500)
+      // eslint-disable-next-line no-console
+      console.log(`[REPORT] Project ${segments[0]} reported by ${reportUser?.sub || 'anon'}: ${reason}`)
+      return json({ ok: true, message: 'Thank you for reporting. We will review this project.' })
     }
 
     // POST /api/projects/:id/download — increment download count
