@@ -7,8 +7,9 @@
  * a shareable summary for copy-to-clipboard.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '@clerk/clerk-react'
 import type { DailyPuzzle } from './puzzles'
 
 interface ChallengeBannerProps {
@@ -18,8 +19,25 @@ interface ChallengeBannerProps {
 }
 
 export default function ChallengeBanner({ puzzle, dayNumber, solvedBlocks }: ChallengeBannerProps) {
+  const { getToken } = useAuth()
   const [expanded, setExpanded] = useState(true)
   const [copied, setCopied] = useState(false)
+
+  // Sync solve to global leaderboard when solvedBlocks first appears
+  useEffect(() => {
+    if (solvedBlocks == null) return
+    ;(async () => {
+      try {
+        const token = await getToken()
+        if (!token) return
+        await fetch('/api/daily/solve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ dayNumber, blocksUsed: solvedBlocks }),
+        })
+      } catch {}
+    })()
+  }, [solvedBlocks, dayNumber, getToken])
 
   const stars = solvedBlocks == null
     ? ''

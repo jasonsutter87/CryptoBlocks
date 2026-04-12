@@ -6,10 +6,12 @@
  * `/?daily=1` which triggers the in-editor banner + auto-check on Run.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { getTodaysPuzzle, getDayNumber, getPuzzleByDay } from './getTodaysPuzzle'
 import { loadDailyState, getEffectiveStreak } from './state'
+
+interface BoardEntry { userName: string; totalSolved?: number; bestBlocks?: number; blocksUsed?: number }
 
 function DifficultyBadge({ difficulty }: { difficulty: 'easy' | 'medium' | 'hard' }) {
   const colors = {
@@ -42,12 +44,29 @@ function HistorySquare({ dayNumber, solved, isToday }: { dayNumber: number; solv
   )
 }
 
+const MEDALS = ['🥇', '🥈', '🥉']
+
 export default function DailyChallengePage() {
   const { puzzle, dayNumber } = useMemo(() => getTodaysPuzzle(), [])
   const state = useMemo(() => loadDailyState(), [])
   const currentDay = useMemo(() => getDayNumber(), [])
   const effectiveStreak = getEffectiveStreak(state, currentDay)
   const solvedToday = !!state.solved[dayNumber]
+
+  const [topSolvers, setTopSolvers] = useState<BoardEntry[]>([])
+  const [todaySolvers, setTodaySolvers] = useState<BoardEntry[]>([])
+
+  useEffect(() => {
+    fetch(`/api/daily/board?day=${dayNumber}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d) {
+          setTopSolvers(d.topSolvers ?? [])
+          setTodaySolvers(d.todaySolvers ?? [])
+        }
+      })
+      .catch(() => {})
+  }, [dayNumber])
 
   // History grid: last 10 days including today
   const historyDays = useMemo(() => {
@@ -163,6 +182,43 @@ export default function DailyChallengePage() {
             ))}
           </div>
         </div>
+
+        {/* Global Leaderboard */}
+        {(topSolvers.length > 0 || todaySolvers.length > 0) && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+            {/* Top Solvers (all time) */}
+            {topSolvers.length > 0 && (
+              <div className="bg-[#181825] border border-[#313244] rounded-xl p-5">
+                <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">🏆 Top Solvers</h3>
+                <div className="flex flex-col gap-2">
+                  {topSolvers.slice(0, 10).map((s, i) => (
+                    <div key={s.userName} className="flex items-center gap-2">
+                      <span className="w-5 text-center text-sm">{i < 3 ? MEDALS[i] : `${i + 1}`}</span>
+                      <span className="text-sm text-[#cdd6f4] flex-1 truncate">{s.userName}</span>
+                      <span className="text-xs text-[#a6e3a1] font-mono">{s.totalSolved} solved</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Today's Solvers */}
+            {todaySolvers.length > 0 && (
+              <div className="bg-[#181825] border border-[#313244] rounded-xl p-5">
+                <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">🎯 Today&apos;s Solvers</h3>
+                <div className="flex flex-col gap-2">
+                  {todaySolvers.slice(0, 10).map((s, i) => (
+                    <div key={s.userName} className="flex items-center gap-2">
+                      <span className="w-5 text-center text-sm">{i < 3 ? MEDALS[i] : `${i + 1}`}</span>
+                      <span className="text-sm text-[#cdd6f4] flex-1 truncate">{s.userName}</span>
+                      <span className="text-xs text-[#89b4fa] font-mono">{s.blocksUsed} blocks</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Footer tip */}
         <div className="text-center text-[#6c7086] text-sm">
