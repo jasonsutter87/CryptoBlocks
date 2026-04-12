@@ -6,6 +6,7 @@ import { fetchProjects } from '../shareplace/api'
 import { fetchClassrooms, type Classroom } from '../teacher/api'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
+import { useIsPro, openCheckout, openPortal } from '../billing/useIsPro'
 import type { SharedProject } from '../types/shareplace'
 
 function getInitials(displayName: string, username: string): string {
@@ -54,6 +55,7 @@ export default function ProfilePage() {
   const [clearCheckpointConfirm, setClearCheckpointConfirm] = useState(false)
   const [clearWorkspaceConfirm, setClearWorkspaceConfirm] = useState(false)
   const { getToken } = useAuth()
+  const { isPro } = useIsPro()
   const [myProjects, setMyProjects] = useState<SharedProject[]>([])
   const [myClassrooms, setMyClassrooms] = useState<Classroom[]>([])
   const dailyState = useMemo(() => loadDailyState(), [])
@@ -151,6 +153,42 @@ export default function ProfilePage() {
           </SignInButton>
         </div>
       </SignedOut>
+
+      {/* Subscription */}
+      <SignedIn>
+        <SectionCard title="Subscription">
+          {isPro ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">⭐</span>
+                <div>
+                  <div className="text-sm font-bold text-[#cdd6f4]">CryptoBlocks Pro</div>
+                  <div className="text-xs text-[#a6e3a1]">Active subscription</div>
+                </div>
+              </div>
+              <button
+                onClick={() => openPortal(getToken)}
+                className="px-4 py-2 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-lg text-sm font-semibold transition-colors"
+              >
+                Manage Subscription
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm font-semibold text-[#cdd6f4]">Free Plan</div>
+                <div className="text-xs text-[#6c7086]">Upgrade to unlock build tools, exports, classrooms, and more.</div>
+              </div>
+              <button
+                onClick={() => openCheckout(getToken)}
+                className="px-5 py-2.5 bg-gradient-to-r from-[#f9e2af] to-[#fab387] text-[#1e1e2e] rounded-lg text-sm font-bold hover:opacity-90 transition-opacity"
+              >
+                Upgrade — $10/mo
+              </button>
+            </div>
+          )}
+        </SectionCard>
+      </SignedIn>
 
       {/* My shared projects */}
       {myProjects.length > 0 && (
