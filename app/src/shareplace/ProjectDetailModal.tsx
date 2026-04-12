@@ -102,8 +102,30 @@ export default function ProjectDetailModal({
   const iconColor = CATEGORY_ICON_COLORS[project.category] ?? '#6c7086'
   const pillClass = CATEGORY_PILL_COLORS[project.category] ?? 'bg-[#45475a]/40 text-[#a6adc8]'
 
-  const handleDownload = () => {
-    console.log('Download .blocks (coming soon):', project.id)
+  const [downloading, setDownloading] = useState(false)
+
+  const handleDownload = async () => {
+    setDownloading(true)
+    try {
+      const res = await fetch(`/api/projects/${project.id}`)
+      if (!res.ok) throw new Error('Failed to fetch project')
+      const data = await res.json()
+      const workspaceJson = data.workspaceJson || '{}'
+
+      const blob = new Blob([workspaceJson], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${project.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.blocks`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Download failed:', err)
+    }
+    setDownloading(false)
   }
 
   return (
@@ -203,12 +225,13 @@ export default function ProjectDetailModal({
             {/* Primary actions */}
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#1e1e2e] bg-[#a6e3a1] hover:bg-[#a6e3a1]/80 rounded-lg transition-colors"
+              disabled={downloading}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-[#1e1e2e] bg-[#a6e3a1] hover:bg-[#a6e3a1]/80 rounded-lg transition-colors disabled:opacity-60"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
               </svg>
-              Download .blocks
+              {downloading ? 'Downloading...' : 'Download .blocks'}
             </button>
             <button
               onClick={() => setSubModal('remix')}
