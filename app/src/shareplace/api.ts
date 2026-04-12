@@ -117,6 +117,31 @@ export async function publishProject(payload: PublishPayload, clerkToken?: strin
   }
 }
 
+export interface RemixTreeNode {
+  id: string
+  name: string
+  authorName: string
+  parentId: string | null
+  createdAt: number
+  likes: number
+}
+
+export interface RemixTree {
+  ancestors: RemixTreeNode[]
+  children: RemixTreeNode[]
+  remixCount: number
+}
+
+export async function fetchRemixTree(id: string): Promise<RemixTree | null> {
+  try {
+    const res = await fetch(`${API_BASE}/${id}/tree`)
+    if (!res.ok) return null
+    return await res.json()
+  } catch {
+    return null
+  }
+}
+
 export async function likeProject(id: string): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/${id}/like`, { method: 'POST' })

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { SharedProject } from '../types/shareplace'
+import { fetchRemixTree, type RemixTree } from './api'
 import RemixModal from './RemixModal'
+import RemixTreeView from './RemixTreeView'
 import EditListingModal from './EditListingModal'
 import RemoveListingModal from './RemoveListingModal'
 
@@ -108,6 +110,11 @@ export default function ProjectDetailModal({
   const [opening, setOpening] = useState(false)
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(project.likes)
+  const [remixTree, setRemixTree] = useState<RemixTree | null>(null)
+
+  useEffect(() => {
+    fetchRemixTree(project.id).then(setRemixTree)
+  }, [project.id])
 
   const handleLike = async () => {
     if (liked) return
@@ -241,6 +248,21 @@ export default function ProjectDetailModal({
               <p className="text-[#a6adc8] text-sm leading-relaxed">{project.description}</p>
             </div>
 
+            {/* "Remixed from" badge */}
+            {remixTree && remixTree.ancestors.length > 0 && (
+              <div className="flex items-center gap-2 bg-[#a6e3a1]/10 border border-[#a6e3a1]/20 rounded-lg px-3 py-2">
+                <svg className="w-4 h-4 text-[#a6e3a1] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                </svg>
+                <span className="text-xs text-[#a6adc8]">
+                  Remixed from{' '}
+                  <span className="text-[#a6e3a1] font-semibold">{remixTree.ancestors[remixTree.ancestors.length - 1].name}</span>
+                  {' '}by{' '}
+                  <span className="text-[#89b4fa]">{remixTree.ancestors[remixTree.ancestors.length - 1].authorName}</span>
+                </span>
+              </div>
+            )}
+
             {/* Tags */}
             {project.tags.length > 0 && (
               <div>
@@ -255,6 +277,24 @@ export default function ProjectDetailModal({
                     </span>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Remix tree */}
+            {remixTree && (remixTree.ancestors.length > 0 || remixTree.children.length > 0) && (
+              <div>
+                <h3 className="text-xs font-medium text-[#6c7086] uppercase tracking-wider mb-3">Remix Tree</h3>
+                <RemixTreeView
+                  ancestors={remixTree.ancestors}
+                  currentProject={{ id: project.id, name: project.name, authorName: project.author }}
+                  children={remixTree.children}
+                  remixCount={remixTree.remixCount}
+                  onNodeClick={(id) => {
+                    // Could navigate to that project — for now just log
+                    // eslint-disable-next-line no-console
+                    console.log('Navigate to project:', id)
+                  }}
+                />
               </div>
             )}
           </div>

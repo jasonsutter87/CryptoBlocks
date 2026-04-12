@@ -198,6 +198,49 @@ export default async function handler(req: Request) {
       return json({ ok: true })
     }
 
+    // GET /api/projects/:id/tree — remix lineage (ancestors + descendants)
+    if (req.method === 'GET' && segments.length === 2 && segments[1] === 'tree') {
+      const projectId = segments[0]
+
+      // Get ancestors (walk parent_id chain up)
+      const ancestors: TursoRow[] = []
+      let currentId: string | null = projectId
+      while (currentId) {
+        const row = await tursoExecute(
+          'SELECT id, name, author_name, parent_id, created_at, likes FROM projects WHERE id = ?',
+          [currentId],
+        )
+        if (row.rows.length === 0) break
+        const r = row.rows[0]
+        if (String(r.id) !== projectId) ancestors.unshift(r)
+        currentId = r.parent_id ? String(r.parent_id) : null
+      }
+
+      // Get direct descendants (one level — children that have parent_id = this project)
+      const children = await tursoExecute(
+        'SELECT id, name, author_name, parent_id, created_at, likes FROM projects WHERE parent_id = ? ORDER BY created_at ASC',
+        [projectId],
+      )
+
+      // Get total remix count (recursive — all descendants)
+      const allDescendants = await tursoExecute(
+        `WITH RECURSIVE tree AS (
+           SELECT id FROM projects WHERE parent_id = ?
+           UNION ALL
+           SELECT p.id FROM projects p JOIN tree t ON p.parent_id = t.id
+         )
+         SELECT COUNT(*) as count FROM tree`,
+        [projectId],
+      )
+      const remixCount = Number(allDescendants.rows[0]?.count ?? 0)
+
+      return json({
+        ancestors: ancestors.map(formatTreeNode),
+        children: children.rows.map(formatTreeNode),
+        remixCount,
+      })
+    }
+
     // GET /api/projects/:id
     if (req.method === 'GET' && segments.length === 1) {
       const result = await tursoExecute(
@@ -258,6 +301,17 @@ function formatProject(row: TursoRow) {
     downloads: row.downloads,
     likes: row.likes,
     createdAt: row.created_at,
+  }
+}
+
+function formatTreeNode(row: TursoRow) {
+  return {
+    id: row.id,
+    name: row.name,
+    authorName: row.author_name,
+    parentId: row.parent_id,
+    createdAt: row.created_at,
+    likes: row.likes,
   }
 }
 

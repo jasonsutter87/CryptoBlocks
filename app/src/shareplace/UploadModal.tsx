@@ -12,7 +12,16 @@ const CATEGORIES = ['Games', 'Art', 'Web', 'Sound', 'Data', 'AI'] as const
 export default function UploadModal({ onClose, onPublished }: UploadModalProps) {
   const { user } = useUser()
   const { getToken } = useAuth()
-  const [name, setName] = useState('')
+
+  // Check if this upload is a remix of another project
+  const remixParent = (() => {
+    try {
+      const raw = localStorage.getItem('cryptoblocks_remix_parent')
+      return raw ? JSON.parse(raw) as { id: string; name: string; author: string } : null
+    } catch { return null }
+  })()
+
+  const [name, setName] = useState(remixParent ? `${remixParent.name} (remix)` : '')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<string>('Games')
   const [tags, setTags] = useState('')
@@ -60,7 +69,10 @@ export default function UploadModal({ onClose, onPublished }: UploadModalProps) 
       workspaceJson,
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       blockCount,
+      parentId: remixParent?.id,
     }, token)
+    // Clear the remix parent after successful upload
+    if (result) localStorage.removeItem('cryptoblocks_remix_parent')
     setUploading(false)
     if (result) {
       onPublished?.()

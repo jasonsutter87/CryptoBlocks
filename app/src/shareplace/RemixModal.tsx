@@ -1,4 +1,5 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { SharedProject } from '../types/shareplace'
 
 interface RemixModalProps {
@@ -8,6 +9,9 @@ interface RemixModalProps {
 }
 
 export default function RemixModal({ project, onClose, onConfirm }: RemixModalProps) {
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -16,10 +20,30 @@ export default function RemixModal({ project, onClose, onConfirm }: RemixModalPr
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  const handleConfirm = () => {
-    console.log('Remix project (coming soon):', project.id)
-    onConfirm?.()
-    onClose()
+  const handleConfirm = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/projects/${project.id}`)
+      if (!res.ok) throw new Error('fetch failed')
+      const data = await res.json()
+
+      // Save workspace to localStorage so editor loads it
+      localStorage.setItem('cryptoblocks_workspace', data.workspaceJson || '{}')
+      // Track the parent so UploadModal sets parentId on the remix upload
+      localStorage.setItem('cryptoblocks_remix_parent', JSON.stringify({
+        id: project.id,
+        name: project.name,
+        author: project.author,
+      }))
+
+      onConfirm?.()
+      onClose()
+      navigate('/')
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Remix failed:', err)
+      setLoading(false)
+    }
   }
 
   return (
@@ -54,9 +78,10 @@ export default function RemixModal({ project, onClose, onConfirm }: RemixModalPr
           </button>
           <button
             onClick={handleConfirm}
-            className="px-4 py-2 text-sm font-semibold text-[#1e1e2e] bg-[#a6e3a1] hover:bg-[#a6e3a1]/80 rounded-lg transition-colors"
+            disabled={loading}
+            className="px-4 py-2 text-sm font-semibold text-[#1e1e2e] bg-[#a6e3a1] hover:bg-[#a6e3a1]/80 rounded-lg transition-colors disabled:opacity-60"
           >
-            Remix
+            {loading ? 'Loading...' : 'Remix'}
           </button>
         </div>
       </div>
