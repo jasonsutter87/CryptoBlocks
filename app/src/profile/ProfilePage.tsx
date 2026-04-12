@@ -1,8 +1,11 @@
-import { useState, useCallback, useEffect } from 'react'
-import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
+import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useUser, useAuth, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
 import { loadProfile, saveProfile, type UserProfile } from './profile-storage'
 import { loadSettings, saveSettings, type UserSettings } from '../settings'
 import { fetchProjects } from '../shareplace/api'
+import { fetchClassrooms, type Classroom } from '../teacher/api'
+import { loadDailyState, getEffectiveStreak } from '../daily/state'
+import { getDayNumber } from '../daily/getTodaysPuzzle'
 import type { SharedProject } from '../types/shareplace'
 
 function getInitials(displayName: string, username: string): string {
@@ -50,7 +53,11 @@ export default function ProfilePage() {
   const [profileSaved, setProfileSaved] = useState(false)
   const [clearCheckpointConfirm, setClearCheckpointConfirm] = useState(false)
   const [clearWorkspaceConfirm, setClearWorkspaceConfirm] = useState(false)
+  const { getToken } = useAuth()
   const [myProjects, setMyProjects] = useState<SharedProject[]>([])
+  const [myClassrooms, setMyClassrooms] = useState<Classroom[]>([])
+  const dailyState = useMemo(() => loadDailyState(), [])
+  const dailyStreak = getEffectiveStreak(dailyState, getDayNumber())
 
   useEffect(() => {
     fetchProjects().then((all) => {
@@ -59,7 +66,8 @@ export default function ProfilePage() {
         setMyProjects(all.filter((p) => p.author === authorName))
       }
     })
-  }, [clerkUser, profile.displayName])
+    fetchClassrooms(getToken).then(setMyClassrooms)
+  }, [clerkUser, profile.displayName, getToken])
 
   // Profile handlers
   const updateProfile = useCallback((patch: Partial<UserProfile>) => {
@@ -156,6 +164,41 @@ export default function ProfilePage() {
                 </div>
                 <a href="/shareplace" className="text-xs text-[#89b4fa] hover:text-[#74c7ec]">View</a>
               </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
+
+      {/* Daily Challenge stats */}
+      <SectionCard title="Daily Challenge">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-[#fab387]">{dailyStreak}🔥</div>
+            <div className="text-[10px] text-[#6c7086]">Current Streak</div>
+          </div>
+          <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-[#f9e2af]">{dailyState.longestStreak}</div>
+            <div className="text-[10px] text-[#6c7086]">Longest Streak</div>
+          </div>
+          <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-[#a6e3a1]">{dailyState.totalSolved}</div>
+            <div className="text-[10px] text-[#6c7086]">Total Solved</div>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Classrooms */}
+      {myClassrooms.length > 0 && (
+        <SectionCard title="My Classrooms">
+          <div className="flex flex-col gap-2">
+            {myClassrooms.map((c) => (
+              <a key={c.id} href="/teacher" className="flex items-center justify-between bg-[#1e1e2e] rounded-lg px-4 py-3 hover:bg-[#181825] transition-colors">
+                <div>
+                  <div className="text-sm font-semibold text-[#cdd6f4]">{c.name}</div>
+                  <div className="text-xs text-[#6c7086]">by {c.teacherName} · {c.memberCount} members</div>
+                </div>
+                <span className="text-sm font-mono text-[#89b4fa]">{c.joinCode}</span>
+              </a>
             ))}
           </div>
         </SectionCard>
