@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useAuth } from '@clerk/clerk-react'
 import type { SharedProject } from '../types/shareplace'
 import { fetchRemixTree, type RemixTree } from './api'
 import RemixModal from './RemixModal'
@@ -106,6 +107,7 @@ export default function ProjectDetailModal({
 
   const [downloading, setDownloading] = useState(false)
   const [opening, setOpening] = useState(false)
+  const { getToken } = useAuth()
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(project.likes)
   const [remixTree, setRemixTree] = useState<RemixTree | null>(null)
@@ -119,7 +121,11 @@ export default function ProjectDetailModal({
     setLiked(true)
     setLikeCount((c) => c + 1)
     try {
-      await fetch(`/api/projects/${project.id}/like`, { method: 'POST' })
+      const token = await getToken()
+      const headers: Record<string, string> = {}
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const res = await fetch(`/api/projects/${project.id}/like`, { method: 'POST', headers })
+      if (!res.ok) throw new Error('like failed')
     } catch {
       setLiked(false)
       setLikeCount((c) => c - 1)

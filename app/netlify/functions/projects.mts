@@ -198,8 +198,14 @@ export default async function handler(req: Request) {
       return json({ ok: true })
     }
 
-    // POST /api/projects/:id/like
+    // POST /api/projects/:id/like (auth required to prevent spam)
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'like') {
+      const authHeader = req.headers.get('Authorization') || ''
+      const likeToken = authHeader.replace('Bearer ', '')
+      const likeUser = await verifyClerkToken(likeToken)
+      if (!likeUser && process.env.CLERK_SECRET_KEY) {
+        return json({ error: 'Sign in to like projects' }, 401)
+      }
       await tursoExecute(
         'UPDATE projects SET likes = likes + 1 WHERE id = ?',
         [segments[0]],
