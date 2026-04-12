@@ -200,6 +200,18 @@ window.addEventListener('unhandledrejection', function(e) { __sendMsg('log', '[e
 ${safetyPreamble}
 (async function() {
   try {
+    // The head script runs before the parser reaches <body>. Any sync user
+    // code that touches document.body — set_canvas, game setup, etc. —
+    // would crash with a null appendChild. Wait until the body exists.
+    if (!document.body) {
+      await new Promise(function(r) {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() { r(null); }, { once: true });
+        } else {
+          r(null);
+        }
+      });
+    }
     var __code = decodeURIComponent(escape(atob("${encoded}")));
     var __fn = new Function("return (async function() {\\n" + __code + "\\n})()");
     var __result = await __fn();

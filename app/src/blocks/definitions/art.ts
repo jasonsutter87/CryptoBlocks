@@ -19,7 +19,8 @@ export const artBlocks: BlockDefinition[] = [
   if (!c) {
     c = document.createElement('canvas');
     c.id = 'cb-canvas';
-    document.body.appendChild(c);
+    var parent = document.body || document.documentElement;
+    if (parent) parent.appendChild(c);
   }
   c.width = width;
   c.height = height;
