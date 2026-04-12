@@ -57,8 +57,26 @@ export default function MicrobitStatus() {
       const message = err instanceof Error ? err.message : String(err)
       // User cancelling the BLE prompt throws a NotFoundError — don't surface
       // that as an error, it's a deliberate action.
-      if (!/cancell?ed|User cancelled/i.test(message) && !/NotFoundError/.test(String(err))) {
+      const isCancel =
+        /cancell?ed|User cancelled/i.test(message) || /NotFoundError/.test(String(err))
+
+      // Brave Shields and some Chrome configurations throw "Bluetooth
+      // permission has been blocked" or a SecurityError. Give users an
+      // actionable pointer instead of the raw message.
+      const isBlocked =
+        /permission.*block|SecurityError|globally disabled|blocklisted/i.test(message)
+
+      if (isBlocked) {
+        alert(
+          'Bluetooth is blocked in your browser.\n\n' +
+          '• Brave: click the 🦁 shield icon in the address bar and drop shields for this site.\n' +
+          '• Chrome/Edge: make sure you are on https:// and that Bluetooth is enabled in system settings.\n' +
+          '• Safari/Firefox: Web Bluetooth is not supported — use Chrome, Edge, or Brave (shields off).'
+        )
+      } else if (!isCancel) {
         setError(message)
+        // eslint-disable-next-line no-console
+        console.error('[microbit] connect failed:', message)
       }
       setBusy(false)
     }
