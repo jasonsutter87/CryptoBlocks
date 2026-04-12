@@ -36,7 +36,7 @@ function toSharedProject(p: ApiProject): SharedProject {
     blockCount: p.blockCount,
     downloads: p.downloads,
     likes: p.likes,
-    createdAt: new Date(p.createdAt).toISOString().slice(0, 10),
+    createdAt: new Date(Number(p.createdAt)).toISOString().slice(0, 10),
     tags: p.tags,
   }
 }
