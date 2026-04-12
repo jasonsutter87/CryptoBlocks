@@ -153,9 +153,20 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider">Course Description</h3>
-                {isTeacher && !editingDesc && (
-                  <button onClick={() => setEditingDesc(true)} className="text-xs text-[#89b4fa]">Edit</button>
-                )}
+                <div className="flex gap-2">
+                  {isTeacher && !editingDesc && (
+                    <button onClick={() => setEditingDesc(true)} className="text-xs text-[#89b4fa]">Edit</button>
+                  )}
+                  {isTeacher && (
+                    <a
+                      href={`/api/classrooms/${classroom.id}/export`}
+                      download
+                      className="text-xs text-[#a6e3a1] hover:text-[#a6e3a1]/80"
+                    >
+                      Export All Data (JSON)
+                    </a>
+                  )}
+                </div>
               </div>
               {editingDesc ? (
                 <div>

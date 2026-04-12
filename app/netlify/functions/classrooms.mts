@@ -29,7 +29,7 @@ async function verifyClerkToken(token: string): Promise<{ sub: string; name?: st
           return {
             sub: payload.sub,
             name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || undefined,
-            avatar: user.image_url || undefined,
+            avatar: user.image_url || user.profile_image_url || undefined,
           }
         }
       } catch {}
@@ -399,6 +399,58 @@ export default async function handler(req: Request) {
       )
 
       return json({ ok: true })
+    }
+
+    // GET /api/classrooms/:id/export — download all classroom data as JSON (teacher record)
+    if (req.method === 'GET' && segments.length === 2 && segments[1] === 'export') {
+      const classroomId = segments[0]
+      const classroom = await tursoExecute('SELECT * FROM classrooms WHERE id = ?', [classroomId])
+      if (classroom.rows.length === 0) return json({ error: 'Not found' }, 404)
+
+      const members = await tursoExecute('SELECT * FROM class_members WHERE classroom_id = ?', [classroomId])
+      const assignments = await tursoExecute('SELECT * FROM assignments WHERE classroom_id = ?', [classroomId])
+
+      const allSubmissions = []
+      for (const a of assignments.rows) {
+        const subs = await tursoExecute('SELECT * FROM submissions WHERE assignment_id = ?', [String(a.id)])
+        for (const s of subs.rows) {
+          allSubmissions.push({ assignmentTitle: a.title, ...s })
+        }
+      }
+
+      const discussions = await tursoExecute('SELECT * FROM discussions WHERE classroom_id = ?', [classroomId])
+      const allReplies = []
+      for (const d of discussions.rows) {
+        const replies = await tursoExecute('SELECT * FROM replies WHERE discussion_id = ?', [String(d.id)])
+        for (const r of replies.rows) {
+          allReplies.push({ discussionTitle: d.title, ...r })
+        }
+      }
+
+      const chatMessages = await tursoExecute(
+        'SELECT * FROM chat_messages WHERE classroom_id = ? ORDER BY created_at ASC',
+        [classroomId],
+      )
+
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        classroom: classroom.rows[0],
+        members: members.rows,
+        assignments: assignments.rows,
+        submissions: allSubmissions,
+        discussions: discussions.rows,
+        replies: allReplies,
+        chatMessages: chatMessages.rows,
+      }
+
+      const c = classroom.rows[0]
+      return new Response(JSON.stringify(exportData, null, 2), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Disposition': `attachment; filename="classroom-${String(c.name).replace(/[^a-zA-Z0-9]/g, '_')}-export.json"`,
+          'Access-Control-Allow-Origin': '*',
+        },
+      })
     }
 
     // POST /api/classrooms/:id/description — update classroom description (teacher)
