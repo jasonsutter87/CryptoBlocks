@@ -346,12 +346,17 @@ function executeJavaScript(
   // iframes send Origin: null which breaks CORS/WS on most servers.
   // micro:bit blocks touch the BLE connection held in the parent window,
   // so they also need direct execution (the iframe is a separate context).
+  // Games rely on document-level keyboard events (when_key_pressed) and
+  // a live canvas visible in the output panel. The sandbox iframe is
+  // hidden, so it can't receive keystrokes — games have to run in the
+  // parent window to feel interactive.
   const needsDirectExec =
     /\bfetch\s*\(/.test(code) ||
     /\bWebSocket\s*\(/.test(code) ||
     /\b__microbit\b/.test(code) ||
     /\b__speech\b/.test(code) ||
-    /\b__vision\b/.test(code)
+    /\b__vision\b/.test(code) ||
+    /\b__game\b/.test(code)
 
   let iframeCleanup: (() => void) | null = null
 
