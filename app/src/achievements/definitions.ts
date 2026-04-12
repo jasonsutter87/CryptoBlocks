@@ -109,4 +109,176 @@ export const achievements: Achievement[] = [
     rarity: 'legendary',
     secret: true,
   },
+
+  // === v0.3 Achievements ===
+
+  // Collab
+  {
+    id: 'team-player',
+    name: 'Team Player',
+    description: 'Join a collab room',
+    icon: '🤝',
+    rarity: 'common',
+  },
+  {
+    id: 'teacher-mode',
+    name: 'Teacher Mode',
+    description: 'Create a classroom',
+    icon: '🏫',
+    rarity: 'rare',
+  },
+
+  // Games
+  {
+    id: 'game-on',
+    name: 'Game On',
+    description: 'Run a program with game blocks',
+    icon: '🎮',
+    rarity: 'common',
+  },
+  {
+    id: 'level-designer',
+    name: 'Level Designer',
+    description: 'Export a level from the Level Editor',
+    icon: '🗺️',
+    rarity: 'rare',
+  },
+  {
+    id: 'pixel-artist',
+    name: 'Pixel Artist',
+    description: 'Save a sprite in the Sprite Editor',
+    icon: '🎨',
+    rarity: 'common',
+  },
+
+  // AI
+  {
+    id: 'voice-activated',
+    name: 'Voice Activated',
+    description: 'Use a speech block',
+    icon: '🎤',
+    rarity: 'rare',
+  },
+  {
+    id: 'i-see-you',
+    name: 'I See You',
+    description: 'Classify an image with MobileNet',
+    icon: '👁️',
+    rarity: 'epic',
+  },
+
+  // Hardware
+  {
+    id: 'hardware-hacker',
+    name: 'Hardware Hacker',
+    description: 'Connect a micro:bit',
+    icon: '🔌',
+    rarity: 'epic',
+  },
+
+  // Daily Challenge
+  {
+    id: 'daily-starter',
+    name: 'Daily Starter',
+    description: 'Solve your first Daily Challenge',
+    icon: '🎯',
+    rarity: 'common',
+  },
+  {
+    id: 'streak-3',
+    name: 'Three-peat',
+    description: 'Get a 3-day Daily Challenge streak',
+    icon: '🔥',
+    rarity: 'rare',
+  },
+  {
+    id: 'streak-7',
+    name: 'On Fire',
+    description: 'Get a 7-day Daily Challenge streak',
+    icon: '🔥🔥',
+    rarity: 'epic',
+  },
+  {
+    id: 'streak-30',
+    name: 'Unstoppable',
+    description: 'Get a 30-day Daily Challenge streak',
+    icon: '🏆',
+    rarity: 'legendary',
+  },
+
+  // Shareplace
+  {
+    id: 'first-share',
+    name: 'First Share',
+    description: 'Upload your first project to Shareplace',
+    icon: '📤',
+    rarity: 'common',
+  },
+  {
+    id: 'popular',
+    name: 'Popular',
+    description: 'Get 10 likes on a project',
+    icon: '❤️',
+    rarity: 'rare',
+  },
+  {
+    id: 'remixer',
+    name: 'Remixer',
+    description: 'Remix another project',
+    icon: '🔀',
+    rarity: 'common',
+  },
+  {
+    id: 'inspiration',
+    name: 'Inspiration',
+    description: 'Someone remixed your project',
+    icon: '✨',
+    rarity: 'epic',
+  },
+
+  // Prestige / Milestones
+  {
+    id: 'marathon',
+    name: 'Marathon',
+    description: 'Run 500 programs',
+    icon: '🏃',
+    rarity: 'epic',
+  },
+  {
+    id: 'thousand-runs',
+    name: 'Millennial',
+    description: 'Run 1000 programs',
+    icon: '🎖️',
+    rarity: 'legendary',
+  },
+  {
+    id: 'block-master',
+    name: 'Block Master',
+    description: 'Use 100+ blocks in one program',
+    icon: '🧩',
+    rarity: 'legendary',
+  },
+  {
+    id: 'all-categories',
+    name: 'Renaissance Coder',
+    description: 'Use blocks from 10+ categories in one program',
+    icon: '🎭',
+    rarity: 'legendary',
+  },
+  {
+    id: 'time-traveler',
+    name: 'Time Traveler',
+    description: 'Use Time Travel to scrub through your history',
+    icon: '🕰️',
+    rarity: 'rare',
+    secret: true,
+  },
+  {
+    id: 'matrix',
+    name: 'Red Pill',
+    description: 'Enter the Matrix',
+    icon: '💊',
+    rarity: 'legendary',
+    secret: true,
+  },
 ]
