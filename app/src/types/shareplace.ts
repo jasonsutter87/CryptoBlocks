@@ -9,4 +9,5 @@ export interface SharedProject {
   likes: number
   createdAt: string
   tags: string[]
+  parentId?: string | null
 }

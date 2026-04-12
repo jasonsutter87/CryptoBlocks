@@ -38,6 +38,7 @@ function toSharedProject(p: ApiProject): SharedProject {
     likes: p.likes,
     createdAt: new Date(Number(p.createdAt)).toISOString().slice(0, 10),
     tags: p.tags,
+    parentId: p.parentId || null,
   }
 }
 

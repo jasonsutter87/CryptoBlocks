@@ -97,8 +97,13 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
           </span>
         </div>
 
-        {/* Author */}
-        <p className="text-xs text-[#6c7086]">by {project.author}</p>
+        {/* Author + remix badge */}
+        <p className="text-xs text-[#6c7086]">
+          by {project.author}
+          {project.parentId && (
+            <span className="ml-1.5 text-[#a6e3a1]">🔀 remix</span>
+          )}
+        </p>
 
         {/* Description */}
         <p className="text-sm text-[#a6adc8] line-clamp-2 leading-relaxed">
