@@ -338,7 +338,8 @@ function executeJavaScript(
     /\bfetch\s*\(/.test(code) ||
     /\bWebSocket\s*\(/.test(code) ||
     /\b__microbit\b/.test(code) ||
-    /\b__speech\b/.test(code)
+    /\b__speech\b/.test(code) ||
+    /\b__vision\b/.test(code)
 
   let iframeCleanup: (() => void) | null = null
 

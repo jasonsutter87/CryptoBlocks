@@ -99,4 +99,223 @@ export const visionBlocks: BlockDefinition[] = [
     tests: [],
     color: '#06B6D4',
   },
+
+  // ---------------------------------------------------------------------------
+  // Image Classifier (MobileNet, lazy-loaded from CDN)
+  // ---------------------------------------------------------------------------
+
+  {
+    name: 'classify_camera',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Use AI to guess what is in the camera view. Call "start camera" first.',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'label', type: 'string' }],
+    implementations: {
+      javascript: `async function classify_camera() {
+  if (typeof window === 'undefined' || !window.__vision) return '';
+  const result = await window.__vision.classifyCamera();
+  return result.label;
+}`,
+      python: `def classify_camera():
+    return ''`,
+    },
+    tests: [
+      { input: {}, expected: { label: 'string' } },
+    ],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+
+  {
+    name: 'classify_image',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Use AI to guess what is in a picture at the given URL',
+    category: 'Vision',
+    inputs: [
+      { name: 'url', type: 'string', description: 'Image URL', default: '' },
+    ],
+    outputs: [{ name: 'label', type: 'string' }],
+    implementations: {
+      javascript: `async function classify_image(url) {
+  if (typeof window === 'undefined' || !window.__vision) return '';
+  const result = await window.__vision.classifyUrl(String(url));
+  return result.label;
+}`,
+      python: `def classify_image(url):
+    return ''`,
+    },
+    tests: [
+      { input: { url: '' }, expected: { label: 'string' } },
+    ],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+
+  {
+    name: 'classify_confidence',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'How sure the classifier was about its last answer (0 to 1)',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'confidence', type: 'number' }],
+    implementations: {
+      javascript: `function classify_confidence() {
+  if (typeof window === 'undefined' || !window.__vision) return 0;
+  return window.__vision.getLatestClassification().confidence;
+}`,
+      python: `def classify_confidence():
+    return 0`,
+    },
+    tests: [
+      { input: {}, expected: { confidence: 'number' } },
+    ],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+
+  // ---------------------------------------------------------------------------
+  // Hand Tracking (MediaPipe Hands via TF.js hand-pose-detection)
+  // ---------------------------------------------------------------------------
+
+  {
+    name: 'start_hand_tracking',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Start tracking hands from the camera. Call "start camera" first.',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'ok', type: 'boolean' }],
+    implementations: {
+      javascript: `async function start_hand_tracking() {
+  if (typeof window === 'undefined' || !window.__vision) return false;
+  return await window.__vision.startHandTracking();
+}`,
+      python: `def start_hand_tracking():
+    return False`,
+    },
+    tests: [
+      { input: {}, expected: { ok: 'boolean' } },
+    ],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+
+  {
+    name: 'hand_count',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'How many hands the camera currently sees (0, 1, or 2)',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'count', type: 'number' }],
+    implementations: {
+      javascript: `function hand_count() {
+  if (typeof window === 'undefined' || !window.__vision) return 0;
+  return window.__vision.getHandState().handCount;
+}`,
+      python: `def hand_count():
+    return 0`,
+    },
+    tests: [
+      { input: {}, expected: { count: 'number' } },
+    ],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+
+  {
+    name: 'index_finger_x',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Index finger X position (0 = left, 1 = right). Call "start hand tracking" first.',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'x', type: 'number' }],
+    implementations: {
+      javascript: `function index_finger_x() {
+  if (typeof window === 'undefined' || !window.__vision) return 0;
+  return window.__vision.getHandState().indexX;
+}`,
+      python: `def index_finger_x():
+    return 0`,
+    },
+    tests: [
+      { input: {}, expected: { x: 'number' } },
+    ],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+
+  {
+    name: 'index_finger_y',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Index finger Y position (0 = top, 1 = bottom). Call "start hand tracking" first.',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'y', type: 'number' }],
+    implementations: {
+      javascript: `function index_finger_y() {
+  if (typeof window === 'undefined' || !window.__vision) return 0;
+  return window.__vision.getHandState().indexY;
+}`,
+      python: `def index_finger_y():
+    return 0`,
+    },
+    tests: [
+      { input: {}, expected: { y: 'number' } },
+    ],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+
+  {
+    name: 'is_pinching',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Is the thumb and index finger tip close together? (good for grabbing things)',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'pinching', type: 'boolean' }],
+    implementations: {
+      javascript: `function is_pinching() {
+  if (typeof window === 'undefined' || !window.__vision) return false;
+  return window.__vision.getHandState().isPinching;
+}`,
+      python: `def is_pinching():
+    return False`,
+    },
+    tests: [
+      { input: {}, expected: { pinching: 'boolean' } },
+    ],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+
+  {
+    name: 'fingers_up',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'How many fingers are pointing up (0 to 5). Great for counting and gesture games.',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'count', type: 'number' }],
+    implementations: {
+      javascript: `function fingers_up() {
+  if (typeof window === 'undefined' || !window.__vision) return 0;
+  return window.__vision.getHandState().fingersUp;
+}`,
+      python: `def fingers_up():
+    return 0`,
+    },
+    tests: [
+      { input: {}, expected: { count: 'number' } },
+    ],
+    color: '#06B6D4',
+    shape: 'value',
+  },
 ]
