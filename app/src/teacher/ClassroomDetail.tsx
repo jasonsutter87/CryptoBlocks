@@ -3,7 +3,7 @@
  * Tabs: Overview, Discussions, Chat, Assignments, Projects
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { useAuth, useUser } from '@clerk/clerk-react'
 import type {
   ClassroomDetail as ClassroomDetailType,
@@ -14,6 +14,18 @@ import {
   fetchDiscussions, createDiscussion, fetchReplies, postReply,
   fetchChat, sendChat, updateDescription,
 } from './api'
+
+const Markdown = lazy(() => import('react-markdown'))
+
+function Md({ children }: { children: string }) {
+  return (
+    <Suspense fallback={<span className="text-sm text-[#a6adc8]">{children}</span>}>
+      <div className="prose prose-invert prose-sm max-w-none [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm [&_p]:text-sm [&_p]:text-[#a6adc8] [&_a]:text-[#89b4fa] [&_code]:text-[#f9e2af] [&_code]:bg-[#313244] [&_code]:px-1 [&_code]:rounded [&_ul]:text-sm [&_ol]:text-sm [&_li]:text-[#a6adc8] [&_blockquote]:border-[#45475a] [&_blockquote]:text-[#6c7086] [&_hr]:border-[#313244]">
+        <Markdown>{children}</Markdown>
+      </div>
+    </Suspense>
+  )
+}
 
 type Tab = 'overview' | 'students' | 'discussions' | 'chat' | 'assignments' | 'projects'
 
@@ -213,10 +225,10 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
                     </button>
                   </div>
                 </div>
+              ) : desc ? (
+                <Md>{desc}</Md>
               ) : (
-                <p className="text-sm text-[#a6adc8] whitespace-pre-wrap">
-                  {desc || 'No course description yet.'}
-                </p>
+                <p className="text-sm text-[#6c7086] italic">No course description yet.</p>
               )}
             </div>
 
@@ -363,7 +375,7 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
                     <span className="text-[10px] text-[#6c7086]">{formatAge(selectedDiscussion.createdAt)}</span>
                   </div>
                   <h4 className="text-base font-bold text-[#cdd6f4] mb-1">{selectedDiscussion.title}</h4>
-                  <p className="text-sm text-[#a6adc8] whitespace-pre-wrap">{selectedDiscussion.body}</p>
+                  <Md>{selectedDiscussion.body}</Md>
                 </div>
 
                 {replies.map((r) => (
@@ -378,7 +390,7 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
                     <div className="bg-[#1e1e2e] rounded-lg px-3 py-2 flex-1">
                       <span className="text-xs font-semibold text-[#cdd6f4]">{r.authorName}</span>
                       <span className="text-[10px] text-[#6c7086] ml-2">{formatAge(r.createdAt)}</span>
-                      <p className="text-sm text-[#a6adc8] mt-0.5">{r.body}</p>
+                      <div className="mt-0.5"><Md>{r.body}</Md></div>
                     </div>
                   </div>
                 ))}
@@ -528,7 +540,7 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="text-sm font-bold text-[#cdd6f4]">{selectedAssignment.title}</div>
-                    {selectedAssignment.description && <p className="text-xs text-[#a6adc8] mt-1">{selectedAssignment.description}</p>}
+                    {selectedAssignment.description && <div className="mt-1"><Md>{selectedAssignment.description}</Md></div>}
                   </div>
                   <button
                     onClick={async () => {
