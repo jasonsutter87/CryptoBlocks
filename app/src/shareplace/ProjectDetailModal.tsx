@@ -6,6 +6,7 @@ import { fetchRemixTree, type RemixTree } from './api'
 import RemixModal from './RemixModal'
 import RemixTreeView from './RemixTreeView'
 import ShareCardButton from './ShareCard'
+import { showToast } from '../components/Toast'
 import EditListingModal from './EditListingModal'
 import RemoveListingModal from './RemoveListingModal'
 
@@ -410,7 +411,7 @@ export default function ProjectDetailModal({
                       method: 'POST', headers,
                       body: JSON.stringify({ reason }),
                     })
-                    alert('Thank you for reporting. We will review this project.')
+                    showToast('Thank you for reporting. We will review this project.', 'success')
                   } catch {}
                 }}
                 className="flex items-center gap-1 px-3 py-2 text-xs text-[#6c7086] hover:text-[#f38ba8] transition-colors"

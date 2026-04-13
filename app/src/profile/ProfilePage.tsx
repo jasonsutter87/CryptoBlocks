@@ -7,6 +7,7 @@ import { fetchClassrooms, type Classroom } from '../teacher/api'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
 import { useIsPro, openCheckout, openPortal } from '../billing/useIsPro'
+import { showToast } from '../components/Toast'
 import type { SharedProject } from '../types/shareplace'
 
 function getInitials(displayName: string, username: string): string {
@@ -385,9 +386,9 @@ export default function ProfilePage() {
             onChange={(e) => {
               const locale = e.target.value as 'en' | 'es'
               updateSettings({ locale })
-              alert(locale === 'es'
-                ? 'Idioma cambiado a Español. Recarga la página para ver los cambios.'
-                : 'Language changed to English. Reload to see changes.')
+              showToast(locale === 'es'
+                ? 'Idioma cambiado. Recarga la página.'
+                : 'Language changed. Reload to see changes.', 'success')
             }}
           >
             <option value="en">English</option>

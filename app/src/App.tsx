@@ -68,6 +68,7 @@ import { recordRun, recordChallengeComplete, recordGolfComplete, recordLabComple
 import { AchievementToast } from './components/AchievementToast'
 import StatsPanel from './components/StatsPanel'
 import HackerTerminal from './components/HackerTerminal'
+import ToastContainer from './components/Toast'
 const SpriteEditor = lazy(() => import('./sprite-editor/SpriteEditor'))
 const LevelEditor = lazy(() => import('./level-editor/LevelEditor'))
 const CollabModal = lazy(() => import('./collab/CollabModal'))
@@ -1623,6 +1624,7 @@ export default function App() {
 
       {/* Hacker Terminal */}
       <HackerTerminal blockCount={blockCount} />
+      <ToastContainer />
 
       {/* Tutorial Overlay */}
       {showTutorial && (

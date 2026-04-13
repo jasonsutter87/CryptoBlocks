@@ -29,6 +29,11 @@ body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(100px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
 /* Blockly overrides */
 .blocklySvg {
   background-color: #1e1e2e !important;

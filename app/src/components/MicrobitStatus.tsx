@@ -19,6 +19,7 @@ import {
   subscribe,
   ensureMicrobitGlobal,
 } from '../hardware/microbit'
+import { showToast } from './Toast'
 
 export default function MicrobitStatus() {
   const [connected, setConnected] = useState(isConnected())
@@ -67,12 +68,7 @@ export default function MicrobitStatus() {
         /permission.*block|SecurityError|globally disabled|blocklisted/i.test(message)
 
       if (isBlocked) {
-        alert(
-          'Bluetooth is blocked in your browser.\n\n' +
-          '• Brave: click the 🦁 shield icon in the address bar and drop shields for this site.\n' +
-          '• Chrome/Edge: make sure you are on https:// and that Bluetooth is enabled in system settings.\n' +
-          '• Safari/Firefox: Web Bluetooth is not supported — use Chrome, Edge, or Brave (shields off).'
-        )
+        showToast('Bluetooth is blocked. Brave: drop shields. Chrome: check system Bluetooth. Safari/Firefox: not supported.', 'error')
       } else if (!isCancel) {
         setError(message)
         // eslint-disable-next-line no-console

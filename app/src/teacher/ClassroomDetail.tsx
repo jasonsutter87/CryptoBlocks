@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import { showToast } from '../components/Toast'
 import { useAuth, useUser } from '@clerk/clerk-react'
 import type {
   ClassroomDetail as ClassroomDetailType,
@@ -604,7 +605,7 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
                 onClick={async () => {
                   const ws = localStorage.getItem('cryptoblocks_workspace')
                   if (!ws || ws === '{}') {
-                    alert('Build something in the editor first, then come back to upload.')
+                    showToast('Build something in the editor first!', 'info')
                     return
                   }
                   const name = prompt('Project name:')
@@ -625,8 +626,8 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
                         blockCount: (() => { try { return JSON.parse(ws)?.blocks?.blocks?.length ?? 0 } catch { return 0 } })(),
                       }),
                     })
-                    if (res.ok) alert('Project uploaded! Refresh to see it.')
-                  } catch { alert('Upload failed — try again.') }
+                    if (res.ok) showToast('Project uploaded!', 'success')
+                  } catch (_e) { showToast('Upload failed — try again.', 'error') }
                 }}
                 className="px-3 py-1.5 text-xs font-bold text-[#1e1e2e] bg-[#a6e3a1] hover:bg-[#a6e3a1]/80 rounded-lg"
               >

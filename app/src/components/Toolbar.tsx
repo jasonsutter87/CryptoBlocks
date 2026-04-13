@@ -4,6 +4,7 @@ import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '@clerk/clerk-react'
 import NotificationBell from './NotificationBell'
+import { showToast } from './Toast'
 import { ProBadge } from '../billing/UpgradeGate'
 import { useIsPro, openCheckout } from '../billing/useIsPro'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
@@ -106,7 +107,7 @@ export default function Toolbar({
 
   const requireAuth = (action: () => void) => {
     if (isSignedIn) { action(); return }
-    alert('Sign in to save and share your work! It\'s free.')
+    showToast('Sign in to save and share your work!', 'signin')
   }
 
   const requirePro = (action: () => void) => {
@@ -326,11 +327,11 @@ export default function Toolbar({
                     onClick={async () => {
                       if (sharing) return
                       const token = await getToken()
-                      if (!token) { alert('Sign in to share your work!'); return }
+                      if (!token) { showToast('Sign in to share your work!', 'signin'); return }
                       setSharing(true)
                       try {
                         const ws = localStorage.getItem('cryptoblocks_workspace') || '{}'
-                        if (ws === '{}') { alert('Build something first!'); setSharing(false); return }
+                        if (ws === '{}') { showToast('Build something first!', 'info'); setSharing(false); return }
                         const headers: Record<string, string> = { 'Content-Type': 'application/json' }
                         if (token) headers['Authorization'] = `Bearer ${token}`
                         const res = await fetch('/api/projects', {
