@@ -76,7 +76,19 @@ export default async function handler(req: Request) {
 
   const ghToken = await getGitHubToken(user.sub)
   if (!ghToken) {
-    return json({ error: 'No GitHub connection found. Sign in with GitHub to connect your account.', needsGithub: true }, 403)
+    // Debug: try to see what external accounts the user has
+    let debugInfo = ''
+    try {
+      const userRes = await fetch(`https://api.clerk.com/v1/users/${user.sub}`, {
+        headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` },
+      })
+      if (userRes.ok) {
+        const userData = await userRes.json()
+        const accounts = userData.external_accounts?.map((a: { provider: string; provider_user_id: string }) => a.provider) || []
+        debugInfo = `Connected providers: ${accounts.join(', ') || 'none'}`
+      }
+    } catch {}
+    return json({ error: `No GitHub OAuth token found. ${debugInfo}. Try signing out and back in with GitHub.`, needsGithub: true }, 403)
   }
 
   try {

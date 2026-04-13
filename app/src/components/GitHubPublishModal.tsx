@@ -53,6 +53,7 @@ export default function GitHubPublishModal({ onClose }: GitHubPublishModalProps)
         const res = await fetch('/api/github/repos', { method: 'POST', headers: h })
         const data = await res.json()
         if (data.needsGithub) {
+          setError(data.error || '')
           setStep('no-github')
           return
         }
@@ -142,7 +143,8 @@ export default function GitHubPublishModal({ onClose }: GitHubPublishModalProps)
             <div className="text-center py-6">
               <span className="text-3xl block mb-3">🔗</span>
               <p className="text-sm text-[#cdd6f4] font-semibold mb-1">No GitHub connection</p>
-              <p className="text-xs text-[#6c7086] mb-4">Sign in with GitHub (not Google) to push to your repos.</p>
+              <p className="text-xs text-[#6c7086] mb-2">Sign out, then sign back in with GitHub to grant repo access.</p>
+              {error && <p className="text-[10px] text-[#6c7086] mb-3 bg-[#313244] rounded p-2 text-left font-mono break-all">{error}</p>}
               <button onClick={onClose} className="px-4 py-2 bg-[#313244] text-[#cdd6f4] rounded-lg text-sm">Close</button>
             </div>
           )}
