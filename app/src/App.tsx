@@ -51,7 +51,7 @@ import LabPanel from './components/LabPanel'
 import LabComplete from './components/LabComplete'
 import ExamplesBrowser from './components/ExamplesBrowser'
 import CodeToBlocksModal from './components/CodeToBlocksModal'
-import PublishModal from './components/PublishModal'
+import GitHubPublishModal from './components/GitHubPublishModal'
 import type { ConversionResult } from './converters/js-to-workspace'
 import type { Example } from './examples'
 import { useVersionControl } from './version-control/useVersionControl'
@@ -1054,13 +1054,6 @@ export default function App() {
     await copyToClipboard(snippet)
   }, [code, language])
 
-  const getPublishHtml = useCallback(() => {
-    const jsCode = language === 'html' && workspaceRef.current
-      ? generateCode(workspaceRef.current, 'javascript')
-      : code
-    return generateStandaloneHtml(jsCode, { title: 'CryptoBlocks Project' })
-  }, [code, language])
-
   const handleExport = useCallback(() => {
     if (workspaceRef.current) {
       exportBlocksFile(customBlocks, workspaceRef.current)
@@ -1440,8 +1433,7 @@ export default function App() {
 
       {/* Publish to GitHub Modal */}
       {showPublishModal && (
-        <PublishModal
-          getHtml={getPublishHtml}
+        <GitHubPublishModal
           onClose={() => setShowPublishModal(false)}
         />
       )}
