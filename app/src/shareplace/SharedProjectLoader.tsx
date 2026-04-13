@@ -26,8 +26,15 @@ export default function SharedProjectLoader() {
         }
         const data = await res.json()
         if (data.workspaceJson) {
-          localStorage.setItem('cryptoblocks_workspace', data.workspaceJson)
-          window.location.href = '/'
+          // Store as a shared (read-only) project — the editor will show
+          // a banner and lock editing until the user clicks "Make a Copy"
+          localStorage.setItem('cryptoblocks_shared_view', JSON.stringify({
+            id: id,
+            name: data.name || 'Shared Project',
+            authorName: data.authorName || 'Anonymous',
+            workspaceJson: data.workspaceJson,
+          }))
+          window.location.href = '/?shared=1'
         } else {
           setError('Project has no workspace data')
         }

@@ -157,6 +157,28 @@ export default function App() {
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
 
+  // Shared project read-only mode
+  const isSharedView =
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('shared') === '1'
+  const [sharedProject] = useState<{ id: string; name: string; authorName: string; workspaceJson: string } | null>(() => {
+    if (!isSharedView) return null
+    try {
+      const raw = localStorage.getItem('cryptoblocks_shared_view')
+      if (!raw) return null
+      return JSON.parse(raw)
+    } catch { return null }
+  })
+
+  // Load shared workspace on mount
+  useEffect(() => {
+    if (sharedProject && workspaceRef.current) {
+      try {
+        workspaceRef.current.clear()
+        Blockly.serialization.workspaces.load(JSON.parse(sharedProject.workspaceJson), workspaceRef.current)
+      } catch {}
+    }
+  }, [sharedProject]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Daily Challenge state (read-only URL param; banner shown if active)
   const isDailyChallenge =
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('daily') === '1'
@@ -1128,6 +1150,37 @@ export default function App() {
           dayNumber={dailyInfo.dayNumber}
           solvedBlocks={dailySolvedBlocks}
         />
+      )}
+      {sharedProject && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 w-[min(92vw,500px)] bg-[#181825] border border-[#45475a] rounded-xl shadow-2xl p-3 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-xs text-[#6c7086]">Viewing shared project</div>
+            <div className="text-sm font-bold text-[#cdd6f4] truncate">{sharedProject.name}</div>
+            <div className="text-[10px] text-[#6c7086]">by {sharedProject.authorName} · read-only</div>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              onClick={() => {
+                // Make a copy — save workspace to localStorage and reload as editable
+                localStorage.setItem('cryptoblocks_workspace', sharedProject.workspaceJson)
+                localStorage.removeItem('cryptoblocks_shared_view')
+                window.location.href = '/'
+              }}
+              className="px-3 py-1.5 bg-[#a6e3a1] text-[#1e1e2e] rounded-lg text-xs font-bold hover:bg-[#a6e3a1]/80"
+            >
+              Make a Copy
+            </button>
+            <button
+              onClick={() => {
+                localStorage.removeItem('cryptoblocks_shared_view')
+                window.location.href = '/'
+              }}
+              className="px-3 py-1.5 bg-[#313244] text-[#cdd6f4] rounded-lg text-xs font-semibold hover:bg-[#45475a]"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
       {timeTravel.isActive && (
         <TimeTravelBar
