@@ -186,18 +186,36 @@ export default async function handler(req: Request) {
     }
 
     // GET /api/stripe/status — check subscription status + plan type
+    // Also checks if the user is a student in a classroom whose teacher has an active plan
     if (req.method === 'GET' && segments[0] === 'status') {
       const authHeader = req.headers.get('Authorization') || ''
       const user = await verifyClerkToken(authHeader.replace('Bearer ', ''))
       if (!user) return json({ isPro: false, plan: 'free' })
 
+      // Check direct subscription first
       const sub = await tursoExecute(
         'SELECT status, plan FROM subscriptions WHERE user_id = ? AND status = ?',
         [user.sub, 'active'],
       )
-      if (sub.rows.length === 0) return json({ isPro: false, plan: 'free' })
-      const plan = String(sub.rows[0].plan || 'pro')
-      return json({ isPro: true, plan })
+      if (sub.rows.length > 0) {
+        const plan = String(sub.rows[0].plan || 'pro')
+        return json({ isPro: true, plan })
+      }
+
+      // Check if student in a teacher's classroom (teacher has active subscription)
+      const teacherSub = await tursoExecute(
+        `SELECT s.plan FROM class_members cm
+         JOIN classrooms c ON cm.classroom_id = c.id
+         JOIN subscriptions s ON c.teacher_id = s.user_id AND s.status = 'active'
+         WHERE cm.user_id = ? AND cm.role = 'student'
+         LIMIT 1`,
+        [user.sub],
+      )
+      if (teacherSub.rows.length > 0) {
+        return json({ isPro: true, plan: 'student-via-teacher' })
+      }
+
+      return json({ isPro: false, plan: 'free' })
     }
 
     // POST /api/stripe/webhook — handle Stripe events
