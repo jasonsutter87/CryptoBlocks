@@ -245,6 +245,21 @@ export default async function handler(req: Request) {
       return json({ id, name, createdAt: now }, 201)
     }
 
+    // DELETE /api/projects/:id — admin only
+    if (req.method === 'DELETE' && segments.length === 1) {
+      const authHeader = req.headers.get('Authorization') || ''
+      const delUser = await verifyClerkToken(authHeader.replace('Bearer ', ''))
+      if (!delUser) return json({ error: 'Sign in' }, 401)
+      // Only admins can delete (check via env var)
+      const adminEmails = (process.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase())
+      const userEmail = delUser.email?.toLowerCase() || ''
+      if (!adminEmails.includes(userEmail) && adminEmails.length > 0) {
+        return json({ error: 'Admin access required' }, 403)
+      }
+      await tursoExecute('DELETE FROM projects WHERE id = ?', [segments[0]])
+      return json({ ok: true })
+    }
+
     // POST /api/projects/:id/report — flag a project for review
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'report') {
       const reportAuth = req.headers.get('Authorization') || ''

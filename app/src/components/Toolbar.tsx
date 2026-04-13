@@ -316,11 +316,12 @@ export default function Toolbar({
                   <button
                     onClick={async () => {
                       if (sharing) return
+                      const token = await getToken()
+                      if (!token) { alert('Sign in to share your work!'); return }
                       setSharing(true)
                       try {
                         const ws = localStorage.getItem('cryptoblocks_workspace') || '{}'
                         if (ws === '{}') { alert('Build something first!'); setSharing(false); return }
-                        const token = await getToken()
                         const headers: Record<string, string> = { 'Content-Type': 'application/json' }
                         if (token) headers['Authorization'] = `Bearer ${token}`
                         const res = await fetch('/api/projects', {
