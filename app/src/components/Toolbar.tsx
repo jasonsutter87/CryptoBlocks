@@ -109,6 +109,8 @@ export default function Toolbar({
     openCheckout(getToken)
   }
   const [embedCopied, setEmbedCopied] = useState(false)
+  const [shareLinkCopied, setShareLinkCopied] = useState(false)
+  const [sharing, setSharing] = useState(false)
   const menuContainerRef = useRef<HTMLDivElement>(null)
 
   // Logo click counter — 7 rapid clicks toggles hacker mode
@@ -310,6 +312,47 @@ export default function Toolbar({
                     </svg>
                     Publish to GitHub
                     <span className="ml-auto text-xs text-[#6c7086]">Live URL</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (sharing) return
+                      setSharing(true)
+                      try {
+                        const ws = localStorage.getItem('cryptoblocks_workspace') || '{}'
+                        if (ws === '{}') { alert('Build something first!'); setSharing(false); return }
+                        const token = await getToken()
+                        const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+                        if (token) headers['Authorization'] = `Bearer ${token}`
+                        const res = await fetch('/api/projects', {
+                          method: 'POST', headers,
+                          body: JSON.stringify({
+                            name: 'Shared Project — ' + new Date().toLocaleDateString(),
+                            authorName: 'Anonymous',
+                            description: 'Shared via link',
+                            category: 'General',
+                            workspaceJson: ws,
+                            tags: ['shared'],
+                            blockCount: (() => { try { return JSON.parse(ws)?.blocks?.blocks?.length ?? 0 } catch { return 0 } })(),
+                          }),
+                        })
+                        if (res.ok) {
+                          const data = await res.json()
+                          const link = `${window.location.origin}/project/${data.id}`
+                          await navigator.clipboard.writeText(link)
+                          setShareLinkCopied(true)
+                          setTimeout(() => setShareLinkCopied(false), 3000)
+                        }
+                      } catch {}
+                      setSharing(false)
+                      setOpenMenu(null)
+                    }}
+                    className={menuItem}
+                  >
+                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    {shareLinkCopied ? '✓ Link Copied!' : sharing ? 'Sharing...' : 'Share Link'}
+                    <span className="ml-auto text-xs text-[#6c7086]">🔗</span>
                   </button>
                   <div className={menuDivider} />
                   <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>

@@ -28,6 +28,7 @@ const CollabPage = lazy(() => import('./collab/CollabPage'))
 const DailyChallengePage = lazy(() => import('./daily/DailyChallengePage'))
 const TeacherDashboard = lazy(() => import('./teacher/TeacherDashboard'))
 const LeaderboardPage = lazy(() => import('./leaderboard/LeaderboardPage'))
+const SharedProjectLoader = lazy(() => import('./shareplace/SharedProjectLoader'))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -44,6 +45,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="/daily" element={<SharedLayout><DailyChallengePage /></SharedLayout>} />
           <Route path="/teacher" element={<SharedLayout><TeacherDashboard /></SharedLayout>} />
           <Route path="/leaderboard" element={<SharedLayout><LeaderboardPage /></SharedLayout>} />
+          <Route path="/project/:id" element={<SharedProjectLoader />} />
           </Routes>
         </Suspense>
       </BrowserRouter>
