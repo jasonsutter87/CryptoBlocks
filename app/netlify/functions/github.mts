@@ -19,11 +19,13 @@ async function verifyClerkToken(token: string): Promise<{ sub: string } | null> 
   } catch (_e) { return null }
 }
 
+let _lastDebugLog: string[] = []
+
 async function getGitHubToken(clerkUserId: string): Promise<string | null> {
   if (!process.env.CLERK_SECRET_KEY) return null
   // Clerk provider IDs vary — try all known variants
   const providers = ['oauth_github', 'github', 'oauth_custom_github']
-  const debugLog: string[] = []
+  const debugLog: string[] = []; _lastDebugLog = debugLog
   for (const provider of providers) {
     try {
       const url = `https://api.clerk.com/v1/users/${clerkUserId}/oauth_access_tokens/${provider}`
@@ -93,7 +95,7 @@ export default async function handler(req: Request) {
         debugInfo = `Connected providers: ${accounts.join(', ') || 'none'}`
       }
     } catch (_e) {}
-    return json({ error: `No GitHub OAuth token found. ${debugInfo}. Check Netlify function logs for details.`, needsGithub: true }, 403)
+    return json({ error: `No GitHub OAuth token found. ${debugInfo}. Attempts: ${_lastDebugLog.join(' | ')}`, needsGithub: true }, 403)
   }
 
   try {
