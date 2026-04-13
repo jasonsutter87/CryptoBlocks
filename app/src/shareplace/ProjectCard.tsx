@@ -94,8 +94,8 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
           <h3 className="font-semibold text-[#cdd6f4] leading-tight">{project.name}</h3>
           <div className="flex items-center gap-1 shrink-0">
             {project.tags.some(t => t === 'pro' || t === 'sprite-editor' || t === 'level-editor' || t === 'gamepad') && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-gradient-to-r from-[#f9e2af] to-[#fab387] text-[#1e1e2e]">
-                PRO
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-[#cba6f7]/20 text-[#cba6f7]">
+                ✨ Pro Tools
               </span>
             )}
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${pillClass}`}>
