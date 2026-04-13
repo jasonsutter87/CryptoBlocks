@@ -3,6 +3,7 @@ import { FieldMultilineInput } from '@blockly/field-multilineinput'
 import { compileString } from 'sass'
 import type { BlockDefinition, Language } from '../types/block'
 import { registry } from './registry'
+import { blockLabel } from '../i18n'
 import { isHackerModeActive } from '../easter-eggs/hacker-mode'
 
 function typeToBlocklyField(type: string): string {
@@ -727,7 +728,7 @@ export function registerCustomBlocks() {
 
         // Add block name as label
         this.appendDummyInput().appendField(
-          block.name.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+          blockLabel(block.name)
         )
 
         // Add inputs

@@ -4,12 +4,14 @@ export interface UserSettings {
   autoSaveEnabled: boolean
   autoSaveIntervalMinutes: number
   theme: 'dark' | 'light'
+  locale: 'en' | 'es'
 }
 
 const DEFAULTS: UserSettings = {
   autoSaveEnabled: true,
   autoSaveIntervalMinutes: 5,
   theme: 'dark',
+  locale: 'en',
 }
 
 export function loadSettings(): UserSettings {

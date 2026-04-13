@@ -376,6 +376,24 @@ export default function ProfilePage() {
             <option value="light">Light</option>
           </select>
         </Field>
+
+        {/* Language selector */}
+        <Field label="Language / Idioma">
+          <select
+            className={inputClass}
+            value={settings.locale || 'en'}
+            onChange={(e) => {
+              const locale = e.target.value as 'en' | 'es'
+              updateSettings({ locale })
+              alert(locale === 'es'
+                ? 'Idioma cambiado a Español. Recarga la página para ver los cambios.'
+                : 'Language changed to English. Reload to see changes.')
+            }}
+          >
+            <option value="en">English</option>
+            <option value="es">Español</option>
+          </select>
+        </Field>
       </SectionCard>
 
       {/* Data section */}

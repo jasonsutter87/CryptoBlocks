@@ -79,6 +79,7 @@ import WorkspaceFloatingControls from './components/WorkspaceFloatingControls'
 import { ensureSpeechGlobal } from './speech/speech'
 import { ensureVisionGlobal } from './vision/vision-global'
 import { ensureGamepadGlobal } from './hardware/gamepad'
+import { initLocale } from './i18n'
 import ChallengeBanner from './daily/ChallengeBanner'
 import { getTodaysPuzzle } from './daily/getTodaysPuzzle'
 import { matchesTarget } from './daily/puzzles'
@@ -224,6 +225,7 @@ export default function App() {
     ensureSpeechGlobal()
     ensureVisionGlobal()
     ensureGamepadGlobal()
+    initLocale()
 
     // Apply theme from settings
     const settings = loadSettings()
