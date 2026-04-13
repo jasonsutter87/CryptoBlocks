@@ -150,7 +150,7 @@ function json(data: unknown, status = 200): Response {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   })
@@ -161,7 +161,7 @@ function cors(): Response {
     status: 204,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   })
@@ -250,11 +250,13 @@ export default async function handler(req: Request) {
       const authHeader = req.headers.get('Authorization') || ''
       const delUser = await verifyClerkToken(authHeader.replace('Bearer ', ''))
       if (!delUser) return json({ error: 'Sign in' }, 401)
-      // Only admins can delete (check via env var)
-      const adminEmails = (process.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase())
-      const userEmail = delUser.email?.toLowerCase() || ''
-      if (!adminEmails.includes(userEmail) && adminEmails.length > 0) {
-        return json({ error: 'Admin access required' }, 403)
+      // Check admin via env var — if not set, any authenticated user can delete (dev mode)
+      const adminEmails = (process.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+      if (adminEmails.length > 0) {
+        const userEmail = delUser.email?.toLowerCase() || ''
+        if (!userEmail || !adminEmails.includes(userEmail)) {
+          return json({ error: 'Admin access required' }, 403)
+        }
       }
       await tursoExecute('DELETE FROM projects WHERE id = ?', [segments[0]])
       return json({ ok: true })
