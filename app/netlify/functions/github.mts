@@ -16,7 +16,7 @@ async function verifyClerkToken(token: string): Promise<{ sub: string } | null> 
     if (parts.length !== 3) return null
     const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
     return payload.sub ? { sub: payload.sub } : null
-  } catch { return null }
+  } catch (_e) { return null }
 }
 
 async function getGitHubToken(clerkUserId: string): Promise<string | null> {
@@ -34,11 +34,10 @@ async function getGitHubToken(clerkUserId: string): Promise<string | null> {
       if (Array.isArray(data) && data.length > 0 && data[0].token) {
         return data[0].token
       }
-    } catch { continue }
+    } catch (_e) { continue }
   }
   console.error('[github] No OAuth token found for user', clerkUserId)
   return null
-  } catch { return null }
 }
 
 async function githubApi(path: string, ghToken: string, method = 'GET', body?: unknown): Promise<{ ok: boolean; data: unknown; status: number }> {
@@ -87,7 +86,7 @@ export default async function handler(req: Request) {
         const accounts = userData.external_accounts?.map((a: { provider: string; provider_user_id: string }) => a.provider) || []
         debugInfo = `Connected providers: ${accounts.join(', ') || 'none'}`
       }
-    } catch {}
+    } catch (_e) {}
     return json({ error: `No GitHub OAuth token found. ${debugInfo}. Try signing out and back in with GitHub.`, needsGithub: true }, 403)
   }
 
