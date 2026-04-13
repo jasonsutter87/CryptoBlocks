@@ -192,7 +192,18 @@ export default async function handler(req: Request) {
       const user = await verifyClerkToken(authHeader.replace('Bearer ', ''))
       if (!user) return json({ isPro: false, plan: 'free' })
 
-      // Check direct subscription first
+      // Check free overrides first (manually granted Pro/Teacher access)
+      if (user.email) {
+        const override = await tursoExecute(
+          'SELECT plan FROM free_overrides WHERE email = ?',
+          [user.email.toLowerCase()],
+        )
+        if (override.rows.length > 0) {
+          return json({ isPro: true, plan: String(override.rows[0].plan || 'pro'), override: true })
+        }
+      }
+
+      // Check direct subscription
       const sub = await tursoExecute(
         'SELECT status, plan FROM subscriptions WHERE user_id = ? AND status = ?',
         [user.sub, 'active'],
