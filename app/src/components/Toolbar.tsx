@@ -102,7 +102,12 @@ export default function Toolbar({
   const [openMenu, setOpenMenu] = useState<'file' | 'build' | 'menu' | 'mobile' | null>(null)
   const dailyStreak = useMemo(() => getEffectiveStreak(loadDailyState(), getDayNumber()), [])
   const { isPro } = useIsPro()
-  const { getToken } = useAuth()
+  const { getToken, isSignedIn } = useAuth()
+
+  const requireAuth = (action: () => void) => {
+    if (isSignedIn) { action(); return }
+    alert('Sign in to save and share your work! It\'s free.')
+  }
 
   const requirePro = (action: () => void) => {
     if (isPro) { action(); return }
@@ -210,23 +215,26 @@ export default function Toolbar({
 
               {openMenu === 'file' && (
                 <div className={menuDropdown}>
-                  <button onClick={() => { onExport(); setOpenMenu(null) }} className={menuItem}>
+                  <button onClick={() => requireAuth(() => { onExport(); setOpenMenu(null) })} className={menuItem}>
                     <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
                     </svg>
                     Save .blocks
+                    {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
-                  <button onClick={() => { fileInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
+                  <button onClick={() => requireAuth(() => { fileInputRef.current?.click(); setOpenMenu(null) })} className={menuItem}>
                     <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
                     </svg>
                     Load .blocks
+                    {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
-                  <button onClick={() => { importAsBlockInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
+                  <button onClick={() => requireAuth(() => { importAsBlockInputRef.current?.click(); setOpenMenu(null) })} className={menuItem}>
                     <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                     Import as Block
+                    {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
                   {onImportScratch && (
                     <button onClick={() => { requirePro(() => { onImportScratch(); setOpenMenu(null) }) }} className={menuItem}>
@@ -236,13 +244,14 @@ export default function Toolbar({
                     </button>
                   )}
                   <div className={menuDivider} />
-                  <button onClick={() => { onSaveCheckpoint(); setOpenMenu(null) }} className={menuItem}>
+                  <button onClick={() => requireAuth(() => { onSaveCheckpoint(); setOpenMenu(null) })} className={menuItem}>
                     <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                     Save Checkpoint
+                    {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
-                  <button onClick={() => { onOpenHistory(); setOpenMenu(null) }} className={menuItem}>
+                  <button onClick={() => requireAuth(() => { onOpenHistory(); setOpenMenu(null) })} className={menuItem}>
                     <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -304,14 +313,14 @@ export default function Toolbar({
                     {isPro ? <span className="ml-auto text-xs text-[#6c7086]">&lt;/&gt;</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button
-                    onClick={() => { onPublish(); setOpenMenu(null) }}
+                    onClick={() => requireAuth(() => { onPublish(); setOpenMenu(null) })}
                     className={menuItem}
                   >
                     <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     Publish to GitHub
-                    <span className="ml-auto text-xs text-[#6c7086]">Live URL</span>
+                    {isSignedIn ? <span className="ml-auto text-xs text-[#6c7086]">Live URL</span> : <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
                   <button
                     onClick={async () => {
