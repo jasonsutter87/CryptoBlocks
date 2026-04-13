@@ -356,7 +356,8 @@ function executeJavaScript(
     /\b__microbit\b/.test(code) ||
     /\b__speech\b/.test(code) ||
     /\b__vision\b/.test(code) ||
-    /\b__game\b/.test(code)
+    /\b__game\b/.test(code) ||
+    /\b__gamepad\b/.test(code)
 
   let iframeCleanup: (() => void) | null = null
 
