@@ -89,12 +89,19 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
       <CategoryThumbnail category={project.category} />
 
       <div className="p-4 flex flex-col gap-2">
-        {/* Name + category pill */}
+        {/* Name + category pill + pro badge */}
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-semibold text-[#cdd6f4] leading-tight">{project.name}</h3>
-          <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${pillClass}`}>
-            {project.category}
-          </span>
+          <div className="flex items-center gap-1 shrink-0">
+            {project.tags.some(t => t === 'pro' || t === 'sprite-editor' || t === 'level-editor' || t === 'gamepad') && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-gradient-to-r from-[#f9e2af] to-[#fab387] text-[#1e1e2e]">
+                PRO
+              </span>
+            )}
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${pillClass}`}>
+              {project.category}
+            </span>
+          </div>
         </div>
 
         {/* Author + remix badge */}
