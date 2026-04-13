@@ -23,20 +23,26 @@ async function getGitHubToken(clerkUserId: string): Promise<string | null> {
   if (!process.env.CLERK_SECRET_KEY) return null
   // Clerk provider IDs vary — try all known variants
   const providers = ['oauth_github', 'github', 'oauth_custom_github']
+  const debugLog: string[] = []
   for (const provider of providers) {
     try {
-      const res = await fetch(
-        `https://api.clerk.com/v1/users/${clerkUserId}/oauth_access_tokens/${provider}`,
-        { headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` } },
-      )
+      const url = `https://api.clerk.com/v1/users/${clerkUserId}/oauth_access_tokens/${provider}`
+      const res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` },
+      })
+      const text = await res.text()
+      debugLog.push(`${provider}: ${res.status} ${text.slice(0, 200)}`)
       if (!res.ok) continue
-      const data = await res.json()
+      const data = JSON.parse(text)
       if (Array.isArray(data) && data.length > 0 && data[0].token) {
         return data[0].token
       }
-    } catch (_e) { continue }
+    } catch (_e) {
+      debugLog.push(`${provider}: error ${_e}`)
+      continue
+    }
   }
-  console.error('[github] No OAuth token found for user', clerkUserId)
+  console.error('[github] No OAuth token found. Debug:', debugLog.join(' | '))
   return null
 }
 
@@ -87,7 +93,7 @@ export default async function handler(req: Request) {
         debugInfo = `Connected providers: ${accounts.join(', ') || 'none'}`
       }
     } catch (_e) {}
-    return json({ error: `No GitHub OAuth token found. ${debugInfo}. Try signing out and back in with GitHub.`, needsGithub: true }, 403)
+    return json({ error: `No GitHub OAuth token found. ${debugInfo}. Check Netlify function logs for details.`, needsGithub: true }, 403)
   }
 
   try {
