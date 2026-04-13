@@ -251,7 +251,7 @@ export default async function handler(req: Request) {
       const delUser = await verifyClerkToken(authHeader.replace('Bearer ', ''))
       if (!delUser) return json({ error: 'Sign in' }, 401)
       // Check admin via env var — if not set, any authenticated user can delete (dev mode)
-      const adminEmails = (process.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
+      const adminEmails = (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
       if (adminEmails.length > 0) {
         const userEmail = delUser.email?.toLowerCase() || ''
         if (!userEmail || !adminEmails.includes(userEmail)) {
