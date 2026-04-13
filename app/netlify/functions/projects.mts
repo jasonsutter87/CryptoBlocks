@@ -58,10 +58,12 @@ const BANNED_WORDS = [
 const URL_PATTERN = /https?:\/\/[^\s]+|www\.[^\s]+/gi
 
 function moderateContent(name: string, description: string): string | null {
-  const combined = `${name} ${description}`.toLowerCase()
+  const combined = ` ${name} ${description} `.toLowerCase()
 
   for (const word of BANNED_WORDS) {
-    if (combined.includes(word)) {
+    // Use word boundary check so "classic" doesn't match "ass"
+    const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`)
+    if (re.test(combined)) {
       return 'Project contains inappropriate language. Please edit and try again.'
     }
   }
