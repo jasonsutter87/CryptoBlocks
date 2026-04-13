@@ -71,14 +71,15 @@ export default function UploadModal({ onClose, onPublished }: UploadModalProps) 
       blockCount,
       parentId: remixParent?.id,
     }, token)
-    // Clear the remix parent after successful upload
-    if (result) localStorage.removeItem('cryptoblocks_remix_parent')
     setUploading(false)
-    if (result) {
+    if (!result) {
+      setError('Upload failed — check your connection and try again.')
+    } else if ('error' in result) {
+      setError(result.error)
+    } else {
+      localStorage.removeItem('cryptoblocks_remix_parent')
       onPublished?.()
       onClose()
-    } else {
-      setError('Upload failed — try again in a moment.')
     }
   }
 

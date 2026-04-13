@@ -101,7 +101,7 @@ export interface PublishPayload {
   parentId?: string
 }
 
-export async function publishProject(payload: PublishPayload, clerkToken?: string): Promise<{ id: string } | null> {
+export async function publishProject(payload: PublishPayload, clerkToken?: string): Promise<{ id: string } | { error: string } | null> {
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' }
     if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`
@@ -111,8 +111,9 @@ export async function publishProject(payload: PublishPayload, clerkToken?: strin
       headers,
       body: JSON.stringify(payload),
     })
-    if (!res.ok) return null
-    return await res.json()
+    const data = await res.json()
+    if (!res.ok) return { error: data.error || 'Upload failed' }
+    return data
   } catch {
     return null
   }
