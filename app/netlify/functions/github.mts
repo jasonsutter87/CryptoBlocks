@@ -21,18 +21,23 @@ async function verifyClerkToken(token: string): Promise<{ sub: string } | null> 
 
 async function getGitHubToken(clerkUserId: string): Promise<string | null> {
   if (!process.env.CLERK_SECRET_KEY) return null
-  try {
-    const res = await fetch(
-      `https://api.clerk.com/v1/users/${clerkUserId}/oauth_access_tokens/oauth_github`,
-      { headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` } },
-    )
-    if (!res.ok) return null
-    const data = await res.json()
-    // Clerk returns an array of tokens — use the first active one
-    if (Array.isArray(data) && data.length > 0) {
-      return data[0].token || null
-    }
-    return null
+  // Clerk provider IDs vary — try all known variants
+  const providers = ['oauth_github', 'github', 'oauth_custom_github']
+  for (const provider of providers) {
+    try {
+      const res = await fetch(
+        `https://api.clerk.com/v1/users/${clerkUserId}/oauth_access_tokens/${provider}`,
+        { headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` } },
+      )
+      if (!res.ok) continue
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0 && data[0].token) {
+        return data[0].token
+      }
+    } catch { continue }
+  }
+  console.error('[github] No OAuth token found for user', clerkUserId)
+  return null
   } catch { return null }
 }
 
