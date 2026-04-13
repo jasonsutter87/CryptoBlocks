@@ -40,6 +40,10 @@ export function drawYourHeroWorkspace(): Record<string, unknown> {
 
   const setGravity = block('cb_set_gravity', undefined, { value: numVal(0.4) })
 
+  const hint = block('cb_print', undefined, {
+    message: textVal('🎨 Open Build → Sprite Editor, draw a character, save as "hero" — then re-run to see YOUR art!'),
+  })
+
   // Player uses sprite_editor_image — THE showcase moment
   const createHero = block('cb_create_sprite', undefined, {
     name: textVal('hero'),
@@ -107,7 +111,7 @@ export function drawYourHeroWorkspace(): Record<string, unknown> {
 
   return workspace(
     chain(kbLeft, kbRight, kbJump),
-    chain(setCanvas, setGravity, createHero, ground, p1, p2, p3, p4, ...gems, trophy, gameLoop),
+    chain(setCanvas, setGravity, hint, createHero, ground, p1, p2, p3, p4, ...gems, trophy, gameLoop),
   )
 }
 
@@ -144,7 +148,7 @@ export function designYourWorldWorkspace(): Record<string, unknown> {
   })
 
   const instructions = block('cb_print', undefined, {
-    message: textVal('🗺️ Open Build → Level Editor to design your level! Then add platforms here.'),
+    message: textVal('🗺️ Step 1: Build → Sprite Editor → draw a character → save as "hero"\n🗺️ Step 2: Build → Level Editor → draw platforms → Export to Editor\n🗺️ Step 3: Run and play YOUR level with YOUR art!'),
   })
 
   // Just a ground — the kid adds platforms from Level Editor
