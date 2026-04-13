@@ -90,10 +90,14 @@ export default async function handler(req: Request) {
     if (!process.env.STRIPE_SECRET_KEY) return json({ error: 'Stripe not configured' }, 500)
 
     // POST /api/stripe/checkout — create Checkout Session
+    // Body: { plan: 'pro' | 'teacher' }
     if (req.method === 'POST' && segments[0] === 'checkout') {
       const authHeader = req.headers.get('Authorization') || ''
       const user = await verifyClerkToken(authHeader.replace('Bearer ', ''))
       if (!user) return json({ error: 'Sign in to upgrade' }, 401)
+
+      const body = await req.json().catch(() => ({})) as { plan?: string }
+      const plan = body.plan || 'pro'
 
       // Find or create Stripe customer
       let customerId: string | null = null
@@ -112,21 +116,49 @@ export default async function handler(req: Request) {
         customerId = customer.id
       }
 
-      const session = await stripe.checkout.sessions.create({
-        customer: customerId,
-        mode: 'subscription',
-        line_items: [{
+      const lineItems: Array<{ price_data: { currency: string; product: string; recurring: { interval: string }; unit_amount: number }; quantity: number }> = []
+
+      if (plan === 'teacher') {
+        // Teacher base: $25/month
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product: process.env.STRIPE_TEACHER_PRODUCT_ID || 'prod_UKGdxapGBhJGfR',
+            recurring: { interval: 'month' },
+            unit_amount: 2500,
+          },
+          quantity: 1,
+        })
+        // Per-student: $3.50/month — starts at 0, updated when students join
+        lineItems.push({
+          price_data: {
+            currency: 'usd',
+            product: process.env.STRIPE_STUDENT_PRODUCT_ID || 'prod_UKGeLR2xlgPsqj',
+            recurring: { interval: 'month' },
+            unit_amount: 350,
+          },
+          quantity: 0,
+        })
+      } else {
+        // Pro: $10/month
+        lineItems.push({
           price_data: {
             currency: 'usd',
             product: process.env.STRIPE_PRODUCT_ID || 'prod_UK2SC9xh2YTlMQ',
             recurring: { interval: 'month' },
-            unit_amount: 499, // $4.99/month
+            unit_amount: 1000,
           },
           quantity: 1,
-        }],
+        })
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        mode: 'subscription',
+        line_items: lineItems,
         success_url: `${url.origin}/?upgraded=1`,
         cancel_url: `${url.origin}/?cancelled=1`,
-        metadata: { clerk_user_id: user.sub },
+        metadata: { clerk_user_id: user.sub, plan },
       })
 
       return json({ url: session.url })
@@ -153,17 +185,19 @@ export default async function handler(req: Request) {
       return json({ url: session.url })
     }
 
-    // GET /api/stripe/status — check subscription status
+    // GET /api/stripe/status — check subscription status + plan type
     if (req.method === 'GET' && segments[0] === 'status') {
       const authHeader = req.headers.get('Authorization') || ''
       const user = await verifyClerkToken(authHeader.replace('Bearer ', ''))
-      if (!user) return json({ isPro: false })
+      if (!user) return json({ isPro: false, plan: 'free' })
 
       const sub = await tursoExecute(
-        'SELECT status FROM subscriptions WHERE user_id = ? AND status = ?',
+        'SELECT status, plan FROM subscriptions WHERE user_id = ? AND status = ?',
         [user.sub, 'active'],
       )
-      return json({ isPro: sub.rows.length > 0 })
+      if (sub.rows.length === 0) return json({ isPro: false, plan: 'free' })
+      const plan = String(sub.rows[0].plan || 'pro')
+      return json({ isPro: true, plan })
     }
 
     // POST /api/stripe/webhook — handle Stripe events
@@ -181,15 +215,17 @@ export default async function handler(req: Request) {
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object as Stripe.Checkout.Session
         const clerkUserId = session.metadata?.clerk_user_id
+        const plan = session.metadata?.plan || 'pro'
         if (clerkUserId && session.customer) {
           await tursoExecute(
-            `INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, status, created_at)
-             VALUES (?, ?, ?, ?, ?)
+            `INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, status, plan, created_at)
+             VALUES (?, ?, ?, ?, ?, ?)
              ON CONFLICT (user_id) DO UPDATE SET
                stripe_customer_id = excluded.stripe_customer_id,
                stripe_subscription_id = excluded.stripe_subscription_id,
-               status = 'active'`,
-            [clerkUserId, String(session.customer), String(session.subscription), 'active', Date.now()],
+               status = 'active',
+               plan = excluded.plan`,
+            [clerkUserId, String(session.customer), String(session.subscription), 'active', plan, Date.now()],
           )
         }
       }

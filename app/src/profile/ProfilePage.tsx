@@ -174,17 +174,32 @@ export default function ProfilePage() {
               </button>
             </div>
           ) : (
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-[#cdd6f4]">Free Plan</div>
-                <div className="text-xs text-[#6c7086]">Upgrade to unlock build tools, exports, classrooms, and more.</div>
+            <div className="flex flex-col gap-3">
+              <div className="text-sm font-semibold text-[#cdd6f4]">Free Plan</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
+                  <div className="text-sm font-bold text-[#cdd6f4] mb-1">Pro</div>
+                  <div className="text-2xl font-bold text-[#f9e2af] mb-1">$10<span className="text-sm text-[#6c7086]">/mo</span></div>
+                  <div className="text-xs text-[#6c7086] mb-3">Build tools, exports, Sprite Editor, Level Editor</div>
+                  <button
+                    onClick={() => openCheckout(getToken, 'pro')}
+                    className="w-full px-4 py-2 bg-gradient-to-r from-[#f9e2af] to-[#fab387] text-[#1e1e2e] rounded-lg text-sm font-bold hover:opacity-90 transition-opacity"
+                  >
+                    Upgrade to Pro
+                  </button>
+                </div>
+                <div className="bg-[#1e1e2e] rounded-xl p-4 border border-[#89b4fa]/30">
+                  <div className="text-sm font-bold text-[#89b4fa] mb-1">Teacher</div>
+                  <div className="text-2xl font-bold text-[#89b4fa] mb-1">$25<span className="text-sm text-[#6c7086]">/mo + $3.50/student</span></div>
+                  <div className="text-xs text-[#6c7086] mb-3">Unlimited classrooms, assignments, students get Pro</div>
+                  <button
+                    onClick={() => openCheckout(getToken, 'teacher')}
+                    className="w-full px-4 py-2 bg-[#89b4fa] text-[#1e1e2e] rounded-lg text-sm font-bold hover:opacity-90 transition-opacity"
+                  >
+                    Start Teacher Plan
+                  </button>
+                </div>
               </div>
-              <button
-                onClick={() => openCheckout(getToken)}
-                className="px-5 py-2.5 bg-gradient-to-r from-[#f9e2af] to-[#fab387] text-[#1e1e2e] rounded-lg text-sm font-bold hover:opacity-90 transition-opacity"
-              >
-                Upgrade — $10/mo
-              </button>
             </div>
           )}
         </SectionCard>

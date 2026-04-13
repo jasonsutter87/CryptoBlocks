@@ -11,7 +11,7 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAILS || '').split(',').map((e
 const CACHE_KEY = 'cb-pro-status'
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
-export function useIsPro(): { isPro: boolean; loading: boolean; isAdmin: boolean; refresh: () => void } {
+export function useIsPro(): { isPro: boolean; loading: boolean; isAdmin: boolean; plan: string; refresh: () => void } {
   const { getToken, isSignedIn } = useAuth()
   const { user } = useUser()
 
@@ -27,12 +27,13 @@ export function useIsPro(): { isPro: boolean; loading: boolean; isAdmin: boolean
     } catch {}
     return false
   })
+  const [plan, setPlan] = useState('free')
   const [loading, setLoading] = useState(false)
 
   const check = async () => {
-    if (isAdmin) { setIsPro(true); return }
+    if (isAdmin) { setIsPro(true); setPlan('admin'); return }
     if (!isSignedIn) {
-      setIsPro(false)
+      setIsPro(false); setPlan('free')
       return
     }
     setLoading(true)
@@ -45,7 +46,8 @@ export function useIsPro(): { isPro: boolean; loading: boolean; isAdmin: boolean
         const data = await res.json()
         const pro = data.isPro === true
         setIsPro(pro)
-        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ isPro: pro, ts: Date.now() }))
+        setPlan(data.plan || 'free')
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({ isPro: pro, plan: data.plan, ts: Date.now() }))
       }
     } catch {}
     setLoading(false)
@@ -53,15 +55,19 @@ export function useIsPro(): { isPro: boolean; loading: boolean; isAdmin: boolean
 
   useEffect(() => { check() }, [isSignedIn, isAdmin]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { isPro: isPro || isAdmin, loading, isAdmin, refresh: check }
+  return { isPro: isPro || isAdmin, loading, isAdmin, plan, refresh: check }
 }
 
-export async function openCheckout(getToken: () => Promise<string | null>): Promise<void> {
+export async function openCheckout(getToken: () => Promise<string | null>, plan: 'pro' | 'teacher' = 'pro'): Promise<void> {
   try {
     const token = await getToken()
     const res = await fetch('/api/stripe/checkout', {
       method: 'POST',
-      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ plan }),
     })
     if (res.ok) {
       const data = await res.json()
