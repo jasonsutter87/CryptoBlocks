@@ -213,12 +213,12 @@ export default async function handler(req: Request) {
 
     // GET /api/admin/tables — row counts
     if (segments[0] === 'tables') {
-      const tables = ['projects', 'classrooms', 'class_members', 'assignments', 'submissions',
+      const ALLOWED_TABLES = new Set(['projects', 'classrooms', 'class_members', 'assignments', 'submissions',
         'discussions', 'replies', 'chat_messages', 'daily_scores', 'notifications',
-        'subscriptions', 'free_overrides']
+        'subscriptions', 'free_overrides'])
       const counts: Record<string, number> = {}
-      for (const table of tables) {
-        const r = await tursoExecute(`SELECT COUNT(*) as c FROM ${table}`)
+      for (const table of ALLOWED_TABLES) {
+        const r = await tursoExecute(`SELECT COUNT(*) as c FROM "${table.replace(/"/g, '')}"`)
         counts[table] = Number(r.rows[0]?.c ?? 0)
       }
       return json({ tables: counts })

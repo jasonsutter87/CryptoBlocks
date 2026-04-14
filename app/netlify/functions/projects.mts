@@ -260,12 +260,17 @@ export default async function handler(req: Request) {
       const authHeader = req.headers.get('Authorization') || ''
       const delUser = await verifyClerkToken(authHeader.replace('Bearer ', ''))
       if (!delUser) return json({ error: 'Sign in' }, 401)
-      // Check admin via env var — if not set, any authenticated user can delete (dev mode)
+      // Check admin OR project owner
       const adminEmails = (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
-      if (adminEmails.length > 0) {
-        const userEmail = delUser.email?.toLowerCase() || ''
-        if (!userEmail || !adminEmails.includes(userEmail)) {
-          return json({ error: 'Admin access required' }, 403)
+      const userEmail = delUser.email?.toLowerCase() || ''
+      const isAdmin = adminEmails.length > 0 && adminEmails.includes(userEmail)
+
+      if (!isAdmin) {
+        // Non-admins can only delete their own projects
+        const project = await tursoExecute('SELECT author_id FROM projects WHERE id = ?', [segments[0]])
+        if (project.rows.length === 0) return json({ error: 'Not found' }, 404)
+        if (project.rows[0].author_id !== delUser.sub) {
+          return json({ error: 'You can only delete your own projects' }, 403)
         }
       }
       await tursoExecute('DELETE FROM projects WHERE id = ?', [segments[0]])
@@ -366,14 +371,22 @@ export default async function handler(req: Request) {
       })
     }
 
-    // GET /api/projects/:id
-    if (req.method === 'GET' && segments.length === 1) {
+    // GET /api/projects/:id — public projects visible to all, private only to owner
+    if (req.method === 'GET' && segments.length === 1 && segments[0] !== 'my') {
       const result = await tursoExecute(
         'SELECT * FROM projects WHERE id = ?',
         [segments[0]],
       )
       if (result.rows.length === 0) return json({ error: 'Not found' }, 404)
-      return json(formatProject(result.rows[0]))
+      const project = result.rows[0]
+      if (project.visibility === 'private') {
+        const authHeader = req.headers.get('Authorization') || ''
+        const viewer = await verifyClerkToken(authHeader.replace('Bearer ', ''))
+        if (!viewer || viewer.sub !== project.author_id) {
+          return json({ error: 'Not found' }, 404)
+        }
+      }
+      return json(formatProject(project))
     }
 
     // GET /api/projects/my — user's own projects (private + public)
