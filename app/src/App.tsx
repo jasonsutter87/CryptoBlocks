@@ -241,6 +241,20 @@ export default function App() {
       }
       setCustomBlocks(saved)
     }
+    // Check for example loaded via /example/:id route
+    const pendingExample = sessionStorage.getItem('cb-load-example')
+    if (pendingExample) {
+      sessionStorage.removeItem('cb-load-example')
+      try {
+        const ex = JSON.parse(pendingExample)
+        if (ex.workspace) {
+          setInitialWorkspaceState(ex.workspace)
+          setRestored(true)
+          return
+        }
+      } catch (_e) { /* fall through to normal restore */ }
+    }
+
     setInitialWorkspaceState(workspaceState)
     setRestored(true)
 

@@ -30,6 +30,7 @@ const TeacherDashboard = lazy(() => import('./teacher/TeacherDashboard'))
 const LeaderboardPage = lazy(() => import('./leaderboard/LeaderboardPage'))
 const SharedProjectLoader = lazy(() => import('./shareplace/SharedProjectLoader'))
 const AdminPage = lazy(() => import('./admin/AdminPage'))
+const ExampleLoader = lazy(() => import('./examples/ExampleLoader'))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -47,6 +48,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/teacher" element={<SharedLayout><TeacherDashboard /></SharedLayout>} />
           <Route path="/leaderboard" element={<SharedLayout><LeaderboardPage /></SharedLayout>} />
           <Route path="/project/:id" element={<SharedProjectLoader />} />
+          <Route path="/example/:id" element={<ExampleLoader />} />
           <Route path="/admin" element={<SharedLayout><AdminPage /></SharedLayout>} />
           </Routes>
         </Suspense>
