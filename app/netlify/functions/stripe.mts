@@ -235,11 +235,10 @@ export default async function handler(req: Request) {
       let event: Stripe.Event
 
       const sig = req.headers.get('stripe-signature')
-      if (sig && process.env.STRIPE_WEBHOOK_SECRET) {
-        event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET)
-      } else {
-        event = JSON.parse(body) as Stripe.Event
+      if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
+        return json({ error: 'Webhook signature verification required' }, 400)
       }
+      event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET)
 
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object as Stripe.Checkout.Session
