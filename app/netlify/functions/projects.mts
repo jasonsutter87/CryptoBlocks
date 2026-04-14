@@ -183,6 +183,13 @@ export default async function handler(req: Request) {
       return json({ error: 'Database not configured' }, 500)
     }
 
+    // Auto-migrate: add visibility column if missing (runs once per cold start)
+    if (!(globalThis as any).__visibilityMigrated) {
+      await tursoExecute("ALTER TABLE projects ADD COLUMN visibility TEXT DEFAULT 'public'").catch(() => {})
+      ;(globalThis as any).__visibilityMigrated = true
+    }
+    }
+
     // POST /api/projects — publish a project (requires Clerk auth)
     if (req.method === 'POST' && segments.length === 0) {
       // Verify Clerk JWT from Authorization header
@@ -210,9 +217,11 @@ export default async function handler(req: Request) {
       const id = crypto.randomUUID()
       const now = Date.now()
 
+      const visibility = body.visibility === 'private' ? 'private' : 'public'
+
       await tursoExecute(
-        `INSERT INTO projects (id, name, author_id, author_name, description, category, workspace_json, tags, block_count, parent_id, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO projects (id, name, author_id, author_name, description, category, workspace_json, tags, block_count, parent_id, visibility, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           String(name).slice(0, 100),
@@ -224,6 +233,7 @@ export default async function handler(req: Request) {
           JSON.stringify(tags || []),
           Number(blockCount) || 0,
           parentId || null,
+          visibility,
           now,
         ],
       )
@@ -366,7 +376,19 @@ export default async function handler(req: Request) {
       return json(formatProject(result.rows[0]))
     }
 
-    // GET /api/projects — list
+    // GET /api/projects/my — user's own projects (private + public)
+    if (req.method === 'GET' && segments[0] === 'my') {
+      if (!clerkUser?.sub) return json({ error: 'Sign in required' }, 401)
+      const limit = Math.min(50, Number(url.searchParams.get('limit')) || 50)
+      const offset = Number(url.searchParams.get('offset')) || 0
+      const result = await tursoExecute(
+        'SELECT * FROM projects WHERE author_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
+        [clerkUser.sub, limit, offset],
+      )
+      return json({ projects: result.rows.map(formatProject), limit, offset })
+    }
+
+    // GET /api/projects — public listing (excludes private projects)
     if (req.method === 'GET' && segments.length === 0) {
       const category = url.searchParams.get('category')
       const search = url.searchParams.get('search')
@@ -375,7 +397,7 @@ export default async function handler(req: Request) {
 
       let sql = 'SELECT * FROM projects'
       const args: (string | number)[] = []
-      const conditions: string[] = []
+      const conditions: string[] = ["(visibility IS NULL OR visibility = 'public')"]
 
       if (category && category !== 'All') {
         conditions.push('category = ?')
@@ -385,7 +407,7 @@ export default async function handler(req: Request) {
         conditions.push('(name LIKE ? OR description LIKE ?)')
         args.push(`%${search}%`, `%${search}%`)
       }
-      if (conditions.length > 0) sql += ' WHERE ' + conditions.join(' AND ')
+      sql += ' WHERE ' + conditions.join(' AND ')
       sql += ' ORDER BY created_at DESC LIMIT ? OFFSET ?'
       args.push(limit, offset)
 
@@ -415,6 +437,7 @@ function formatProject(row: TursoRow) {
     parentId: row.parent_id,
     downloads: row.downloads,
     likes: row.likes,
+    visibility: row.visibility || 'public',
     createdAt: row.created_at,
   }
 }

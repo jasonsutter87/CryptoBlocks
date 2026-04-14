@@ -119,6 +119,37 @@ export async function publishProject(payload: PublishPayload, clerkToken?: strin
   }
 }
 
+export async function saveToDashboard(payload: PublishPayload, clerkToken?: string): Promise<{ id: string } | { error: string } | null> {
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`
+
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ ...payload, visibility: 'private' }),
+    })
+    const data = await res.json()
+    if (!res.ok) return { error: data.error || 'Save failed' }
+    return data
+  } catch {
+    return null
+  }
+}
+
+export async function fetchMyProjects(clerkToken?: string): Promise<SharedProject[]> {
+  try {
+    const headers: Record<string, string> = {}
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`
+    const res = await fetch(`${API_BASE}/my`, { headers })
+    if (!res.ok) return []
+    const data = await res.json()
+    return (data.projects || []).map(toSharedProject)
+  } catch {
+    return []
+  }
+}
+
 export interface RemixTreeNode {
   id: string
   name: string

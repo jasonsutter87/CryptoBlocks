@@ -48,6 +48,7 @@ interface ToolbarProps {
   onOpenSettings: () => void
   onOpenTutorial?: () => void
   onExportPwa: () => void
+  onSaveToDashboard: () => void
   onOpenSpriteEditor?: () => void
   onOpenLevelEditor?: () => void
   onOpenCollab?: () => void
@@ -91,6 +92,7 @@ export default function Toolbar({
   onOpenSettings,
   onOpenTutorial,
   onExportPwa,
+  onSaveToDashboard,
   onOpenSpriteEditor,
   onOpenLevelEditor,
   onOpenCollab,
@@ -221,6 +223,14 @@ export default function Toolbar({
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
                     </svg>
                     Save .blocks
+                    {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
+                  </button>
+                  <button onClick={() => requireAuth(() => { onSaveToDashboard(); setOpenMenu(null) })} className={menuItem}>
+                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 11l-2-2m0 0l-2 2m2-2v6" />
+                    </svg>
+                    Save to Dashboard
                     {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
                   <button onClick={() => requireAuth(() => { fileInputRef.current?.click(); setOpenMenu(null) })} className={menuItem}>

@@ -18,6 +18,7 @@ import {
   downloadHtml,
   copyToClipboard,
 } from './export-html'
+import { saveToDashboard } from './shareplace/api'
 import type { Challenge } from './challenges'
 import { getNextChallenge } from './challenges'
 import { validateOutput, calculateStars, countBlocks } from './challenges/validator'
@@ -1063,6 +1064,34 @@ export default function App() {
     }
   }, [customBlocks])
 
+  const handleSaveToDashboard = useCallback(async () => {
+    if (!workspaceRef.current) return
+    const { showToast } = await import('./components/Toast')
+    try {
+      const state = Blockly.serialization.workspaces.save(workspaceRef.current)
+      const workspaceJson = JSON.stringify(state)
+      const name = prompt('Project name:') || 'Untitled Project'
+      const token = await (window as any).Clerk?.session?.getToken() || undefined
+
+      const result = await saveToDashboard({
+        name,
+        workspaceJson,
+        blockCount: countBlocks(workspaceRef.current),
+        category: 'General',
+      }, token)
+
+      if (result && 'id' in result) {
+        showToast('Saved to your dashboard!', 'success')
+      } else if (result && 'error' in result) {
+        showToast(result.error, 'error')
+      } else {
+        showToast('Save failed — try again', 'error')
+      }
+    } catch (_e) {
+      showToast('Save failed', 'error')
+    }
+  }, [])
+
   const handleImportAsBlock = useCallback(async (file: File) => {
     try {
       const data = await importBlocksFile(file)
@@ -1231,6 +1260,7 @@ export default function App() {
         onOpenCollab={() => setShowCollabModal(true)}
         isCollabMode={isCollabMode}
         onImportScratch={() => setShowScratchImport(true)}
+        onSaveToDashboard={handleSaveToDashboard}
         onOpenSpriteEditor={() => setShowSpriteEditor(true)}
         onOpenLevelEditor={() => setShowLevelEditor(true)}
         onRunForEveryone={() => {
