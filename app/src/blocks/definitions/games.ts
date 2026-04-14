@@ -251,6 +251,9 @@ export const gamesBlocks: BlockDefinition[] = [
     }
   }
 
+  // --- Tilemap (rendered behind platforms and sprites) ---
+  if (game.tilemapRender) game.tilemapRender(ctx, game.camera);
+
   // --- Platforms ---
   for (var pi = 0; pi < game.platforms.length; pi++) {
     var p = game.platforms[pi];
@@ -1094,5 +1097,185 @@ export const gamesBlocks: BlockDefinition[] = [
     ],
     color: '#EA580C',
     shape: 'statement',
+  },
+
+  // ─── Tilemap Blocks ──────────────────────────────────────────────────────
+
+  {
+    name: 'create_tilemap',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Create a tilemap from a 2D array — each number maps to a tile color/type. Renders to the game canvas.',
+    category: 'Games',
+    inputs: [
+      { name: 'grid', type: 'any', description: '2D array of tile values (e.g. 0=wall, 1=open, 2=dot)' },
+      { name: 'tileSize', type: 'number', description: 'Size of each tile in pixels', default: 16 },
+      { name: 'colorMap', type: 'any', description: 'Object mapping tile values to colors (e.g. {0:"#222",1:"#000",2:"#ffb8ae"})', default: '{}' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function createTilemap(grid, tileSize, colorMap) {
+  window.__game = window.__game || { sprites: {}, score: 0 };
+  var ts = Number(tileSize) || 16;
+  var g = Array.isArray(grid) ? grid : [];
+  var rows = g.length;
+  var cols = rows > 0 ? g[0].length : 0;
+  var cm = (typeof colorMap === 'object' && colorMap !== null) ? colorMap : {};
+  var defaults = { 0: '#1a1a2e', 1: '#000000', 2: '#ffb8ae', 3: '#ff6b6b', 4: '#4a4a8a', 5: '#00bfff' };
+  for (var k in defaults) { if (!(k in cm)) cm[k] = defaults[k]; }
+  window.__game.tilemap = { grid: g, tileSize: ts, rows: rows, cols: cols, colorMap: cm };
+  window.__game.tilemapRender = function(ctx, cam) {
+    var tm = window.__game.tilemap;
+    if (!tm) return;
+    var ox = cam ? cam.x : 0;
+    var oy = cam ? cam.y : 0;
+    for (var r = 0; r < tm.rows; r++) {
+      for (var c = 0; c < tm.cols; c++) {
+        var val = tm.grid[r][c];
+        var color = tm.colorMap[val] || '#333';
+        ctx.fillStyle = color;
+        ctx.fillRect(c * tm.tileSize - ox, r * tm.tileSize - oy, tm.tileSize, tm.tileSize);
+        if (val === 2) {
+          ctx.fillStyle = '#ffb8ae';
+          ctx.beginPath();
+          ctx.arc(c * tm.tileSize + tm.tileSize / 2 - ox, r * tm.tileSize + tm.tileSize / 2 - oy, 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (val === 3) {
+          ctx.fillStyle = '#ff6b6b';
+          ctx.beginPath();
+          ctx.arc(c * tm.tileSize + tm.tileSize / 2 - ox, r * tm.tileSize + tm.tileSize / 2 - oy, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+  };
+}`,
+      python: `def create_tilemap(grid, tile_size, color_map):
+    print("[Tilemap only works in JavaScript mode]")`,
+    },
+    tests: [
+      { input: { grid: [[0,1],[1,0]], tileSize: 16, colorMap: {} }, expected: {} },
+    ],
+    color: '#EA580C',
+  },
+  {
+    name: 'get_tile_at',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get the tile value at a grid position (col, row). Returns the number from the tilemap array.',
+    category: 'Games',
+    inputs: [
+      { name: 'col', type: 'number', description: 'Column (x in grid coordinates)' },
+      { name: 'row', type: 'number', description: 'Row (y in grid coordinates)' },
+    ],
+    outputs: [
+      { name: 'value', type: 'number', description: 'Tile value at that position' },
+    ],
+    implementations: {
+      javascript: `function getTileAt(col, row) {
+  var tm = window.__game && window.__game.tilemap;
+  if (!tm) return 0;
+  var r = Math.floor(Number(row));
+  var c = Math.floor(Number(col));
+  if (r < 0 || r >= tm.rows || c < 0 || c >= tm.cols) return 0;
+  return tm.grid[r][c];
+}`,
+      python: `def get_tile_at(col, row):
+    print("[Tilemap only works in JavaScript mode]")
+    return 0`,
+    },
+    tests: [
+      { input: { col: 0, row: 0 }, expected: { value: 0 } },
+    ],
+    color: '#EA580C',
+    shape: 'value',
+  },
+  {
+    name: 'set_tile_at',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Set the tile value at a grid position. Use this to remove dots when eaten, open doors, etc.',
+    category: 'Games',
+    inputs: [
+      { name: 'col', type: 'number', description: 'Column (x in grid coordinates)' },
+      { name: 'row', type: 'number', description: 'Row (y in grid coordinates)' },
+      { name: 'value', type: 'number', description: 'New tile value', default: 0 },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function setTileAt(col, row, value) {
+  var tm = window.__game && window.__game.tilemap;
+  if (!tm) return;
+  var r = Math.floor(Number(row));
+  var c = Math.floor(Number(col));
+  if (r >= 0 && r < tm.rows && c >= 0 && c < tm.cols) {
+    tm.grid[r][c] = Number(value);
+  }
+}`,
+      python: `def set_tile_at(col, row, value):
+    print("[Tilemap only works in JavaScript mode]")`,
+    },
+    tests: [
+      { input: { col: 1, row: 1, value: 0 }, expected: {} },
+    ],
+    color: '#EA580C',
+  },
+  {
+    name: 'screen_to_grid',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Convert pixel screen coordinates to grid tile coordinates. Returns [col, row].',
+    category: 'Games',
+    inputs: [
+      { name: 'pixelX', type: 'number', description: 'X position in pixels' },
+      { name: 'pixelY', type: 'number', description: 'Y position in pixels' },
+    ],
+    outputs: [
+      { name: 'result', type: 'any', description: '[col, row] array' },
+    ],
+    implementations: {
+      javascript: `function screenToGrid(pixelX, pixelY) {
+  var tm = window.__game && window.__game.tilemap;
+  var ts = tm ? tm.tileSize : 16;
+  return [Math.floor(Number(pixelX) / ts), Math.floor(Number(pixelY) / ts)];
+}`,
+      python: `def screen_to_grid(pixel_x, pixel_y):
+    print("[Tilemap only works in JavaScript mode]")
+    return [0, 0]`,
+    },
+    tests: [
+      { input: { pixelX: 32, pixelY: 48 }, expected: { result: [2, 3] } },
+    ],
+    color: '#EA580C',
+    shape: 'value',
+  },
+  {
+    name: 'grid_to_screen',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Convert grid tile coordinates to pixel screen coordinates (center of tile). Returns [x, y].',
+    category: 'Games',
+    inputs: [
+      { name: 'col', type: 'number', description: 'Column in grid' },
+      { name: 'row', type: 'number', description: 'Row in grid' },
+    ],
+    outputs: [
+      { name: 'result', type: 'any', description: '[x, y] array (center of tile in pixels)' },
+    ],
+    implementations: {
+      javascript: `function gridToScreen(col, row) {
+  var tm = window.__game && window.__game.tilemap;
+  var ts = tm ? tm.tileSize : 16;
+  return [Math.floor(Number(col)) * ts + ts / 2, Math.floor(Number(row)) * ts + ts / 2];
+}`,
+      python: `def grid_to_screen(col, row):
+    print("[Tilemap only works in JavaScript mode]")
+    return [0, 0]`,
+    },
+    tests: [
+      { input: { col: 2, row: 3 }, expected: { result: [40, 56] } },
+    ],
+    color: '#EA580C',
+    shape: 'value',
   },
 ]
