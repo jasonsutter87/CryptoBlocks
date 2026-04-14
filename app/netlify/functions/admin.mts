@@ -164,6 +164,53 @@ export default async function handler(req: Request) {
       return json({ ok: true })
     }
 
+    // GET /api/admin/analytics — block usage, categories, activity patterns
+    if (segments[0] === 'analytics') {
+      // Parse workspace JSON from projects to count block usage
+      const workspaces = await tursoExecute('SELECT workspace_json FROM projects WHERE workspace_json IS NOT NULL LIMIT 200')
+      const blockCounts: Record<string, number> = {}
+      for (const row of workspaces.rows) {
+        try {
+          const ws = JSON.parse(String(row.workspace_json))
+          const blocks = ws?.blocks?.blocks || []
+          const countBlocks = (block: Record<string, unknown>): void => {
+            if (!block) return
+            if (block.type) blockCounts[String(block.type).replace('cb_', '')] = (blockCounts[String(block.type).replace('cb_', '')] || 0) + 1
+            if (block.next && typeof block.next === 'object') countBlocks((block.next as Record<string, unknown>).block as Record<string, unknown>)
+            if (block.inputs && typeof block.inputs === 'object') {
+              for (const v of Object.values(block.inputs as Record<string, Record<string, unknown>>)) {
+                if (v?.block) countBlocks(v.block as Record<string, unknown>)
+                if (v?.shadow) countBlocks(v.shadow as Record<string, unknown>)
+              }
+            }
+          }
+          for (const b of blocks) countBlocks(b as Record<string, unknown>)
+        } catch (_e) { /* skip */ }
+      }
+      const topBlocks = Object.entries(blockCounts).sort((a, b) => b[1] - a[1]).slice(0, 30).map(([name, count]) => ({ name, count }))
+
+      const byCategory = await tursoExecute('SELECT category, COUNT(*) as count FROM projects GROUP BY category ORDER BY count DESC')
+      const byHour = await tursoExecute(
+        "SELECT CAST(((created_at / 1000) % 86400) / 3600 AS INTEGER) as hour, COUNT(*) as count FROM projects GROUP BY hour ORDER BY hour"
+      )
+      const classroomSizes = await tursoExecute(
+        'SELECT c.name, COUNT(cm.user_id) as members FROM classrooms c LEFT JOIN class_members cm ON c.id = cm.classroom_id GROUP BY c.id ORDER BY members DESC LIMIT 10'
+      )
+      const likesData = await tursoExecute(
+        "SELECT SUM(CASE WHEN likes = 0 THEN 1 ELSE 0 END) as z, SUM(CASE WHEN likes BETWEEN 1 AND 5 THEN 1 ELSE 0 END) as l, SUM(CASE WHEN likes > 5 THEN 1 ELSE 0 END) as h FROM projects"
+      )
+
+      return json({
+        topBlocks,
+        totalUniqueBlocks: Object.keys(blockCounts).length,
+        totalBlockUsages: Object.values(blockCounts).reduce((a, b) => a + b, 0),
+        byCategory: byCategory.rows.map(r => ({ category: r.category, count: Number(r.count) })),
+        byHour: byHour.rows.map(r => ({ hour: Number(r.hour), count: Number(r.count) })),
+        classroomSizes: classroomSizes.rows.map(r => ({ name: r.name, members: Number(r.members) })),
+        likesDistribution: { zero: Number(likesData.rows[0]?.z ?? 0), low: Number(likesData.rows[0]?.l ?? 0), high: Number(likesData.rows[0]?.h ?? 0) },
+      })
+    }
+
     // GET /api/admin/tables — row counts
     if (segments[0] === 'tables') {
       const tables = ['projects', 'classrooms', 'class_members', 'assignments', 'submissions',

@@ -22,7 +22,17 @@ interface Override {
   createdAt: number
 }
 
-type Tab = 'dashboard' | 'overrides' | 'tables' | 'projects'
+interface Analytics {
+  topBlocks: Array<{ name: string; count: number }>
+  totalUniqueBlocks: number
+  totalBlockUsages: number
+  byCategory: Array<{ category: string; count: number }>
+  byHour: Array<{ hour: number; count: number }>
+  classroomSizes: Array<{ name: string; members: number }>
+  likesDistribution: { zero: number; low: number; high: number }
+}
+
+type Tab = 'dashboard' | 'analytics' | 'overrides' | 'tables' | 'projects'
 
 export default function AdminPage() {
   const { getToken } = useAuth()
@@ -31,6 +41,7 @@ export default function AdminPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [overrides, setOverrides] = useState<Override[]>([])
   const [tables, setTables] = useState<Record<string, number>>({})
+  const [analytics, setAnalytics] = useState<Analytics | null>(null)
   const [loading, setLoading] = useState(true)
   const [newEmail, setNewEmail] = useState('')
   const [newPlan, setNewPlan] = useState('pro')
@@ -47,14 +58,16 @@ export default function AdminPage() {
     setLoading(true)
     try {
       const h = await headers()
-      const [statsRes, overridesRes, tablesRes] = await Promise.all([
+      const [statsRes, overridesRes, tablesRes, analyticsRes] = await Promise.all([
         fetch('/api/admin/stats', { headers: h }),
         fetch('/api/admin/overrides', { headers: h }),
         fetch('/api/admin/tables', { headers: h }),
+        fetch('/api/admin/analytics', { headers: h }),
       ])
       if (statsRes.ok) setStats(await statsRes.json())
       if (overridesRes.ok) { const d = await overridesRes.json(); setOverrides(d.overrides || []) }
       if (tablesRes.ok) { const d = await tablesRes.json(); setTables(d.tables || {}) }
+      if (analyticsRes.ok) setAnalytics(await analyticsRes.json())
     } catch (_e) {
       showToast('Failed to load admin data', 'error')
     }
@@ -124,6 +137,7 @@ export default function AdminPage() {
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
           {tabBtn('dashboard', '📊 Dashboard')}
+          {tabBtn('analytics', '🧮 Analytics')}
           {tabBtn('overrides', '🔐 Free Overrides')}
           {tabBtn('tables', '🗄️ Tables')}
           {tabBtn('projects', '📦 Recent Projects')}
@@ -193,6 +207,116 @@ export default function AdminPage() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* === Analytics === */}
+            {tab === 'analytics' && analytics && (
+              <div className="flex flex-col gap-6">
+                {/* Summary */}
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-[#313244] rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold text-[#89b4fa]">{analytics.totalUniqueBlocks}</div>
+                    <div className="text-[10px] text-[#6c7086]">Unique Block Types Used</div>
+                  </div>
+                  <div className="bg-[#313244] rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold text-[#a6e3a1]">{analytics.totalBlockUsages.toLocaleString()}</div>
+                    <div className="text-[10px] text-[#6c7086]">Total Block Placements</div>
+                  </div>
+                  <div className="bg-[#313244] rounded-xl p-4 text-center">
+                    <div className="text-2xl font-bold text-[#f9e2af]">
+                      {analytics.likesDistribution.zero + analytics.likesDistribution.low + analytics.likesDistribution.high}
+                    </div>
+                    <div className="text-[10px] text-[#6c7086]">Total Projects</div>
+                  </div>
+                </div>
+
+                {/* Most Used Blocks */}
+                <div className="bg-[#181825] rounded-xl p-5 border border-[#313244]">
+                  <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">Most Used Blocks (Top 30)</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
+                    {analytics.topBlocks.map((b, i) => {
+                      const max = analytics.topBlocks[0]?.count || 1
+                      const pct = Math.round((b.count / max) * 100)
+                      return (
+                        <div key={b.name} className="flex items-center gap-2 bg-[#1e1e2e] rounded px-2 py-1.5">
+                          <span className="text-[10px] text-[#6c7086] w-4 text-right">{i + 1}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-[#cdd6f4] font-mono truncate">{b.name}</div>
+                            <div className="h-1 bg-[#313244] rounded-full mt-0.5">
+                              <div className="h-1 bg-[#89b4fa] rounded-full" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-[#6c7086] font-mono shrink-0">{b.count}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Projects by Category */}
+                <div className="bg-[#181825] rounded-xl p-5 border border-[#313244]">
+                  <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">Projects by Category</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {analytics.byCategory.map((c) => (
+                      <div key={c.category} className="bg-[#1e1e2e] rounded-lg px-3 py-2 text-center">
+                        <div className="text-lg font-bold text-[#cdd6f4]">{c.count}</div>
+                        <div className="text-[10px] text-[#6c7086]">{c.category}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Activity by Hour */}
+                <div className="bg-[#181825] rounded-xl p-5 border border-[#313244]">
+                  <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">Activity by Hour (UTC)</h3>
+                  <div className="flex items-end gap-0.5 h-24">
+                    {Array.from({ length: 24 }, (_, h) => {
+                      const entry = analytics.byHour.find(x => x.hour === h)
+                      const count = entry?.count || 0
+                      const max = Math.max(...analytics.byHour.map(x => x.count), 1)
+                      const pct = Math.max(2, (count / max) * 100)
+                      return (
+                        <div key={h} className="flex-1 flex flex-col items-center gap-0.5" title={`${h}:00 — ${count} projects`}>
+                          <div className="w-full bg-[#cba6f7] rounded-t" style={{ height: `${pct}%` }} />
+                          {h % 6 === 0 && <span className="text-[8px] text-[#6c7086]">{h}h</span>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Likes Distribution */}
+                <div className="bg-[#181825] rounded-xl p-5 border border-[#313244]">
+                  <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">Likes Distribution</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-[#6c7086]">{analytics.likesDistribution.zero}</div>
+                      <div className="text-[10px] text-[#6c7086]">0 likes</div>
+                    </div>
+                    <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-[#f9e2af]">{analytics.likesDistribution.low}</div>
+                      <div className="text-[10px] text-[#6c7086]">1-5 likes</div>
+                    </div>
+                    <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-[#f38ba8]">{analytics.likesDistribution.high}</div>
+                      <div className="text-[10px] text-[#6c7086]">6+ likes</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Classroom Sizes */}
+                {analytics.classroomSizes.length > 0 && (
+                  <div className="bg-[#181825] rounded-xl p-5 border border-[#313244]">
+                    <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">Classroom Sizes</h3>
+                    {analytics.classroomSizes.map((c) => (
+                      <div key={c.name} className="flex items-center justify-between bg-[#1e1e2e] rounded-lg px-3 py-2 mb-1">
+                        <span className="text-sm text-[#cdd6f4]">{c.name}</span>
+                        <span className="text-sm font-bold text-[#89b4fa]">{c.members} members</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
