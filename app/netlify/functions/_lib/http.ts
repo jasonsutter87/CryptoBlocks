@@ -4,6 +4,8 @@
  * One source of truth for JSON responses, CORS, and error shapes.
  */
 
+import { PageParams } from '../../../src/schema/index.js'
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
@@ -70,10 +72,9 @@ export function getQueryParam(req: Request, name: string): string | null {
  * Extract + validate pagination from query string.
  * Returns { limit, offset } with defaults, or null + 400 Response on invalid input.
  */
-export async function parsePagination(
+export function parsePagination(
   req: Request,
-): Promise<{ limit: number; offset: number } | Response> {
-  const { PageParams } = await import('../../../src/schema/index.js')
+): { limit: number; offset: number } | Response {
   const qs = new URL(req.url).searchParams
   const parsed = PageParams.safeParse({
     limit: qs.get('limit') ?? undefined,

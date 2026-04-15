@@ -5,7 +5,7 @@
  * Public endpoint (no auth) — read-only aggregates over the projects table.
  */
 
-import { json, cors, tursoExecute, isTursoConfigured } from './_lib/index.js'
+import { json, cors, logError, tursoExecute, isTursoConfigured } from './_lib/index.js'
 
 export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') return cors()
@@ -72,7 +72,7 @@ export default async function handler(req: Request) {
       } : { totalProjects: 0, totalBuilders: 0, totalLikes: 0, totalRemixes: 0 },
     })
   } catch (err) {
-    console.error('Leaderboard error:', err instanceof Error ? err.message : String(err))
+    logError('leaderboard', err)
     return json({ error: 'Internal server error' }, 500)
   }
 }

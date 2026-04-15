@@ -9,7 +9,7 @@
 
 import Stripe from 'stripe'
 import {
-  json, cors, parsePath, verifyFromRequest, tursoExecute,
+  json, cors, logError, parsePath, verifyFromRequest, tursoExecute,
   requireAuth,
 } from './_lib/index.js'
 import { z } from 'zod'
@@ -190,7 +190,7 @@ export default async function handler(req: Request) {
       try {
         event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET)
       } catch (err) {
-        console.error('Stripe webhook signature verification failed:', err instanceof Error ? err.message : String(err))
+        logError('stripe:webhook-sig', err)
         return json({ error: 'Invalid signature' }, 400)
       }
 
@@ -200,7 +200,7 @@ export default async function handler(req: Request) {
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    console.error('Stripe error:', err instanceof Error ? err.message : String(err))
+    logError('stripe', err)
     return json({ error: 'Internal server error' }, 500)
   }
 }

@@ -10,7 +10,7 @@
  */
 
 import {
-  json, cors, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  json, cors, logError, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
   requireAuth,
 } from './_lib/index.js'
 
@@ -61,7 +61,7 @@ export default async function handler(req: Request) {
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    console.error('Notifications API error:', err instanceof Error ? err.message : String(err))
+    logError('notifications', err)
     return json({ error: 'Internal server error' }, 500)
   }
 }

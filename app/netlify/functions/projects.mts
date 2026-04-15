@@ -13,7 +13,7 @@
  */
 
 import {
-  json, cors, parsePath, parsePagination, getQueryParam,
+  json, cors, logError, parsePath, parsePagination, getQueryParam,
   verifyFromRequest, tursoExecute, isTursoConfigured,
   moderateContent, requireAuth, isAdmin,
 } from './_lib/index.js'
@@ -247,7 +247,7 @@ export default async function handler(req: Request) {
       const authErr = requireAuth(user)
       if (authErr) return authErr
 
-      const page = await parsePagination(req)
+      const page = parsePagination(req)
       if (page instanceof Response) return page
       const { limit, offset } = page
 
@@ -260,7 +260,7 @@ export default async function handler(req: Request) {
 
     // GET /api/projects — public listing (excludes private projects)
     if (req.method === 'GET' && segments.length === 0) {
-      const page = await parsePagination(req)
+      const page = parsePagination(req)
       if (page instanceof Response) return page
       const { limit, offset } = page
 
@@ -299,7 +299,7 @@ export default async function handler(req: Request) {
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    console.error('Projects API error:', err instanceof Error ? err.message : String(err))
+    logError('projects', err)
     return json({ error: 'Internal server error' }, 500)
   }
 }

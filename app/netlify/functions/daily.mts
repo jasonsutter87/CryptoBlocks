@@ -6,7 +6,7 @@
  */
 
 import {
-  json, cors, parsePath, getQueryParam,
+  json, cors, logError, parsePath, getQueryParam,
   verifyFromRequest, tursoExecute, isTursoConfigured,
   requireAuth,
 } from './_lib/index.js'
@@ -82,7 +82,7 @@ export default async function handler(req: Request) {
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    console.error('Daily API error:', err instanceof Error ? err.message : String(err))
+    logError('daily', err)
     return json({ error: 'Internal server error' }, 500)
   }
 }

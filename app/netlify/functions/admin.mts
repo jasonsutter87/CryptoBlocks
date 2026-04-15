@@ -10,7 +10,7 @@
  */
 
 import {
-  json, cors, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  json, cors, logError, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
   isAdmin,
 } from './_lib/index.js'
 import { FreeOverrideInput, Email } from '../../src/schema/index.js'
@@ -183,7 +183,7 @@ export default async function handler(req: Request) {
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    console.error('Admin API error:', err instanceof Error ? err.message : String(err))
+    logError('admin', err)
     return json({ error: 'Internal error' }, 500)
   }
 }

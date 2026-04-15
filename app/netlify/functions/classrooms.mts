@@ -9,7 +9,7 @@
  */
 
 import {
-  json, cors, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  json, cors, logError, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
   moderateContent, secureRandomCode,
   requireAuth, requireClassroomMember, requireClassroomTeacher,
 } from './_lib/index.js'
@@ -563,7 +563,7 @@ export default async function handler(req: Request) {
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    console.error('Classrooms API error:', err instanceof Error ? err.message : String(err))
+    logError('classrooms', err)
     return json({ error: 'Internal server error' }, 500)
   }
 }

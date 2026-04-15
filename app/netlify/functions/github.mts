@@ -10,7 +10,7 @@
  */
 
 import {
-  json, cors, parsePath, verifyFromRequest, requireAuth,
+  json, cors, logError, parsePath, verifyFromRequest, requireAuth,
 } from './_lib/index.js'
 import { CreateRepoInput, PushFileInput } from '../../src/schema/index.js'
 
@@ -30,7 +30,7 @@ async function getGitHubToken(clerkUserId: string): Promise<string | null> {
         return String(data[0].token)
       }
     } catch (err) {
-      console.error(`[github] ${provider} lookup failed:`, err instanceof Error ? err.message : String(err))
+      logError(`github:${provider}`, err)
     }
   }
   return null
@@ -133,7 +133,7 @@ export default async function handler(req: Request) {
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    console.error('GitHub error:', err instanceof Error ? err.message : String(err))
+    logError('github', err)
     return json({ error: 'Internal error' }, 500)
   }
 }

@@ -4,6 +4,7 @@
  */
 
 import { tursoExecute } from './turso.js'
+import { logError } from './http.js'
 
 export async function createNotification(
   userId: string,
@@ -16,6 +17,6 @@ export async function createNotification(
     'INSERT INTO notifications (id, user_id, type, title, body, link, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [crypto.randomUUID(), userId, type, title, body, link, Date.now()],
   ).catch((err) => {
-    console.error('createNotification failed:', err instanceof Error ? err.message : String(err))
+    logError('createNotification', err)
   })
 }
