@@ -9,7 +9,7 @@
  */
 
 import {
-  json, cors, logError, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  json, cors, logError, withRequest, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
   moderateContent, secureRandomCode,
   requireAuth, requireClassroomMember, requireClassroomTeacher,
 } from './_lib/index.js'
@@ -25,8 +25,8 @@ function generateJoinCode(): string {
   return secureRandomCode(6, JOIN_CODE_ALPHABET)
 }
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors(req)
+async function handler(req: Request) {
+  if (req.method === 'OPTIONS') return cors()
 
   const segments = parsePath(req, 'classrooms')
 
@@ -353,9 +353,16 @@ export default async function handler(req: Request) {
       if (!parsed.success) return json({ error: 'Invalid input' }, 400)
       const { feedback, status } = parsed.data
 
+      // Defense in depth: scope the UPDATE to the classroom so that a
+      // submission id from a different classroom cannot be overwritten
+      // even if the outer guard is ever weakened (Black Team M3).
+      // submissions has no classroom_id column — gate via the parent
+      // assignment instead.
       await tursoExecute(
-        'UPDATE submissions SET feedback = ?, status = ? WHERE id = ?',
-        [feedback, status ?? 'reviewed', submissionId],
+        `UPDATE submissions SET feedback = ?, status = ?
+         WHERE id = ?
+           AND assignment_id IN (SELECT id FROM assignments WHERE classroom_id = ?)`,
+        [feedback, status ?? 'reviewed', submissionId, classroomId],
       )
 
       return json({ ok: true })
@@ -394,8 +401,15 @@ export default async function handler(req: Request) {
         [classroomId],
       )
 
+      // Privacy notice embedded in the export — this dump contains
+      // student-authored content, names, and chat messages. U.S. teachers
+      // using this in a school context are covered by FERPA; the notice
+      // reminds them not to redistribute and that former students' data
+      // is included (Black Team L7).
       const exportData = {
         exportedAt: new Date().toISOString(),
+        privacyNotice: 'This export contains student work, identifiers, and chat history including former members. Treat as confidential educational records. Do not share outside authorized school staff. Delete copies when no longer needed.',
+        exportedBy: { userId: user!.sub, name: user!.name || null },
         classroom: classroom.rows[0],
         members: members.rows,
         assignments: assignments.rows,
@@ -429,9 +443,13 @@ export default async function handler(req: Request) {
       const modErr = moderateContent('', description)
       if (modErr) return json({ error: modErr }, 400)
 
+      // Belt-and-suspenders against TOCTOU (Black Team M3): the guard
+      // already verified teacher ownership above, but scope the UPDATE
+      // itself so that even if ownership flipped between the two queries
+      // we cannot write into someone else's row.
       await tursoExecute(
-        'UPDATE classrooms SET description = ? WHERE id = ?',
-        [description, classroomId],
+        'UPDATE classrooms SET description = ? WHERE id = ? AND teacher_id = ?',
+        [description, classroomId, user!.sub],
       )
       return json({ ok: true })
     }
@@ -552,12 +570,22 @@ export default async function handler(req: Request) {
       const guardErr = await requireClassroomMember(classroomId, user)
       if (guardErr) return guardErr
 
-      const after = new URL(req.url).searchParams.get('after')
+      // Validate the `after` cursor — a non-numeric or out-of-range value
+      // falls through to "no cursor" instead of feeding NaN to the query.
+      // Non-integers, negatives, and future timestamps are rejected
+      // (Black Team L6).
+      const rawAfter = new URL(req.url).searchParams.get('after')
+      let afterTs: number | null = null
+      if (rawAfter) {
+        const n = Number(rawAfter)
+        if (Number.isInteger(n) && n >= 0 && n <= Date.now()) afterTs = n
+      }
+
       let sql = 'SELECT * FROM chat_messages WHERE classroom_id = ?'
       const args: (string | number)[] = [classroomId]
-      if (after) {
+      if (afterTs !== null) {
         sql += ' AND created_at > ?'
-        args.push(Number(after))
+        args.push(afterTs)
       }
       sql += ' ORDER BY created_at DESC LIMIT 100'
       const result = await tursoExecute(sql, args)
@@ -614,3 +642,5 @@ export default async function handler(req: Request) {
     return json({ error: 'Internal server error' }, 500)
   }
 }
+
+export default withRequest(handler)

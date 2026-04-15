@@ -10,13 +10,13 @@
  */
 
 import {
-  json, cors, logError, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  json, cors, logError, withRequest, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
   isAdmin,
 } from './_lib/index.js'
 import { FreeOverrideInput, Email } from '../../src/schema/index.js'
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors(req)
+async function handler(req: Request) {
+  if (req.method === 'OPTIONS') return cors()
 
   const user = await verifyFromRequest(req)
   if (!isAdmin(user)) return json({ error: 'Admin access required' }, 403)
@@ -114,8 +114,18 @@ export default async function handler(req: Request) {
 
     // GET /api/admin/analytics — block usage, categories, activity patterns
     if (segments[0] === 'analytics') {
-      // Parse workspace JSON from projects to count block usage
-      const workspaces = await tursoExecute('SELECT workspace_json FROM projects WHERE workspace_json IS NOT NULL LIMIT 200')
+      // Parse workspace JSON from projects to count block usage.
+      // Skip rows larger than MAX_WORKSPACE_BYTES — with a 2MB schema cap
+      // and LIMIT 200, one dashboard load could otherwise hold ~400MB in
+      // a single function invocation (Black Team M1).
+      const MAX_WORKSPACE_BYTES = 256 * 1024
+      const workspaces = await tursoExecute(
+        `SELECT workspace_json FROM projects
+         WHERE workspace_json IS NOT NULL
+           AND length(workspace_json) <= ?
+         LIMIT 200`,
+        [MAX_WORKSPACE_BYTES],
+      )
       const blockCounts: Record<string, number> = {}
       const MAX_BLOCK_DEPTH = 50 // prevents stack overflow on cyclic/malicious workspace JSON
       for (const row of workspaces.rows) {
@@ -187,3 +197,5 @@ export default async function handler(req: Request) {
     return json({ error: 'Internal error' }, 500)
   }
 }
+
+export default withRequest(handler)

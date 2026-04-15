@@ -10,12 +10,12 @@
  */
 
 import {
-  json, cors, logError, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  json, cors, logError, withRequest, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
   requireAuth,
 } from './_lib/index.js'
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors(req)
+async function handler(req: Request) {
+  if (req.method === 'OPTIONS') return cors()
 
   const segments = parsePath(req, 'notifications')
   const user = await verifyFromRequest(req)
@@ -68,3 +68,5 @@ export default async function handler(req: Request) {
 
 // Re-export for back-compat: other functions previously imported createNotification from here
 export { createNotification } from './_lib/notifications.js'
+
+export default withRequest(handler)

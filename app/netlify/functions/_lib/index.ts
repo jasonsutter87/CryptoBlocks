@@ -5,7 +5,7 @@
  *   import { json, cors, errorResponse, verifyFromRequest, tursoExecute, moderateContent } from './_lib'
  */
 
-export { json, cors, errorResponse, logError, extractBearer, parsePath, getQueryParam, parsePagination } from './http.js'
+export { json, cors, errorResponse, logError, extractBearer, parsePath, getQueryParam, parsePagination, withRequest } from './http.js'
 export { tursoExecute, isTursoConfigured } from './turso.js'
 export type { TursoRow, TursoResult } from './turso.js'
 export { verifyClerkToken, verifyFromRequest, isAdmin, secureRandomCode } from './auth.js'

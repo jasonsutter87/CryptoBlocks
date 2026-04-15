@@ -2,8 +2,14 @@
  * Shared HTTP helpers for all Netlify Functions.
  *
  * One source of truth for JSON responses, CORS, and error shapes.
+ *
+ * CORS model: the current request's Origin is captured once per invocation
+ * via AsyncLocalStorage (set by withRequest). `json()` and `cors()` then
+ * emit the approved ACAO header without needing the request threaded
+ * through 100+ call sites.
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks'
 import { PageParams } from '../../../src/schema/index.js'
 
 /**
@@ -18,8 +24,20 @@ const ALLOWED_ORIGINS = new Set(
   ).split(',').map((s) => s.trim()).filter(Boolean),
 )
 
-function corsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get('Origin') ?? ''
+const requestContext = new AsyncLocalStorage<{ req: Request }>()
+
+/**
+ * Wrap a Netlify handler so json()/cors() can see the current request's
+ * Origin. Every function's default export goes through this.
+ */
+export function withRequest<T>(
+  handler: (req: Request) => Promise<T>,
+): (req: Request) => Promise<T> {
+  return (req) => requestContext.run({ req }, () => handler(req))
+}
+
+function corsHeaders(): Record<string, string> {
+  const origin = requestContext.getStore()?.req.headers.get('Origin') ?? ''
   const allow = ALLOWED_ORIGINS.has(origin) ? origin : ''
   return {
     ...(allow ? { 'Access-Control-Allow-Origin': allow } : {}),
@@ -30,22 +48,19 @@ function corsHeaders(req: Request): Record<string, string> {
 }
 
 /** JSON response with CORS headers (echoes approved origin only). */
-export function json(data: unknown, status = 200, req?: Request): Response {
+export function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       'Content-Type': 'application/json',
-      ...(req ? corsHeaders(req) : { 'Vary': 'Origin' }),
+      ...corsHeaders(),
     },
   })
 }
 
-/** CORS preflight response. Pass the request so we can echo its origin. */
-export function cors(req?: Request): Response {
-  return new Response(null, {
-    status: 204,
-    headers: req ? corsHeaders(req) : { 'Vary': 'Origin' },
-  })
+/** CORS preflight response. */
+export function cors(): Response {
+  return new Response(null, { status: 204, headers: corsHeaders() })
 }
 
 /**

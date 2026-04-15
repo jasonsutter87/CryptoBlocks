@@ -6,15 +6,15 @@
  */
 
 import {
-  json, cors, logError, parsePath, getQueryParam,
+  json, cors, logError, withRequest, parsePath, getQueryParam,
   verifyFromRequest, tursoExecute, isTursoConfigured,
   requireAuth,
 } from './_lib/index.js'
 import type { TursoRow } from './_lib/index.js'
 import { SubmitDailyScoreInput, DayNumber } from '../../src/schema/index.js'
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors(req)
+async function handler(req: Request) {
+  if (req.method === 'OPTIONS') return cors()
 
   const segments = parsePath(req, 'daily')
   const user = await verifyFromRequest(req)
@@ -92,3 +92,5 @@ export default async function handler(req: Request) {
     return json({ error: 'Internal server error' }, 500)
   }
 }
+
+export default withRequest(handler)

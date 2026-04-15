@@ -9,7 +9,7 @@
 
 import Stripe from 'stripe'
 import {
-  json, cors, logError, parsePath, verifyFromRequest, tursoExecute,
+  json, cors, logError, withRequest, parsePath, verifyFromRequest, tursoExecute,
   requireAuth,
 } from './_lib/index.js'
 import { z } from 'zod'
@@ -66,8 +66,8 @@ function buildLineItems(plan: 'pro' | 'teacher') {
   }]
 }
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors(req)
+async function handler(req: Request) {
+  if (req.method === 'OPTIONS') return cors()
 
   const segments = parsePath(req, 'stripe')
 
@@ -300,3 +300,5 @@ async function handleStripeEvent(event: Stripe.Event): Promise<void> {
     )
   }
 }
+
+export default withRequest(handler)

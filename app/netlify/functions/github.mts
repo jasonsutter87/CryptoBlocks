@@ -10,7 +10,7 @@
  */
 
 import {
-  json, cors, logError, parsePath, verifyFromRequest, requireAuth,
+  json, cors, logError, withRequest, parsePath, verifyFromRequest, requireAuth,
 } from './_lib/index.js'
 import { CreateRepoInput, PushFileInput } from '../../src/schema/index.js'
 
@@ -53,8 +53,8 @@ async function githubApi(
   return { ok: res.ok, data, status: res.status }
 }
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors(req)
+async function handler(req: Request) {
+  if (req.method === 'OPTIONS') return cors()
 
   const segments = parsePath(req, 'github')
   const user = await verifyFromRequest(req)
@@ -137,3 +137,5 @@ export default async function handler(req: Request) {
     return json({ error: 'Internal error' }, 500)
   }
 }
+
+export default withRequest(handler)
