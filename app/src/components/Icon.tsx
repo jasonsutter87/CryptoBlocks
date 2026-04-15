@@ -56,7 +56,7 @@ const STROKE_PATHS: Record<string, string> = {
   'dashboard-grid': 'M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zm0 9.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z',
   'user-circle': 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0',
   'book-open': 'M12 14l9-5-9-5-9 5 9 5zm0 7l-9-5 9-5 9 5-9 5z',
-  'swap': 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4',
+  'swap': 'M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5',
 }
 
 const FILL_PATHS: Record<string, string> = {
@@ -75,8 +75,10 @@ interface IconProps {
 export function Icon({ name, className, style, strokeWidth = 2 }: IconProps) {
   const stroke = STROKE_PATHS[name]
   if (stroke) {
-    // Multiple paths separated by " M" or " polygon:" pattern: split on " M "
-    const parts = stroke.split(/(?= M )/g).map((p) => p.trim()).filter(Boolean)
+    // Multiple paths are concatenated in STROKE_PATHS with a leading space
+    // before the next `M` command. Split on that boundary only when the M is
+    // followed by a number/space (not by a letter in a path mnemonic).
+    const parts = stroke.split(/(?=\sM[\s\d-])/g).map((p) => p.trim()).filter(Boolean)
     return (
       <svg
         className={className ?? 'w-4 h-4'}

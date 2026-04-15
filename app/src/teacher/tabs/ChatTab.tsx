@@ -42,7 +42,7 @@ export default function ChatTab({ classroomId, active }: ChatTabProps) {
         const newMsgs = await fetchChat(classroomId, lastCursorRef.current, ctrl.signal)
         if (ctrl.signal.aborted || newMsgs.length === 0) return
         lastCursorRef.current = Number(newMsgs[newMsgs.length - 1].createdAt)
-        setMessages((prev) => [...prev, ...newMsgs])
+        setMessages((prev) => mergeUnique(prev, newMsgs))
       } catch { /* aborted or network blip */ }
     }
     const id = setInterval(poll, 3000)
@@ -64,8 +64,16 @@ export default function ChatTab({ classroomId, active }: ChatTabProps) {
     const newMsgs = await fetchChat(classroomId, lastCursorRef.current)
     if (newMsgs.length > 0) {
       lastCursorRef.current = Number(newMsgs[newMsgs.length - 1].createdAt)
-      setMessages((prev) => [...prev, ...newMsgs])
+      setMessages((prev) => mergeUnique(prev, newMsgs))
     }
+  }
+
+  // When the poll and a manual send race, both can fetch the same tail.
+  // Dedup by message id so the user never sees their own message twice.
+  function mergeUnique(prev: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
+    const seen = new Set(prev.map((m) => m.id))
+    const fresh = incoming.filter((m) => !seen.has(m.id))
+    return fresh.length === 0 ? prev : [...prev, ...fresh]
   }
 
   return (
