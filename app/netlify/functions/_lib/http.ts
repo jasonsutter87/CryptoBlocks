@@ -54,3 +54,25 @@ export function parsePath(req: Request, functionName: string): string[] {
     .replace(`/api/${functionName}`, '')
   return clean.split('/').filter(Boolean)
 }
+
+/** Get a query-string parameter or null */
+export function getQueryParam(req: Request, name: string): string | null {
+  return new URL(req.url).searchParams.get(name)
+}
+
+/**
+ * Extract + validate pagination from query string.
+ * Returns { limit, offset } with defaults, or null + 400 Response on invalid input.
+ */
+export async function parsePagination(
+  req: Request,
+): Promise<{ limit: number; offset: number } | Response> {
+  const { PageParams } = await import('../../../src/schema/index.js')
+  const qs = new URL(req.url).searchParams
+  const parsed = PageParams.safeParse({
+    limit: qs.get('limit') ?? undefined,
+    offset: qs.get('offset') ?? undefined,
+  })
+  if (!parsed.success) return json({ error: 'Invalid pagination' }, 400)
+  return parsed.data
+}

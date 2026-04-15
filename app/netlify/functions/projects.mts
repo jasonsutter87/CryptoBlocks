@@ -13,25 +13,45 @@
  */
 
 import {
-  json, cors, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  json, cors, parsePath, parsePagination, getQueryParam,
+  verifyFromRequest, tursoExecute, isTursoConfigured,
   moderateContent, requireAuth, isAdmin,
 } from './_lib/index.js'
 import type { ClerkUser, TursoRow } from './_lib/index.js'
 import {
-  PublishProjectInput, ReportProjectInput, PageParams, Category,
+  PublishProjectInput, ReportProjectInput, Category,
 } from '../../src/schema/index.js'
 
 declare global {
   // eslint-disable-next-line no-var
-  var __visibilityMigrated: boolean | undefined
+  var __projectsMigrated: boolean | undefined
 }
 
-async function ensureVisibilityColumn(): Promise<void> {
-  if (globalThis.__visibilityMigrated) return
-  await tursoExecute(
-    "ALTER TABLE projects ADD COLUMN visibility TEXT DEFAULT 'public'",
-  ).catch(() => { /* already exists */ })
-  globalThis.__visibilityMigrated = true
+/**
+ * One-time schema migration — runs once per cold start.
+ * TEMPORARY: delete after 2026-Q3 once all environments have migrated.
+ * Prefer a real migration tool for future schema changes.
+ */
+async function ensureSchema(): Promise<void> {
+  if (globalThis.__projectsMigrated) return
+  await Promise.all([
+    tursoExecute("ALTER TABLE projects ADD COLUMN visibility TEXT DEFAULT 'public'").catch(() => {}),
+    tursoExecute(`CREATE TABLE IF NOT EXISTS project_likes (
+      project_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      PRIMARY KEY (project_id, user_id)
+    )`).catch(() => {}),
+    tursoExecute(`CREATE TABLE IF NOT EXISTS project_reports (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      reporter_id TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      detail TEXT,
+      created_at INTEGER NOT NULL
+    )`).catch(() => {}),
+  ])
+  globalThis.__projectsMigrated = true
 }
 
 export default async function handler(req: Request) {
@@ -43,7 +63,7 @@ export default async function handler(req: Request) {
     if (!isTursoConfigured()) {
       return json({ error: 'Database not configured' }, 500)
     }
-    await ensureVisibilityColumn()
+    await ensureSchema()
 
     const user: ClerkUser | null = await verifyFromRequest(req)
 
@@ -81,18 +101,11 @@ export default async function handler(req: Request) {
         ],
       )
 
-      // Notify original author on remix (don't block response on failure)
+      // Notify original author on remix
       if (parentId) {
-        const parent = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [parentId])
-        const parentAuthor = parent.rows[0]?.author_id
-        if (parentAuthor && parentAuthor !== user!.sub) {
-          await createNotificationDirect(
-            String(parentAuthor), 'remix',
-            'Your project was remixed!',
-            `Someone remixed "${parent.rows[0]?.name}" into "${name.slice(0, 50)}"`,
-            `/shareplace`,
-          ).catch(() => { /* notification failure non-fatal */ })
-        }
+        await notifyAuthor(parentId, user!.sub, 'remix', 'Your project was remixed!',
+          (parentName) => `Someone remixed "${parentName}" into "${name.slice(0, 50)}"`,
+          '/shareplace')
       }
 
       return json({ id, name, createdAt: now }, 201)
@@ -124,8 +137,10 @@ export default async function handler(req: Request) {
       const parsed = ReportProjectInput.safeParse(raw)
       if (!parsed.success) return json({ error: 'Invalid input' }, 400)
 
-      // eslint-disable-next-line no-console
-      console.log(`[REPORT] Project ${segments[0]} reported by ${user!.sub}: ${parsed.data.reason} ${parsed.data.detail ?? ''}`.slice(0, 500))
+      await tursoExecute(
+        'INSERT INTO project_reports (id, project_id, reporter_id, reason, detail, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [crypto.randomUUID(), segments[0], user!.sub, parsed.data.reason, parsed.data.detail ?? '', Date.now()],
+      )
       return json({ ok: true, message: 'Thank you for reporting. We will review this project.' })
     }
 
@@ -138,41 +153,30 @@ export default async function handler(req: Request) {
       return json({ ok: true })
     }
 
-    // POST /api/projects/:id/like — auth required, dedup enforced
+    // POST /api/projects/:id/like — auth required, one like per user (PK enforced)
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'like') {
       const authErr = requireAuth(user, 'Sign in to like projects')
       if (authErr) return authErr
 
-      // Dedup: skip if this user already liked (non-fatal — table may not exist yet)
       const projectId = segments[0]
-      try {
-        const existing = await tursoExecute(
-          'SELECT 1 FROM project_likes WHERE project_id = ? AND user_id = ?',
-          [projectId, user!.sub],
-        )
-        if (existing.rows.length > 0) return json({ ok: true, alreadyLiked: true })
-        await tursoExecute(
-          'INSERT INTO project_likes (project_id, user_id, created_at) VALUES (?, ?, ?)',
-          [projectId, user!.sub, Date.now()],
-        )
-      } catch { /* table may not exist yet — skip dedup, still count the like */ }
+      const existing = await tursoExecute(
+        'SELECT 1 FROM project_likes WHERE project_id = ? AND user_id = ?',
+        [projectId, user!.sub],
+      )
+      if (existing.rows.length > 0) return json({ ok: true, alreadyLiked: true })
 
+      await tursoExecute(
+        'INSERT INTO project_likes (project_id, user_id, created_at) VALUES (?, ?, ?)',
+        [projectId, user!.sub, Date.now()],
+      )
       await tursoExecute(
         'UPDATE projects SET likes = likes + 1 WHERE id = ?',
         [projectId],
       )
 
-      // Notify author (non-fatal)
-      const project = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [projectId])
-      const authorId = project.rows[0]?.author_id
-      if (authorId && authorId !== user!.sub) {
-        await createNotificationDirect(
-          String(authorId), 'like',
-          'New like!',
-          `Someone liked your project "${project.rows[0]?.name}"`,
-          `/shareplace`,
-        ).catch(() => { /* non-fatal */ })
-      }
+      await notifyAuthor(projectId, user!.sub, 'like', 'New like!',
+        (name) => `Someone liked your project "${name}"`,
+        '/shareplace')
       return json({ ok: true })
     }
 
@@ -180,32 +184,35 @@ export default async function handler(req: Request) {
     if (req.method === 'GET' && segments.length === 2 && segments[1] === 'tree') {
       const projectId = segments[0]
 
-      // Get ancestors (walk parent_id chain up)
-      const ancestors: TursoRow[] = []
-      let currentId: string | null = projectId
-      while (currentId) {
-        const row = await tursoExecute(
-          'SELECT id, name, author_name, parent_id, created_at, likes FROM projects WHERE id = ?',
-          [currentId],
-        )
-        if (row.rows.length === 0) break
-        const r = row.rows[0]
-        if (String(r.id) !== projectId) ancestors.unshift(r)
-        currentId = r.parent_id ? String(r.parent_id) : null
-      }
+      // Ancestors via recursive CTE — one round-trip, bounded depth, cycle-safe
+      // (MAX_ANCESTORS limits iterations even if parent_id ever formed a loop)
+      const MAX_ANCESTORS = 50
+      const ancestors = await tursoExecute(
+        `WITH RECURSIVE anc(id, name, author_name, parent_id, created_at, likes, depth) AS (
+           SELECT id, name, author_name, parent_id, created_at, likes, 0 FROM projects WHERE id = ?
+           UNION ALL
+           SELECT p.id, p.name, p.author_name, p.parent_id, p.created_at, p.likes, a.depth + 1
+           FROM projects p JOIN anc a ON p.id = a.parent_id
+           WHERE a.depth < ?
+         )
+         SELECT id, name, author_name, parent_id, created_at, likes
+         FROM anc WHERE id != ? ORDER BY depth DESC`,
+        [projectId, MAX_ANCESTORS, projectId],
+      )
 
-      // Get direct descendants (one level — children that have parent_id = this project)
+      // Direct children (one level)
       const children = await tursoExecute(
         'SELECT id, name, author_name, parent_id, created_at, likes FROM projects WHERE parent_id = ? ORDER BY created_at ASC',
         [projectId],
       )
 
-      // Get total remix count (recursive — all descendants)
+      // Total recursive remix count
       const allDescendants = await tursoExecute(
-        `WITH RECURSIVE tree AS (
-           SELECT id FROM projects WHERE parent_id = ?
+        `WITH RECURSIVE tree(id, depth) AS (
+           SELECT id, 0 FROM projects WHERE parent_id = ?
            UNION ALL
-           SELECT p.id FROM projects p JOIN tree t ON p.parent_id = t.id
+           SELECT p.id, t.depth + 1 FROM projects p JOIN tree t ON p.parent_id = t.id
+           WHERE t.depth < 100
          )
          SELECT COUNT(*) as count FROM tree`,
         [projectId],
@@ -213,7 +220,7 @@ export default async function handler(req: Request) {
       const remixCount = Number(allDescendants.rows[0]?.count ?? 0)
 
       return json({
-        ancestors: ancestors.map(formatTreeNode),
+        ancestors: ancestors.rows.map(formatTreeNode),
         children: children.rows.map(formatTreeNode),
         remixCount,
       })
@@ -240,13 +247,9 @@ export default async function handler(req: Request) {
       const authErr = requireAuth(user)
       if (authErr) return authErr
 
-      const qs = new URL(req.url).searchParams
-      const pageParsed = PageParams.safeParse({
-        limit: qs.get('limit') ?? undefined,
-        offset: qs.get('offset') ?? undefined,
-      })
-      if (!pageParsed.success) return json({ error: 'Invalid pagination' }, 400)
-      const { limit, offset } = pageParsed.data
+      const page = await parsePagination(req)
+      if (page instanceof Response) return page
+      const { limit, offset } = page
 
       const result = await tursoExecute(
         'SELECT * FROM projects WHERE author_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
@@ -257,17 +260,12 @@ export default async function handler(req: Request) {
 
     // GET /api/projects — public listing (excludes private projects)
     if (req.method === 'GET' && segments.length === 0) {
-      const qs = new URL(req.url).searchParams
-
-      const pageParsed = PageParams.safeParse({
-        limit: qs.get('limit') ?? undefined,
-        offset: qs.get('offset') ?? undefined,
-      })
-      if (!pageParsed.success) return json({ error: 'Invalid pagination' }, 400)
-      const { limit, offset } = pageParsed.data
+      const page = await parsePagination(req)
+      if (page instanceof Response) return page
+      const { limit, offset } = page
 
       // Validate category — reject unknown values instead of passing them to SQL
-      const rawCategory = qs.get('category')
+      const rawCategory = getQueryParam(req, 'category')
       let category: string | null = null
       if (rawCategory && rawCategory !== 'All') {
         const cat = Category.safeParse(rawCategory)
@@ -276,7 +274,7 @@ export default async function handler(req: Request) {
       }
 
       // Bound search term
-      const rawSearch = qs.get('search')
+      const rawSearch = getQueryParam(req, 'search')
       const search = rawSearch ? rawSearch.slice(0, 100) : null
 
       let sql = 'SELECT * FROM projects'
@@ -325,29 +323,34 @@ function formatProject(row: TursoRow) {
   }
 }
 
+/** Tree node — subset of formatProject for the remix-lineage endpoint */
 function formatTreeNode(row: TursoRow) {
-  return {
-    id: row.id,
-    name: row.name,
-    authorName: row.author_name,
-    parentId: row.parent_id,
-    createdAt: row.created_at,
-    likes: row.likes,
-  }
+  const { id, name, authorName, parentId, createdAt, likes } = formatProject(row)
+  return { id, name, authorName, parentId, createdAt, likes }
 }
 
 function tryParse(s: string): unknown {
   try { return JSON.parse(s) } catch { return [] }
 }
 
-async function createNotificationDirect(userId: string, type: string, title: string, body: string, link: string): Promise<void> {
-  try {
-    const baseUrl = (process.env.TURSO_URL || '').replace('libsql://', 'https://')
-    const token = process.env.TURSO_AUTH_TOKEN || ''
-    if (!baseUrl || !token) return
-    await tursoExecute(
-      'INSERT INTO notifications (id, user_id, type, title, body, link, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [crypto.randomUUID(), userId, type, title, body, link, Date.now()],
-    )
-  } catch {}
+async function createNotification(
+  userId: string, type: string, title: string, body: string, link: string,
+): Promise<void> {
+  await tursoExecute(
+    'INSERT INTO notifications (id, user_id, type, title, body, link, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [crypto.randomUUID(), userId, type, title, body, link, Date.now()],
+  ).catch(() => { /* non-fatal */ })
+}
+
+/** Notify a project author of an event, unless they're the actor themselves */
+async function notifyAuthor(
+  projectId: string, actorSub: string,
+  type: string, title: string, bodyTemplate: (name: string) => string, link: string,
+): Promise<void> {
+  const project = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [projectId])
+  const row = project.rows[0]
+  if (!row) return
+  const authorId = String(row.author_id ?? '')
+  if (!authorId || authorId === actorSub) return
+  await createNotification(authorId, type, title, bodyTemplate(String(row.name ?? '')), link)
 }
