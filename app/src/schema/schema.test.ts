@@ -335,15 +335,21 @@ describe('Project schemas', () => {
     }).success).toBe(false)
   })
 
-  it('PublishProjectInput drift guard — fields must match Project', () => {
-    // If Project gains a new field, either add it to Input or to the omit list.
-    // This test prevents silent contract drift.
+  it('PublishProjectInput drift guard — input + omitted fields = all Project fields', () => {
+    // Derive the difference instead of hardcoding the omit list.
+    // If Project gains a field, it must appear in PublishProjectInput.shape OR
+    // the test will fail — forcing the author to decide explicitly.
     const projectKeys = new Set(Object.keys(Project.shape))
     const inputKeys = new Set(Object.keys(PublishProjectInput.shape))
-    const omitted = ['id', 'authorId', 'downloads', 'likes', 'createdAt']
-    for (const k of projectKeys) {
-      if (omitted.includes(k)) continue
-      expect(inputKeys.has(k)).toBe(true)
+    const missing = [...projectKeys].filter((k) => !inputKeys.has(k))
+    // Allowlist: server-set fields that cannot come from the client
+    const SERVER_SET = new Set(['id', 'authorId', 'downloads', 'likes', 'createdAt'])
+    for (const k of missing) {
+      expect(SERVER_SET.has(k)).toBe(true)
+    }
+    // And no extra server-set fields that aren't in Project
+    for (const k of SERVER_SET) {
+      expect(projectKeys.has(k)).toBe(true)
     }
   })
 
