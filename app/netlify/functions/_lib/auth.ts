@@ -12,6 +12,7 @@ export interface ClerkUser {
   sub: string
   name?: string
   email?: string
+  avatar?: string
 }
 
 interface ClerkPayload {
@@ -100,8 +101,8 @@ async function verifyJwtSignature(token: string, keys: JwkKey[]): Promise<ClerkP
   let key: CryptoKey
   try { key = await importJwk(jwk) } catch { return null }
 
-  const signedData = new TextEncoder().encode(`${parts[0]}.${parts[1]}`)
-  const signature = base64UrlDecode(parts[2])
+  const signedData = new TextEncoder().encode(`${parts[0]}.${parts[1]}`).buffer as ArrayBuffer
+  const signature = base64UrlDecode(parts[2]).buffer as ArrayBuffer
 
   const valid = await crypto.subtle.verify(
     'RSASSA-PKCS1-v1_5',
@@ -144,6 +145,7 @@ async function enrichFromClerk(sub: string): Promise<Partial<ClerkUser>> {
     return {
       name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || undefined,
       email: user.email_addresses?.[0]?.email_address,
+      avatar: user.image_url || user.profile_image_url || undefined,
     }
   } catch {
     return {}

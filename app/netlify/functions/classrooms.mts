@@ -8,115 +8,10 @@
  *   POST /api/classrooms/join      → join with a code (student, auth required)
  */
 
-// -- Clerk JWT verification ------------------------------------------------
-
-async function verifyClerkToken(token: string): Promise<{ sub: string; name?: string; avatar?: string } | null> {
-  if (!token) return null
-  try {
-    // Decode JWT payload (Clerk session tokens are JWTs)
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-    if (!payload.sub) return null
-    // Fetch user details from Clerk Backend API for name/avatar
-    if (process.env.CLERK_SECRET_KEY) {
-      try {
-        const res = await fetch(`https://api.clerk.com/v1/users/${payload.sub}`, {
-          headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` },
-        })
-        if (res.ok) {
-          const user = await res.json()
-          return {
-            sub: payload.sub,
-            name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || undefined,
-            avatar: user.image_url || user.profile_image_url || undefined,
-          }
-        }
-      } catch {}
-    }
-    return { sub: payload.sub }
-  } catch {
-    return null
-  }
-}
-
-// -- Turso HTTP client (same as projects function) -------------------------
-
-interface TursoRow { [key: string]: unknown }
-interface TursoResult { rows: TursoRow[] }
-
-async function tursoExecute(sql: string, args: (string | number | null)[] = []): Promise<TursoResult> {
-  const baseUrl = (process.env.TURSO_URL || '').replace('libsql://', 'https://')
-  const token = process.env.TURSO_AUTH_TOKEN || ''
-
-  const res = await fetch(`${baseUrl}/v3/pipeline`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      requests: [
-        {
-          type: 'execute',
-          stmt: {
-            sql,
-            args: args.map((a) => {
-              if (a === null) return { type: 'null', value: null }
-              if (typeof a === 'number') return { type: Number.isInteger(a) ? 'integer' : 'float', value: String(a) }
-              return { type: 'text', value: String(a) }
-            }),
-          },
-        },
-        { type: 'close' },
-      ],
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`Turso HTTP ${res.status}: ${body.slice(0, 200)}`)
-  }
-
-  const data = await res.json()
-  const result = data?.results?.[0]?.response?.result
-  if (!result) return { rows: [] }
-
-  const cols: string[] = result.cols.map((c: { name: string }) => c.name)
-  const rows: TursoRow[] = result.rows.map((row: Array<{ value: unknown }>) => {
-    const obj: TursoRow = {}
-    for (let i = 0; i < cols.length; i++) {
-      obj[cols[i]] = row[i]?.value ?? null
-    }
-    return obj
-  })
-  return { rows }
-}
-
-// -- HTTP helpers -----------------------------------------------------------
-
-function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  })
-}
-
-function cors(): Response {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  })
-}
+import {
+  json, cors, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+} from './_lib/index.js'
+import type { TursoRow } from './_lib/index.js'
 
 function generateJoinCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -127,25 +22,17 @@ function generateJoinCode(): string {
   return code
 }
 
-// -- Handler ----------------------------------------------------------------
-
 export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') return cors()
 
-  const url = new URL(req.url)
-  const cleanPath = url.pathname
-    .replace('/.netlify/functions/classrooms', '')
-    .replace('/api/classrooms', '')
-  const segments = cleanPath.split('/').filter(Boolean)
+  const segments = parsePath(req, 'classrooms')
 
   try {
-    if (!process.env.TURSO_URL || !process.env.TURSO_AUTH_TOKEN) {
+    if (!isTursoConfigured()) {
       return json({ error: 'Database not configured' }, 500)
     }
 
-    const authHeader = req.headers.get('Authorization') || ''
-    const token = authHeader.replace('Bearer ', '')
-    const user = await verifyClerkToken(token)
+    const user = await verifyFromRequest(req)
 
     // POST /api/classrooms — create a classroom
     if (req.method === 'POST' && segments.length === 0) {
@@ -548,7 +435,7 @@ export default async function handler(req: Request) {
 
     // GET /api/classrooms/:id/chat — get recent messages
     if (req.method === 'GET' && segments.length === 2 && segments[1] === 'chat') {
-      const after = url.searchParams.get('after')
+      const after = new URL(req.url).searchParams.get('after')
       let sql = 'SELECT * FROM chat_messages WHERE classroom_id = ?'
       const args: (string | number)[] = [segments[0]]
       if (after) {
