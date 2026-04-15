@@ -50,35 +50,49 @@ export const ClerkUserId = z.string().min(5).max(50).regex(/^[a-zA-Z0-9_-]+$/)
 const noControlChars = (s: string) => !CONTROL_CHAR_RE.test(s)
 const NO_CONTROL_MSG = { message: 'Contains invalid control characters' }
 
+/** Reject empty-after-trim strings */
+const nonBlank = (s: string) => s.trim().length > 0
+const BLANK_MSG = { message: 'Cannot be empty or whitespace only' }
+
+/** Factory: bounded, safe string type with optional min/trim/required-nonblank */
+interface BoundedOpts {
+  max: number
+  min?: number
+  trim?: boolean
+  required?: boolean // rejects whitespace-only
+}
+function bounded(opts: BoundedOpts) {
+  let s: z.ZodString | z.ZodEffects<z.ZodString> | z.ZodEffects<z.ZodEffects<z.ZodString>> = z.string().max(opts.max)
+  if (opts.min !== undefined) s = (s as z.ZodString).min(opts.min)
+  if (opts.trim) s = (s as z.ZodString).trim()
+  let result: z.ZodType<string> = s as z.ZodType<string>
+  if (opts.required) result = result.refine(nonBlank, BLANK_MSG)
+  return result.refine(noControlChars, NO_CONTROL_MSG)
+}
+
 /** Bounded name (projects, classrooms, assignments, titles) */
-export const Name = z.string().max(MAX_NAME).trim()
-  .refine((s) => s.length > 0, { message: 'Name cannot be empty or whitespace only' })
-  .refine(noControlChars, NO_CONTROL_MSG)
+export const Name = bounded({ max: MAX_NAME, trim: true, required: true })
 
 /** Bounded short text (descriptions, feedback) */
-export const Text = z.string().max(MAX_TEXT).refine(noControlChars, NO_CONTROL_MSG)
+export const Text = bounded({ max: MAX_TEXT })
 
 /** Bounded long content (messages, discussion bodies) — allows newlines/tabs */
-export const Content = z.string().min(1).max(MAX_CONTENT)
-  .refine(noControlChars, NO_CONTROL_MSG)
+export const Content = bounded({ max: MAX_CONTENT, min: 1 })
+
+/** Username — visible, no control chars, non-blank after trim */
+export const Username = bounded({ max: MAX_USERNAME, trim: true, required: true })
 
 /** Bounded URL/path string — rejects dangerous protocols */
-export const UrlString = z.string().max(MAX_URL)
-  .refine((s) => !DANGEROUS_PROTOCOL_RE.test(s.trim()), {
+export const UrlString = bounded({ max: MAX_URL })
+  .refine((s: string) => !DANGEROUS_PROTOCOL_RE.test(s), {
     message: 'URL protocol is not allowed',
   })
-  .refine(noControlChars, NO_CONTROL_MSG)
 
 /** Bounded hex color */
 export const ColorString = z.string().max(MAX_COLOR).regex(/^#?[a-zA-Z0-9(),. %-]*$/)
 
 /** Email with length cap */
 export const Email = z.string().email().max(MAX_EMAIL).toLowerCase()
-
-/** Username — visible to other users, no control chars */
-export const Username = z.string().max(MAX_USERNAME).trim()
-  .refine((s) => s.length > 0, { message: 'Username cannot be empty' })
-  .refine(noControlChars, NO_CONTROL_MSG)
 
 /** Category slug — one of the known block categories */
 export const Category = z.enum([
@@ -96,6 +110,21 @@ export const Tags = z.array(Tag).max(MAX_TAGS).default([])
 /** Visibility: public (Shareplace) or private (dashboard only) */
 export const Visibility = z.enum(['public', 'private']).default('private')
 
+/** Block count on a workspace (bounded) */
+export const BlockCount = z.number().int().min(0).max(MAX_BLOCK_COUNT).default(0)
+
+/** Non-negative counter (likes, downloads, etc.) */
+export const Counter = z.number().int().min(0).default(0)
+
+/** Opaque external ID (Stripe, etc.) — bounded, URL-safe chars only */
+export const ExternalId = z.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/)
+
+/** Day number for daily challenges (1 to 10,000 days) */
+export const DayNumber = z.number().int().min(1).max(10_000)
+
+/** Blocks-used count for daily scoring (1 to 1000) */
+export const BlocksUsed = z.number().int().min(1).max(1000)
+
 /** 6-character join code (classrooms) */
 export const JoinCode = z.string().length(6).regex(/^[A-Z0-9]{6}$/)
 
@@ -109,10 +138,17 @@ export const Timestamps = {
   updatedAt: Timestamp,
 } as const
 
-/** Mixin: authored-by fields */
+/** Mixin: authored-by fields (no avatar) */
 export const Authored = {
   authorId: ClerkUserId,
   authorName: Username,
+} as const
+
+/** Mixin: authored-by fields with avatar (used in discussions/replies/chat) */
+export const AuthoredWithAvatar = {
+  authorId: ClerkUserId,
+  authorName: Username,
+  authorAvatar: UrlString.nullable().default(null),
 } as const
 
 // ---------------------------------------------------------------------------

@@ -1,12 +1,10 @@
 /**
  * Project schema — workspaces saved to Shareplace or Dashboard.
- *
- * Shape matches the `projects` table in Turso.
  */
 import { z } from 'zod'
 import {
   Id, Timestamp, ClerkUserId, Name, Text, Username, Category, Tags,
-  Visibility, WorkspaceJson, MAX_BLOCK_COUNT,
+  Visibility, WorkspaceJson, BlockCount, Counter,
 } from './primitives.js'
 
 /** Full project row (as stored in DB, as returned by API) */
@@ -19,26 +17,30 @@ export const Project = z.object({
   category: Category.default('General'),
   workspaceJson: WorkspaceJson,
   tags: Tags,
-  blockCount: z.number().int().min(0).max(MAX_BLOCK_COUNT).default(0),
+  blockCount: BlockCount,
   parentId: Id.nullable().default(null),
   visibility: Visibility,
-  downloads: z.number().int().min(0).default(0),
-  likes: z.number().int().min(0).default(0),
+  downloads: Counter,
+  likes: Counter,
   createdAt: Timestamp,
 })
 export type Project = z.infer<typeof Project>
 
-/** Payload for POST /api/projects */
-export const PublishProjectInput = z.object({
-  name: Name,
-  authorName: Username.optional(),
-  description: Text.optional().default(''),
-  category: Category.optional().default('General'),
-  workspaceJson: WorkspaceJson,
-  tags: Tags.optional(),
-  blockCount: z.number().int().min(0).max(MAX_BLOCK_COUNT).optional(),
-  parentId: Id.optional(),
-  visibility: Visibility.optional(),
+/** Payload for POST /api/projects — derived from Project, drops server-set fields */
+export const PublishProjectInput = Project.omit({
+  id: true,
+  authorId: true,
+  downloads: true,
+  likes: true,
+  createdAt: true,
+}).partial({
+  authorName: true,
+  description: true,
+  category: true,
+  tags: true,
+  blockCount: true,
+  parentId: true,
+  visibility: true,
 })
 export type PublishProjectInput = z.infer<typeof PublishProjectInput>
 

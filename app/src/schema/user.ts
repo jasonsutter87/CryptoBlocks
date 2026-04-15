@@ -5,6 +5,7 @@
 import { z } from 'zod'
 import {
   Id, Timestamp, ClerkUserId, Name, Text, Email, UrlString, Username,
+  ExternalId, DayNumber, BlocksUsed,
 } from './primitives.js'
 
 /** Notification */
@@ -29,16 +30,14 @@ export type Notification = z.infer<typeof Notification>
 export const DailyScore = z.object({
   userId: ClerkUserId,
   userName: Username,
-  dayNumber: z.number().int().min(1).max(10_000),
-  blocksUsed: z.number().int().min(1).max(1000),
+  dayNumber: DayNumber,
+  blocksUsed: BlocksUsed,
   solvedAt: Timestamp,
 })
 export type DailyScore = z.infer<typeof DailyScore>
 
-export const SubmitDailyScoreInput = z.object({
-  dayNumber: z.number().int().min(1).max(10_000),
-  blocksUsed: z.number().int().min(1).max(1000),
-})
+/** Input for submitting a daily score — derived from DailyScore */
+export const SubmitDailyScoreInput = DailyScore.pick({ dayNumber: true, blocksUsed: true })
 export type SubmitDailyScoreInput = z.infer<typeof SubmitDailyScoreInput>
 
 /** Subscription */
@@ -48,8 +47,8 @@ export const SubscriptionStatus = z.enum([
 export const SubscriptionPlan = z.enum(['pro', 'teacher', 'student'])
 export const Subscription = z.object({
   userId: ClerkUserId,
-  stripeCustomerId: z.string().min(1).max(100),
-  stripeSubscriptionId: z.string().min(1).max(100),
+  stripeCustomerId: ExternalId,
+  stripeSubscriptionId: ExternalId,
   status: SubscriptionStatus,
   plan: SubscriptionPlan,
   createdAt: Timestamp,
@@ -65,9 +64,6 @@ export const FreeOverride = z.object({
 })
 export type FreeOverride = z.infer<typeof FreeOverride>
 
-export const FreeOverrideInput = z.object({
-  email: Email,
-  plan: SubscriptionPlan.optional().default('pro'),
-  note: Text.optional().default(''),
-})
+/** Input for creating a free override — derived, drops createdAt */
+export const FreeOverrideInput = FreeOverride.omit({ createdAt: true })
 export type FreeOverrideInput = z.infer<typeof FreeOverrideInput>

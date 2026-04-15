@@ -5,7 +5,7 @@
 import { z } from 'zod'
 import {
   Id, Timestamp, ClerkUserId, Name, Text, Content, Username, UrlString,
-  JoinCode, WorkspaceJson, MAX_BLOCK_COUNT,
+  JoinCode, WorkspaceJson, BlockCount, AuthoredWithAvatar,
 } from './primitives.js'
 
 /** Classroom */
@@ -64,7 +64,7 @@ export const Submission = z.object({
   studentId: ClerkUserId,
   studentName: Username,
   workspaceJson: WorkspaceJson,
-  blockCount: z.number().int().min(0).max(MAX_BLOCK_COUNT).default(0),
+  blockCount: BlockCount,
   feedback: Text.nullable().default(null),
   status: SubmissionStatus.default('pending'),
   submittedAt: Timestamp,
@@ -73,7 +73,7 @@ export type Submission = z.infer<typeof Submission>
 
 export const SubmitAssignmentInput = z.object({
   workspaceJson: WorkspaceJson,
-  blockCount: z.number().int().min(0).max(MAX_BLOCK_COUNT).optional(),
+  blockCount: BlockCount.optional(),
 })
 export type SubmitAssignmentInput = z.infer<typeof SubmitAssignmentInput>
 
@@ -87,9 +87,7 @@ export type FeedbackInput = z.infer<typeof FeedbackInput>
 export const Discussion = z.object({
   id: Id,
   classroomId: Id,
-  authorId: ClerkUserId,
-  authorName: Username,
-  authorAvatar: UrlString.nullable().default(null),
+  ...AuthoredWithAvatar,
   title: Name,
   body: Content,
   createdAt: Timestamp,
@@ -106,9 +104,7 @@ export type CreateDiscussionInput = z.infer<typeof CreateDiscussionInput>
 export const Reply = z.object({
   id: Id,
   discussionId: Id,
-  authorId: ClerkUserId,
-  authorName: Username,
-  authorAvatar: UrlString.nullable().default(null),
+  ...AuthoredWithAvatar,
   body: Content,
   createdAt: Timestamp,
 })
@@ -123,9 +119,7 @@ export type CreateReplyInput = z.infer<typeof CreateReplyInput>
 export const ChatMessage = z.object({
   id: Id,
   classroomId: Id,
-  authorId: ClerkUserId,
-  authorName: Username,
-  authorAvatar: UrlString.nullable().default(null),
+  ...AuthoredWithAvatar,
   body: Content,
   createdAt: Timestamp,
 })
