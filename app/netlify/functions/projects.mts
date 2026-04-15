@@ -50,12 +50,16 @@ async function ensureSchema(): Promise<void> {
       detail TEXT,
       created_at INTEGER NOT NULL
     )`).catch(() => {}),
+    // One-time cleanup: rows inserted before the visibility column existed
+    // have NULL. Normalize so every subsequent check can assume a concrete
+    // value and we can drop the `visibility IS NULL OR ...` branch.
+    tursoExecute("UPDATE projects SET visibility = 'public' WHERE visibility IS NULL").catch(() => {}),
   ])
   globalThis.__projectsMigrated = true
 }
 
 export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors()
+  if (req.method === 'OPTIONS') return cors(req)
 
   const segments = parsePath(req, 'projects')
 
@@ -279,7 +283,7 @@ export default async function handler(req: Request) {
 
       let sql = 'SELECT * FROM projects'
       const args: (string | number)[] = []
-      const conditions: string[] = ["(visibility IS NULL OR visibility = 'public')"]
+      const conditions: string[] = ["visibility = 'public'"]
 
       if (category) {
         conditions.push('category = ?')

@@ -8,7 +8,7 @@
 import { json, cors, logError, tursoExecute, isTursoConfigured } from './_lib/index.js'
 
 export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors()
+  if (req.method === 'OPTIONS') return cors(req)
 
   try {
     if (!isTursoConfigured()) return json({ error: 'Database not configured' }, 500)

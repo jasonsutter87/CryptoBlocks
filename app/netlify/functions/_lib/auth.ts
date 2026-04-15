@@ -94,8 +94,13 @@ async function verifyJwtSignature(token: string, keys: JwkKey[]): Promise<ClerkP
   } catch { return null }
 
   if (header.alg !== 'RS256') return null
+  // Reject tokens without a `kid` header. Falling back to keys[0] was the
+  // old behavior and let a stale first-position key validate forever across
+  // Clerk rotations. If the token doesn't say which key signed it, we don't
+  // trust it.
   const kid = typeof header.kid === 'string' ? header.kid : null
-  const jwk = kid ? keys.find((k) => k.kid === kid) : keys[0]
+  if (!kid) return null
+  const jwk = keys.find((k) => k.kid === kid)
   if (!jwk) return null
 
   let key: CryptoKey
@@ -117,6 +122,14 @@ async function verifyJwtSignature(token: string, keys: JwkKey[]): Promise<ClerkP
 
   // exp check — JWTs are dead after expiration
   if (typeof payload.exp === 'number' && payload.exp * 1000 < Date.now()) return null
+
+  // Bind to the expected Clerk instance. Without this, a token from another
+  // Clerk tenant (staging, someone else's project) signed by the same
+  // rotating JWKS endpoint would validate against us. CLERK_ISSUER should be
+  // set to the `https://<instance>.clerk.accounts.dev` (or prod) value from
+  // the Clerk dashboard's API keys page.
+  const expectedIss = process.env.CLERK_ISSUER
+  if (expectedIss && payload.iss !== expectedIss) return null
 
   return payload
 }

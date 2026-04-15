@@ -16,7 +16,7 @@ import {
 import { FreeOverrideInput, Email } from '../../src/schema/index.js'
 
 export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors()
+  if (req.method === 'OPTIONS') return cors(req)
 
   const user = await verifyFromRequest(req)
   if (!isAdmin(user)) return json({ error: 'Admin access required' }, 403)

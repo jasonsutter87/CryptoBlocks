@@ -15,7 +15,7 @@ import {
 } from './_lib/index.js'
 
 export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors()
+  if (req.method === 'OPTIONS') return cors(req)
 
   const segments = parsePath(req, 'notifications')
   const user = await verifyFromRequest(req)

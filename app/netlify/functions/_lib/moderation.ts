@@ -17,11 +17,27 @@ function escapeRegex(s: string): string {
 }
 
 /**
+ * Normalize text before matching. Unicode NFKC folds lookalikes
+ * (`ｆｕｃｋ` → `fuck`), and stripping zero-width joiners / non-joiners
+ * prevents `f\u200buck` from slipping past the banned-word regex.
+ */
+function normalize(s: string): string {
+  return s
+    .normalize('NFKC')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .toLowerCase()
+}
+
+/**
  * Check combined name + description for banned words (word-boundary matched)
  * and URLs. Returns a user-facing error message, or null when clean.
+ *
+ * Not a content-safety replacement — a kid determined to swear will find a
+ * way. This is a speed bump that catches the obvious cases without needing
+ * a third-party moderation API.
  */
 export function moderateContent(name: string, description: string): string | null {
-  const combined = ` ${name} ${description} `.toLowerCase()
+  const combined = ` ${normalize(name)} ${normalize(description)} `
 
   for (const word of BANNED_WORDS) {
     const re = new RegExp(`\\b${escapeRegex(word)}\\b`)

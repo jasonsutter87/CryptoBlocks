@@ -26,7 +26,7 @@ function generateJoinCode(): string {
 }
 
 export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors()
+  if (req.method === 'OPTIONS') return cors(req)
 
   const segments = parsePath(req, 'classrooms')
 
@@ -76,16 +76,58 @@ export default async function handler(req: Request) {
       if (!parsed.success) return json({ error: 'Invalid join code format' }, 400)
       const code = parsed.data
 
+      // Rate-limit guessers. 6-char codes over a 32-char alphabet = ~10^9
+      // space; without a limit, one account at 1 req/ms enumerates it in
+      // ~11 days. Allow 10 wrong guesses per rolling hour per user.
+      const MAX_FAILS = 10
+      const WINDOW_MS = 60 * 60 * 1000
+      await tursoExecute(
+        `CREATE TABLE IF NOT EXISTS join_attempts (
+          user_id TEXT PRIMARY KEY,
+          fails INTEGER NOT NULL DEFAULT 0,
+          last_fail_at INTEGER NOT NULL DEFAULT 0
+        )`,
+      ).catch(() => { /* concurrent create */ })
+      const now = Date.now()
+      const prev = await tursoExecute(
+        'SELECT fails, last_fail_at FROM join_attempts WHERE user_id = ?',
+        [user.sub],
+      )
+      const fails = Number(prev.rows[0]?.fails ?? 0)
+      const lastFail = Number(prev.rows[0]?.last_fail_at ?? 0)
+      if (fails >= MAX_FAILS && now - lastFail < WINDOW_MS) {
+        return json({ error: 'Too many attempts — try again in an hour.' }, 429)
+      }
+      // Window expired — reset the counter.
+      if (fails > 0 && now - lastFail >= WINDOW_MS) {
+        await tursoExecute(
+          'UPDATE join_attempts SET fails = 0 WHERE user_id = ?',
+          [user.sub],
+        )
+      }
+
       const classroom = await tursoExecute(
         'SELECT id, name FROM classrooms WHERE join_code = ?',
         [code],
       )
       if (classroom.rows.length === 0) {
+        await tursoExecute(
+          `INSERT INTO join_attempts (user_id, fails, last_fail_at) VALUES (?, 1, ?)
+           ON CONFLICT (user_id) DO UPDATE SET
+             fails = fails + 1, last_fail_at = excluded.last_fail_at`,
+          [user.sub, now],
+        )
         return json({ error: 'Invalid join code' }, 404)
       }
 
       const classroomId = String(classroom.rows[0].id)
       const classroomName = String(classroom.rows[0].name)
+
+      // Successful match — reset the attempt counter.
+      await tursoExecute(
+        'DELETE FROM join_attempts WHERE user_id = ?',
+        [user.sub],
+      ).catch(() => { /* nothing to delete is fine */ })
 
       // Check if already a member
       const existing = await tursoExecute(
@@ -133,11 +175,15 @@ export default async function handler(req: Request) {
       }
 
       const c = classroom.rows[0]
+      // Join code is a credential — only the teacher sees it. A student who
+      // had the code and later left the class could otherwise share it to
+      // auto-enroll alts, or leak it publicly.
+      const viewerIsTeacher = user?.sub === String(c.teacher_id)
       return json({
         id: c.id,
         name: c.name,
         description: c.description || '',
-        joinCode: c.join_code,
+        joinCode: viewerIsTeacher ? c.join_code : null,
         teacherId: c.teacher_id,
         teacherName: c.teacher_name,
         createdAt: c.created_at,
@@ -178,7 +224,8 @@ export default async function handler(req: Request) {
         classrooms: result.rows.map((c) => ({
           id: c.id,
           name: c.name,
-          joinCode: c.join_code,
+          // See detail endpoint: join code is teacher-only.
+          joinCode: String(c.teacher_id) === user.sub ? c.join_code : null,
           teacherId: c.teacher_id,
           teacherName: c.teacher_name,
           memberCount: Number(c.member_count),

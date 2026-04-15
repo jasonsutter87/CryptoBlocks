@@ -14,7 +14,7 @@ import type { TursoRow } from './_lib/index.js'
 import { SubmitDailyScoreInput, DayNumber } from '../../src/schema/index.js'
 
 export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors()
+  if (req.method === 'OPTIONS') return cors(req)
 
   const segments = parsePath(req, 'daily')
   const user = await verifyFromRequest(req)
@@ -30,9 +30,15 @@ export default async function handler(req: Request) {
       const raw = await req.json().catch(() => null)
       const parsed = SubmitDailyScoreInput.safeParse(raw)
       if (!parsed.success) return json({ error: 'Invalid input' }, 400)
-      const { dayNumber, blocksUsed } = parsed.data
+      const { blocksUsed } = parsed.data
 
-      // Upsert — only replace if fewer blocks (better score)
+      // Compute day number server-side instead of trusting the client —
+      // otherwise a user can spoof solves for any day and fake streaks /
+      // pollute the leaderboard. Epoch: 2024-01-01 UTC (matches client
+      // getDayNumber).
+      const DAILY_EPOCH_MS = Date.UTC(2024, 0, 1)
+      const dayNumber = Math.floor((Date.now() - DAILY_EPOCH_MS) / 86_400_000)
+
       await tursoExecute(
         `INSERT INTO daily_scores (user_id, user_name, day_number, blocks_used, solved_at)
          VALUES (?, ?, ?, ?, ?)

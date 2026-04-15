@@ -54,7 +54,7 @@ async function githubApi(
 }
 
 export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors()
+  if (req.method === 'OPTIONS') return cors(req)
 
   const segments = parsePath(req, 'github')
   const user = await verifyFromRequest(req)

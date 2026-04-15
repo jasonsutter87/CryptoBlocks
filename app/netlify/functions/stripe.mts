@@ -67,7 +67,7 @@ function buildLineItems(plan: 'pro' | 'teacher') {
 }
 
 export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return cors()
+  if (req.method === 'OPTIONS') return cors(req)
 
   const segments = parsePath(req, 'stripe')
 
@@ -160,18 +160,30 @@ export default async function handler(req: Request) {
         return json({ isPro: true, plan: String(sub.rows[0].plan || 'pro') })
       }
 
-      // Student in a teacher's classroom (teacher has active TEACHER plan)
-      // A Pro user who creates a classroom does NOT grant Pro to their students
-      const teacherSub = await tursoExecute(
-        `SELECT s.plan FROM class_members cm
-         JOIN classrooms c ON cm.classroom_id = c.id
-         JOIN subscriptions s ON c.teacher_id = s.user_id
-           AND s.status = 'active' AND s.plan = 'teacher'
-         WHERE cm.user_id = ? AND cm.role = 'student'
-         LIMIT 1`,
-        [user.sub],
+      // Student in a teacher's classroom (teacher has active TEACHER plan).
+      // A Pro user who creates a classroom does NOT grant Pro to their students.
+      //
+      // Seat cap: the teacher plan includes the first TEACHER_SEAT_LIMIT
+      // students per classroom. Beyond that, students stay on free until
+      // the teacher pays for more seats. Without this cap, a teacher could
+      // enroll 10,000 kids on a $25 plan and give them all Pro — direct
+      // revenue leak (Black Team M5).
+      const TEACHER_SEAT_LIMIT = 30
+      const teacherGrant = await tursoExecute(
+        `WITH ranked_members AS (
+           SELECT cm.user_id,
+                  cm.classroom_id,
+                  ROW_NUMBER() OVER (PARTITION BY cm.classroom_id ORDER BY cm.joined_at ASC) AS seat_no
+           FROM class_members cm
+           JOIN classrooms c ON cm.classroom_id = c.id
+           JOIN subscriptions s ON c.teacher_id = s.user_id
+             AND s.status = 'active' AND s.plan = 'teacher'
+           WHERE cm.role = 'student'
+         )
+         SELECT 1 FROM ranked_members WHERE user_id = ? AND seat_no <= ? LIMIT 1`,
+        [user.sub, TEACHER_SEAT_LIMIT],
       )
-      if (teacherSub.rows.length > 0) {
+      if (teacherGrant.rows.length > 0) {
         return json({ isPro: true, plan: 'student-via-teacher' })
       }
 
@@ -205,13 +217,61 @@ export default async function handler(req: Request) {
   }
 }
 
+/**
+ * Map a Stripe subscription's authoritative product IDs to our internal plan
+ * string. This replaces the webhook's previous trust in client-controllable
+ * `metadata.plan` — see Black Team C1. Stripe signs the subscription object
+ * but NOT arbitrary metadata keys.
+ */
+function resolvePlanFromSubscription(sub: Stripe.Subscription): 'pro' | 'teacher' | null {
+  const productIds = sub.items.data
+    .map((item) => item.price?.product)
+    .filter((p): p is string => typeof p === 'string')
+  if (productIds.includes(PRICES.teacher.product)) return 'teacher'
+  if (productIds.includes(PRICES.pro.product)) return 'pro'
+  return null
+}
+
+/**
+ * Resolve Clerk user id from a Stripe customer, via our own mapping first
+ * (subscriptions.stripe_customer_id) and falling back to the customer's
+ * server-set metadata. Never trust session.metadata here — see Black Team C2.
+ */
+async function resolveClerkUserId(customerId: string): Promise<string | null> {
+  const known = await tursoExecute(
+    'SELECT user_id FROM subscriptions WHERE stripe_customer_id = ? LIMIT 1',
+    [customerId],
+  )
+  if (known.rows.length > 0) return String(known.rows[0].user_id)
+  // First-time checkout: read metadata we set in `stripe.customers.create`.
+  const cust = await stripe.customers.retrieve(customerId)
+  if (cust.deleted) return null
+  const id = (cust as Stripe.Customer).metadata?.clerk_user_id
+  return typeof id === 'string' && id.length > 0 ? id : null
+}
+
 /** Process a verified Stripe event. Errors are caught by the outer try/catch. */
 async function handleStripeEvent(event: Stripe.Event): Promise<void> {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    const clerkUserId = session.metadata?.clerk_user_id
-    const plan = session.metadata?.plan || 'pro'
-    if (!clerkUserId || !session.customer) return
+    if (!session.customer || !session.subscription) return
+
+    const customerId = String(session.customer)
+    const subscriptionId = String(session.subscription)
+
+    // Pull the signed subscription — the only trustworthy source for plan.
+    const sub = await stripe.subscriptions.retrieve(subscriptionId)
+    const plan = resolvePlanFromSubscription(sub)
+    if (!plan) {
+      logError('stripe', new Error(`Unknown subscription products for ${subscriptionId}`))
+      return
+    }
+
+    const clerkUserId = await resolveClerkUserId(customerId)
+    if (!clerkUserId) {
+      logError('stripe', new Error(`No Clerk user for customer ${customerId}`))
+      return
+    }
 
     await tursoExecute(
       `INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, status, plan, created_at)
@@ -221,7 +281,7 @@ async function handleStripeEvent(event: Stripe.Event): Promise<void> {
          stripe_subscription_id = excluded.stripe_subscription_id,
          status = 'active',
          plan = excluded.plan`,
-      [clerkUserId, String(session.customer), String(session.subscription ?? ''), 'active', plan, Date.now()],
+      [clerkUserId, customerId, subscriptionId, String(sub.status), plan, Date.now()],
     )
     return
   }
@@ -229,10 +289,14 @@ async function handleStripeEvent(event: Stripe.Event): Promise<void> {
   if (event.type === 'customer.subscription.deleted' || event.type === 'customer.subscription.updated') {
     const sub = event.data.object as Stripe.Subscription
     // Preserve actual status — past_due/incomplete/trialing/unpaid users
-    // are NOT cancelled (Stripe is retrying their card)
+    // are NOT cancelled (Stripe is retrying their card).
+    //
+    // Scope by BOTH subscription_id and customer_id — prevents a row whose
+    // stripe_subscription_id was tampered with from cancelling a different
+    // user (Black Team C3).
     await tursoExecute(
-      'UPDATE subscriptions SET status = ? WHERE stripe_subscription_id = ?',
-      [String(sub.status), sub.id],
+      'UPDATE subscriptions SET status = ? WHERE stripe_subscription_id = ? AND stripe_customer_id = ?',
+      [String(sub.status), sub.id, String(sub.customer)],
     )
   }
 }
