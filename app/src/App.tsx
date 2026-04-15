@@ -34,19 +34,14 @@ import type { LabExercise } from './code-lab'
 import { getNextExercise } from './code-lab'
 import { saveLabProgress } from './code-lab/progress'
 import Toolbar from './components/Toolbar'
-import BlockEditor from './components/BlockEditor'
-import CodeView from './components/CodeView'
-import CodeMirrorEditor from './learn/CodeMirrorEditor'
-import OutputPanel from './components/OutputPanel'
+import EditorPane from './components/EditorPane'
+import ActiveLabPane from './components/ActiveLabPane'
 import CreateBlockModal from './components/CreateBlockModal'
 import ChallengeBrowser from './components/ChallengeBrowser'
-import ChallengePanel from './components/ChallengePanel'
 import ChallengeComplete from './components/ChallengeComplete'
 import BlocksetBrowser from './components/BlocksetBrowser'
-import BlocksetPanel from './components/BlocksetPanel'
 import BlocksetComplete from './components/BlocksetComplete'
 import GolfBrowser from './components/GolfBrowser'
-import GolfPanel from './components/GolfPanel'
 import GolfComplete from './components/GolfComplete'
 import LabBrowser from './components/LabBrowser'
 import LabPanel from './components/LabPanel'
@@ -78,7 +73,6 @@ const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
 const ScratchImportModal = lazy(() => import('./components/ScratchImportModal'))
 import { useCollabDoc } from './collab/CollabPage'
 import { bindRunBroadcast } from './collab/run-broadcast'
-import WorkspaceFloatingControls from './components/WorkspaceFloatingControls'
 import { ensureSpeechGlobal } from './speech/speech'
 import { ensureVisionGlobal } from './vision/vision-global'
 import { ensureGamepadGlobal } from './hardware/gamepad'
@@ -1195,143 +1189,55 @@ export default function App() {
         />
       )}
 
-      {/* Active Lab Mode — full-width editor, no Blockly */}
       {mode === 'active-lab' && activeLabExercise && (
-        <>
-          <LabPanel
-            exercise={activeLabExercise}
-            onCheckSolution={handleCheckLabSolution}
-            onBack={handleBackToLab}
-            isRunning={isRunning}
-          />
-
-          <div className="flex-1 flex flex-col md:flex-row min-h-0">
-            {/* Full-width Code Editor */}
-            <div className={`${showOutput ? 'h-1/2 md:h-full md:w-1/2' : 'h-full w-full'} flex flex-col`}>
-              <div className="flex items-center gap-2 px-4 py-2 bg-[#181825] border-b border-[#313244]">
-                <span className="text-xs text-[#6c7086] uppercase tracking-wide font-semibold mr-2">
-                  Code Lab
-                </span>
-                <span className="text-xs text-[#f9e2af] bg-[#313244] px-2 py-0.5 rounded">JavaScript</span>
-              </div>
-              <div className="flex-1 min-h-0">
-                <CodeMirrorEditor
-                  code={labCode}
-                  onChange={handleLabCodeChange}
-                  language="javascript"
-                  height="100%"
-                />
-              </div>
-            </div>
-
-            {/* Output Panel */}
-            {showOutput && (
-              <div className="h-1/2 md:h-full md:w-1/2 border-t md:border-t-0 md:border-l border-[#313244]">
-                <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
-              </div>
-            )}
-          </div>
-        </>
+        <ActiveLabPane
+          exercise={activeLabExercise}
+          labCode={labCode}
+          onLabCodeChange={handleLabCodeChange}
+          onCheckSolution={handleCheckLabSolution}
+          onBack={handleBackToLab}
+          isRunning={isRunning}
+          showOutput={showOutput}
+          result={result}
+          liveOutput={liveOutput}
+          lastExecCode={lastExecCode}
+        />
       )}
 
-      {/* Editor Mode (sandbox, active-challenge, active-blockset, active-golf) */}
-      {mode !== 'challenges' && mode !== 'blocksets' && mode !== 'code-golf' && mode !== 'code-lab' && mode !== 'active-lab' && (
-        <>
-          {/* Challenge Panel Banner */}
-          {mode === 'active-challenge' && activeChallenge && (
-            <ChallengePanel
-              challenge={activeChallenge}
-              blockCount={blockCount}
-              onCheckSolution={handleCheckSolution}
-              onBack={handleBackToChallenges}
-              isRunning={isRunning}
-            />
-          )}
-
-          {/* Blockset Panel Banner */}
-          {mode === 'active-blockset' && activeBlockset && (
-            <BlocksetPanel
-              blockset={activeBlockset}
-              blockCount={blockCount}
-              onCheckSolution={handleCheckBlocksetSolution}
-              onBack={handleBackToBlocksets}
-              isRunning={isRunning}
-            />
-          )}
-
-          {/* Golf Panel Banner */}
-          {mode === 'active-golf' && activeGolfProblem && (
-            <GolfPanel
-              problem={activeGolfProblem}
-              blockCount={blockCount}
-              onCheckSolution={handleCheckGolfSolution}
-              onBack={handleBackToGolf}
-              isRunning={isRunning}
-            />
-          )}
-
-          <div className="flex-1 flex flex-col md:flex-row min-h-0">
-            {/* Block Editor */}
-            <div
-              className="relative h-1/2 md:h-full border-b md:border-b-0 md:border-r border-[#313244]"
-              style={(showCode || showOutput) ? { width: `${splitPercent}%` } : { width: '100%' }}
-            >
-              <BlockEditor
-                onWorkspaceChange={handleWorkspaceChange}
-                onEditBlock={handleEditBlock}
-                onDeleteBlock={handleDeleteBlock}
-                onSaveAsBlock={handleSaveAsBlock}
-                initialWorkspaceState={initialWorkspaceState}
-              />
-              {mode === 'sandbox' && (
-                <WorkspaceFloatingControls
-                  slowMo={slowMo}
-                  onToggleSlowMo={() => setSlowMo((s) => !s)}
-                  slowMoDisabled={isRunning}
-                  onEnterTimeTravel={timeTravel.enterTimeTravel}
-                  timeTravelAvailable={timeTravel.snapshotCount > 1}
-                />
-              )}
-            </div>
-
-            {/* Drag handle */}
-            {(showCode || showOutput) && (
-              <div
-                className="hidden md:flex items-center justify-center w-1.5 cursor-col-resize bg-[#313244] hover:bg-[#f9e2af] active:bg-[#f9e2af] transition-colors flex-shrink-0"
-                onMouseDown={handleSplitMouseDown}
-              >
-                <div className="w-0.5 h-8 bg-[#6c7086] rounded-full" />
-              </div>
-            )}
-
-            {/* Code View */}
-            {showCode && (
-              <div className="h-1/2 md:h-full flex flex-col" style={{ width: `${100 - splitPercent}%` }}>
-                <div className={showOutput ? 'h-1/2' : 'h-full'}>
-                  <CodeView
-                    code={code}
-                    language={language}
-                    onLanguageChange={handleLanguageChange}
-                  />
-                </div>
-
-                {/* Output Panel */}
-                {showOutput && (
-                  <div className="h-1/2 border-t border-[#313244]">
-                    <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Output when code view is hidden — show on right side */}
-            {!showCode && showOutput && (
-              <div className="h-1/2 md:h-full border-t md:border-t-0 md:border-l border-[#313244]" style={{ width: `${100 - splitPercent}%` }}>
-                <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
-              </div>
-            )}
-          </div>
-        </>
+      {(mode === 'sandbox' || mode === 'active-challenge' || mode === 'active-blockset' || mode === 'active-golf') && (
+        <EditorPane
+          mode={mode}
+          activeChallenge={activeChallenge}
+          activeBlockset={activeBlockset}
+          activeGolfProblem={activeGolfProblem}
+          blockCount={blockCount}
+          isRunning={isRunning}
+          onCheckChallenge={handleCheckSolution}
+          onBackChallenge={handleBackToChallenges}
+          onCheckBlockset={handleCheckBlocksetSolution}
+          onBackBlockset={handleBackToBlocksets}
+          onCheckGolf={handleCheckGolfSolution}
+          onBackGolf={handleBackToGolf}
+          onWorkspaceChange={handleWorkspaceChange}
+          onEditBlock={handleEditBlock}
+          onDeleteBlock={handleDeleteBlock}
+          onSaveAsBlock={handleSaveAsBlock}
+          initialWorkspaceState={initialWorkspaceState}
+          slowMo={slowMo}
+          onToggleSlowMo={() => setSlowMo((s) => !s)}
+          onEnterTimeTravel={timeTravel.enterTimeTravel}
+          timeTravelAvailable={timeTravel.snapshotCount > 1}
+          showCode={showCode}
+          showOutput={showOutput}
+          splitPercent={splitPercent}
+          onSplitMouseDown={handleSplitMouseDown}
+          code={code}
+          language={language}
+          onLanguageChange={handleLanguageChange}
+          result={result}
+          liveOutput={liveOutput}
+          lastExecCode={lastExecCode}
+        />
       )}
 
       {showCreateModal && (
