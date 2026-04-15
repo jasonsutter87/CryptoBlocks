@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import type { Language } from '../types/block'
+import { Icon } from './Icon'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '@clerk/clerk-react'
@@ -172,9 +173,7 @@ export default function Toolbar({
   const menuDropdown = 'absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1'
   const menuDivider = 'h-px bg-[#45475a] my-1'
   const chevron = (
-    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-    </svg>
+    <Icon name="chevron-down" className="w-3 h-3" />
   )
 
   return (
@@ -209,9 +208,7 @@ export default function Toolbar({
                 onClick={() => toggleMenu('file')}
                 className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
+                <Icon name="folder" className="w-4 h-4" />
                 File
                 {chevron}
               </button>
@@ -219,31 +216,22 @@ export default function Toolbar({
               {openMenu === 'file' && (
                 <div className={menuDropdown}>
                   <button onClick={() => requireAuth(() => { onExport(); setOpenMenu(null) })} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-                    </svg>
+                    <Icon name="download" className="w-4 h-4 text-[#89b4fa]" />
                     Save .blocks
                     {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
                   <button onClick={() => requireAuth(() => { onSaveToDashboard(); setOpenMenu(null) })} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M14 11l-2-2m0 0l-2 2m2-2v6" />
-                    </svg>
+                    <Icon name="cloud-up" className="w-4 h-4 text-[#a6e3a1]" />
                     Save to Dashboard
                     {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
                   <button onClick={() => requireAuth(() => { fileInputRef.current?.click(); setOpenMenu(null) })} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
-                    </svg>
+                    <Icon name="upload" className="w-4 h-4 text-[#89b4fa]" />
                     Load .blocks
                     {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
                   <button onClick={() => requireAuth(() => { importAsBlockInputRef.current?.click(); setOpenMenu(null) })} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                    </svg>
+                    <Icon name="cube" className="w-4 h-4 text-[#89b4fa]" />
                     Import as Block
                     {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
@@ -256,16 +244,12 @@ export default function Toolbar({
                   )}
                   <div className={menuDivider} />
                   <button onClick={() => requireAuth(() => { onSaveCheckpoint(); setOpenMenu(null) })} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Icon name="check" className="w-4 h-4 text-[#a6e3a1]" />
                     Save Checkpoint
                     {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
                   <button onClick={() => requireAuth(() => { onOpenHistory(); setOpenMenu(null) })} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <Icon name="clock" className="w-4 h-4 text-[#89b4fa]" />
                     History
                     {currentBranchName && currentBranchName !== 'Main' && (
                       <span className="ml-auto text-xs text-[#cba6f7] bg-[#1e1e2e] px-1.5 py-0.5 rounded font-mono">
@@ -274,10 +258,7 @@ export default function Toolbar({
                     )}
                   </button>
                   <button onClick={() => { onOpenSettings(); setOpenMenu(null) }} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#6c7086]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                    <Icon name="cog" className="w-4 h-4 text-[#6c7086]" />
                     Settings
                   </button>
                   {onOpenTutorial && (
@@ -291,9 +272,7 @@ export default function Toolbar({
                     onClick={() => requirePro(() => { onExportHtml(); setOpenMenu(null) })}
                     className={menuItem}
                   >
-                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-                    </svg>
+                    <Icon name="download" className="w-4 h-4 text-[#a6e3a1]" />
                     Export as HTML
                     {isPro ? <span className="ml-auto text-xs text-[#6c7086]">.html</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
@@ -301,9 +280,7 @@ export default function Toolbar({
                     onClick={() => requirePro(() => { onExportPwa(); setOpenMenu(null) })}
                     className={menuItem}
                   >
-                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
+                    <Icon name="mobile-app" className="w-4 h-4 text-[#89b4fa]" />
                     Export as App (PWA)
                     {isPro ? <span className="ml-auto text-xs text-[#6c7086]">.zip</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
@@ -317,9 +294,7 @@ export default function Toolbar({
                     }}
                     className={menuItem}
                   >
-                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                    </svg>
+                    <Icon name="code-brackets" className="w-4 h-4 text-[#89b4fa]" />
                     {embedCopied ? 'Copied!' : 'Copy Embed Snippet'}
                     {isPro ? <span className="ml-auto text-xs text-[#6c7086]">&lt;/&gt;</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
@@ -327,9 +302,7 @@ export default function Toolbar({
                     onClick={() => requireAuth(() => { onPublish(); setOpenMenu(null) })}
                     className={menuItem}
                   >
-                    <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                    <Icon name="cloud-up-arrow" className="w-4 h-4 text-[#cba6f7]" />
                     Publish to GitHub
                     {isSignedIn ? <span className="ml-auto text-xs text-[#6c7086]">Live URL</span> : <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
                   </button>
@@ -369,17 +342,13 @@ export default function Toolbar({
                     }}
                     className={menuItem}
                   >
-                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                    </svg>
+                    <Icon name="link" className="w-4 h-4 text-[#a6e3a1]" />
                     {shareLinkCopied ? '✓ Link Copied!' : sharing ? 'Sharing...' : 'Share Link'}
                     <span className="ml-auto text-xs text-[#6c7086]">🔗</span>
                   </button>
                   <div className={menuDivider} />
                   <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#f38ba8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    <Icon name="trash" className="w-4 h-4 text-[#f38ba8]" />
                     Clear Workspace
                   </button>
                 </div>
@@ -392,9 +361,7 @@ export default function Toolbar({
                 onClick={() => toggleMenu('build')}
                 className={`${btn} text-[#f9e2af] hover:bg-[#313244]`}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
+                <Icon name="plus" className="w-4 h-4" />
                 Build
                 {chevron}
               </button>
@@ -402,16 +369,12 @@ export default function Toolbar({
               {openMenu === 'build' && (
                 <div className={menuDropdown}>
                   <button onClick={() => requirePro(() => { onCreateBlock(); setOpenMenu(null) })} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#f9e2af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
+                    <Icon name="plus" className="w-4 h-4 text-[#f9e2af]" />
                     Create Block
                     {!isPro && <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button onClick={() => requirePro(() => { onCodeToBlocks(); setOpenMenu(null) })} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
+                    <Icon name="pages" className="w-4 h-4 text-[#cba6f7]" />
                     Code to Blocks
                     {!isPro && <span className="ml-auto"><ProBadge /></span>}
                   </button>
@@ -447,9 +410,7 @@ export default function Toolbar({
                 }
                 title="Friends, Shareplace, Stats, Learn"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <Icon name="bars" className="w-4 h-4" />
                 Menu
                 {chevron}
               </button>
@@ -458,16 +419,12 @@ export default function Toolbar({
                 <div className={menuDropdown}>
                   {onOpenCollab && (
                     <button onClick={() => { onOpenCollab(); setOpenMenu(null) }} className={menuItem}>
-                      <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
+                      <Icon name="users" className="w-4 h-4 text-[#89b4fa]" />
                       Code with Friends
                     </button>
                   )}
                   <a href="/shareplace" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
+                    <Icon name="bolt" className="w-4 h-4 text-[#a6e3a1]" />
                     Shareplace
                   </a>
                   <a href="/leaderboard" onClick={() => setOpenMenu(null)} className={menuItem}>
@@ -482,21 +439,15 @@ export default function Toolbar({
                     )}
                   </a>
                   <button onClick={() => { onOpenStats(); setOpenMenu(null) }} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#cdd6f4]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
+                    <Icon name="bars-chart" className="w-4 h-4 text-[#cdd6f4]" />
                     Stats
                   </button>
                   <a href="/dashboard" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#fab387]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zm0 9.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6z" />
-                    </svg>
+                    <Icon name="dashboard-grid" className="w-4 h-4 text-[#fab387]" />
                     Dashboard
                   </a>
                   <a href="/profile" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" />
-                    </svg>
+                    <Icon name="user-circle" className="w-4 h-4 text-[#cba6f7]" />
                     Profile & Settings
                   </a>
                   <a
@@ -510,43 +461,31 @@ export default function Toolbar({
                   </a>
                   <div className={menuDivider} />
                   <a href="/learn" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 7l-9-5 9-5 9 5-9 5z" />
-                    </svg>
+                    <Icon name="book-open" className="w-4 h-4 text-[#89b4fa]" />
                     Learn JavaScript
                   </a>
                   <button onClick={() => { onOpenExamples(); setOpenMenu(null) }} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
+                    <Icon name="book" className="w-4 h-4 text-[#a6e3a1]" />
                     Examples
                   </button>
                   <div className={menuDivider} />
                   <button onClick={() => { onOpenChallenges(); setOpenMenu(null) }} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#f9e2af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                    </svg>
+                    <Icon name="sparkles" className="w-4 h-4 text-[#f9e2af]" />
                     Challenges
                     {mode === 'challenges' && <span className="ml-auto text-xs text-[#f9e2af] font-bold">Active</span>}
                   </button>
                   <button onClick={() => { onOpenBlocksets(); setOpenMenu(null) }} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
+                    <Icon name="book" className="w-4 h-4 text-[#89b4fa]" />
                     Blocksets
                     {mode === 'blocksets' && <span className="ml-auto text-xs text-[#89b4fa] font-bold">Active</span>}
                   </button>
                   <button onClick={() => { onOpenGolf(); setOpenMenu(null) }} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11m16-11v11" />
-                    </svg>
+                    <Icon name="flag" className="w-4 h-4 text-[#a6e3a1]" />
                     Code Golf
                     {mode === 'code-golf' ? <span className="ml-auto text-xs text-[#a6e3a1] font-bold">Active</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button onClick={() => { onOpenLab(); setOpenMenu(null) }} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
+                    <Icon name="book-classroom" className="w-4 h-4 text-[#cba6f7]" />
                     Code Lab
                     {mode === 'code-lab' ? <span className="ml-auto text-xs text-[#cba6f7] font-bold">Active</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
@@ -566,9 +505,7 @@ export default function Toolbar({
                 : `md:hidden ${btn} text-[#cdd6f4] hover:bg-[#313244]`
             }
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-            </svg>
+            <Icon name="sparkles" className="w-4 h-4" />
             <span className="hidden sm:inline">Challenges</span>
           </button>
         )}
@@ -579,12 +516,7 @@ export default function Toolbar({
             className="hidden md:flex items-center gap-1 text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded font-mono"
             title="Blocks on workspace"
           >
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" />
-              <rect x="14" y="14" width="7" height="7" rx="1" />
-            </svg>
+            <Icon name="blocks-2x2" className="w-3 h-3" />
             {blockCount}
           </div>
         )}
@@ -598,27 +530,21 @@ export default function Toolbar({
               title="Undo"
               className="flex items-center justify-center w-7 h-7 rounded text-[#6c7086] hover:text-[#cdd6f4] hover:bg-[#45475a] transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4-4" />
-              </svg>
+              <Icon name="arrow-undo" className="w-4 h-4" />
             </button>
             <button
               onClick={onRedo}
               title="Redo"
               className="flex items-center justify-center w-7 h-7 rounded text-[#6c7086] hover:text-[#cdd6f4] hover:bg-[#45475a] transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 10H11a5 5 0 000 10h4m6-10l-4-4 4-4" />
-              </svg>
+              <Icon name="arrow-redo" className="w-4 h-4" />
             </button>
             <button
               onClick={onFitView}
               title="Fit View"
               className="flex items-center justify-center w-7 h-7 rounded text-[#6c7086] hover:text-[#cdd6f4] hover:bg-[#45475a] transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V5a1 1 0 011-1h3M4 16v3a1 1 0 001 1h3m10-11V5a1 1 0 00-1-1h-3m4 11v3a1 1 0 01-1 1h-3" />
-              </svg>
+              <Icon name="expand" className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -633,9 +559,7 @@ export default function Toolbar({
                 : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
             }
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-            </svg>
+            <Icon name="code-brackets" className="w-4 h-4" />
             <span className="hidden sm:inline">{showCode ? 'Hide Code' : 'Peek Code'}</span>
           </button>
         )}
@@ -655,9 +579,7 @@ export default function Toolbar({
                 onClick={onStop}
                 className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 text-sm font-semibold rounded-lg bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/80 transition-colors"
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <rect x="6" y="6" width="12" height="12" rx="1" />
-                </svg>
+                <Icon name="stop" className="w-4 h-4" />
                 Stop
               </button>
             ) : (
@@ -665,9 +587,7 @@ export default function Toolbar({
                 onClick={onRun}
                 className={`${btn} bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 font-semibold px-3 md:px-4`}
               >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  <polygon points="5,3 19,12 5,21" />
-                </svg>
+                <Icon name="play" className="w-4 h-4" />
                 Run
               </button>
             )}
@@ -679,12 +599,8 @@ export default function Toolbar({
                 className={`${btn} bg-[#89b4fa] text-[#1e1e2e] hover:bg-[#89b4fa]/80 font-semibold px-2 md:px-3`}
                 title="Run on everyone's screen"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <svg className="w-3 h-3 -ml-1" fill="currentColor" viewBox="0 0 24 24">
-                  <polygon points="5,3 19,12 5,21" />
-                </svg>
+                <Icon name="users" className="w-4 h-4" />
+                <Icon name="play" className="w-3 h-3 -ml-1" />
               </button>
             )}
           </>
@@ -717,132 +633,92 @@ export default function Toolbar({
               className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
               aria-label="More options"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
-              </svg>
+              <Icon name="dots-vertical" className="w-5 h-5" />
             </button>
 
             {openMenu === 'mobile' && (
               <div className="absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1 max-h-[70vh] overflow-auto">
                 {onOpenCollab && (
                   <button onClick={() => { onOpenCollab(); setOpenMenu(null) }} className={menuItem}>
-                    <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
+                    <Icon name="users" className="w-4 h-4 text-[#89b4fa]" />
                     Code with Friends
                   </button>
                 )}
                 <button onClick={() => { onExport(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-                  </svg>
+                  <Icon name="download" className="w-4 h-4 text-[#89b4fa]" />
                   Save .blocks
                 </button>
                 <button onClick={() => { fileInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M17 8l-5-5-5 5M12 3v12" />
-                  </svg>
+                  <Icon name="upload" className="w-4 h-4 text-[#89b4fa]" />
                   Load .blocks
                 </button>
                 <button onClick={() => { importAsBlockInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                  </svg>
+                  <Icon name="cube" className="w-4 h-4 text-[#89b4fa]" />
                   Import as Block
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onCreateBlock(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#f9e2af]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
+                  <Icon name="plus" className="w-4 h-4 text-[#f9e2af]" />
                   Create Block
                 </button>
                 <button onClick={() => { onCodeToBlocks(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+                  <Icon name="pages" className="w-4 h-4 text-[#cba6f7]" />
                   Code to Blocks
                 </button>
                 <button onClick={() => { onOpenExamples(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
+                  <Icon name="book" className="w-4 h-4 text-[#a6e3a1]" />
                   Examples
                 </button>
                 <button onClick={() => { onOpenBlocksets(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
+                  <Icon name="book" className="w-4 h-4 text-[#89b4fa]" />
                   Blocksets
                 </button>
                 <button onClick={() => { onOpenGolf(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 21h18M3 10h18M3 7l9-4 9 4M4 10v11m16-11v11" />
-                  </svg>
+                  <Icon name="flag" className="w-4 h-4 text-[#a6e3a1]" />
                   Code Golf
                 </button>
                 <button onClick={() => { onOpenLab(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
+                  <Icon name="book-classroom" className="w-4 h-4 text-[#cba6f7]" />
                   Code Lab
                 </button>
                 <button onClick={() => { onOpenStats(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
+                  <Icon name="bars-chart" className="w-4 h-4 text-[#89b4fa]" />
                   Developer Stats
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onExportHtml(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
-                  </svg>
+                  <Icon name="download" className="w-4 h-4 text-[#a6e3a1]" />
                   Export HTML
                 </button>
                 <button onClick={() => { onPublish(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#cba6f7]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11.25l-3-3m0 0l-3 3m3-3v7.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <Icon name="cloud-up-arrow" className="w-4 h-4 text-[#cba6f7]" />
                   Publish to GitHub
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onUndo(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#cdd6f4]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h10a5 5 0 010 10H9m-6-10l4-4-4-4" />
-                  </svg>
+                  <Icon name="arrow-undo" className="w-4 h-4 text-[#cdd6f4]" />
                   Undo
                 </button>
                 <button onClick={() => { onRedo(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#cdd6f4]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 10H11a5 5 0 000 10h4m6-10l-4-4 4-4" />
-                  </svg>
+                  <Icon name="arrow-redo" className="w-4 h-4 text-[#cdd6f4]" />
                   Redo
                 </button>
                 <button onClick={() => { onFitView(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V5a1 1 0 011-1h3M4 16v3a1 1 0 001 1h3m10-11V5a1 1 0 00-1-1h-3m4 11v3a1 1 0 01-1 1h-3" />
-                  </svg>
+                  <Icon name="expand" className="w-4 h-4 text-[#89b4fa]" />
                   Fit View
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onSaveCheckpoint(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
+                  <Icon name="check" className="w-4 h-4 text-[#a6e3a1]" />
                   Save Checkpoint
                 </button>
                 <button onClick={() => { onOpenHistory(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <Icon name="clock" className="w-4 h-4 text-[#89b4fa]" />
                   History
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
-                  <svg className="w-4 h-4 text-[#f38ba8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  <Icon name="trash" className="w-4 h-4 text-[#f38ba8]" />
                   Clear Workspace
                 </button>
               </div>
