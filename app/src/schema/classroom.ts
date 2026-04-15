@@ -23,7 +23,7 @@ export type Classroom = z.infer<typeof Classroom>
 export const CreateClassroomInput = z.object({
   name: Name,
   description: Text.optional(),
-})
+}).strict()
 export type CreateClassroomInput = z.infer<typeof CreateClassroomInput>
 
 /** Class member */
@@ -53,7 +53,7 @@ export const CreateAssignmentInput = z.object({
   title: Name,
   description: Text.optional(),
   dueDate: Timestamp.optional(),
-})
+}).strict()
 export type CreateAssignmentInput = z.infer<typeof CreateAssignmentInput>
 
 /** Submission */
@@ -74,13 +74,13 @@ export type Submission = z.infer<typeof Submission>
 export const SubmitAssignmentInput = z.object({
   workspaceJson: WorkspaceJson,
   blockCount: BlockCount.optional(),
-})
+}).strict()
 export type SubmitAssignmentInput = z.infer<typeof SubmitAssignmentInput>
 
 export const FeedbackInput = z.object({
   feedback: Text,
   status: SubmissionStatus.optional(),
-})
+}).strict()
 export type FeedbackInput = z.infer<typeof FeedbackInput>
 
 /** Discussion */
@@ -97,7 +97,7 @@ export type Discussion = z.infer<typeof Discussion>
 export const CreateDiscussionInput = z.object({
   title: Name,
   body: Content,
-})
+}).strict()
 export type CreateDiscussionInput = z.infer<typeof CreateDiscussionInput>
 
 /** Reply */
@@ -112,7 +112,7 @@ export type Reply = z.infer<typeof Reply>
 
 export const CreateReplyInput = z.object({
   body: Content,
-})
+}).strict()
 export type CreateReplyInput = z.infer<typeof CreateReplyInput>
 
 /** Chat message */
@@ -127,5 +127,5 @@ export type ChatMessage = z.infer<typeof ChatMessage>
 
 export const SendChatInput = z.object({
   body: Content,
-})
+}).strict()
 export type SendChatInput = z.infer<typeof SendChatInput>

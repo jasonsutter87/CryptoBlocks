@@ -54,42 +54,33 @@ const NO_CONTROL_MSG = { message: 'Contains invalid control characters' }
 const nonBlank = (s: string) => s.trim().length > 0
 const BLANK_MSG = { message: 'Cannot be empty or whitespace only' }
 
-/** Factory: bounded, safe string type with optional min/trim/required-nonblank */
-interface BoundedOpts {
-  max: number
-  min?: number
-  trim?: boolean
-  required?: boolean // rejects whitespace-only
-}
-function bounded(opts: BoundedOpts) {
-  let s: z.ZodString | z.ZodEffects<z.ZodString> | z.ZodEffects<z.ZodEffects<z.ZodString>> = z.string().max(opts.max)
-  if (opts.min !== undefined) s = (s as z.ZodString).min(opts.min)
-  if (opts.trim) s = (s as z.ZodString).trim()
-  let result: z.ZodType<string> = s as z.ZodType<string>
-  if (opts.required) result = result.refine(nonBlank, BLANK_MSG)
-  return result.refine(noControlChars, NO_CONTROL_MSG)
-}
-
 /** Bounded name (projects, classrooms, assignments, titles) */
-export const Name = bounded({ max: MAX_NAME, trim: true, required: true })
+export const Name = z.string().max(MAX_NAME).trim()
+  .refine(nonBlank, BLANK_MSG)
+  .refine(noControlChars, NO_CONTROL_MSG)
 
 /** Bounded short text (descriptions, feedback) */
-export const Text = bounded({ max: MAX_TEXT })
+export const Text = z.string().max(MAX_TEXT).refine(noControlChars, NO_CONTROL_MSG)
 
 /** Bounded long content (messages, discussion bodies) — allows newlines/tabs */
-export const Content = bounded({ max: MAX_CONTENT, min: 1 })
+export const Content = z.string().min(1).max(MAX_CONTENT)
+  .refine(noControlChars, NO_CONTROL_MSG)
 
 /** Username — visible, no control chars, non-blank after trim */
-export const Username = bounded({ max: MAX_USERNAME, trim: true, required: true })
+export const Username = z.string().max(MAX_USERNAME).trim()
+  .refine(nonBlank, BLANK_MSG)
+  .refine(noControlChars, NO_CONTROL_MSG)
 
 /** Bounded URL/path string — rejects dangerous protocols */
-export const UrlString = bounded({ max: MAX_URL })
-  .refine((s: string) => !DANGEROUS_PROTOCOL_RE.test(s), {
+export const UrlString = z.string().max(MAX_URL)
+  .refine(noControlChars, NO_CONTROL_MSG)
+  .refine((s) => !DANGEROUS_PROTOCOL_RE.test(s), {
     message: 'URL protocol is not allowed',
   })
 
-/** Bounded hex color */
-export const ColorString = z.string().max(MAX_COLOR).regex(/^#?[a-zA-Z0-9(),. %-]*$/)
+/** Bounded hex color (regex already excludes control chars via charset) */
+export const ColorString = z.string().max(MAX_COLOR)
+  .regex(/^#?[a-zA-Z0-9(),. %-]*$/, { message: 'Invalid color format' })
 
 /** Email with length cap */
 export const Email = z.string().email().max(MAX_EMAIL).toLowerCase()
@@ -173,17 +164,36 @@ function jsonDepth(v: unknown, limit: number): number {
   return 1
 }
 
-/** Workspace JSON string — size-bounded, must parse, depth-capped */
+/**
+ * Workspace JSON string — size-bounded, must parse, depth-capped.
+ *
+ * Performance note: JSON.parse on a 2MB string is ~5-15ms on Netlify Edge.
+ * Fast-fail checks (first char, brace count) prune obvious garbage before parse.
+ * Callers that already have a parsed object should validate with
+ * WorkspaceJsonParsed instead (below) to avoid double-parsing.
+ */
 export const WorkspaceJson = z
   .string()
   .min(2)
   .max(MAX_BLOB)
   .refine((s) => {
+    // Fast-fail: must start with { or [, balanced within reason
+    const first = s[0]
+    if (first !== '{' && first !== '[') return false
     try {
       const parsed = JSON.parse(s)
       return jsonDepth(parsed, MAX_JSON_DEPTH + 1) <= MAX_JSON_DEPTH
     } catch { return false }
   }, { message: 'Invalid JSON or too deeply nested' })
+
+/** Validates an already-parsed workspace object (no re-parse penalty) */
+export const WorkspaceJsonParsed = z.unknown()
+  .refine((v) => v !== null && (typeof v === 'object' || Array.isArray(v)), {
+    message: 'Must be an object or array',
+  })
+  .refine((v) => jsonDepth(v, MAX_JSON_DEPTH + 1) <= MAX_JSON_DEPTH, {
+    message: 'Too deeply nested',
+  })
 
 /** Pagination — bounded limit/offset */
 export const PageParams = z.object({

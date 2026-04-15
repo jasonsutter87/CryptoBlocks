@@ -37,7 +37,7 @@ export const DailyScore = z.object({
 export type DailyScore = z.infer<typeof DailyScore>
 
 /** Input for submitting a daily score — derived from DailyScore */
-export const SubmitDailyScoreInput = DailyScore.pick({ dayNumber: true, blocksUsed: true })
+export const SubmitDailyScoreInput = DailyScore.pick({ dayNumber: true, blocksUsed: true }).strict()
 export type SubmitDailyScoreInput = z.infer<typeof SubmitDailyScoreInput>
 
 /** Subscription */
@@ -65,5 +65,5 @@ export const FreeOverride = z.object({
 export type FreeOverride = z.infer<typeof FreeOverride>
 
 /** Input for creating a free override — derived, drops createdAt */
-export const FreeOverrideInput = FreeOverride.omit({ createdAt: true })
+export const FreeOverrideInput = FreeOverride.omit({ createdAt: true }).strict()
 export type FreeOverrideInput = z.infer<typeof FreeOverrideInput>

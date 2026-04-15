@@ -41,14 +41,14 @@ export const PublishProjectInput = Project.omit({
   blockCount: true,
   parentId: true,
   visibility: true,
-})
+}).strict()
 export type PublishProjectInput = z.infer<typeof PublishProjectInput>
 
 /** Payload for POST /api/projects/:id/report */
 export const ReportProjectInput = z.object({
   reason: z.enum(['inappropriate', 'spam', 'copyright', 'other']),
   detail: Text.optional().default(''),
-})
+}).strict()
 export type ReportProjectInput = z.infer<typeof ReportProjectInput>
 
 /** Response shape for GET /api/projects?... */

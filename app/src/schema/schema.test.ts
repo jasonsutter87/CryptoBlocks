@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest'
 import {
   Id, Timestamp, ClerkUserId, Name, Text, Content, Email, UrlString,
   Username, Category, Tag, Tags, Visibility, JoinCode, WorkspaceJson,
-  PageParams,
+  PageParams, WorkspaceJsonParsed,
   Project, PublishProjectInput, ReportProjectInput,
   Classroom, CreateClassroomInput, Assignment, Submission, Discussion,
   Reply, ChatMessage, MemberRole,
@@ -191,6 +191,30 @@ describe('Primitives', () => {
       for (let i = 0; i < 15; i++) nested = { x: nested }
       expect(WorkspaceJson.safeParse(JSON.stringify(nested)).success).toBe(true)
     })
+    it('fast-fails on non-object start char (no JSON.parse)', () => {
+      expect(WorkspaceJson.safeParse('garbage text here').success).toBe(false)
+    })
+  })
+
+  describe('WorkspaceJsonParsed (pre-parsed, no double-parse)', () => {
+    it('accepts object', () => {
+      expect(WorkspaceJsonParsed.safeParse({ blocks: [] }).success).toBe(true)
+    })
+    it('accepts array', () => {
+      expect(WorkspaceJsonParsed.safeParse([]).success).toBe(true)
+    })
+    it('rejects primitive', () => {
+      expect(WorkspaceJsonParsed.safeParse('string').success).toBe(false)
+      expect(WorkspaceJsonParsed.safeParse(42).success).toBe(false)
+    })
+    it('rejects null', () => {
+      expect(WorkspaceJsonParsed.safeParse(null).success).toBe(false)
+    })
+    it('rejects deep nesting', () => {
+      let n: unknown = 1
+      for (let i = 0; i < 25; i++) n = { x: n }
+      expect(WorkspaceJsonParsed.safeParse(n).success).toBe(false)
+    })
   })
 
   describe('Control characters (XSS/log injection prevention)', () => {
@@ -303,6 +327,24 @@ describe('Project schemas', () => {
   it('ReportProjectInput validates reason enum', () => {
     expect(ReportProjectInput.safeParse({ reason: 'spam' }).success).toBe(true)
     expect(ReportProjectInput.safeParse({ reason: 'bad-vibes' }).success).toBe(false)
+  })
+
+  it('PublishProjectInput rejects unknown fields (.strict)', () => {
+    expect(PublishProjectInput.safeParse({
+      name: 'Valid', workspaceJson: '{}', hackField: 'evil',
+    }).success).toBe(false)
+  })
+
+  it('PublishProjectInput drift guard — fields must match Project', () => {
+    // If Project gains a new field, either add it to Input or to the omit list.
+    // This test prevents silent contract drift.
+    const projectKeys = new Set(Object.keys(Project.shape))
+    const inputKeys = new Set(Object.keys(PublishProjectInput.shape))
+    const omitted = ['id', 'authorId', 'downloads', 'likes', 'createdAt']
+    for (const k of projectKeys) {
+      if (omitted.includes(k)) continue
+      expect(inputKeys.has(k)).toBe(true)
+    }
   })
 
   it('Project requires all stored fields', () => {
