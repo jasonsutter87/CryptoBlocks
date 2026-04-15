@@ -196,3 +196,17 @@ export function isAdmin(user: ClerkUser | null): boolean {
     .filter(Boolean)
   return admins.includes(user.email.toLowerCase())
 }
+
+/**
+ * Generate a cryptographically strong random ID using getRandomValues.
+ * Replaces Math.random() for security-adjacent tokens (join codes, etc.).
+ */
+export function secureRandomCode(length: number, alphabet: string): string {
+  const bytes = new Uint8Array(length)
+  crypto.getRandomValues(bytes)
+  let code = ''
+  for (let i = 0; i < length; i++) {
+    code += alphabet[bytes[i] % alphabet.length]
+  }
+  return code
+}

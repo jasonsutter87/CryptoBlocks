@@ -8,6 +8,12 @@
 export { json, cors, errorResponse, extractBearer, parsePath } from './http.js'
 export { tursoExecute, isTursoConfigured } from './turso.js'
 export type { TursoRow, TursoResult } from './turso.js'
-export { verifyClerkToken, verifyFromRequest, isAdmin } from './auth.js'
+export { verifyClerkToken, verifyFromRequest, isAdmin, secureRandomCode } from './auth.js'
 export type { ClerkUser } from './auth.js'
 export { moderateContent } from './moderation.js'
+export {
+  requireAuth,
+  requireClassroomMember,
+  requireClassroomTeacher,
+  requireTeacherViaAssignment,
+} from './guards.js'
