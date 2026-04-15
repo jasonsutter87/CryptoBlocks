@@ -160,11 +160,13 @@ export default async function handler(req: Request) {
         return json({ isPro: true, plan: String(sub.rows[0].plan || 'pro') })
       }
 
-      // Student in a teacher's classroom (teacher has active plan)
+      // Student in a teacher's classroom (teacher has active TEACHER plan)
+      // A Pro user who creates a classroom does NOT grant Pro to their students
       const teacherSub = await tursoExecute(
         `SELECT s.plan FROM class_members cm
          JOIN classrooms c ON cm.classroom_id = c.id
-         JOIN subscriptions s ON c.teacher_id = s.user_id AND s.status = 'active'
+         JOIN subscriptions s ON c.teacher_id = s.user_id
+           AND s.status = 'active' AND s.plan = 'teacher'
          WHERE cm.user_id = ? AND cm.role = 'student'
          LIMIT 1`,
         [user.sub],
@@ -226,10 +228,11 @@ async function handleStripeEvent(event: Stripe.Event): Promise<void> {
 
   if (event.type === 'customer.subscription.deleted' || event.type === 'customer.subscription.updated') {
     const sub = event.data.object as Stripe.Subscription
-    const status = sub.status === 'active' ? 'active' : 'cancelled'
+    // Preserve actual status — past_due/incomplete/trialing/unpaid users
+    // are NOT cancelled (Stripe is retrying their card)
     await tursoExecute(
       'UPDATE subscriptions SET status = ? WHERE stripe_subscription_id = ?',
-      [status, sub.id],
+      [String(sub.status), sub.id],
     )
   }
 }

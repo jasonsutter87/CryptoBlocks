@@ -39,6 +39,12 @@ export function errorResponse(message: string, status = 400, detail?: string): R
   return json(body, status)
 }
 
+/** Consistent error logging across all functions. Use scope = function name. */
+export function logError(scope: string, err: unknown): void {
+  const msg = err instanceof Error ? err.message : String(err)
+  console.error(`[${scope}] ${msg}`)
+}
+
 /** Extract bearer token from an Authorization header */
 export function extractBearer(req: Request): string {
   const header = req.headers.get('Authorization') ?? ''

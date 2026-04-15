@@ -117,22 +117,28 @@ export default async function handler(req: Request) {
       // Parse workspace JSON from projects to count block usage
       const workspaces = await tursoExecute('SELECT workspace_json FROM projects WHERE workspace_json IS NOT NULL LIMIT 200')
       const blockCounts: Record<string, number> = {}
+      const MAX_BLOCK_DEPTH = 50 // prevents stack overflow on cyclic/malicious workspace JSON
       for (const row of workspaces.rows) {
         try {
           const ws = JSON.parse(String(row.workspace_json))
           const blocks = ws?.blocks?.blocks || []
-          const countBlocks = (block: Record<string, unknown>): void => {
-            if (!block) return
-            if (block.type) blockCounts[String(block.type).replace('cb_', '')] = (blockCounts[String(block.type).replace('cb_', '')] || 0) + 1
-            if (block.next && typeof block.next === 'object') countBlocks((block.next as Record<string, unknown>).block as Record<string, unknown>)
+          const countBlocks = (block: Record<string, unknown>, depth: number): void => {
+            if (!block || depth >= MAX_BLOCK_DEPTH) return
+            if (block.type) {
+              const k = String(block.type).replace('cb_', '')
+              blockCounts[k] = (blockCounts[k] || 0) + 1
+            }
+            if (block.next && typeof block.next === 'object') {
+              countBlocks((block.next as Record<string, unknown>).block as Record<string, unknown>, depth + 1)
+            }
             if (block.inputs && typeof block.inputs === 'object') {
               for (const v of Object.values(block.inputs as Record<string, Record<string, unknown>>)) {
-                if (v?.block) countBlocks(v.block as Record<string, unknown>)
-                if (v?.shadow) countBlocks(v.shadow as Record<string, unknown>)
+                if (v?.block) countBlocks(v.block as Record<string, unknown>, depth + 1)
+                if (v?.shadow) countBlocks(v.shadow as Record<string, unknown>, depth + 1)
               }
             }
           }
-          for (const b of blocks) countBlocks(b as Record<string, unknown>)
+          for (const b of blocks) countBlocks(b as Record<string, unknown>, 0)
         } catch (_e) { /* skip */ }
       }
       const topBlocks = Object.entries(blockCounts).sort((a, b) => b[1] - a[1]).slice(0, 30).map(([name, count]) => ({ name, count }))
@@ -159,16 +165,19 @@ export default async function handler(req: Request) {
       })
     }
 
-    // GET /api/admin/tables — row counts
+    // GET /api/admin/tables — row counts (parallel)
     if (segments[0] === 'tables') {
-      const ALLOWED_TABLES = new Set(['projects', 'classrooms', 'class_members', 'assignments', 'submissions',
+      const ALLOWED_TABLES = ['projects', 'classrooms', 'class_members', 'assignments', 'submissions',
         'discussions', 'replies', 'chat_messages', 'daily_scores', 'notifications',
-        'subscriptions', 'free_overrides'])
-      const counts: Record<string, number> = {}
-      for (const table of ALLOWED_TABLES) {
-        const r = await tursoExecute(`SELECT COUNT(*) as c FROM "${table.replace(/"/g, '')}"`)
-        counts[table] = Number(r.rows[0]?.c ?? 0)
-      }
+        'subscriptions', 'free_overrides'] as const
+      const results = await Promise.all(
+        ALLOWED_TABLES.map((t) =>
+          tursoExecute(`SELECT COUNT(*) as c FROM "${t.replace(/"/g, '')}"`)
+            .then((r) => [t, Number(r.rows[0]?.c ?? 0)] as const)
+            .catch(() => [t, 0] as const),
+        ),
+      )
+      const counts: Record<string, number> = Object.fromEntries(results)
       return json({ tables: counts })
     }
 

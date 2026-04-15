@@ -107,6 +107,12 @@ export default async function handler(req: Request) {
       if (!parsed.success) return json({ error: 'Invalid input' }, 400)
       const { repo, filename, content, message } = parsed.data
 
+      // Defense-in-depth: belt-and-suspenders check against schema-validated values
+      // (RepoFullName + SafeFilename already block this, but interpolating into
+      // URL paths warrants a second check)
+      if (repo.includes('..') || filename.includes('..') || filename.startsWith('/')) {
+        return json({ error: 'Invalid path' }, 400)
+      }
       const contentB64 = Buffer.from(content).toString('base64')
       const safePath = `/repos/${repo}/contents/${filename}`
 

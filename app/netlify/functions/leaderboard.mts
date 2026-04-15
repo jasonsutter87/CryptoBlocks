@@ -5,9 +5,11 @@
  * Public endpoint (no auth) — read-only aggregates over the projects table.
  */
 
-import { json, tursoExecute, isTursoConfigured } from './_lib/index.js'
+import { json, cors, tursoExecute, isTursoConfigured } from './_lib/index.js'
 
-export default async function handler() {
+export default async function handler(req: Request) {
+  if (req.method === 'OPTIONS') return cors()
+
   try {
     if (!isTursoConfigured()) return json({ error: 'Database not configured' }, 500)
 
