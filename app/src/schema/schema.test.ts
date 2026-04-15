@@ -5,6 +5,7 @@ import { describe, it, expect } from 'vitest'
 import {
   Id, Timestamp, ClerkUserId, Name, Text, Content, Email, UrlString,
   Username, Category, Tag, Tags, Visibility, JoinCode, WorkspaceJson,
+  PageParams,
   Project, PublishProjectInput, ReportProjectInput,
   Classroom, CreateClassroomInput, Assignment, Submission, Discussion,
   Reply, ChatMessage, MemberRole,
@@ -179,6 +180,80 @@ describe('Primitives', () => {
     it('rejects over 2MB', () => {
       const tooBig = JSON.stringify({ data: 'x'.repeat(2_000_001) })
       expect(WorkspaceJson.safeParse(tooBig).success).toBe(false)
+    })
+    it('rejects deeply nested JSON (>20 levels)', () => {
+      let nested: unknown = 1
+      for (let i = 0; i < 25; i++) nested = { x: nested }
+      expect(WorkspaceJson.safeParse(JSON.stringify(nested)).success).toBe(false)
+    })
+    it('accepts normal nesting (<20 levels)', () => {
+      let nested: unknown = 1
+      for (let i = 0; i < 15; i++) nested = { x: nested }
+      expect(WorkspaceJson.safeParse(JSON.stringify(nested)).success).toBe(true)
+    })
+  })
+
+  describe('Control characters (XSS/log injection prevention)', () => {
+    it('Name rejects null byte', () => {
+      expect(Name.safeParse('evil\x00name').success).toBe(false)
+    })
+    it('Name rejects escape sequence', () => {
+      expect(Name.safeParse('evil\x1bname').success).toBe(false)
+    })
+    it('Text rejects control chars', () => {
+      expect(Text.safeParse('desc\x07').success).toBe(false)
+    })
+    it('Content allows newlines and tabs', () => {
+      expect(Content.safeParse('line 1\nline 2\twith tab').success).toBe(true)
+    })
+    it('Content rejects null bytes', () => {
+      expect(Content.safeParse('msg\x00').success).toBe(false)
+    })
+    it('Username rejects control chars', () => {
+      expect(Username.safeParse('user\x01').success).toBe(false)
+    })
+  })
+
+  describe('UrlString protocol blocking', () => {
+    it('accepts https', () => {
+      expect(UrlString.safeParse('https://example.com').success).toBe(true)
+    })
+    it('accepts relative path', () => {
+      expect(UrlString.safeParse('/dashboard').success).toBe(true)
+    })
+    it('rejects javascript:', () => {
+      expect(UrlString.safeParse('javascript:alert(1)').success).toBe(false)
+    })
+    it('rejects data:text/html', () => {
+      expect(UrlString.safeParse('data:text/html,<script>').success).toBe(false)
+    })
+    it('rejects vbscript:', () => {
+      expect(UrlString.safeParse('vbscript:msgbox').success).toBe(false)
+    })
+    it('rejects with whitespace prefix', () => {
+      expect(UrlString.safeParse('  javascript:alert(1)').success).toBe(false)
+    })
+  })
+
+  describe('PageParams', () => {
+    it('applies defaults', () => {
+      const parsed = PageParams.parse({})
+      expect(parsed.limit).toBe(20)
+      expect(parsed.offset).toBe(0)
+    })
+    it('coerces string params (URL query)', () => {
+      const parsed = PageParams.parse({ limit: '30', offset: '10' })
+      expect(parsed.limit).toBe(30)
+      expect(parsed.offset).toBe(10)
+    })
+    it('caps limit at MAX_PAGE_SIZE', () => {
+      expect(PageParams.safeParse({ limit: 100 }).success).toBe(false)
+    })
+    it('caps offset at MAX_PAGE_OFFSET', () => {
+      expect(PageParams.safeParse({ offset: 20_000 }).success).toBe(false)
+    })
+    it('rejects negative offset', () => {
+      expect(PageParams.safeParse({ offset: -1 }).success).toBe(false)
     })
   })
 })
