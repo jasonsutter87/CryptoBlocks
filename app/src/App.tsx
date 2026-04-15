@@ -456,19 +456,36 @@ export default function App() {
     exec.abort()
   }, [exec])
 
-  const handleCheckSolution = useCallback(async () => {
-    if (!activeChallenge || !workspaceRef.current) return
+  // Shared entry preamble for every gameplay mode. Captures the current
+  // sandbox workspace, closes any lingering output panel, and clears the
+  // last run's result. Mode-specific state (setActive*, setMode, etc.)
+  // still lives in each handler.
+  const beginModeEntry = useCallback(() => {
+    savedSandboxState.current =
+      snapshotSandbox(workspaceRef.current, modeRef.current === 'sandbox') ?? savedSandboxState.current
+    setShowOutput(false)
+    exec.setResult(null)
+  }, [exec])
 
+  // Shared preamble for the 3 Check-Solution handlers that use Blockly.
+  // Executes the current workspace as JS (HTML mode compiles to JS),
+  // publishes the result, and returns null on error so callers can bail.
+  const runCurrentCode = useCallback(async (): Promise<ExecutionResult | null> => {
+    if (!workspaceRef.current) return null
     setShowOutput(true)
     const execLang = language === 'html' ? 'javascript' : language
     const execCode = language === 'html'
       ? generateCode(workspaceRef.current, 'javascript')
       : code
-
     const execResult = await exec.run({ code: execCode, language: execLang })
     exec.finish(execResult)
+    return execResult.error ? null : execResult
+  }, [code, language, exec])
 
-    if (execResult.error) return
+  const handleCheckSolution = useCallback(async () => {
+    if (!activeChallenge) return
+    const execResult = await runCurrentCode()
+    if (!execResult || !workspaceRef.current) return
 
     const passed = validateOutput(execResult.output, activeChallenge.expectedOutput)
     if (passed) {
@@ -493,16 +510,13 @@ export default function App() {
 
       setShowComplete(true)
     }
-  }, [code, language, activeChallenge, processAchievements, exec])
+  }, [activeChallenge, processAchievements, runCurrentCode])
 
   const handleSelectChallenge = useCallback((challenge: Challenge) => {
-    savedSandboxState.current = snapshotSandbox(workspaceRef.current, modeRef.current === 'sandbox') ?? savedSandboxState.current
-
+    beginModeEntry()
     setActiveChallenge(challenge)
     setMode('active-challenge')
     setShowComplete(false)
-    setShowOutput(false)
-    exec.setResult(null)
     setBlockCount(0)
 
     setTimeout(() => {
@@ -511,7 +525,7 @@ export default function App() {
         starterBlocks: challenge.starterBlocks,
       })
     }, 0)
-  }, [exec])
+  }, [beginModeEntry])
 
   const handleBackToSandbox = useCallback(() => {
     setMode('sandbox')
@@ -567,19 +581,16 @@ export default function App() {
   }, [mode, handleBackToSandbox])
 
   const handleSelectBlockset = useCallback((blockset: Blockset) => {
-    savedSandboxState.current = snapshotSandbox(workspaceRef.current, modeRef.current === 'sandbox') ?? savedSandboxState.current
-
+    beginModeEntry()
     setActiveBlockset(blockset)
     setMode('active-blockset')
     setShowBlocksetComplete(false)
-    setShowOutput(false)
-    exec.setResult(null)
     setBlockCount(0)
 
     setTimeout(() => {
       enterMode(workspaceRef.current, { allowedCategories: blockset.allowedCategories })
     }, 0)
-  }, [exec])
+  }, [beginModeEntry])
 
   const handleBackToBlocksets = useCallback(() => {
     setMode('blocksets')
@@ -598,28 +609,15 @@ export default function App() {
   }, [activeBlockset, handleSelectBlockset, handleBackToBlocksets])
 
   const handleCheckBlocksetSolution = useCallback(async () => {
-    if (!activeBlockset || !workspaceRef.current) return
-
-    setShowOutput(true)
-    const execLang = language === 'html' ? 'javascript' : language
-    const execCode = language === 'html'
-      ? generateCode(workspaceRef.current, 'javascript')
-      : code
-
-    const execResult = await exec.run({ code: execCode, language: execLang })
-    exec.finish(execResult)
-
-    if (execResult.error) return
+    if (!activeBlockset) return
+    const execResult = await runCurrentCode()
+    if (!execResult) return
 
     if (validateOutput(execResult.output, activeBlockset.expectedOutput)) {
-      saveBlocksetProgress({
-        blocksetId: activeBlockset.id,
-        completed: true,
-        attempts: 1,
-      })
+      saveBlocksetProgress({ blocksetId: activeBlockset.id, completed: true, attempts: 1 })
       setShowBlocksetComplete(true)
     }
-  }, [code, language, activeBlockset, exec])
+  }, [activeBlockset, runCurrentCode])
 
   // === Code Golf handlers ===
   const handleOpenGolf = useCallback(() => {
@@ -631,20 +629,17 @@ export default function App() {
   }, [mode, handleBackToSandbox])
 
   const handleSelectGolfProblem = useCallback((problem: GolfProblem) => {
-    savedSandboxState.current = snapshotSandbox(workspaceRef.current, modeRef.current === 'sandbox') ?? savedSandboxState.current
-
+    beginModeEntry()
     setActiveGolfProblem(problem)
     setMode('active-golf')
     setShowGolfComplete(false)
-    setShowOutput(false)
-    exec.setResult(null)
     setBlockCount(0)
     setGolfIsNewBest(false)
 
     setTimeout(() => {
       enterMode(workspaceRef.current, { allowedCategories: problem.allowedCategories })
     }, 0)
-  }, [exec])
+  }, [beginModeEntry])
 
   const handleBackToGolf = useCallback(() => {
     setMode('code-golf')
@@ -670,41 +665,22 @@ export default function App() {
   }, [exec])
 
   const handleCheckGolfSolution = useCallback(async () => {
-    if (!activeGolfProblem || !workspaceRef.current) return
+    if (!activeGolfProblem) return
+    const execResult = await runCurrentCode()
+    if (!execResult || !workspaceRef.current) return
 
-    setShowOutput(true)
-    const execLang = language === 'html' ? 'javascript' : language
-    const execCode = language === 'html'
-      ? generateCode(workspaceRef.current, 'javascript')
-      : code
+    if (!validateOutput(execResult.output, activeGolfProblem.expectedOutput)) return
 
-    const execResult = await exec.run({ code: execCode, language: execLang })
-    exec.finish(execResult)
+    const blocks = countBlocks(workspaceRef.current)
+    const { getGolfProgressById } = await import('./code-golf/progress')
+    const prev = getGolfProgressById(activeGolfProblem.id)
+    setGolfIsNewBest(!prev || blocks < prev.bestBlockCount)
 
-    if (execResult.error) return
-
-    const passed = validateOutput(execResult.output, activeGolfProblem.expectedOutput)
-    if (passed) {
-      const blocks = countBlocks(workspaceRef.current)
-      const { getGolfProgressById } = await import('./code-golf/progress')
-      const prev = getGolfProgressById(activeGolfProblem.id)
-      const isNewBest = !prev || blocks < prev.bestBlockCount
-      setGolfIsNewBest(isNewBest)
-
-      saveGolfProgress({
-        problemId: activeGolfProblem.id,
-        completed: true,
-        bestBlockCount: blocks,
-        attempts: 1,
-      })
-
-      recordGolfComplete()
-      const newAchievements = checkAchievements({ event: 'golf-complete' })
-      processAchievements(newAchievements)
-
-      setShowGolfComplete(true)
-    }
-  }, [code, language, activeGolfProblem, processAchievements])
+    saveGolfProgress({ problemId: activeGolfProblem.id, completed: true, bestBlockCount: blocks, attempts: 1 })
+    recordGolfComplete()
+    processAchievements(checkAchievements({ event: 'golf-complete' }))
+    setShowGolfComplete(true)
+  }, [activeGolfProblem, processAchievements, runCurrentCode])
 
   // === Code Lab handlers ===
   const handleOpenLab = useCallback(() => {
@@ -716,15 +692,12 @@ export default function App() {
   }, [mode, handleBackToSandbox])
 
   const handleSelectExercise = useCallback((exercise: LabExercise) => {
-    savedSandboxState.current = snapshotSandbox(workspaceRef.current, modeRef.current === 'sandbox') ?? savedSandboxState.current
-
+    beginModeEntry()
     setActiveLabExercise(exercise)
     setMode('active-lab')
     setShowLabComplete(false)
-    setShowOutput(false)
-    exec.setResult(null)
     setLabCode(exercise.starterCode || '')
-  }, [exec])
+  }, [beginModeEntry])
 
   const handleBackToLab = useCallback(() => {
     setMode('code-lab')

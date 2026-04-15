@@ -4,6 +4,7 @@
  */
 
 import type { ClassroomDetail } from '../api'
+import { Avatar } from '../Avatar'
 
 interface StudentsTabProps {
   classroom: ClassroomDetail
@@ -36,13 +37,7 @@ export default function StudentsTab({ classroom }: StudentsTabProps) {
           return (
             <div key={student.userId} className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
               <div className="flex items-center gap-3 mb-3">
-                {student.userAvatar ? (
-                  <img src={student.userAvatar} alt="" className="w-10 h-10 rounded-full" />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-[#89b4fa] flex items-center justify-center text-sm font-bold text-[#1e1e2e]">
-                    {student.userName.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <Avatar name={student.userName} src={student.userAvatar} size="lg" />
                 <div>
                   <div className="text-sm font-bold text-[#cdd6f4]">{student.userName}</div>
                   <div className="text-[10px] text-[#6c7086]">

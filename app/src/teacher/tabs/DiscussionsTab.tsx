@@ -11,6 +11,7 @@ import type { Discussion, Reply } from '../api'
 import { createDiscussion, fetchReplies, postReply } from '../api'
 import { Md } from '../Md'
 import { formatAge } from '../formatAge'
+import { Avatar } from '../Avatar'
 
 interface DiscussionsTabProps {
   classroomId: string
@@ -82,13 +83,7 @@ export default function DiscussionsTab({ classroomId, discussions, onRefresh }: 
           </button>
           <div className="bg-[#1e1e2e] rounded-lg p-4 border border-[#313244] mb-3">
             <div className="flex items-center gap-2 mb-2">
-              {selected.authorAvatar ? (
-                <img src={selected.authorAvatar} alt="" className="w-6 h-6 rounded-full" />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-[#89b4fa] flex items-center justify-center text-[10px] font-bold text-[#1e1e2e]">
-                  {selected.authorName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Avatar name={selected.authorName} src={selected.authorAvatar} size="md" />
               <span className="text-sm font-semibold text-[#cdd6f4]">{selected.authorName}</span>
               <span className="text-[10px] text-[#6c7086]">{formatAge(selected.createdAt)}</span>
             </div>
@@ -98,13 +93,7 @@ export default function DiscussionsTab({ classroomId, discussions, onRefresh }: 
 
           {replies.map((r) => (
             <div key={r.id} className="flex gap-2 mb-2 ml-4">
-              {r.authorAvatar ? (
-                <img src={r.authorAvatar} alt="" className="w-5 h-5 rounded-full mt-0.5" />
-              ) : (
-                <div className="w-5 h-5 rounded-full bg-[#313244] flex items-center justify-center text-[9px] font-bold text-[#89b4fa] mt-0.5 shrink-0">
-                  {r.authorName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Avatar name={r.authorName} src={r.authorAvatar} size="sm" variant="muted" className="mt-0.5 shrink-0" />
               <div className="bg-[#1e1e2e] rounded-lg px-3 py-2 flex-1">
                 <span className="text-xs font-semibold text-[#cdd6f4]">{r.authorName}</span>
                 <span className="text-[10px] text-[#6c7086] ml-2">{formatAge(r.createdAt)}</span>

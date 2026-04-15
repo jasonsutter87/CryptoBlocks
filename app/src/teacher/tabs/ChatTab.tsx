@@ -9,6 +9,7 @@ import { useAuth, useUser } from '@clerk/clerk-react'
 import { fetchChat, sendChat } from '../api'
 import type { ChatMessage } from '../api'
 import { formatAge } from '../formatAge'
+import { Avatar } from '../Avatar'
 
 interface ChatTabProps {
   classroomId: string
@@ -77,13 +78,7 @@ export default function ChatTab({ classroomId, active }: ChatTabProps) {
           const isMe = m.authorId === user?.id
           return (
             <div key={m.id} className={`flex gap-2 mb-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-              {m.authorAvatar ? (
-                <img src={m.authorAvatar} alt="" className="w-6 h-6 rounded-full mt-0.5 shrink-0" />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-[#313244] flex items-center justify-center text-[10px] font-bold text-[#89b4fa] mt-0.5 shrink-0">
-                  {m.authorName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Avatar name={m.authorName} src={m.authorAvatar} size="md" variant="muted" className="mt-0.5 shrink-0" />
               <div className={`max-w-[70%] rounded-lg px-3 py-2 ${isMe ? 'bg-[#89b4fa]/20' : 'bg-[#1e1e2e]'}`}>
                 {!isMe && <div className="text-[10px] font-semibold text-[#89b4fa] mb-0.5">{m.authorName}</div>}
                 <p className="text-sm text-[#cdd6f4]">{m.body}</p>

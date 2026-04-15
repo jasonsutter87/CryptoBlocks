@@ -8,6 +8,7 @@ import { useAuth } from '@clerk/clerk-react'
 import type { ClassroomDetail } from '../api'
 import { updateDescription } from '../api'
 import { Md } from '../Md'
+import { Avatar } from '../Avatar'
 
 interface OverviewTabProps {
   classroom: ClassroomDetail
@@ -86,13 +87,7 @@ export default function OverviewTab({ classroom, isTeacher, assignmentCount, dis
         <div className="flex flex-wrap gap-2">
           {classroom.members.map((m) => (
             <div key={m.userId} className="flex items-center gap-2 bg-[#1e1e2e] rounded-lg px-3 py-2">
-              {m.userAvatar ? (
-                <img src={m.userAvatar} alt="" className="w-6 h-6 rounded-full" />
-              ) : (
-                <div className="w-6 h-6 rounded-full bg-[#89b4fa] flex items-center justify-center text-[10px] font-bold text-[#1e1e2e]">
-                  {m.userName.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Avatar name={m.userName} src={m.userAvatar} size="md" />
               <span className="text-sm text-[#cdd6f4]">{m.userName}</span>
               {m.role === 'teacher' && (
                 <span className="text-[10px] text-[#f9e2af] bg-[#f9e2af]/10 px-1.5 py-0.5 rounded font-semibold">Teacher</span>
