@@ -1,275 +1,113 @@
 /**
  * Netlify Function — Shareplace projects API.
  *
- * Uses Turso's raw Hrana HTTP API (fetch-based, no @libsql/client needed)
- * to avoid bundler/runtime compatibility issues in Netlify Functions.
- *
  * Routes:
- *   GET  /api/projects          → list projects (paginated, filterable)
- *   GET  /api/projects/:id      → single project
- *   POST /api/projects          → publish a new project
- *   POST /api/projects/:id/like → increment likes
+ *   GET  /api/projects          → list projects (paginated, filterable, public only)
+ *   GET  /api/projects/my       → list own projects (private + public)
+ *   GET  /api/projects/:id      → single project (private only visible to owner)
+ *   POST /api/projects          → publish a new project (auth required)
+ *   POST /api/projects/:id/like → increment likes (auth required)
+ *   POST /api/projects/:id/download → increment download count
+ *   POST /api/projects/:id/report   → report for review (auth required)
+ *   DELETE /api/projects/:id    → admin or owner only
  */
 
-// -- Clerk JWT verification (lightweight, no SDK dependency) ----------------
+import {
+  json, cors, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  moderateContent, requireAuth, isAdmin,
+} from './_lib/index.js'
+import type { ClerkUser, TursoRow } from './_lib/index.js'
+import {
+  PublishProjectInput, ReportProjectInput, PageParams, Category,
+} from '../../src/schema/index.js'
 
-interface ClerkTokenPayload {
-  sub: string
-  name?: string
-  email?: string
+declare global {
+  // eslint-disable-next-line no-var
+  var __visibilityMigrated: boolean | undefined
 }
 
-async function verifyClerkToken(token: string): Promise<ClerkTokenPayload | null> {
-  if (!token) return null
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-    if (!payload.sub) return null
-    if (process.env.CLERK_SECRET_KEY) {
-      try {
-        const res = await fetch(`https://api.clerk.com/v1/users/${payload.sub}`, {
-          headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` },
-        })
-        if (res.ok) {
-          const user = await res.json()
-          return {
-            sub: payload.sub,
-            name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || undefined,
-            email: user.email_addresses?.[0]?.email_address,
-          }
-        }
-      } catch {}
-    }
-    return { sub: payload.sub }
-  } catch {
-    return null
-  }
+async function ensureVisibilityColumn(): Promise<void> {
+  if (globalThis.__visibilityMigrated) return
+  await tursoExecute(
+    "ALTER TABLE projects ADD COLUMN visibility TEXT DEFAULT 'public'",
+  ).catch(() => { /* already exists */ })
+  globalThis.__visibilityMigrated = true
 }
-
-// -- Content moderation -----------------------------------------------------
-
-const BANNED_WORDS = [
-  'fuck', 'shit', 'bitch', 'ass', 'damn', 'dick', 'pussy', 'cock', 'cunt',
-  'nigger', 'nigga', 'faggot', 'retard', 'slut', 'whore', 'porn', 'xxx',
-  'kill yourself', 'kys',
-]
-
-const URL_PATTERN = /https?:\/\/[^\s]+|www\.[^\s]+/gi
-
-function moderateContent(name: string, description: string): string | null {
-  const combined = ` ${name} ${description} `.toLowerCase()
-
-  for (const word of BANNED_WORDS) {
-    // Use word boundary check so "classic" doesn't match "ass"
-    const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`)
-    if (re.test(combined)) {
-      return 'Project contains inappropriate language. Please edit and try again.'
-    }
-  }
-
-  if (URL_PATTERN.test(name) || URL_PATTERN.test(description)) {
-    return 'URLs are not allowed in project names or descriptions.'
-  }
-
-  return null
-}
-
-// -- Minimal Turso HTTP client via fetch -----------------------------------
-
-interface TursoRow {
-  [key: string]: unknown
-}
-
-interface TursoResult {
-  rows: TursoRow[]
-}
-
-async function tursoExecute(
-  sql: string,
-  args: (string | number | null)[] = [],
-): Promise<TursoResult> {
-  const baseUrl = (process.env.TURSO_URL || '').replace('libsql://', 'https://')
-  const token = process.env.TURSO_AUTH_TOKEN || ''
-
-  const res = await fetch(`${baseUrl}/v3/pipeline`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      requests: [
-        {
-          type: 'execute',
-          stmt: {
-            sql,
-            args: args.map((a) => {
-              if (a === null) return { type: 'null', value: null }
-              if (typeof a === 'number') return { type: Number.isInteger(a) ? 'integer' : 'float', value: String(a) }
-              return { type: 'text', value: String(a) }
-            }),
-          },
-        },
-        { type: 'close' },
-      ],
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`Turso HTTP ${res.status}: ${body.slice(0, 200)}`)
-  }
-
-  const data = await res.json()
-  const result = data?.results?.[0]?.response?.result
-
-  if (!result) {
-    // DDL or write operations might not return result rows
-    return { rows: [] }
-  }
-
-  // Convert columnar response → array of objects
-  const cols: string[] = result.cols.map((c: { name: string }) => c.name)
-  const rows: TursoRow[] = result.rows.map((row: Array<{ value: unknown }>) => {
-    const obj: TursoRow = {}
-    for (let i = 0; i < cols.length; i++) {
-      obj[cols[i]] = row[i]?.value ?? null
-    }
-    return obj
-  })
-
-  return { rows }
-}
-
-// -- HTTP helpers -----------------------------------------------------------
-
-function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
-
-function cors(): Response {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
-
-// -- Handler ----------------------------------------------------------------
 
 export default async function handler(req: Request) {
   if (req.method === 'OPTIONS') return cors()
 
-  const url = new URL(req.url)
-  const cleanPath = url.pathname
-    .replace('/.netlify/functions/projects', '')
-    .replace('/api/projects', '')
-  const segments = cleanPath.split('/').filter(Boolean)
+  const segments = parsePath(req, 'projects')
 
   try {
-    if (!process.env.TURSO_URL || !process.env.TURSO_AUTH_TOKEN) {
+    if (!isTursoConfigured()) {
       return json({ error: 'Database not configured' }, 500)
     }
+    await ensureVisibilityColumn()
 
-    // Auto-migrate: add visibility column if missing (runs once per cold start)
-    if (!(globalThis as any).__visibilityMigrated) {
-      await tursoExecute("ALTER TABLE projects ADD COLUMN visibility TEXT DEFAULT 'public'").catch(() => {})
-      ;(globalThis as any).__visibilityMigrated = true
-    }
-    }
+    const user: ClerkUser | null = await verifyFromRequest(req)
 
     // POST /api/projects — publish a project (requires Clerk auth)
     if (req.method === 'POST' && segments.length === 0) {
-      // Verify Clerk JWT from Authorization header
-      const authHeader = req.headers.get('Authorization') || ''
-      const token = authHeader.replace('Bearer ', '')
-      const clerkUser = await verifyClerkToken(token)
+      const authErr = requireAuth(user, 'Sign in to upload projects')
+      if (authErr) return authErr
 
-      if (!clerkUser && process.env.CLERK_SECRET_KEY) {
-        return json({ error: 'Sign in to upload projects' }, 401)
-      }
+      const raw = await req.json().catch(() => null)
+      const parsed = PublishProjectInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
 
-      const body = await req.json()
-      const { name, authorName, description, category, workspaceJson, tags, blockCount, parentId } = body
+      const {
+        name, authorName, description, category, workspaceJson, tags,
+        blockCount, parentId, visibility,
+      } = parsed.data
 
-      if (!name || !workspaceJson) {
-        return json({ error: 'name and workspaceJson are required' }, 400)
-      }
-
-      // --- Content moderation ---
-      const moderationError = moderateContent(String(name), String(description || ''))
-      if (moderationError) {
-        return json({ error: moderationError }, 400)
-      }
+      // Content moderation
+      const modErr = moderateContent(name, description ?? '')
+      if (modErr) return json({ error: modErr }, 400)
 
       const id = crypto.randomUUID()
       const now = Date.now()
-
-      const visibility = body.visibility === 'private' ? 'private' : 'public'
+      const finalAuthorName = (authorName || user!.name || 'Anonymous').slice(0, 50)
 
       await tursoExecute(
         `INSERT INTO projects (id, name, author_id, author_name, description, category, workspace_json, tags, block_count, parent_id, visibility, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          id,
-          String(name).slice(0, 100),
-          clerkUser?.sub || 'anonymous',
-          String(authorName || clerkUser?.name || 'Anonymous').slice(0, 50),
-          String(description || '').slice(0, 500),
-          String(category || 'General').slice(0, 50),
-          String(workspaceJson),
-          JSON.stringify(tags || []),
-          Number(blockCount) || 0,
-          parentId || null,
-          visibility,
-          now,
+          id, name, user!.sub, finalAuthorName,
+          description ?? '', category ?? 'General',
+          workspaceJson, JSON.stringify(tags ?? []),
+          blockCount ?? 0, parentId ?? null,
+          visibility ?? 'public', now,
         ],
       )
 
-      // Notify the original author if this is a remix
-      if (parentId && clerkUser) {
+      // Notify original author on remix (don't block response on failure)
+      if (parentId) {
         const parent = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [parentId])
         const parentAuthor = parent.rows[0]?.author_id
-        if (parentAuthor && parentAuthor !== clerkUser.sub) {
+        if (parentAuthor && parentAuthor !== user!.sub) {
           await createNotificationDirect(
             String(parentAuthor), 'remix',
             'Your project was remixed!',
-            `Someone remixed "${parent.rows[0]?.name}" into "${String(name).slice(0, 50)}"`,
+            `Someone remixed "${parent.rows[0]?.name}" into "${name.slice(0, 50)}"`,
             `/shareplace`,
-          )
+          ).catch(() => { /* notification failure non-fatal */ })
         }
       }
 
       return json({ id, name, createdAt: now }, 201)
     }
 
-    // DELETE /api/projects/:id — admin only
+    // DELETE /api/projects/:id — admin or owner
     if (req.method === 'DELETE' && segments.length === 1) {
-      const authHeader = req.headers.get('Authorization') || ''
-      const delUser = await verifyClerkToken(authHeader.replace('Bearer ', ''))
-      if (!delUser) return json({ error: 'Sign in' }, 401)
-      // Check admin OR project owner
-      const adminEmails = (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
-      const userEmail = delUser.email?.toLowerCase() || ''
-      const isAdmin = adminEmails.length > 0 && adminEmails.includes(userEmail)
+      const authErr = requireAuth(user)
+      if (authErr) return authErr
 
-      if (!isAdmin) {
+      if (!isAdmin(user)) {
         // Non-admins can only delete their own projects
         const project = await tursoExecute('SELECT author_id FROM projects WHERE id = ?', [segments[0]])
         if (project.rows.length === 0) return json({ error: 'Not found' }, 404)
-        if (project.rows[0].author_id !== delUser.sub) {
+        if (project.rows[0].author_id !== user!.sub) {
           return json({ error: 'You can only delete your own projects' }, 403)
         }
       }
@@ -279,19 +117,19 @@ export default async function handler(req: Request) {
 
     // POST /api/projects/:id/report — flag a project for review
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'report') {
-      const reportAuth = req.headers.get('Authorization') || ''
-      const reportUser = await verifyClerkToken(reportAuth.replace('Bearer ', ''))
-      if (!reportUser && process.env.CLERK_SECRET_KEY) {
-        return json({ error: 'Sign in to report' }, 401)
-      }
-      const body = await req.json()
-      const reason = String(body.reason || 'No reason given').slice(0, 500)
+      const authErr = requireAuth(user, 'Sign in to report')
+      if (authErr) return authErr
+
+      const raw = await req.json().catch(() => null)
+      const parsed = ReportProjectInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+
       // eslint-disable-next-line no-console
-      console.log(`[REPORT] Project ${segments[0]} reported by ${reportUser?.sub || 'anon'}: ${reason}`)
+      console.log(`[REPORT] Project ${segments[0]} reported by ${user!.sub}: ${parsed.data.reason} ${parsed.data.detail ?? ''}`.slice(0, 500))
       return json({ ok: true, message: 'Thank you for reporting. We will review this project.' })
     }
 
-    // POST /api/projects/:id/download — increment download count
+    // POST /api/projects/:id/download — increment download count (no auth by design)
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'download') {
       await tursoExecute(
         'UPDATE projects SET downloads = downloads + 1 WHERE id = ?',
@@ -300,30 +138,40 @@ export default async function handler(req: Request) {
       return json({ ok: true })
     }
 
-    // POST /api/projects/:id/like (auth required to prevent spam)
+    // POST /api/projects/:id/like — auth required, dedup enforced
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'like') {
-      const authHeader = req.headers.get('Authorization') || ''
-      const likeToken = authHeader.replace('Bearer ', '')
-      const likeUser = await verifyClerkToken(likeToken)
-      if (!likeUser && process.env.CLERK_SECRET_KEY) {
-        return json({ error: 'Sign in to like projects' }, 401)
-      }
+      const authErr = requireAuth(user, 'Sign in to like projects')
+      if (authErr) return authErr
+
+      // Dedup: skip if this user already liked (non-fatal — table may not exist yet)
+      const projectId = segments[0]
+      try {
+        const existing = await tursoExecute(
+          'SELECT 1 FROM project_likes WHERE project_id = ? AND user_id = ?',
+          [projectId, user!.sub],
+        )
+        if (existing.rows.length > 0) return json({ ok: true, alreadyLiked: true })
+        await tursoExecute(
+          'INSERT INTO project_likes (project_id, user_id, created_at) VALUES (?, ?, ?)',
+          [projectId, user!.sub, Date.now()],
+        )
+      } catch { /* table may not exist yet — skip dedup, still count the like */ }
+
       await tursoExecute(
         'UPDATE projects SET likes = likes + 1 WHERE id = ?',
-        [segments[0]],
+        [projectId],
       )
-      // Notify the project author
-      if (likeUser) {
-        const project = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [segments[0]])
-        const authorId = project.rows[0]?.author_id
-        if (authorId && authorId !== likeUser.sub) {
-          await createNotificationDirect(
-            String(authorId), 'like',
-            'New like!',
-            `Someone liked your project "${project.rows[0]?.name}"`,
-            `/shareplace`,
-          )
-        }
+
+      // Notify author (non-fatal)
+      const project = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [projectId])
+      const authorId = project.rows[0]?.author_id
+      if (authorId && authorId !== user!.sub) {
+        await createNotificationDirect(
+          String(authorId), 'like',
+          'New like!',
+          `Someone liked your project "${project.rows[0]?.name}"`,
+          `/shareplace`,
+        ).catch(() => { /* non-fatal */ })
       }
       return json({ ok: true })
     }
@@ -380,9 +228,7 @@ export default async function handler(req: Request) {
       if (result.rows.length === 0) return json({ error: 'Not found' }, 404)
       const project = result.rows[0]
       if (project.visibility === 'private') {
-        const authHeader = req.headers.get('Authorization') || ''
-        const viewer = await verifyClerkToken(authHeader.replace('Bearer ', ''))
-        if (!viewer || viewer.sub !== project.author_id) {
+        if (!user || user.sub !== project.author_id) {
           return json({ error: 'Not found' }, 404)
         }
       }
@@ -391,28 +237,53 @@ export default async function handler(req: Request) {
 
     // GET /api/projects/my — user's own projects (private + public)
     if (req.method === 'GET' && segments[0] === 'my') {
-      if (!clerkUser?.sub) return json({ error: 'Sign in required' }, 401)
-      const limit = Math.min(50, Number(url.searchParams.get('limit')) || 50)
-      const offset = Number(url.searchParams.get('offset')) || 0
+      const authErr = requireAuth(user)
+      if (authErr) return authErr
+
+      const qs = new URL(req.url).searchParams
+      const pageParsed = PageParams.safeParse({
+        limit: qs.get('limit') ?? undefined,
+        offset: qs.get('offset') ?? undefined,
+      })
+      if (!pageParsed.success) return json({ error: 'Invalid pagination' }, 400)
+      const { limit, offset } = pageParsed.data
+
       const result = await tursoExecute(
         'SELECT * FROM projects WHERE author_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
-        [clerkUser.sub, limit, offset],
+        [user!.sub, limit, offset],
       )
       return json({ projects: result.rows.map(formatProject), limit, offset })
     }
 
     // GET /api/projects — public listing (excludes private projects)
     if (req.method === 'GET' && segments.length === 0) {
-      const category = url.searchParams.get('category')
-      const search = url.searchParams.get('search')
-      const limit = Math.min(50, Number(url.searchParams.get('limit')) || 20)
-      const offset = Number(url.searchParams.get('offset')) || 0
+      const qs = new URL(req.url).searchParams
+
+      const pageParsed = PageParams.safeParse({
+        limit: qs.get('limit') ?? undefined,
+        offset: qs.get('offset') ?? undefined,
+      })
+      if (!pageParsed.success) return json({ error: 'Invalid pagination' }, 400)
+      const { limit, offset } = pageParsed.data
+
+      // Validate category — reject unknown values instead of passing them to SQL
+      const rawCategory = qs.get('category')
+      let category: string | null = null
+      if (rawCategory && rawCategory !== 'All') {
+        const cat = Category.safeParse(rawCategory)
+        if (!cat.success) return json({ error: 'Invalid category' }, 400)
+        category = cat.data
+      }
+
+      // Bound search term
+      const rawSearch = qs.get('search')
+      const search = rawSearch ? rawSearch.slice(0, 100) : null
 
       let sql = 'SELECT * FROM projects'
       const args: (string | number)[] = []
       const conditions: string[] = ["(visibility IS NULL OR visibility = 'public')"]
 
-      if (category && category !== 'All') {
+      if (category) {
         conditions.push('category = ?')
         args.push(category)
       }
@@ -430,9 +301,8 @@ export default async function handler(req: Request) {
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('Projects API error:', message)
-    return json({ error: 'Internal server error', detail: message }, 500)
+    console.error('Projects API error:', err instanceof Error ? err.message : String(err))
+    return json({ error: 'Internal server error' }, 500)
   }
 }
 
