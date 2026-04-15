@@ -11,6 +11,7 @@ export type { TursoRow, TursoResult } from './turso.js'
 export { verifyClerkToken, verifyFromRequest, isAdmin, secureRandomCode } from './auth.js'
 export type { ClerkUser } from './auth.js'
 export { moderateContent } from './moderation.js'
+export { createNotification } from './notifications.js'
 export {
   requireAuth,
   requireClassroomMember,
