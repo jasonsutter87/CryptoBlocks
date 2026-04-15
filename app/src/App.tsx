@@ -1,10 +1,11 @@
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
 import * as Blockly from 'blockly'
 import type { Language, BlockDefinition } from './types/block'
-import { generateCode, generateHtmlMarkup, registerSingleBlock, unregisterBlock, getToolboxXml, getFilteredToolboxXml } from './blocks/blockly-register'
+import { generateCode, generateHtmlMarkup, registerSingleBlock, unregisterBlock, getToolboxXml } from './blocks/blockly-register'
 import { registry } from './blocks/registry'
-import { executeCode } from './execution/runner'
-import type { ExecutionResult, ExecutionHandle } from './execution/runner'
+import type { ExecutionResult } from './execution/runner'
+import { useExecution } from './hooks/useExecution'
+import { snapshotSandbox, enterMode, exitToSandbox } from './hooks/modeWorkspace'
 import {
   saveCustomBlocksToLocal,
   saveWorkspaceToLocal,
@@ -100,9 +101,8 @@ export default function App() {
   const [lastExecCode, setLastExecCode] = useState('')
   const [showCode, setShowCode] = useState(false)
   const [showOutput, setShowOutput] = useState(false)
-  const [isRunning, setIsRunning] = useState(false)
-  const [result, setResult] = useState<ExecutionResult | null>(null)
-  const [liveOutput, setLiveOutput] = useState<string[]>([])
+  const exec = useExecution()
+  const { isRunning, result, liveOutput } = exec
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showExamples, setShowExamples] = useState(false)
   const [showCodeToBlocks, setShowCodeToBlocks] = useState(false)
@@ -195,7 +195,6 @@ export default function App() {
   })
 
   // Execution handle for stop button (CB-R2-002)
-  const executionHandleRef = useRef<ExecutionHandle | null>(null)
 
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
 
@@ -363,12 +362,6 @@ export default function App() {
   )
 
   const handleRun = useCallback(async () => {
-    // Abort any in-flight execution from a prior click — otherwise two
-    // postMessage handlers race and the older promise overwrites the newer
-    // result.
-    executionHandleRef.current?.abort()
-    executionHandleRef.current = null
-
     // Cancel any leftover game loop from a previous run so two Runs don't
     // pile up requestAnimationFrame callbacks on the same canvas.
     const w = window as unknown as { __cbGameLoopId?: number }
@@ -377,10 +370,7 @@ export default function App() {
       w.__cbGameLoopId = 0
     }
 
-    setIsRunning(true)
     setShowOutput(true)
-    setResult(null)
-    setLiveOutput([])
 
     // Always execute as JS or Python — HTML peek is display-only
     const execLang = language === 'html' ? 'javascript' : language
@@ -394,34 +384,28 @@ export default function App() {
 
     const traceLog: string[] = []
 
-    const handle = executeCode(execCode, execLang, (line) => {
-      setLiveOutput((prev) => [...prev, line])
-    }, traceEnabled ? (blockId) => {
-      traceLog.push(blockId)
-    } : undefined, (dataUrl) => {
-      setResult((prev) => prev
-        ? { ...prev, canvasDataUrl: dataUrl }
-        : { output: [], error: null, returnValue: undefined, duration: 0, canvasDataUrl: dataUrl })
+    const execResult = await exec.run({
+      code: execCode,
+      language: execLang,
+      onTrace: traceEnabled ? (blockId) => { traceLog.push(blockId) } : undefined,
+      onCanvasUpdate: (dataUrl) => {
+        exec.patchResult((prev) => prev
+          ? { ...prev, canvasDataUrl: dataUrl }
+          : { output: [], error: null, returnValue: undefined, duration: 0, canvasDataUrl: dataUrl })
+      },
     })
-    executionHandleRef.current = handle
-
-    const execResult = await handle.promise
-    executionHandleRef.current = null
 
     // Replay trace highlights with delay so user can follow along
     if (traceEnabled && traceLog.length > 0) {
-      setResult(execResult)
-      setLiveOutput([])
+      exec.finish(execResult)
       for (const blockId of traceLog) {
         workspaceRef.current?.highlightBlock(blockId)
         await new Promise(r => setTimeout(r, 200))
       }
       workspaceRef.current?.highlightBlock(null as unknown as string)
     } else {
-      setResult(execResult)
-      setLiveOutput([])
+      exec.finish(execResult)
     }
-    setIsRunning(false)
 
     // Track stats + check achievements
     const blocks = workspaceRef.current ? countBlocks(workspaceRef.current) : 0
@@ -445,7 +429,7 @@ export default function App() {
         setDailySolvedBlocks(blocks)
       }
     }
-  }, [code, language, slowMo, processAchievements, getUsedCategories, isDailyChallenge, dailyInfo])
+  }, [code, language, slowMo, processAchievements, getUsedCategories, isDailyChallenge, dailyInfo, exec])
 
   // Keep run ref up to date for collab broadcast
   handleRunRef.current = handleRun
@@ -475,39 +459,21 @@ export default function App() {
   }, [])
 
   const handleStop = useCallback(() => {
-    executionHandleRef.current?.abort()
-    executionHandleRef.current = null
-    setIsRunning(false)
-  }, [])
+    exec.abort()
+  }, [exec])
 
   const handleCheckSolution = useCallback(async () => {
     if (!activeChallenge || !workspaceRef.current) return
 
-    executionHandleRef.current?.abort()
-    executionHandleRef.current = null
-
-    setIsRunning(true)
     setShowOutput(true)
-    setResult(null)
-    setLiveOutput([])
-
     const execLang = language === 'html' ? 'javascript' : language
-    const execCode = language === 'html' && workspaceRef.current
+    const execCode = language === 'html'
       ? generateCode(workspaceRef.current, 'javascript')
       : code
 
-    const handle = executeCode(execCode, execLang, (line) => {
-      setLiveOutput((prev) => [...prev, line])
-    })
-    executionHandleRef.current = handle
+    const execResult = await exec.run({ code: execCode, language: execLang })
+    exec.finish(execResult)
 
-    const execResult = await handle.promise
-    executionHandleRef.current = null
-    setResult(execResult)
-    setLiveOutput([])
-    setIsRunning(false)
-
-    // Validate
     if (execResult.error) return
 
     const passed = validateOutput(execResult.output, activeChallenge.expectedOutput)
@@ -533,55 +499,33 @@ export default function App() {
 
       setShowComplete(true)
     }
-  }, [code, language, activeChallenge, processAchievements])
+  }, [code, language, activeChallenge, processAchievements, exec])
 
   const handleSelectChallenge = useCallback((challenge: Challenge) => {
-    // Save current sandbox workspace
-    if (workspaceRef.current && modeRef.current === 'sandbox') {
-      savedSandboxState.current = Blockly.serialization.workspaces.save(workspaceRef.current)
-    }
+    savedSandboxState.current = snapshotSandbox(workspaceRef.current, modeRef.current === 'sandbox') ?? savedSandboxState.current
 
     setActiveChallenge(challenge)
     setMode('active-challenge')
     setShowComplete(false)
     setShowOutput(false)
-    setResult(null)
+    exec.setResult(null)
     setBlockCount(0)
 
-    // Apply restricted toolbox and clear workspace
     setTimeout(() => {
-      if (workspaceRef.current) {
-        const toolbox = challenge.allowedCategories
-          ? getFilteredToolboxXml(challenge.allowedCategories)
-          : getToolboxXml()
-        workspaceRef.current.updateToolbox(toolbox)
-        workspaceRef.current.clear()
-
-        if (challenge.starterBlocks) {
-          Blockly.serialization.workspaces.load(challenge.starterBlocks, workspaceRef.current)
-          // Lock starter blocks — user must use them
-          for (const b of workspaceRef.current.getAllBlocks(false)) {
-            b.setDeletable(false)
-          }
-        }
-      }
+      enterMode(workspaceRef.current, {
+        allowedCategories: challenge.allowedCategories,
+        starterBlocks: challenge.starterBlocks,
+      })
     }, 0)
-  }, [])
+  }, [exec])
 
   const handleBackToSandbox = useCallback(() => {
     setMode('sandbox')
     setActiveChallenge(null)
     setShowComplete(false)
 
-    // Restore full toolbox and sandbox workspace
     setTimeout(() => {
-      if (workspaceRef.current) {
-        workspaceRef.current.updateToolbox(getToolboxXml())
-        workspaceRef.current.clear()
-        if (savedSandboxState.current) {
-          Blockly.serialization.workspaces.load(savedSandboxState.current, workspaceRef.current)
-        }
-      }
+      exitToSandbox(workspaceRef.current, savedSandboxState.current)
     }, 0)
   }, [])
 
@@ -603,19 +547,13 @@ export default function App() {
 
   const handleRetryChallenge = useCallback(() => {
     setShowComplete(false)
-    setResult(null)
+    exec.setResult(null)
     setShowOutput(false)
-    if (workspaceRef.current) {
-      workspaceRef.current.clear()
-      // Reload starter blocks if this is an island challenge
-      if (activeChallenge?.starterBlocks) {
-        Blockly.serialization.workspaces.load(activeChallenge.starterBlocks, workspaceRef.current)
-        for (const b of workspaceRef.current.getAllBlocks(false)) {
-          b.setDeletable(false)
-        }
-      }
-    }
-  }, [activeChallenge])
+    enterMode(workspaceRef.current, {
+      allowedCategories: activeChallenge?.allowedCategories,
+      starterBlocks: activeChallenge?.starterBlocks,
+    })
+  }, [activeChallenge, exec])
 
   const handleOpenChallenges = useCallback(() => {
     if (mode === 'challenges') {
@@ -635,25 +573,19 @@ export default function App() {
   }, [mode, handleBackToSandbox])
 
   const handleSelectBlockset = useCallback((blockset: Blockset) => {
-    if (workspaceRef.current && modeRef.current === 'sandbox') {
-      savedSandboxState.current = Blockly.serialization.workspaces.save(workspaceRef.current)
-    }
+    savedSandboxState.current = snapshotSandbox(workspaceRef.current, modeRef.current === 'sandbox') ?? savedSandboxState.current
 
     setActiveBlockset(blockset)
     setMode('active-blockset')
     setShowBlocksetComplete(false)
     setShowOutput(false)
-    setResult(null)
+    exec.setResult(null)
     setBlockCount(0)
 
     setTimeout(() => {
-      if (workspaceRef.current) {
-        const toolbox = getFilteredToolboxXml(blockset.allowedCategories)
-        workspaceRef.current.updateToolbox(toolbox)
-        workspaceRef.current.clear()
-      }
+      enterMode(workspaceRef.current, { allowedCategories: blockset.allowedCategories })
     }, 0)
-  }, [])
+  }, [exec])
 
   const handleBackToBlocksets = useCallback(() => {
     setMode('blocksets')
@@ -674,34 +606,18 @@ export default function App() {
   const handleCheckBlocksetSolution = useCallback(async () => {
     if (!activeBlockset || !workspaceRef.current) return
 
-    executionHandleRef.current?.abort()
-    executionHandleRef.current = null
-
-    setIsRunning(true)
     setShowOutput(true)
-    setResult(null)
-    setLiveOutput([])
-
     const execLang = language === 'html' ? 'javascript' : language
-    const execCode = language === 'html' && workspaceRef.current
+    const execCode = language === 'html'
       ? generateCode(workspaceRef.current, 'javascript')
       : code
 
-    const handle = executeCode(execCode, execLang, (line) => {
-      setLiveOutput((prev) => [...prev, line])
-    })
-    executionHandleRef.current = handle
-
-    const execResult = await handle.promise
-    executionHandleRef.current = null
-    setResult(execResult)
-    setLiveOutput([])
-    setIsRunning(false)
+    const execResult = await exec.run({ code: execCode, language: execLang })
+    exec.finish(execResult)
 
     if (execResult.error) return
 
-    const passed = validateOutput(execResult.output, activeBlockset.expectedOutput)
-    if (passed) {
+    if (validateOutput(execResult.output, activeBlockset.expectedOutput)) {
       saveBlocksetProgress({
         blocksetId: activeBlockset.id,
         completed: true,
@@ -709,7 +625,7 @@ export default function App() {
       })
       setShowBlocksetComplete(true)
     }
-  }, [code, language, activeBlockset])
+  }, [code, language, activeBlockset, exec])
 
   // === Code Golf handlers ===
   const handleOpenGolf = useCallback(() => {
@@ -721,28 +637,20 @@ export default function App() {
   }, [mode, handleBackToSandbox])
 
   const handleSelectGolfProblem = useCallback((problem: GolfProblem) => {
-    if (workspaceRef.current && modeRef.current === 'sandbox') {
-      savedSandboxState.current = Blockly.serialization.workspaces.save(workspaceRef.current)
-    }
+    savedSandboxState.current = snapshotSandbox(workspaceRef.current, modeRef.current === 'sandbox') ?? savedSandboxState.current
 
     setActiveGolfProblem(problem)
     setMode('active-golf')
     setShowGolfComplete(false)
     setShowOutput(false)
-    setResult(null)
+    exec.setResult(null)
     setBlockCount(0)
     setGolfIsNewBest(false)
 
     setTimeout(() => {
-      if (workspaceRef.current) {
-        const toolbox = problem.allowedCategories
-          ? getFilteredToolboxXml(problem.allowedCategories)
-          : getToolboxXml()
-        workspaceRef.current.updateToolbox(toolbox)
-        workspaceRef.current.clear()
-      }
+      enterMode(workspaceRef.current, { allowedCategories: problem.allowedCategories })
     }, 0)
-  }, [])
+  }, [exec])
 
   const handleBackToGolf = useCallback(() => {
     setMode('code-golf')
@@ -762,39 +670,22 @@ export default function App() {
 
   const handleRetryGolf = useCallback(() => {
     setShowGolfComplete(false)
-    setResult(null)
+    exec.setResult(null)
     setShowOutput(false)
-    if (workspaceRef.current) {
-      workspaceRef.current.clear()
-    }
-  }, [])
+    workspaceRef.current?.clear()
+  }, [exec])
 
   const handleCheckGolfSolution = useCallback(async () => {
     if (!activeGolfProblem || !workspaceRef.current) return
 
-    executionHandleRef.current?.abort()
-    executionHandleRef.current = null
-
-    setIsRunning(true)
     setShowOutput(true)
-    setResult(null)
-    setLiveOutput([])
-
     const execLang = language === 'html' ? 'javascript' : language
-    const execCode = language === 'html' && workspaceRef.current
+    const execCode = language === 'html'
       ? generateCode(workspaceRef.current, 'javascript')
       : code
 
-    const handle = executeCode(execCode, execLang, (line) => {
-      setLiveOutput((prev) => [...prev, line])
-    })
-    executionHandleRef.current = handle
-
-    const execResult = await handle.promise
-    executionHandleRef.current = null
-    setResult(execResult)
-    setLiveOutput([])
-    setIsRunning(false)
+    const execResult = await exec.run({ code: execCode, language: execLang })
+    exec.finish(execResult)
 
     if (execResult.error) return
 
@@ -831,17 +722,15 @@ export default function App() {
   }, [mode, handleBackToSandbox])
 
   const handleSelectExercise = useCallback((exercise: LabExercise) => {
-    if (workspaceRef.current && modeRef.current === 'sandbox') {
-      savedSandboxState.current = Blockly.serialization.workspaces.save(workspaceRef.current)
-    }
+    savedSandboxState.current = snapshotSandbox(workspaceRef.current, modeRef.current === 'sandbox') ?? savedSandboxState.current
 
     setActiveLabExercise(exercise)
     setMode('active-lab')
     setShowLabComplete(false)
     setShowOutput(false)
-    setResult(null)
+    exec.setResult(null)
     setLabCode(exercise.starterCode || '')
-  }, [])
+  }, [exec])
 
   const handleBackToLab = useCallback(() => {
     setMode('code-lab')
@@ -863,44 +752,26 @@ export default function App() {
   const handleCheckLabSolution = useCallback(async () => {
     if (!activeLabExercise) return
 
-    executionHandleRef.current?.abort()
-    executionHandleRef.current = null
-
-    setIsRunning(true)
     setShowOutput(true)
-    setResult(null)
-    setLiveOutput([])
-
-    const handle = executeCode(labCode, 'javascript', (line) => {
-      setLiveOutput((prev) => [...prev, line])
-    })
-    executionHandleRef.current = handle
-
-    const execResult = await handle.promise
-    executionHandleRef.current = null
-    setResult(execResult)
-    setLiveOutput([])
-    setIsRunning(false)
+    const execResult = await exec.run({ code: labCode, language: 'javascript' })
+    exec.finish(execResult)
 
     if (execResult.error) return
 
-    const passed = validateOutput(execResult.output, activeLabExercise.expectedOutput)
-    if (passed) {
+    if (validateOutput(execResult.output, activeLabExercise.expectedOutput)) {
       saveLabProgress({
         exerciseId: activeLabExercise.id,
         completed: true,
         attempts: 1,
       })
-
       recordLabComplete()
       const newAchievements = checkAchievements({ event: 'lab-complete' })
       processAchievements(newAchievements)
-
       setShowLabComplete(true)
     } else {
       const expected = activeLabExercise.expectedOutput.join('\n')
       const actual = execResult.output.length > 0 ? execResult.output.join('\n') : '(no output)'
-      setResult({
+      exec.patchResult(() => ({
         ...execResult,
         output: [
           ...execResult.output,
@@ -909,9 +780,9 @@ export default function App() {
           `Expected output: ${expected}`,
           `Your output: ${actual}`,
         ],
-      })
+      }))
     }
-  }, [labCode, activeLabExercise, processAchievements])
+  }, [labCode, activeLabExercise, processAchievements, exec])
 
   const handleLabCodeChange = useCallback((newCode: string) => {
     setLabCode(newCode)
@@ -921,11 +792,8 @@ export default function App() {
     setShowExamples(false)
 
     // Kill any running execution (camera, animation loops, etc.)
-    executionHandleRef.current?.abort()
-    executionHandleRef.current = null
-    setIsRunning(false)
-    setResult(null)
-    setLiveOutput([])
+    exec.abort()
+    exec.setResult(null)
 
     // Ensure we're in sandbox mode
     if (modeRef.current !== 'sandbox') {
@@ -936,17 +804,15 @@ export default function App() {
 
     setTimeout(() => {
       if (workspaceRef.current) {
-        // Restore full toolbox if coming from challenge mode
         if (modeRef.current !== 'sandbox') {
           workspaceRef.current.updateToolbox(getToolboxXml())
         }
         workspaceRef.current.clear()
         Blockly.serialization.workspaces.load(example.workspace, workspaceRef.current)
-        // Scroll to show the loaded blocks
         workspaceRef.current.scrollCenter()
       }
     }, 0)
-  }, [])
+  }, [exec])
 
   const handleCodeToBlocks = useCallback((result: ConversionResult) => {
     // Register any new custom blocks
@@ -1059,17 +925,11 @@ export default function App() {
   }, [])
 
   const handleClear = useCallback(() => {
-    // Kill any running execution
-    executionHandleRef.current?.abort()
-    executionHandleRef.current = null
-    setIsRunning(false)
-    if (workspaceRef.current) {
-      workspaceRef.current.clear()
-    }
-    setResult(null)
-    setLiveOutput([])
+    exec.abort()
+    workspaceRef.current?.clear()
+    exec.setResult(null)
     setShowOutput(false)
-  }, [])
+  }, [exec])
 
   const closeModal = useCallback(() => {
     setShowCreateModal(false)
