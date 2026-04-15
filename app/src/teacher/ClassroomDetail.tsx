@@ -3,18 +3,20 @@
  * Tabs: Overview, Discussions, Chat, Assignments, Projects
  */
 
-import { useState, useEffect, useRef, lazy, Suspense } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { showToast } from '../components/Toast'
 import { useAuth, useUser } from '@clerk/clerk-react'
 import type {
   ClassroomDetail as ClassroomDetailType,
-  Assignment, Submission, Discussion, Reply, ChatMessage,
+  Assignment, Submission, Discussion, Reply,
 } from './api'
 import {
   fetchAssignments, createAssignment, submitAssignment, fetchSubmissions, sendFeedback,
   fetchDiscussions, createDiscussion, fetchReplies, postReply,
-  fetchChat, sendChat, updateDescription,
+  updateDescription,
 } from './api'
+import { formatAge } from './formatAge'
+import ChatTab from './tabs/ChatTab'
 
 const Markdown = lazy(() => import('react-markdown'))
 
@@ -33,16 +35,6 @@ type Tab = 'overview' | 'students' | 'discussions' | 'chat' | 'assignments' | 'p
 interface ClassroomDetailProps {
   classroom: ClassroomDetailType
   onClose: () => void
-}
-
-function formatAge(ts: number): string {
-  const ms = Date.now() - Number(ts)
-  if (ms < 60_000) return 'just now'
-  const min = Math.floor(ms / 60_000)
-  if (min < 60) return `${min}m ago`
-  const hr = Math.floor(min / 60)
-  if (hr < 24) return `${hr}h ago`
-  return `${Math.floor(hr / 24)}d ago`
 }
 
 export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailProps) {
@@ -74,59 +66,10 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
   const [replies, setReplies] = useState<Reply[]>([])
   const [replyText, setReplyText] = useState('')
 
-  // Chat
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [chatInput, setChatInput] = useState('')
-  const chatEndRef = useRef<HTMLDivElement>(null)
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  // Cursor tracked outside React state so the polling effect doesn't
-  // re-subscribe on every new message (was causing duplicate appends + lost
-  // updates under load).
-  const lastCursorRef = useRef(0)
-
   useEffect(() => {
     fetchAssignments(classroom.id).then(setAssignments)
     fetchDiscussions(classroom.id).then(setDiscussions)
-    fetchChat(classroom.id).then((msgs) => {
-      setMessages(msgs)
-      lastCursorRef.current = msgs.length > 0 ? Number(msgs[msgs.length - 1].createdAt) : 0
-    })
   }, [classroom.id])
-
-  // Chat polling — stable interval; cursor in ref; cancel in-flight on unmount.
-  useEffect(() => {
-    if (tab !== 'chat') return
-    const ctrl = new AbortController()
-    const poll = async () => {
-      try {
-        const newMsgs = await fetchChat(classroom.id, lastCursorRef.current, ctrl.signal)
-        if (ctrl.signal.aborted || newMsgs.length === 0) return
-        lastCursorRef.current = Number(newMsgs[newMsgs.length - 1].createdAt)
-        setMessages((prev) => [...prev, ...newMsgs])
-      } catch { /* aborted or network blip */ }
-    }
-    pollRef.current = setInterval(poll, 3000)
-    return () => {
-      ctrl.abort()
-      if (pollRef.current) clearInterval(pollRef.current)
-    }
-  }, [tab, classroom.id])
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const handleSendChat = async () => {
-    if (!chatInput.trim()) return
-    const msg = chatInput.trim()
-    setChatInput('')
-    await sendChat(classroom.id, msg, getToken)
-    const newMsgs = await fetchChat(classroom.id, lastCursorRef.current)
-    if (newMsgs.length > 0) {
-      lastCursorRef.current = Number(newMsgs[newMsgs.length - 1].createdAt)
-      setMessages((prev) => [...prev, ...newMsgs])
-    }
-  }
 
   const handleSelectAssignment = async (a: Assignment) => {
     setSelectedAssignment(a)
@@ -462,46 +405,7 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
         )}
 
         {/* === Chat === */}
-        {tab === 'chat' && (
-          <div className="flex flex-col h-[50vh]">
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {messages.length === 0 && (
-                <p className="text-sm text-[#6c7086] italic text-center py-8">No messages yet. Say hi!</p>
-              )}
-              {messages.map((m) => {
-                const isMe = m.authorId === user?.id
-                return (
-                  <div key={m.id} className={`flex gap-2 mb-2 ${isMe ? 'flex-row-reverse' : ''}`}>
-                    {m.authorAvatar ? (
-                      <img src={m.authorAvatar} alt="" className="w-6 h-6 rounded-full mt-0.5 shrink-0" />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-[#313244] flex items-center justify-center text-[10px] font-bold text-[#89b4fa] mt-0.5 shrink-0">
-                        {m.authorName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <div className={`max-w-[70%] rounded-lg px-3 py-2 ${isMe ? 'bg-[#89b4fa]/20' : 'bg-[#1e1e2e]'}`}>
-                      {!isMe && <div className="text-[10px] font-semibold text-[#89b4fa] mb-0.5">{m.authorName}</div>}
-                      <p className="text-sm text-[#cdd6f4]">{m.body}</p>
-                      <div className="text-[9px] text-[#6c7086] mt-0.5 text-right">{formatAge(m.createdAt)}</div>
-                    </div>
-                  </div>
-                )
-              })}
-              <div ref={chatEndRef} />
-            </div>
-            <div className="px-6 py-3 border-t border-[#313244] flex gap-2">
-              <input
-                type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Type a message..."
-                className="flex-1 bg-[#313244] border border-[#45475a] text-[#cdd6f4] text-sm rounded-lg px-3 py-2 placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa]"
-                onKeyDown={(e) => e.key === 'Enter' && handleSendChat()}
-              />
-              <button onClick={handleSendChat} className="px-4 py-2 text-sm font-bold text-[#1e1e2e] bg-[#89b4fa] rounded-lg">
-                Send
-              </button>
-            </div>
-          </div>
-        )}
+        {tab === 'chat' && <ChatTab classroomId={classroom.id} active={tab === 'chat'} />}
 
         {/* === Assignments === */}
         {tab === 'assignments' && (
