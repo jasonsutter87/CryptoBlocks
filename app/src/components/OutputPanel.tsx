@@ -194,7 +194,7 @@ export default function OutputPanel({ result, isRunning, liveOutput, previewCode
             />
           ) : hasHtml ? (
             <iframe
-              srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: https:;"><style>body{font-family:sans-serif;margin:16px;}</style></head><body>${result!.htmlOutput}</body></html>`}
+              srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src data: https:;"><style>body{font-family:sans-serif;margin:16px;}</style></head><body>${result!.htmlOutput}</body></html>`}
               sandbox="allow-scripts"
               className="w-full h-full border-none bg-white"
               title="HTML Preview"

@@ -218,8 +218,10 @@ export default function App() {
   const languageRef = useRef(language)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const modeRef = useRef(mode)
+  const isCollabModeRef = useRef(false)
   languageRef.current = language
   modeRef.current = mode
+  isCollabModeRef.current = !!collabDoc
 
   // Restore from localStorage on mount
   useEffect(() => {
@@ -336,7 +338,7 @@ export default function App() {
       setBlockCount(countBlocks(workspace))
 
       // Debounced auto-save workspace (only in sandbox mode, not in collab)
-      if (modeRef.current === 'sandbox' && !isCollabMode) {
+      if (modeRef.current === 'sandbox' && !isCollabModeRef.current) {
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
         saveTimerRef.current = setTimeout(() => {
           saveWorkspaceToLocal(workspace)
@@ -361,6 +363,12 @@ export default function App() {
   )
 
   const handleRun = useCallback(async () => {
+    // Abort any in-flight execution from a prior click — otherwise two
+    // postMessage handlers race and the older promise overwrites the newer
+    // result.
+    executionHandleRef.current?.abort()
+    executionHandleRef.current = null
+
     // Cancel any leftover game loop from a previous run so two Runs don't
     // pile up requestAnimationFrame callbacks on the same canvas.
     const w = window as unknown as { __cbGameLoopId?: number }
@@ -474,6 +482,9 @@ export default function App() {
 
   const handleCheckSolution = useCallback(async () => {
     if (!activeChallenge || !workspaceRef.current) return
+
+    executionHandleRef.current?.abort()
+    executionHandleRef.current = null
 
     setIsRunning(true)
     setShowOutput(true)
@@ -663,6 +674,9 @@ export default function App() {
   const handleCheckBlocksetSolution = useCallback(async () => {
     if (!activeBlockset || !workspaceRef.current) return
 
+    executionHandleRef.current?.abort()
+    executionHandleRef.current = null
+
     setIsRunning(true)
     setShowOutput(true)
     setResult(null)
@@ -758,6 +772,9 @@ export default function App() {
   const handleCheckGolfSolution = useCallback(async () => {
     if (!activeGolfProblem || !workspaceRef.current) return
 
+    executionHandleRef.current?.abort()
+    executionHandleRef.current = null
+
     setIsRunning(true)
     setShowOutput(true)
     setResult(null)
@@ -845,6 +862,9 @@ export default function App() {
 
   const handleCheckLabSolution = useCallback(async () => {
     if (!activeLabExercise) return
+
+    executionHandleRef.current?.abort()
+    executionHandleRef.current = null
 
     setIsRunning(true)
     setShowOutput(true)

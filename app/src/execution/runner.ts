@@ -149,7 +149,11 @@ function tryIframeExecution(
     }
 
     const handler = (event: MessageEvent) => {
-      // Validate: must come from our iframe + carry our marker
+      // Validate: origin (sandbox + allow-same-origin → parent's origin),
+      // source must be our iframe, and message must carry our marker.
+      // The origin check stops cross-origin embeds or popups from spoofing
+      // execution events.
+      if (event.origin !== window.location.origin) return
       if (event.source !== iframe?.contentWindow) return
       const msg = event.data
       if (!msg || typeof msg !== 'object' || msg.__cryptoblocks !== true) return

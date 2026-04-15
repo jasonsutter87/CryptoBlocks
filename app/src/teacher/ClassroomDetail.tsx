@@ -79,25 +79,38 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
   const [chatInput, setChatInput] = useState('')
   const chatEndRef = useRef<HTMLDivElement>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  // Cursor tracked outside React state so the polling effect doesn't
+  // re-subscribe on every new message (was causing duplicate appends + lost
+  // updates under load).
+  const lastCursorRef = useRef(0)
 
   useEffect(() => {
     fetchAssignments(classroom.id).then(setAssignments)
     fetchDiscussions(classroom.id).then(setDiscussions)
-    fetchChat(classroom.id).then(setMessages)
+    fetchChat(classroom.id).then((msgs) => {
+      setMessages(msgs)
+      lastCursorRef.current = msgs.length > 0 ? Number(msgs[msgs.length - 1].createdAt) : 0
+    })
   }, [classroom.id])
 
-  // Chat polling
+  // Chat polling — stable interval; cursor in ref; cancel in-flight on unmount.
   useEffect(() => {
     if (tab !== 'chat') return
-    const poll = () => {
-      const last = messages.length > 0 ? Number(messages[messages.length - 1].createdAt) : 0
-      fetchChat(classroom.id, last).then((newMsgs) => {
-        if (newMsgs.length > 0) setMessages((prev) => [...prev, ...newMsgs])
-      })
+    const ctrl = new AbortController()
+    const poll = async () => {
+      try {
+        const newMsgs = await fetchChat(classroom.id, lastCursorRef.current, ctrl.signal)
+        if (ctrl.signal.aborted || newMsgs.length === 0) return
+        lastCursorRef.current = Number(newMsgs[newMsgs.length - 1].createdAt)
+        setMessages((prev) => [...prev, ...newMsgs])
+      } catch { /* aborted or network blip */ }
     }
     pollRef.current = setInterval(poll, 3000)
-    return () => { if (pollRef.current) clearInterval(pollRef.current) }
-  }, [tab, classroom.id, messages])
+    return () => {
+      ctrl.abort()
+      if (pollRef.current) clearInterval(pollRef.current)
+    }
+  }, [tab, classroom.id])
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -108,9 +121,11 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
     const msg = chatInput.trim()
     setChatInput('')
     await sendChat(classroom.id, msg, getToken)
-    const latest = messages.length > 0 ? Number(messages[messages.length - 1].createdAt) : 0
-    const newMsgs = await fetchChat(classroom.id, latest)
-    if (newMsgs.length > 0) setMessages((prev) => [...prev, ...newMsgs])
+    const newMsgs = await fetchChat(classroom.id, lastCursorRef.current)
+    if (newMsgs.length > 0) {
+      lastCursorRef.current = Number(newMsgs[newMsgs.length - 1].createdAt)
+      setMessages((prev) => [...prev, ...newMsgs])
+    }
   }
 
   const handleSelectAssignment = async (a: Assignment) => {
