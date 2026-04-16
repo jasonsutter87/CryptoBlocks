@@ -167,7 +167,7 @@ async function handler(req: Request) {
       // students per classroom. Beyond that, students stay on free until
       // the teacher pays for more seats. Without this cap, a teacher could
       // enroll 10,000 kids on a $25 plan and give them all Pro — direct
-      // revenue leak (Black Team M5).
+      // revenue leak (prevents unlimited free Pro seats on a $25 teacher plan).
       const TEACHER_SEAT_LIMIT = 30
       const teacherGrant = await tursoExecute(
         `WITH ranked_members AS (
@@ -220,7 +220,7 @@ async function handler(req: Request) {
 /**
  * Map a Stripe subscription's authoritative product IDs to our internal plan
  * string. This replaces the webhook's previous trust in client-controllable
- * `metadata.plan` — see Black Team C1. Stripe signs the subscription object
+ * `metadata.plan` — only trust fields signed by Stripe. Stripe signs the subscription object
  * but NOT arbitrary metadata keys.
  */
 function resolvePlanFromSubscription(sub: Stripe.Subscription): 'pro' | 'teacher' | null {
@@ -235,7 +235,7 @@ function resolvePlanFromSubscription(sub: Stripe.Subscription): 'pro' | 'teacher
 /**
  * Resolve Clerk user id from a Stripe customer, via our own mapping first
  * (subscriptions.stripe_customer_id) and falling back to the customer's
- * server-set metadata. Never trust session.metadata here — see Black Team C2.
+ * server-set metadata. Never trust session.metadata here — session metadata is client-influenceable.
  */
 async function resolveClerkUserId(customerId: string): Promise<string | null> {
   const known = await tursoExecute(
@@ -293,7 +293,7 @@ async function handleStripeEvent(event: Stripe.Event): Promise<void> {
     //
     // Scope by BOTH subscription_id and customer_id — prevents a row whose
     // stripe_subscription_id was tampered with from cancelling a different
-    // user (Black Team C3).
+    // user (prevents a mismatched subscription row from cancelling a different user).
     await tursoExecute(
       'UPDATE subscriptions SET status = ? WHERE stripe_subscription_id = ? AND stripe_customer_id = ?',
       [String(sub.status), sub.id, String(sub.customer)],

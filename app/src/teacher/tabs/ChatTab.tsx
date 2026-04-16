@@ -1,7 +1,7 @@
 /**
  * Classroom chat tab. Owns its own polling + send lifecycle so the parent
  * doesn't have to. Cursor is tracked in a ref so the polling effect stays
- * subscribed across renders (Purple Team A1).
+ * subscribed across renders (prevents interval teardown/resubscribe on every new message).
  */
 
 import { useEffect, useRef, useState } from 'react'

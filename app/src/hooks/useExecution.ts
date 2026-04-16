@@ -2,7 +2,7 @@
  * Owns the execution lifecycle: isRunning, result, liveOutput, in-flight handle.
  *
  * Bakes in the abort-prior-handle invariant so a fast double-click cannot
- * leave two postMessage listeners racing (Purple Team A3).
+ * leave two postMessage listeners racing (prevents double-run race from overlapping postMessage handlers).
  *
  * Used by the sandbox Run button and every "Check Solution" handler.
  */

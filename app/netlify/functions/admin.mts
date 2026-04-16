@@ -117,7 +117,7 @@ async function handler(req: Request) {
       // Parse workspace JSON from projects to count block usage.
       // Skip rows larger than MAX_WORKSPACE_BYTES — with a 2MB schema cap
       // and LIMIT 200, one dashboard load could otherwise hold ~400MB in
-      // a single function invocation (Black Team M1).
+      // a single function invocation (caps memory usage to prevent OOM on admin dashboard load).
       const MAX_WORKSPACE_BYTES = 256 * 1024
       const workspaces = await tursoExecute(
         `SELECT workspace_json FROM projects

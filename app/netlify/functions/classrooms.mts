@@ -355,7 +355,7 @@ async function handler(req: Request) {
 
       // Defense in depth: scope the UPDATE to the classroom so that a
       // submission id from a different classroom cannot be overwritten
-      // even if the outer guard is ever weakened (Black Team M3).
+      // even if the outer guard is ever weakened .
       // submissions has no classroom_id column — gate via the parent
       // assignment instead.
       await tursoExecute(
@@ -405,7 +405,7 @@ async function handler(req: Request) {
       // student-authored content, names, and chat messages. U.S. teachers
       // using this in a school context are covered by FERPA; the notice
       // reminds them not to redistribute and that former students' data
-      // is included (Black Team L7).
+      // is included .
       const exportData = {
         exportedAt: new Date().toISOString(),
         privacyNotice: 'This export contains student work, identifiers, and chat history including former members. Treat as confidential educational records. Do not share outside authorized school staff. Delete copies when no longer needed.',
@@ -443,7 +443,7 @@ async function handler(req: Request) {
       const modErr = moderateContent('', description)
       if (modErr) return json({ error: modErr }, 400)
 
-      // Belt-and-suspenders against TOCTOU (Black Team M3): the guard
+      // Belt-and-suspenders against TOCTOU : the guard
       // already verified teacher ownership above, but scope the UPDATE
       // itself so that even if ownership flipped between the two queries
       // we cannot write into someone else's row.
@@ -573,7 +573,7 @@ async function handler(req: Request) {
       // Validate the `after` cursor — a non-numeric or out-of-range value
       // falls through to "no cursor" instead of feeding NaN to the query.
       // Non-integers, negatives, and future timestamps are rejected
-      // (Black Team L6).
+      // .
       const rawAfter = new URL(req.url).searchParams.get('after')
       let afterTs: number | null = null
       if (rawAfter) {
