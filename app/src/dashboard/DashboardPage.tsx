@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
+import { useUser, SignedIn, SignedOut, SignInButton } from '../auth'
 import { loadStats } from '../stats'
 import ProjectCard from '../shareplace/ProjectCard'
 import type { SharedProject } from '../types/shareplace'

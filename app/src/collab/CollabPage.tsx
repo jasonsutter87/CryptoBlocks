@@ -7,7 +7,7 @@
 
 import { createContext, useContext, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useUser } from '@clerk/clerk-react'
+import { useUser } from '../auth'
 import * as Y from 'yjs'
 import type { Awareness } from 'y-protocols/awareness'
 import { useCollabRoom } from './use-collab-room'

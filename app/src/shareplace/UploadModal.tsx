@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useUser, useAuth } from '@clerk/clerk-react'
+import { useUser, useAuth } from '../auth'
 import { publishProject } from './api'
 
 interface UploadModalProps {

@@ -4,7 +4,7 @@
  * as a classroom project.
  */
 
-import { useAuth, useUser } from '@clerk/clerk-react'
+import { useAuth, useUser } from '../../auth'
 import type { ClassroomDetail } from '../api'
 import { showToast } from '../../components/Toast'
 

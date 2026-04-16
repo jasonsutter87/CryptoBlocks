@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
-import { useAuth, useUser } from '@clerk/clerk-react'
+import { useAuth, useUser } from '../../auth'
 import { fetchChat, sendChat } from '../api'
 import type { ChatMessage } from '../api'
 import { formatAge } from '../formatAge'

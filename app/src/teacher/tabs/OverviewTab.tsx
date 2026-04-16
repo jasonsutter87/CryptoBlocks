@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '../../auth'
 import type { ClassroomDetail } from '../api'
 import { updateDescription } from '../api'
 import { Md } from '../Md'

@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '@clerk/clerk-react'
+import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '../auth'
 import { useIsPro, openCheckout } from '../billing/useIsPro'
 import { ProBadge } from '../billing/UpgradeGate'
 

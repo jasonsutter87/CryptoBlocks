@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useAuth, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
+import { useAuth, SignedIn, SignedOut, SignInButton } from '../auth'
 import {
   fetchClassrooms,
   fetchClassroom,

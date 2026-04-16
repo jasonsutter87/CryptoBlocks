@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { useUser, useAuth, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
+import { useUser, useAuth, SignedIn, SignedOut, SignInButton } from '../auth'
 import { loadProfile, saveProfile, type UserProfile } from './profile-storage'
 import { loadSettings, saveSettings, type UserSettings } from '../settings'
 import { fetchProjects } from '../shareplace/api'

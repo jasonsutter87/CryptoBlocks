@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '../../auth'
 import type { Assignment, Submission } from '../api'
 import { createAssignment, submitAssignment, fetchSubmissions, sendFeedback } from '../api'
 import { Md } from '../Md'

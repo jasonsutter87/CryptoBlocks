@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '../auth'
 import { useIsPro } from '../billing/useIsPro'
 import type { SharedProject } from '../types/shareplace'
 import { fetchRemixTree, type RemixTree } from './api'

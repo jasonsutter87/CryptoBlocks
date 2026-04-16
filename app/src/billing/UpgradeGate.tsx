@@ -3,7 +3,7 @@
  * the user isn't Pro, renders children normally when they are.
  */
 
-import { useAuth, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
+import { useAuth, SignedIn, SignedOut, SignInButton } from '../auth'
 import { useIsPro, openCheckout } from './useIsPro'
 
 interface UpgradeGateProps {

@@ -10,7 +10,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { SignInButton } from '@clerk/clerk-react'
+import { SignInButton } from '../auth'
 
 type ToastType = 'info' | 'success' | 'error' | 'signin'
 

@@ -8,7 +8,7 @@
  */
 
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/clerk-react'
+import { useUser } from '../auth'
 import type { ClassroomDetail as ClassroomDetailType, Assignment, Discussion } from './api'
 import { fetchAssignments, fetchDiscussions } from './api'
 import ChatTab from './tabs/ChatTab'

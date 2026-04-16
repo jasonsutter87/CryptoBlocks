@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '../../auth'
 import type { Discussion, Reply } from '../api'
 import { createDiscussion, fetchReplies, postReply } from '../api'
 import { Md } from '../Md'
