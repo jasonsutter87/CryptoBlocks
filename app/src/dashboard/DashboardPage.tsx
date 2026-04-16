@@ -1,9 +1,9 @@
 import { useMemo, useState, useEffect } from 'react'
-import { useUser, SignedIn, SignedOut, SignInButton } from '../auth'
+import { useUser, useAuth, SignedIn, SignedOut, SignInButton } from '../auth'
 import { loadStats } from '../stats'
-import ProjectCard from '../shareplace/ProjectCard'
 import type { SharedProject } from '../types/shareplace'
-import { fetchProjects } from '../shareplace/api'
+import { fetchProjects, fetchProject } from '../shareplace/api'
+import { showToast } from '../components/Toast'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
 
@@ -28,6 +28,7 @@ function daysActive(runsByDate: Record<string, number>): number {
 
 export default function DashboardPage() {
   const { user } = useUser()
+  const { getToken } = useAuth()
   const stats = useMemo(() => loadStats(), [])
   const dailyState = useMemo(() => loadDailyState(), [])
   const currentDay = useMemo(() => getDayNumber(), [])
@@ -127,7 +128,7 @@ export default function DashboardPage() {
           ) : myProjects.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {myProjects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
+                <MyProjectCard key={project.id} project={project} getToken={getToken} />
               ))}
             </div>
           ) : (
@@ -151,6 +152,64 @@ export default function DashboardPage() {
           </div>
         </SignedOut>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Dashboard-specific project card with an "Open in Editor" action.
+ * Different from the generic ProjectCard (which links to the public
+ * project detail) — this one fetches the workspace JSON, hands it off
+ * via sessionStorage, and navigates to the editor with an explicit
+ * project id so saves PATCH instead of POST.
+ */
+function MyProjectCard({
+  project,
+  getToken,
+}: {
+  project: SharedProject
+  getToken: () => Promise<string | null>
+}) {
+  const [opening, setOpening] = useState(false)
+
+  const handleOpen = async () => {
+    if (opening) return
+    setOpening(true)
+    // Pass token so private projects (everything from "Save to Dashboard")
+    // are visible to the owner.
+    const token = await getToken().catch(() => null)
+    const full = await fetchProject(project.id, token ?? undefined)
+    if (!full || !full.workspaceJson) {
+      showToast('Could not load project — try again', 'error')
+      setOpening(false)
+      return
+    }
+    sessionStorage.setItem('cryptoblocks_open_project', JSON.stringify({
+      id: project.id,
+      name: full.name,
+      workspaceJson: full.workspaceJson,
+    }))
+    window.location.href = '/'
+  }
+
+  return (
+    <div className="bg-mantle border border-surface-0 rounded-xl p-4 flex flex-col gap-2 hover:border-surface-1 transition-colors">
+      <div>
+        <div className="text-base font-semibold text-text truncate">{project.name}</div>
+        <div className="text-xs text-overlay mt-0.5">
+          {project.category} · {project.blockCount} blocks
+        </div>
+      </div>
+      {project.description && (
+        <p className="text-xs text-subtext line-clamp-2">{project.description}</p>
+      )}
+      <button
+        onClick={handleOpen}
+        disabled={opening}
+        className="mt-auto px-3 py-2 text-sm font-bold text-base bg-accent hover:bg-sapphire rounded-lg disabled:opacity-50 transition-colors"
+      >
+        {opening ? 'Opening...' : 'Open in Editor'}
+      </button>
     </div>
   )
 }

@@ -99,6 +99,23 @@ export default function App() {
     }
   }, [sharedProject]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Editable dashboard project — set by clicking "Open in Editor" on the
+  // dashboard. While this id is set, Save to Dashboard PATCHes this row
+  // instead of POSTing a new copy, so editing on multiple computers is
+  // a real round-trip.
+  const [currentProject, setCurrentProject] = useState<{ id: string; name: string } | null>(() => {
+    try {
+      const raw = sessionStorage.getItem('cryptoblocks_open_project')
+      if (!raw) return null
+      const data = JSON.parse(raw) as { id: string; name: string; workspaceJson: string }
+      // Stash the workspace into the same slot the mount-restore path reads,
+      // so the editor lights up with the project's blocks on first paint.
+      localStorage.setItem('cryptoblocks_workspace', data.workspaceJson)
+      sessionStorage.removeItem('cryptoblocks_open_project')
+      return { id: data.id, name: data.name }
+    } catch { return null }
+  })
+
   // Daily Challenge state (read-only URL param; banner shown if active)
   const isDailyChallenge =
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('daily') === '1'
@@ -350,6 +367,7 @@ export default function App() {
     workspaceRef, language, code, customBlocks, setCustomBlocks,
     setEditingBlock,
     openCreateModal: () => modals.setCreateBlock(true),
+    currentProject, setCurrentProject,
   })
   const {
     handleExportHtml, handleCopyEmbed, handleExport,

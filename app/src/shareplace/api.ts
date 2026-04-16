@@ -79,9 +79,19 @@ export async function fetchProjects(opts: FetchProjectsOptions = {}): Promise<Sh
   }
 }
 
-export async function fetchProject(id: string): Promise<(SharedProject & { workspaceJson: string }) | null> {
+/**
+ * Fetch a single project (full record, including workspaceJson).
+ * Pass a Clerk token to access your own private projects — public ones
+ * are returned without auth.
+ */
+export async function fetchProject(
+  id: string,
+  clerkToken?: string,
+): Promise<(SharedProject & { workspaceJson: string }) | null> {
   try {
-    const res = await fetch(`${API_BASE}/${id}`)
+    const headers: Record<string, string> = {}
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`
+    const res = await fetch(`${API_BASE}/${id}`, { headers })
     if (!res.ok) return null
     const p: ApiProject = await res.json()
     return { ...toSharedProject(p), workspaceJson: p.workspaceJson }
@@ -131,6 +141,32 @@ export async function saveToDashboard(payload: PublishPayload, clerkToken?: stri
     })
     const data = await res.json()
     if (!res.ok) return { error: data.error || 'Save failed' }
+    return data
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Update an existing project in place. Server checks owner — caller
+ * must have the same Clerk user id as the project's `author_id`. Used
+ * by the dashboard "Open → edit → save" round-trip.
+ */
+export async function updateProject(
+  id: string,
+  payload: PublishPayload,
+  clerkToken?: string,
+): Promise<{ id: string } | { error: string } | null> {
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`
+    const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ ...payload, visibility: 'private' }),
+    })
+    const data = await res.json()
+    if (!res.ok) return { error: data.error || 'Update failed' }
     return data
   } catch {
     return null

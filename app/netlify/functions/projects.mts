@@ -6,6 +6,7 @@
  *   GET  /api/projects/my       → list own projects (private + public)
  *   GET  /api/projects/:id      → single project (private only visible to owner)
  *   POST /api/projects          → publish a new project (auth required)
+ *   PATCH /api/projects/:id     → update an existing project (owner only)
  *   POST /api/projects/:id/like → increment likes (auth required)
  *   POST /api/projects/:id/download → increment download count
  *   POST /api/projects/:id/report   → report for review (auth required)
@@ -138,6 +139,44 @@ async function handler(req: Request) {
       }
 
       return json({ id, name, createdAt: now }, 201)
+    }
+
+    // PATCH /api/projects/:id — update an existing project (owner only).
+    // Lets the dashboard's "Open" → edit → save round-trip update the
+    // same row instead of creating a new copy each save.
+    if (req.method === 'PATCH' && segments.length === 1) {
+      const authErr = requireAuth(user, 'Sign in to update projects')
+      if (authErr) return authErr
+
+      const projectId = segments[0]
+      const owner = await tursoExecute('SELECT author_id FROM projects WHERE id = ?', [projectId])
+      if (owner.rows.length === 0) return json({ error: 'Not found' }, 404)
+      if (owner.rows[0].author_id !== user!.sub) {
+        return json({ error: 'You can only update your own projects' }, 403)
+      }
+
+      const raw = await req.json().catch(() => null)
+      const parsed = PublishProjectInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      const { name, description, category, workspaceJson, tags, blockCount, visibility } = parsed.data
+
+      const modErr = moderateContent(name, description ?? '')
+      if (modErr) return json({ error: modErr }, 400)
+
+      // Scope by author_id on the UPDATE itself as defense-in-depth
+      // against TOCTOU between the SELECT and the UPDATE.
+      await tursoExecute(
+        `UPDATE projects SET
+           name = ?, description = ?, category = ?, workspace_json = ?,
+           tags = ?, block_count = ?, visibility = ?
+         WHERE id = ? AND author_id = ?`,
+        [
+          name, description ?? '', category ?? 'General', workspaceJson,
+          JSON.stringify(tags ?? []), blockCount ?? 0,
+          visibility ?? 'public', projectId, user!.sub,
+        ],
+      )
+      return json({ id: projectId, updatedAt: Date.now() })
     }
 
     // DELETE /api/projects/:id — admin or owner

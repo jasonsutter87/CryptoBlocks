@@ -11,7 +11,7 @@ import { registry } from '../blocks/registry'
 import { registerSingleBlock, generateCode, getToolboxXml } from '../blocks/blockly-register'
 import { exportBlocksFile, importBlocksFile, saveCustomBlocksToLocal, saveWorkspaceToLocal } from '../storage'
 import { generateStandaloneHtml, generateEmbedSnippet, downloadHtml, copyToClipboard } from '../export-html'
-import { saveToDashboard } from '../shareplace/api'
+import { saveToDashboard, updateProject } from '../shareplace/api'
 import { countBlocks } from '../challenges/validator'
 import { showToast } from '../components/Toast'
 
@@ -23,6 +23,10 @@ interface Deps {
   setCustomBlocks: (blocks: BlockDefinition[]) => void
   setEditingBlock: (b: BlockDefinition) => void
   openCreateModal: () => void
+  /** When set, Save to Dashboard PATCHes this project instead of POSTing
+   *  a new copy. Populated by the dashboard "Open in Editor" flow. */
+  currentProject: { id: string; name: string } | null
+  setCurrentProject: (p: { id: string; name: string } | null) => void
 }
 
 export function useFileOps(deps: Deps) {
@@ -54,23 +58,42 @@ export function useFileOps(deps: Deps) {
     try {
       const state = Blockly.serialization.workspaces.save(deps.workspaceRef.current)
       const workspaceJson = JSON.stringify(state)
-      const name = prompt('Project name:') || 'Untitled Project'
       const token = await (window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }).Clerk?.session?.getToken()
+      const blockCount = countBlocks(deps.workspaceRef.current)
 
+      // If we opened this project from the dashboard, update in place.
+      if (deps.currentProject) {
+        const result = await updateProject(deps.currentProject.id, {
+          name: deps.currentProject.name,
+          workspaceJson,
+          blockCount,
+          category: 'General',
+        }, token)
+        if (result && 'id' in result) showToast('Saved!', 'success')
+        else if (result && 'error' in result) showToast(result.error, 'error')
+        else showToast('Save failed — try again', 'error')
+        return
+      }
+
+      // First-time save — ask for a name and POST a new project.
+      const name = prompt('Project name:') || 'Untitled Project'
       const result = await saveToDashboard({
-        name,
-        workspaceJson,
-        blockCount: countBlocks(deps.workspaceRef.current),
-        category: 'General',
+        name, workspaceJson, blockCount, category: 'General',
       }, token)
 
-      if (result && 'id' in result) showToast('Saved to your dashboard!', 'success')
-      else if (result && 'error' in result) showToast(result.error, 'error')
-      else showToast('Save failed — try again', 'error')
+      if (result && 'id' in result) {
+        showToast('Saved to your dashboard!', 'success')
+        // Future saves on this session update in place rather than create copies.
+        deps.setCurrentProject({ id: result.id, name })
+      } else if (result && 'error' in result) {
+        showToast(result.error, 'error')
+      } else {
+        showToast('Save failed — try again', 'error')
+      }
     } catch {
       showToast('Save failed', 'error')
     }
-  }, [deps.workspaceRef])
+  }, [deps])
 
   const handleImport = useCallback(async (file: File) => {
     try {
