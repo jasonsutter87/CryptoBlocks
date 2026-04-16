@@ -23,8 +23,8 @@ const SIZES = {
 } as const
 
 const VARIANTS = {
-  primary: 'bg-[#89b4fa] text-[#1e1e2e]',
-  muted: 'bg-[#313244] text-[#89b4fa]',
+  primary: 'bg-accent text-base',
+  muted: 'bg-surface-0 text-accent',
 } as const
 
 export function Avatar({ name, src, size = 'md', variant = 'primary', className = '' }: AvatarProps) {

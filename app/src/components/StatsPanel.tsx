@@ -95,7 +95,7 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
 
   const getColorForCount = (count: number): string => {
     if (count === -1) return 'bg-transparent' // empty cell
-    if (count === 0) return 'bg-[#1e1e2e]'
+    if (count === 0) return 'bg-base'
     if (count <= 2) return 'bg-[#0e4429]'
     if (count <= 5) return 'bg-[#006d32]'
     if (count <= 9) return 'bg-[#26a641]'
@@ -119,18 +119,18 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-[#1e1e2e] rounded-xl border border-[#45475a] shadow-2xl">
+      <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-base rounded-xl border border-surface-1 shadow-2xl">
         {/* Header */}
-        <div className="sticky top-0 bg-[#1e1e2e] border-b border-[#45475a] px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-base border-b border-surface-1 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <svg className="w-6 h-6 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
-            <h2 className="text-2xl font-bold text-[#cdd6f4]">Developer Stats</h2>
+            <h2 className="text-2xl font-bold text-text">Developer Stats</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-[#6c7086] hover:text-[#cdd6f4] transition-colors"
+            className="text-overlay hover:text-text transition-colors"
             aria-label="Close"
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -143,49 +143,49 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
         <div className="p-6 space-y-8">
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="bg-[#313244] rounded-lg p-4 border border-[#45475a]">
-              <div className="flex items-center gap-2 text-[#6c7086] text-sm mb-2">
+            <div className="bg-surface-0 rounded-lg p-4 border border-surface-1">
+              <div className="flex items-center gap-2 text-overlay text-sm mb-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Total Runs</span>
               </div>
-              <div className="text-3xl font-bold text-[#89b4fa]">{stats.totalRuns.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-accent">{stats.totalRuns.toLocaleString()}</div>
             </div>
 
-            <div className="bg-[#313244] rounded-lg p-4 border border-[#45475a]">
-              <div className="flex items-center gap-2 text-[#6c7086] text-sm mb-2">
+            <div className="bg-surface-0 rounded-lg p-4 border border-surface-1">
+              <div className="flex items-center gap-2 text-overlay text-sm mb-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
                 <span>Blocks Placed</span>
               </div>
-              <div className="text-3xl font-bold text-[#a6e3a1]">{stats.totalBlocks.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-success">{stats.totalBlocks.toLocaleString()}</div>
             </div>
 
-            <div className="bg-[#313244] rounded-lg p-4 border border-[#45475a]">
-              <div className="flex items-center gap-2 text-[#6c7086] text-sm mb-2">
+            <div className="bg-surface-0 rounded-lg p-4 border border-surface-1">
+              <div className="flex items-center gap-2 text-overlay text-sm mb-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                 </svg>
                 <span>Lines Generated</span>
               </div>
-              <div className="text-3xl font-bold text-[#f9e2af]">{stats.totalLinesGenerated.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-warn">{stats.totalLinesGenerated.toLocaleString()}</div>
             </div>
 
-            <div className="bg-[#313244] rounded-lg p-4 border border-[#45475a]">
-              <div className="flex items-center gap-2 text-[#6c7086] text-sm mb-2">
+            <div className="bg-surface-0 rounded-lg p-4 border border-surface-1">
+              <div className="flex items-center gap-2 text-overlay text-sm mb-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span>Challenges</span>
               </div>
-              <div className="text-3xl font-bold text-[#cba6f7]">{stats.challengesCompleted}</div>
+              <div className="text-3xl font-bold text-purple">{stats.challengesCompleted}</div>
             </div>
 
-            <div className="bg-[#313244] rounded-lg p-4 border border-[#45475a]">
-              <div className="flex items-center gap-2 text-[#6c7086] text-sm mb-2">
+            <div className="bg-surface-0 rounded-lg p-4 border border-surface-1">
+              <div className="flex items-center gap-2 text-overlay text-sm mb-2">
                 {stats.currentStreak > 0 ? (
                   <span className="text-base">🔥</span>
                 ) : (
@@ -195,34 +195,34 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
                 )}
                 <span>Current Streak</span>
               </div>
-              <div className="text-3xl font-bold text-[#fab387]">
+              <div className="text-3xl font-bold text-peach">
                 {stats.currentStreak} {stats.currentStreak === 1 ? 'day' : 'days'}
               </div>
             </div>
 
-            <div className="bg-[#313244] rounded-lg p-4 border border-[#45475a]">
-              <div className="flex items-center gap-2 text-[#6c7086] text-sm mb-2">
+            <div className="bg-surface-0 rounded-lg p-4 border border-surface-1">
+              <div className="flex items-center gap-2 text-overlay text-sm mb-2">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                 </svg>
                 <span>Best Streak</span>
               </div>
-              <div className="text-3xl font-bold text-[#f38ba8]">
+              <div className="text-3xl font-bold text-danger">
                 {stats.bestStreak} {stats.bestStreak === 1 ? 'day' : 'days'}
               </div>
             </div>
           </div>
 
           {/* Activity Heatmap */}
-          <div className="bg-[#313244] rounded-lg p-6 border border-[#45475a]">
-            <h3 className="text-lg font-semibold text-[#cdd6f4] mb-4">Activity Heatmap</h3>
+          <div className="bg-surface-0 rounded-lg p-6 border border-surface-1">
+            <h3 className="text-lg font-semibold text-text mb-4">Activity Heatmap</h3>
             <div className="overflow-x-auto">
               <div className="inline-block min-w-full">
                 {/* Month labels */}
                 
                 <div className="flex justify-between mb-2 ml-8">
                   {monthLabels.map((label, i) => (
-                    <span key={i} className="text-xs text-[#6c7086]">
+                    <span key={i} className="text-xs text-overlay">
                       {label.text}
                     </span>
                   ))}
@@ -230,7 +230,7 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
 
                 <div className="flex gap-1">
                   {/* Day labels */}
-                  <div className="flex flex-col gap-[2px] text-xs text-[#6c7086] pr-2">
+                  <div className="flex flex-col gap-[2px] text-xs text-overlay pr-2">
                     <div style={{ height: '12px' }}>Mon</div>
                     <div style={{ height: '12px' }}></div>
                     <div style={{ height: '12px' }}>Wed</div>
@@ -257,10 +257,10 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
                 </div>
 
                 {/* Legend */}
-                <div className="flex items-center gap-2 mt-4 text-xs text-[#6c7086]">
+                <div className="flex items-center gap-2 mt-4 text-xs text-overlay">
                   <span>Less</span>
                   <div className="flex gap-1">
-                    <div className="w-3 h-3 rounded-sm bg-[#1e1e2e]" title="0 runs" />
+                    <div className="w-3 h-3 rounded-sm bg-base" title="0 runs" />
                     <div className="w-3 h-3 rounded-sm bg-[#0e4429]" title="1-2 runs" />
                     <div className="w-3 h-3 rounded-sm bg-[#006d32]" title="3-5 runs" />
                     <div className="w-3 h-3 rounded-sm bg-[#26a641]" title="6-9 runs" />
@@ -273,20 +273,20 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
           </div>
 
           {/* Language Breakdown */}
-          <div className="bg-[#313244] rounded-lg p-6 border border-[#45475a]">
-            <h3 className="text-lg font-semibold text-[#cdd6f4] mb-4">Language Breakdown</h3>
+          <div className="bg-surface-0 rounded-lg p-6 border border-surface-1">
+            <h3 className="text-lg font-semibold text-text mb-4">Language Breakdown</h3>
             <div className="space-y-4">
               {/* JavaScript */}
               <div>
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-[#cdd6f4]">JavaScript</span>
-                  <span className="text-[#6c7086]">
+                  <span className="text-text">JavaScript</span>
+                  <span className="text-overlay">
                     {stats.runsPerLanguage.javascript} runs ({jsPercent.toFixed(1)}%)
                   </span>
                 </div>
-                <div className="w-full h-3 bg-[#1e1e2e] rounded-full overflow-hidden">
+                <div className="w-full h-3 bg-base rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#f9e2af] transition-all"
+                    className="h-full bg-warn transition-all"
                     style={{ width: `${jsPercent}%` }}
                   />
                 </div>
@@ -295,14 +295,14 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
               {/* Python */}
               <div>
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-[#cdd6f4]">Python</span>
-                  <span className="text-[#6c7086]">
+                  <span className="text-text">Python</span>
+                  <span className="text-overlay">
                     {stats.runsPerLanguage.python} runs ({pyPercent.toFixed(1)}%)
                   </span>
                 </div>
-                <div className="w-full h-3 bg-[#1e1e2e] rounded-full overflow-hidden">
+                <div className="w-full h-3 bg-base rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#89b4fa] transition-all"
+                    className="h-full bg-accent transition-all"
                     style={{ width: `${pyPercent}%` }}
                   />
                 </div>
@@ -311,14 +311,14 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
               {/* HTML */}
               <div>
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-[#cdd6f4]">HTML</span>
-                  <span className="text-[#6c7086]">
+                  <span className="text-text">HTML</span>
+                  <span className="text-overlay">
                     {stats.runsPerLanguage.html} runs ({htmlPercent.toFixed(1)}%)
                   </span>
                 </div>
-                <div className="w-full h-3 bg-[#1e1e2e] rounded-full overflow-hidden">
+                <div className="w-full h-3 bg-base rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-[#a6e3a1] transition-all"
+                    className="h-full bg-success transition-all"
                     style={{ width: `${htmlPercent}%` }}
                   />
                 </div>
@@ -327,10 +327,10 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
           </div>
 
           {/* Longest Program */}
-          <div className="bg-[#313244] rounded-lg p-6 border border-[#45475a] text-center">
-            <div className="text-sm text-[#6c7086] mb-2">Longest Program</div>
-            <div className="text-2xl font-bold text-[#cdd6f4]">
-              Your biggest creation used <span className="text-[#89b4fa]">{stats.longestProgram}</span> blocks
+          <div className="bg-surface-0 rounded-lg p-6 border border-surface-1 text-center">
+            <div className="text-sm text-overlay mb-2">Longest Program</div>
+            <div className="text-2xl font-bold text-text">
+              Your biggest creation used <span className="text-accent">{stats.longestProgram}</span> blocks
             </div>
           </div>
         </div>

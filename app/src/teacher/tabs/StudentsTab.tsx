@@ -16,10 +16,10 @@ export default function StudentsTab({ classroom }: StudentsTabProps) {
   if (students.length === 0) {
     return (
       <div className="px-6 py-4">
-        <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">Student Progress</h3>
-        <p className="text-sm text-[#6c7086] italic">
+        <h3 className="text-xs font-semibold text-overlay uppercase tracking-wider mb-3">Student Progress</h3>
+        <p className="text-sm text-overlay italic">
           No students have joined yet. Share the join code:{' '}
-          <span className="font-mono text-[#89b4fa]">{classroom.joinCode}</span>
+          <span className="font-mono text-accent">{classroom.joinCode}</span>
         </p>
       </div>
     )
@@ -27,7 +27,7 @@ export default function StudentsTab({ classroom }: StudentsTabProps) {
 
   return (
     <div className="px-6 py-4">
-      <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">Student Progress</h3>
+      <h3 className="text-xs font-semibold text-overlay uppercase tracking-wider mb-3">Student Progress</h3>
       <div className="flex flex-col gap-3">
         {students.map((student) => {
           const studentProjects = classroom.projects.filter((p) => p.authorId === student.userId)
@@ -35,12 +35,12 @@ export default function StudentsTab({ classroom }: StudentsTabProps) {
           const totalLikes = studentProjects.reduce((sum, p) => sum + Number(p.likes), 0)
 
           return (
-            <div key={student.userId} className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
+            <div key={student.userId} className="bg-base rounded-xl p-4 border border-surface-0">
               <div className="flex items-center gap-3 mb-3">
                 <Avatar name={student.userName} src={student.userAvatar} size="lg" />
                 <div>
-                  <div className="text-sm font-bold text-[#cdd6f4]">{student.userName}</div>
-                  <div className="text-[10px] text-[#6c7086]">
+                  <div className="text-sm font-bold text-text">{student.userName}</div>
+                  <div className="text-[10px] text-overlay">
                     Joined {new Date(Number(student.joinedAt)).toLocaleDateString()}
                   </div>
                 </div>
@@ -54,10 +54,10 @@ export default function StudentsTab({ classroom }: StudentsTabProps) {
 
               {studentProjects.length > 0 && (
                 <div className="mt-3">
-                  <div className="text-[10px] text-[#6c7086] uppercase tracking-wider mb-1">Recent Projects</div>
+                  <div className="text-[10px] text-overlay uppercase tracking-wider mb-1">Recent Projects</div>
                   {studentProjects.slice(0, 3).map((p) => (
-                    <div key={p.id} className="text-xs text-[#a6adc8] py-0.5">
-                      {p.name} <span className="text-[#6c7086]">· {p.category} · {p.blockCount} blocks</span>
+                    <div key={p.id} className="text-xs text-subtext py-0.5">
+                      {p.name} <span className="text-overlay">· {p.category} · {p.blockCount} blocks</span>
                     </div>
                   ))}
                 </div>
@@ -72,9 +72,9 @@ export default function StudentsTab({ classroom }: StudentsTabProps) {
 
 function StatCell({ value, label, color }: { value: number; label: string; color: string }) {
   return (
-    <div className="bg-[#181825] rounded-lg p-2 text-center">
+    <div className="bg-mantle rounded-lg p-2 text-center">
       <div className="text-lg font-bold" style={{ color }}>{value}</div>
-      <div className="text-[9px] text-[#6c7086]">{label}</div>
+      <div className="text-[9px] text-overlay">{label}</div>
     </div>
   )
 }

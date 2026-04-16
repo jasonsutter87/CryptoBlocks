@@ -15,11 +15,11 @@ interface CodeViewProps {
 function PlainCodeView({ code, language, editable, onCodeChange }: { code: string; language: string; editable?: boolean; onCodeChange?: (code: string) => void }) {
   if (editable) {
     return (
-      <div className="h-full bg-[#1e1e2e] p-3">
+      <div className="h-full bg-base p-3">
         <textarea
           value={code}
           onChange={(e) => onCodeChange?.(e.target.value)}
-          className="w-full h-full bg-transparent text-[13px] leading-relaxed text-[#cdd6f4] font-mono resize-none outline-none border-none"
+          className="w-full h-full bg-transparent text-[13px] leading-relaxed text-text font-mono resize-none outline-none border-none"
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
@@ -28,8 +28,8 @@ function PlainCodeView({ code, language, editable, onCodeChange }: { code: strin
     )
   }
   return (
-    <div className="h-full overflow-auto bg-[#1e1e2e] p-3">
-      <pre className="text-[13px] leading-relaxed text-[#cdd6f4] font-mono whitespace-pre-wrap break-words">
+    <div className="h-full overflow-auto bg-base p-3">
+      <pre className="text-[13px] leading-relaxed text-text font-mono whitespace-pre-wrap break-words">
         <code data-language={language}>{code || '// No code generated yet'}</code>
       </pre>
     </div>
@@ -46,19 +46,19 @@ export default function CodeView({ code, language, onLanguageChange, editable, o
   }, [])
 
   return (
-    <div className="flex flex-col h-full bg-[#1e1e2e]">
+    <div className="flex flex-col h-full bg-base">
       {/* Language toggle — hidden in editable mode (Code Lab provides its own header) */}
       {!editable && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-[#181825] border-b border-[#313244]">
-          <span className="text-xs text-[#6c7086] uppercase tracking-wide font-semibold mr-2">
+        <div className="flex items-center gap-2 px-4 py-2 bg-mantle border-b border-surface-0">
+          <span className="text-xs text-overlay uppercase tracking-wide font-semibold mr-2">
             Peek
           </span>
           <button
             onClick={() => onLanguageChange('javascript')}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
               language === 'javascript'
-                ? 'bg-[#f9e2af] text-[#1e1e2e]'
-                : 'text-[#cdd6f4] hover:bg-[#313244]'
+                ? 'bg-warn text-base'
+                : 'text-text hover:bg-surface-0'
             }`}
           >
             JavaScript
@@ -67,8 +67,8 @@ export default function CodeView({ code, language, onLanguageChange, editable, o
             onClick={() => onLanguageChange('python')}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
               language === 'python'
-                ? 'bg-[#89b4fa] text-[#1e1e2e]'
-                : 'text-[#cdd6f4] hover:bg-[#313244]'
+                ? 'bg-accent text-base'
+                : 'text-text hover:bg-surface-0'
             }`}
           >
             Python
@@ -77,8 +77,8 @@ export default function CodeView({ code, language, onLanguageChange, editable, o
             onClick={() => onLanguageChange('html')}
             className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
               language === 'html'
-                ? 'bg-[#f38ba8] text-[#1e1e2e]'
-                : 'text-[#cdd6f4] hover:bg-[#313244]'
+                ? 'bg-danger text-base'
+                : 'text-text hover:bg-surface-0'
             }`}
           >
             HTML

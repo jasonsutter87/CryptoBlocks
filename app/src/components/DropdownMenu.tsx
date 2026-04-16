@@ -17,14 +17,14 @@ interface DropdownMenuProps {
   className?: string
 }
 
-const ITEM_CLS = 'flex items-center gap-2 w-full px-3 py-2.5 text-sm text-[#cdd6f4] hover:bg-[#45475a] transition-colors text-left'
-const DROPDOWN_CLS = 'absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1'
+const ITEM_CLS = 'flex items-center gap-2 w-full px-3 py-2.5 text-sm text-text hover:bg-surface-1 transition-colors text-left'
+const DROPDOWN_CLS = 'absolute right-0 mt-1 w-56 bg-surface-0 border border-surface-1 rounded-lg shadow-xl z-50 py-1'
 
 export default function DropdownMenu({ items, className }: DropdownMenuProps) {
   return (
     <div className={className ?? DROPDOWN_CLS}>
       {items.map((item, i) => {
-        if (item.kind === 'divider') return <div key={i} className="h-px bg-[#45475a] my-1" />
+        if (item.kind === 'divider') return <div key={i} className="h-px bg-surface-1 my-1" />
 
         const iconEl = item.emoji
           ? <span className="text-base leading-none">{item.emoji}</span>

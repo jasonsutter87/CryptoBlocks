@@ -168,26 +168,26 @@ export default function Toolbar({
 
   const inChallenge = mode === 'active-challenge' || mode === 'active-blockset' || mode === 'active-golf' || mode === 'active-lab'
 
-  const menuItem = 'flex items-center gap-2 w-full px-3 py-2.5 text-sm text-[#cdd6f4] hover:bg-[#45475a] transition-colors text-left'
-  const menuDropdown = 'absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1'
-  const menuDivider = 'h-px bg-[#45475a] my-1'
+  const menuItem = 'flex items-center gap-2 w-full px-3 py-2.5 text-sm text-text hover:bg-surface-1 transition-colors text-left'
+  const menuDropdown = 'absolute right-0 mt-1 w-56 bg-surface-0 border border-surface-1 rounded-lg shadow-xl z-50 py-1'
+  const menuDivider = 'h-px bg-surface-1 my-1'
   const chevron = (
     <Icon name="chevron-down" className="w-3 h-3" />
   )
 
   return (
-    <header className="flex items-center justify-between px-3 md:px-4 py-2 bg-[#181825] border-b border-[#313244] select-none">
+    <header className="flex items-center justify-between px-3 md:px-4 py-2 bg-mantle border-b border-surface-0 select-none">
       {/* Logo — click 7 times rapidly to toggle hacker mode */}
       <div className="flex items-center gap-2 md:gap-3 shrink-0 cursor-pointer select-none" onClick={handleLogoClick}>
         <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-[#89b4fa]" />
-          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-[#f9e2af] -ml-1.5" />
-          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-[#a6e3a1] -ml-1.5" />
+          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-accent" />
+          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-warn -ml-1.5" />
+          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-success -ml-1.5" />
         </div>
-        <h1 className="text-base md:text-lg font-bold text-[#cdd6f4] tracking-tight">
+        <h1 className="text-base md:text-lg font-bold text-text tracking-tight">
           CryptoBlocks
         </h1>
-        <span className="hidden md:inline text-[10px] text-[#6c7086] bg-[#313244] px-1.5 py-0.5 rounded font-mono">
+        <span className="hidden md:inline text-[10px] text-overlay bg-surface-0 px-1.5 py-0.5 rounded font-mono">
           v0.3
         </span>
       </div>
@@ -205,7 +205,7 @@ export default function Toolbar({
             <div className="relative hidden md:block">
               <button
                 onClick={() => toggleMenu('file')}
-                className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+                className={`${btn} text-text hover:bg-surface-0`}
               >
                 <Icon name="folder" className="w-4 h-4" />
                 File
@@ -215,49 +215,49 @@ export default function Toolbar({
               {openMenu === 'file' && (
                 <div className={menuDropdown}>
                   <button onClick={() => requireAuth(() => { onExport(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="download" className="w-4 h-4 text-[#89b4fa]" />
+                    <Icon name="download" className="w-4 h-4 text-accent" />
                     Save .blocks
-                    {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
+                    {!isSignedIn && <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
                   </button>
                   <button onClick={() => requireAuth(() => { onSaveToDashboard(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="cloud-up" className="w-4 h-4 text-[#a6e3a1]" />
+                    <Icon name="cloud-up" className="w-4 h-4 text-success" />
                     Save to Dashboard
-                    {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
+                    {!isSignedIn && <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
                   </button>
                   <button onClick={() => requireAuth(() => { fileInputRef.current?.click(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="upload" className="w-4 h-4 text-[#89b4fa]" />
+                    <Icon name="upload" className="w-4 h-4 text-accent" />
                     Load .blocks
-                    {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
+                    {!isSignedIn && <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
                   </button>
                   <button onClick={() => requireAuth(() => { importAsBlockInputRef.current?.click(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="cube" className="w-4 h-4 text-[#89b4fa]" />
+                    <Icon name="cube" className="w-4 h-4 text-accent" />
                     Import as Block
-                    {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
+                    {!isSignedIn && <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
                   </button>
                   {onImportScratch && (
                     <button onClick={() => { requirePro(() => { onImportScratch(); setOpenMenu(null) }) }} className={menuItem}>
                       <span className="text-base leading-none">🐱</span>
                       Import from Scratch
-                      {isPro ? <span className="ml-auto text-xs text-[#6c7086]">.sb3</span> : <span className="ml-auto"><ProBadge /></span>}
+                      {isPro ? <span className="ml-auto text-xs text-overlay">.sb3</span> : <span className="ml-auto"><ProBadge /></span>}
                     </button>
                   )}
                   <div className={menuDivider} />
                   <button onClick={() => requireAuth(() => { onSaveCheckpoint(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="check" className="w-4 h-4 text-[#a6e3a1]" />
+                    <Icon name="check" className="w-4 h-4 text-success" />
                     Save Checkpoint
-                    {!isSignedIn && <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
+                    {!isSignedIn && <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
                   </button>
                   <button onClick={() => requireAuth(() => { onOpenHistory(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="clock" className="w-4 h-4 text-[#89b4fa]" />
+                    <Icon name="clock" className="w-4 h-4 text-accent" />
                     History
                     {currentBranchName && currentBranchName !== 'Main' && (
-                      <span className="ml-auto text-xs text-[#cba6f7] bg-[#1e1e2e] px-1.5 py-0.5 rounded font-mono">
+                      <span className="ml-auto text-xs text-purple bg-base px-1.5 py-0.5 rounded font-mono">
                         {currentBranchName}
                       </span>
                     )}
                   </button>
                   <button onClick={() => { onOpenSettings(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="cog" className="w-4 h-4 text-[#6c7086]" />
+                    <Icon name="cog" className="w-4 h-4 text-overlay" />
                     Settings
                   </button>
                   {onOpenTutorial && (
@@ -271,17 +271,17 @@ export default function Toolbar({
                     onClick={() => requirePro(() => { onExportHtml(); setOpenMenu(null) })}
                     className={menuItem}
                   >
-                    <Icon name="download" className="w-4 h-4 text-[#a6e3a1]" />
+                    <Icon name="download" className="w-4 h-4 text-success" />
                     Export as HTML
-                    {isPro ? <span className="ml-auto text-xs text-[#6c7086]">.html</span> : <span className="ml-auto"><ProBadge /></span>}
+                    {isPro ? <span className="ml-auto text-xs text-overlay">.html</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button
                     onClick={() => requirePro(() => { onExportPwa(); setOpenMenu(null) })}
                     className={menuItem}
                   >
-                    <Icon name="mobile-app" className="w-4 h-4 text-[#89b4fa]" />
+                    <Icon name="mobile-app" className="w-4 h-4 text-accent" />
                     Export as App (PWA)
-                    {isPro ? <span className="ml-auto text-xs text-[#6c7086]">.zip</span> : <span className="ml-auto"><ProBadge /></span>}
+                    {isPro ? <span className="ml-auto text-xs text-overlay">.zip</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button
                     onClick={async () => {
@@ -293,17 +293,17 @@ export default function Toolbar({
                     }}
                     className={menuItem}
                   >
-                    <Icon name="code-brackets" className="w-4 h-4 text-[#89b4fa]" />
+                    <Icon name="code-brackets" className="w-4 h-4 text-accent" />
                     {embedCopied ? 'Copied!' : 'Copy Embed Snippet'}
-                    {isPro ? <span className="ml-auto text-xs text-[#6c7086]">&lt;/&gt;</span> : <span className="ml-auto"><ProBadge /></span>}
+                    {isPro ? <span className="ml-auto text-xs text-overlay">&lt;/&gt;</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button
                     onClick={() => requireAuth(() => { onPublish(); setOpenMenu(null) })}
                     className={menuItem}
                   >
-                    <Icon name="cloud-up-arrow" className="w-4 h-4 text-[#cba6f7]" />
+                    <Icon name="cloud-up-arrow" className="w-4 h-4 text-purple" />
                     Publish to GitHub
-                    {isSignedIn ? <span className="ml-auto text-xs text-[#6c7086]">Live URL</span> : <span className="ml-auto text-[10px] text-[#6c7086]">Sign in</span>}
+                    {isSignedIn ? <span className="ml-auto text-xs text-overlay">Live URL</span> : <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
                   </button>
                   <button
                     onClick={async () => {
@@ -341,13 +341,13 @@ export default function Toolbar({
                     }}
                     className={menuItem}
                   >
-                    <Icon name="link" className="w-4 h-4 text-[#a6e3a1]" />
+                    <Icon name="link" className="w-4 h-4 text-success" />
                     {shareLinkCopied ? '✓ Link Copied!' : sharing ? 'Sharing...' : 'Share Link'}
-                    <span className="ml-auto text-xs text-[#6c7086]">🔗</span>
+                    <span className="ml-auto text-xs text-overlay">🔗</span>
                   </button>
                   <div className={menuDivider} />
                   <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="trash" className="w-4 h-4 text-[#f38ba8]" />
+                    <Icon name="trash" className="w-4 h-4 text-danger" />
                     Clear Workspace
                   </button>
                 </div>
@@ -356,13 +356,13 @@ export default function Toolbar({
 
             {/* Build dropdown */}
             <div className="relative hidden md:block">
-              <button onClick={() => toggleMenu('build')} className={`${btn} text-[#f9e2af] hover:bg-[#313244]`}>
+              <button onClick={() => toggleMenu('build')} className={`${btn} text-warn hover:bg-surface-0`}>
                 <Icon name="plus" className="w-4 h-4" /> Build {chevron}
               </button>
               {openMenu === 'build' && (
                 <DropdownMenu items={[
-                  { kind: 'button', icon: 'plus', iconCls: 'w-4 h-4 text-[#f9e2af]', label: 'Create Block', onClick: () => requirePro(() => { onCreateBlock(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
-                  { kind: 'button', icon: 'pages', iconCls: 'w-4 h-4 text-[#cba6f7]', label: 'Code to Blocks', onClick: () => requirePro(() => { onCodeToBlocks(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
+                  { kind: 'button', icon: 'plus', iconCls: 'w-4 h-4 text-warn', label: 'Create Block', onClick: () => requirePro(() => { onCreateBlock(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
+                  { kind: 'button', icon: 'pages', iconCls: 'w-4 h-4 text-purple', label: 'Code to Blocks', onClick: () => requirePro(() => { onCodeToBlocks(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
                   ...(onOpenSpriteEditor ? [{ kind: 'button' as const, emoji: '🎨', label: 'Sprite Editor', onClick: () => requirePro(() => { onOpenSpriteEditor(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined }] : []),
                   ...(onOpenLevelEditor ? [{ kind: 'button' as const, emoji: '🗺️', label: 'Level Editor', onClick: () => requirePro(() => { onOpenLevelEditor(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined }] : []),
                 ] satisfies MenuItem[]} />
@@ -370,7 +370,7 @@ export default function Toolbar({
             </div>
 
             {/* Divider */}
-            <div className="hidden md:block w-px h-6 bg-[#313244]" />
+            <div className="hidden md:block w-px h-6 bg-surface-0" />
 
             {/* Combined "Menu" dropdown — replaces Friends / Shareplace / Stats / Learn */}
             <div className="relative hidden md:block">
@@ -378,8 +378,8 @@ export default function Toolbar({
                 onClick={() => toggleMenu('menu')}
                 className={
                   ['challenges', 'blocksets', 'code-golf', 'code-lab'].includes(mode)
-                    ? `${btn} bg-[#f9e2af] text-[#1e1e2e]`
-                    : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
+                    ? `${btn} bg-warn text-base`
+                    : `${btn} text-text hover:bg-surface-0`
                 }
                 title="Friends, Shareplace, Stats, Learn"
               >
@@ -392,35 +392,35 @@ export default function Toolbar({
                 <div className={menuDropdown}>
                   {onOpenCollab && (
                     <button onClick={() => { onOpenCollab(); setOpenMenu(null) }} className={menuItem}>
-                      <Icon name="users" className="w-4 h-4 text-[#89b4fa]" />
+                      <Icon name="users" className="w-4 h-4 text-accent" />
                       Code with Friends
                     </button>
                   )}
                   <a href="/shareplace" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <Icon name="bolt" className="w-4 h-4 text-[#a6e3a1]" />
+                    <Icon name="bolt" className="w-4 h-4 text-success" />
                     Shareplace
                   </a>
                   <a href="/leaderboard" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <span className="w-4 h-4 flex items-center justify-center text-[#f9e2af] text-base">🏆</span>
+                    <span className="w-4 h-4 flex items-center justify-center text-warn text-base">🏆</span>
                     Leaderboard
                   </a>
                   <a href="/daily" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <span className="w-4 h-4 flex items-center justify-center text-[#fab387] text-base">🎯</span>
+                    <span className="w-4 h-4 flex items-center justify-center text-peach text-base">🎯</span>
                     Daily Challenge
                     {dailyStreak > 0 && (
-                      <span className="ml-auto text-xs text-[#fab387] font-bold">{dailyStreak}🔥</span>
+                      <span className="ml-auto text-xs text-peach font-bold">{dailyStreak}🔥</span>
                     )}
                   </a>
                   <button onClick={() => { onOpenStats(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="bars-chart" className="w-4 h-4 text-[#cdd6f4]" />
+                    <Icon name="bars-chart" className="w-4 h-4 text-text" />
                     Stats
                   </button>
                   <a href="/dashboard" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <Icon name="dashboard-grid" className="w-4 h-4 text-[#fab387]" />
+                    <Icon name="dashboard-grid" className="w-4 h-4 text-peach" />
                     Dashboard
                   </a>
                   <a href="/profile" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <Icon name="user-circle" className="w-4 h-4 text-[#cba6f7]" />
+                    <Icon name="user-circle" className="w-4 h-4 text-purple" />
                     Profile & Settings
                   </a>
                   <a
@@ -434,33 +434,33 @@ export default function Toolbar({
                   </a>
                   <div className={menuDivider} />
                   <a href="/learn" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <Icon name="book-open" className="w-4 h-4 text-[#89b4fa]" />
+                    <Icon name="book-open" className="w-4 h-4 text-accent" />
                     Learn JavaScript
                   </a>
                   <button onClick={() => { onOpenExamples(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="book" className="w-4 h-4 text-[#a6e3a1]" />
+                    <Icon name="book" className="w-4 h-4 text-success" />
                     Examples
                   </button>
                   <div className={menuDivider} />
                   <button onClick={() => { onOpenChallenges(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="sparkles" className="w-4 h-4 text-[#f9e2af]" />
+                    <Icon name="sparkles" className="w-4 h-4 text-warn" />
                     Challenges
-                    {mode === 'challenges' && <span className="ml-auto text-xs text-[#f9e2af] font-bold">Active</span>}
+                    {mode === 'challenges' && <span className="ml-auto text-xs text-warn font-bold">Active</span>}
                   </button>
                   <button onClick={() => { onOpenBlocksets(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="book" className="w-4 h-4 text-[#89b4fa]" />
+                    <Icon name="book" className="w-4 h-4 text-accent" />
                     Blocksets
-                    {mode === 'blocksets' && <span className="ml-auto text-xs text-[#89b4fa] font-bold">Active</span>}
+                    {mode === 'blocksets' && <span className="ml-auto text-xs text-accent font-bold">Active</span>}
                   </button>
                   <button onClick={() => { onOpenGolf(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="flag" className="w-4 h-4 text-[#a6e3a1]" />
+                    <Icon name="flag" className="w-4 h-4 text-success" />
                     Code Golf
-                    {mode === 'code-golf' ? <span className="ml-auto text-xs text-[#a6e3a1] font-bold">Active</span> : <span className="ml-auto"><ProBadge /></span>}
+                    {mode === 'code-golf' ? <span className="ml-auto text-xs text-success font-bold">Active</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                   <button onClick={() => { onOpenLab(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="book-classroom" className="w-4 h-4 text-[#cba6f7]" />
+                    <Icon name="book-classroom" className="w-4 h-4 text-purple" />
                     Code Lab
-                    {mode === 'code-lab' ? <span className="ml-auto text-xs text-[#cba6f7] font-bold">Active</span> : <span className="ml-auto"><ProBadge /></span>}
+                    {mode === 'code-lab' ? <span className="ml-auto text-xs text-purple font-bold">Active</span> : <span className="ml-auto"><ProBadge /></span>}
                   </button>
                 </div>
               )}
@@ -474,8 +474,8 @@ export default function Toolbar({
             onClick={onOpenChallenges}
             className={
               mode === 'challenges'
-                ? `md:hidden ${btn} bg-[#f9e2af] text-[#1e1e2e]`
-                : `md:hidden ${btn} text-[#cdd6f4] hover:bg-[#313244]`
+                ? `md:hidden ${btn} bg-warn text-base`
+                : `md:hidden ${btn} text-text hover:bg-surface-0`
             }
           >
             <Icon name="sparkles" className="w-4 h-4" />
@@ -486,7 +486,7 @@ export default function Toolbar({
         {/* Block counter */}
         {mode === 'sandbox' && (
           <div
-            className="hidden md:flex items-center gap-1 text-xs text-[#6c7086] bg-[#313244] px-2 py-1 rounded font-mono"
+            className="hidden md:flex items-center gap-1 text-xs text-overlay bg-surface-0 px-2 py-1 rounded font-mono"
             title="Blocks on workspace"
           >
             <Icon name="blocks-2x2" className="w-3 h-3" />
@@ -497,25 +497,25 @@ export default function Toolbar({
 
         {/* Undo / Redo / Fit View — sandbox only, desktop */}
         {mode === 'sandbox' && (
-          <div className="hidden md:flex items-center gap-0.5 bg-[#313244] rounded-lg p-0.5">
+          <div className="hidden md:flex items-center gap-0.5 bg-surface-0 rounded-lg p-0.5">
             <button
               onClick={onUndo}
               title="Undo"
-              className="flex items-center justify-center w-7 h-7 rounded text-[#6c7086] hover:text-[#cdd6f4] hover:bg-[#45475a] transition-colors"
+              className="flex items-center justify-center w-7 h-7 rounded text-overlay hover:text-text hover:bg-surface-1 transition-colors"
             >
               <Icon name="arrow-undo" className="w-4 h-4" />
             </button>
             <button
               onClick={onRedo}
               title="Redo"
-              className="flex items-center justify-center w-7 h-7 rounded text-[#6c7086] hover:text-[#cdd6f4] hover:bg-[#45475a] transition-colors"
+              className="flex items-center justify-center w-7 h-7 rounded text-overlay hover:text-text hover:bg-surface-1 transition-colors"
             >
               <Icon name="arrow-redo" className="w-4 h-4" />
             </button>
             <button
               onClick={onFitView}
               title="Fit View"
-              className="flex items-center justify-center w-7 h-7 rounded text-[#6c7086] hover:text-[#cdd6f4] hover:bg-[#45475a] transition-colors"
+              className="flex items-center justify-center w-7 h-7 rounded text-overlay hover:text-text hover:bg-surface-1 transition-colors"
             >
               <Icon name="expand" className="w-4 h-4" />
             </button>
@@ -528,8 +528,8 @@ export default function Toolbar({
             onClick={onToggleCode}
             className={
               showCode
-                ? `${btn} bg-[#cba6f7] text-[#1e1e2e]`
-                : `${btn} text-[#cdd6f4] hover:bg-[#313244]`
+                ? `${btn} bg-purple text-base`
+                : `${btn} text-text hover:bg-surface-0`
             }
           >
             <Icon name="code-brackets" className="w-4 h-4" />
@@ -550,7 +550,7 @@ export default function Toolbar({
             {isRunning ? (
               <button
                 onClick={onStop}
-                className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 text-sm font-semibold rounded-lg bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/80 transition-colors"
+                className="flex items-center gap-1.5 px-3 md:px-4 py-1.5 text-sm font-semibold rounded-lg bg-danger text-base hover:bg-danger/80 transition-colors"
               >
                 <Icon name="stop" className="w-4 h-4" />
                 Stop
@@ -558,7 +558,7 @@ export default function Toolbar({
             ) : (
               <button
                 onClick={onRun}
-                className={`${btn} bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 font-semibold px-3 md:px-4`}
+                className={`${btn} bg-success text-base hover:bg-success/80 font-semibold px-3 md:px-4`}
               >
                 <Icon name="play" className="w-4 h-4" />
                 Run
@@ -569,7 +569,7 @@ export default function Toolbar({
             {isCollabMode && !isRunning && onRunForEveryone && (
               <button
                 onClick={onRunForEveryone}
-                className={`${btn} bg-[#89b4fa] text-[#1e1e2e] hover:bg-[#89b4fa]/80 font-semibold px-2 md:px-3`}
+                className={`${btn} bg-accent text-base hover:bg-accent/80 font-semibold px-2 md:px-3`}
                 title="Run on everyone's screen"
               >
                 <Icon name="users" className="w-4 h-4" />
@@ -582,7 +582,7 @@ export default function Toolbar({
         {/* Auth — Sign In / User Avatar */}
         <SignedOut>
           <SignInButton mode="modal">
-            <button className={`${btn} bg-[#cba6f7] text-[#1e1e2e] hover:bg-[#cba6f7]/80 font-semibold px-3`}>
+            <button className={`${btn} bg-purple text-base hover:bg-purple/80 font-semibold px-3`}>
               Sign In
             </button>
           </SignInButton>
@@ -603,95 +603,95 @@ export default function Toolbar({
           <div className="relative md:hidden">
             <button
               onClick={() => toggleMenu('mobile')}
-              className={`${btn} text-[#cdd6f4] hover:bg-[#313244]`}
+              className={`${btn} text-text hover:bg-surface-0`}
               aria-label="More options"
             >
               <Icon name="dots-vertical" className="w-5 h-5" />
             </button>
 
             {openMenu === 'mobile' && (
-              <div className="absolute right-0 mt-1 w-56 bg-[#313244] border border-[#45475a] rounded-lg shadow-xl z-50 py-1 max-h-[70vh] overflow-auto">
+              <div className="absolute right-0 mt-1 w-56 bg-surface-0 border border-surface-1 rounded-lg shadow-xl z-50 py-1 max-h-[70vh] overflow-auto">
                 {onOpenCollab && (
                   <button onClick={() => { onOpenCollab(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="users" className="w-4 h-4 text-[#89b4fa]" />
+                    <Icon name="users" className="w-4 h-4 text-accent" />
                     Code with Friends
                   </button>
                 )}
                 <button onClick={() => { onExport(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="download" className="w-4 h-4 text-[#89b4fa]" />
+                  <Icon name="download" className="w-4 h-4 text-accent" />
                   Save .blocks
                 </button>
                 <button onClick={() => { fileInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="upload" className="w-4 h-4 text-[#89b4fa]" />
+                  <Icon name="upload" className="w-4 h-4 text-accent" />
                   Load .blocks
                 </button>
                 <button onClick={() => { importAsBlockInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="cube" className="w-4 h-4 text-[#89b4fa]" />
+                  <Icon name="cube" className="w-4 h-4 text-accent" />
                   Import as Block
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onCreateBlock(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="plus" className="w-4 h-4 text-[#f9e2af]" />
+                  <Icon name="plus" className="w-4 h-4 text-warn" />
                   Create Block
                 </button>
                 <button onClick={() => { onCodeToBlocks(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="pages" className="w-4 h-4 text-[#cba6f7]" />
+                  <Icon name="pages" className="w-4 h-4 text-purple" />
                   Code to Blocks
                 </button>
                 <button onClick={() => { onOpenExamples(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="book" className="w-4 h-4 text-[#a6e3a1]" />
+                  <Icon name="book" className="w-4 h-4 text-success" />
                   Examples
                 </button>
                 <button onClick={() => { onOpenBlocksets(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="book" className="w-4 h-4 text-[#89b4fa]" />
+                  <Icon name="book" className="w-4 h-4 text-accent" />
                   Blocksets
                 </button>
                 <button onClick={() => { onOpenGolf(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="flag" className="w-4 h-4 text-[#a6e3a1]" />
+                  <Icon name="flag" className="w-4 h-4 text-success" />
                   Code Golf
                 </button>
                 <button onClick={() => { onOpenLab(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="book-classroom" className="w-4 h-4 text-[#cba6f7]" />
+                  <Icon name="book-classroom" className="w-4 h-4 text-purple" />
                   Code Lab
                 </button>
                 <button onClick={() => { onOpenStats(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="bars-chart" className="w-4 h-4 text-[#89b4fa]" />
+                  <Icon name="bars-chart" className="w-4 h-4 text-accent" />
                   Developer Stats
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onExportHtml(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="download" className="w-4 h-4 text-[#a6e3a1]" />
+                  <Icon name="download" className="w-4 h-4 text-success" />
                   Export HTML
                 </button>
                 <button onClick={() => { onPublish(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="cloud-up-arrow" className="w-4 h-4 text-[#cba6f7]" />
+                  <Icon name="cloud-up-arrow" className="w-4 h-4 text-purple" />
                   Publish to GitHub
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onUndo(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="arrow-undo" className="w-4 h-4 text-[#cdd6f4]" />
+                  <Icon name="arrow-undo" className="w-4 h-4 text-text" />
                   Undo
                 </button>
                 <button onClick={() => { onRedo(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="arrow-redo" className="w-4 h-4 text-[#cdd6f4]" />
+                  <Icon name="arrow-redo" className="w-4 h-4 text-text" />
                   Redo
                 </button>
                 <button onClick={() => { onFitView(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="expand" className="w-4 h-4 text-[#89b4fa]" />
+                  <Icon name="expand" className="w-4 h-4 text-accent" />
                   Fit View
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onSaveCheckpoint(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="check" className="w-4 h-4 text-[#a6e3a1]" />
+                  <Icon name="check" className="w-4 h-4 text-success" />
                   Save Checkpoint
                 </button>
                 <button onClick={() => { onOpenHistory(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="clock" className="w-4 h-4 text-[#89b4fa]" />
+                  <Icon name="clock" className="w-4 h-4 text-accent" />
                   History
                 </button>
                 <div className={menuDivider} />
                 <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="trash" className="w-4 h-4 text-[#f38ba8]" />
+                  <Icon name="trash" className="w-4 h-4 text-danger" />
                   Clear Workspace
                 </button>
               </div>

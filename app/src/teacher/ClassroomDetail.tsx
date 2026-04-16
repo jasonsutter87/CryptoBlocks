@@ -44,23 +44,23 @@ export default function ClassroomDetail({ classroom, onClose }: ClassroomDetailP
   }, [classroom.id])
 
   return (
-    <div className="bg-[#181825] border border-[#313244] rounded-xl overflow-hidden">
-      <div className="px-6 py-5 border-b border-[#313244] flex items-center justify-between">
+    <div className="bg-mantle border border-surface-0 rounded-xl overflow-hidden">
+      <div className="px-6 py-5 border-b border-surface-0 flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-[#cdd6f4]">{classroom.name}</h2>
-          <div className="text-sm text-[#6c7086] mt-0.5">
-            Join code: <span className="font-mono text-[#89b4fa] tracking-wider">{classroom.joinCode}</span>
+          <h2 className="text-xl font-bold text-text">{classroom.name}</h2>
+          <div className="text-sm text-overlay mt-0.5">
+            Join code: <span className="font-mono text-accent tracking-wider">{classroom.joinCode}</span>
             <span className="ml-3">{classroom.members.length} members</span>
           </div>
         </div>
-        <button onClick={onClose} className="text-[#6c7086] hover:text-[#cdd6f4] p-1" aria-label="Close">
+        <button onClick={onClose} className="text-overlay hover:text-text p-1" aria-label="Close">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </div>
 
-      <div className="px-6 py-2 border-b border-[#313244] flex gap-2 bg-[#1e1e2e]">
+      <div className="px-6 py-2 border-b border-surface-0 flex gap-2 bg-base">
         <TabButton tab="overview" current={tab} onClick={setTab}>Overview</TabButton>
         <TabButton tab="students" current={tab} onClick={setTab}>Students ({studentCount})</TabButton>
         <TabButton tab="discussions" current={tab} onClick={setTab}>Discussions ({discussions.length})</TabButton>
@@ -110,7 +110,7 @@ function TabButton({ tab, current, onClick, children }: TabButtonProps) {
     <button
       onClick={() => onClick(tab)}
       className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-        active ? 'bg-[#89b4fa] text-[#1e1e2e]' : 'text-[#6c7086] hover:text-[#cdd6f4] hover:bg-[#313244]'
+        active ? 'bg-accent text-base' : 'text-overlay hover:text-text hover:bg-surface-0'
       }`}
     >
       {children}

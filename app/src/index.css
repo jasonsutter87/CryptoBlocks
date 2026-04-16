@@ -1,5 +1,26 @@
 @import "tailwindcss";
 
+/* Catppuccin Mocha — semantic design tokens.
+   Every hex that previously appeared as bg-base etc. now has a name.
+   Changing the palette (e.g., light mode, a rebrand) is one block edit. */
+@theme {
+  --color-base: #1e1e2e;
+  --color-mantle: #181825;
+  --color-crust: #11111b;
+  --color-surface-0: #313244;
+  --color-surface-1: #45475a;
+  --color-overlay: #6c7086;
+  --color-subtext: #a6adc8;
+  --color-text: #cdd6f4;
+  --color-accent: #89b4fa;
+  --color-success: #a6e3a1;
+  --color-warn: #f9e2af;
+  --color-danger: #f38ba8;
+  --color-purple: #cba6f7;
+  --color-peach: #fab387;
+  --color-sapphire: #74c7ec;
+}
+
 html,
 body,
 #root {
@@ -104,23 +125,23 @@ body {
 }
 
 /* Main backgrounds */
-[data-theme="light"] [class*="bg-[#1e1e2e]"] { background-color: #f0f1f5 !important; }
-[data-theme="light"] [class*="bg-[#181825]"] { background-color: #ffffff !important; }
-[data-theme="light"] [class*="bg-[#11111b]"] { background-color: #f5f6f8 !important; }
-[data-theme="light"] [class*="bg-[#313244]"] { background-color: #e2e4e9 !important; }
+[data-theme="light"] [class*="bg-base"] { background-color: #f0f1f5 !important; }
+[data-theme="light"] [class*="bg-mantle"] { background-color: #ffffff !important; }
+[data-theme="light"] [class*="bg-crust"] { background-color: #f5f6f8 !important; }
+[data-theme="light"] [class*="bg-surface-0"] { background-color: #e2e4e9 !important; }
 
 /* Borders */
-[data-theme="light"] [class*="border-[#313244]"] { border-color: #d0d2d8 !important; }
-[data-theme="light"] [class*="border-[#45475a]"] { border-color: #c0c2c8 !important; }
+[data-theme="light"] [class*="border-surface-0"] { border-color: #d0d2d8 !important; }
+[data-theme="light"] [class*="border-surface-1"] { border-color: #c0c2c8 !important; }
 
 /* Text */
-[data-theme="light"] [class*="text-[#cdd6f4]"] { color: #1e1e2e !important; }
-[data-theme="light"] [class*="text-[#a6adc8]"] { color: #4a4a5a !important; }
-[data-theme="light"] [class*="text-[#6c7086]"] { color: #6c7086 !important; }
+[data-theme="light"] [class*="text-text"] { color: #1e1e2e !important; }
+[data-theme="light"] [class*="text-subtext"] { color: #4a4a5a !important; }
+[data-theme="light"] [class*="text-overlay"] { color: #6c7086 !important; }
 
 /* Hover states */
-[data-theme="light"] [class*="hover:bg-[#313244]"]:hover { background-color: #d0d2d8 !important; }
-[data-theme="light"] [class*="hover:bg-[#45475a]"]:hover { background-color: #c0c2c8 !important; }
+[data-theme="light"] [class*="hover:bg-surface-0"]:hover { background-color: #d0d2d8 !important; }
+[data-theme="light"] [class*="hover:bg-surface-1"]:hover { background-color: #c0c2c8 !important; }
 
 /* Blockly workspace */
 [data-theme="light"] .blocklySvg { background-color: #eaebf0 !important; }
@@ -185,7 +206,7 @@ body {
 }
 
 /* Output panel green text */
-.hacker-mode [class*="bg-[#1e1e2e]"] {
+.hacker-mode [class*="bg-base"] {
   background-color: var(--hm-dark) !important;
 }
 

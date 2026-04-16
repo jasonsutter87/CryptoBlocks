@@ -90,16 +90,16 @@ export default function PublishModal({ onClose, getHtml }: PublishModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
 
-      <div className="relative bg-[#1e1e2e] border border-[#313244] rounded-2xl shadow-2xl w-full max-w-md flex flex-col mx-4">
+      <div className="relative bg-base border border-surface-0 rounded-2xl shadow-2xl w-full max-w-md flex flex-col mx-4">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#313244]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-0">
           <div>
-            <h2 className="text-xl font-bold text-[#cdd6f4]">Publish to GitHub</h2>
-            <p className="text-sm text-[#6c7086] mt-0.5">Get a live URL for your project</p>
+            <h2 className="text-xl font-bold text-text">Publish to GitHub</h2>
+            <p className="text-sm text-overlay mt-0.5">Get a live URL for your project</p>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[#313244] transition-colors text-[#6c7086] hover:text-[#cdd6f4]"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-surface-0 transition-colors text-overlay hover:text-text"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -112,15 +112,15 @@ export default function PublishModal({ onClose, getHtml }: PublishModalProps) {
           {/* Token Step */}
           {step === 'token' && (
             <div className="space-y-4">
-              <p className="text-sm text-[#a6adc8]">
-                Enter a GitHub Personal Access Token with <code className="text-[#89b4fa] bg-[#313244] px-1 rounded text-xs">gist</code> and <code className="text-[#89b4fa] bg-[#313244] px-1 rounded text-xs">repo</code> scopes.
+              <p className="text-sm text-subtext">
+                Enter a GitHub Personal Access Token with <code className="text-accent bg-surface-0 px-1 rounded text-xs">gist</code> and <code className="text-accent bg-surface-0 px-1 rounded text-xs">repo</code> scopes.
               </p>
               <input
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                className="w-full px-3 py-2 bg-[#313244] border border-[#45475a] rounded-lg text-sm text-[#cdd6f4] placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa]"
+                className="w-full px-3 py-2 bg-surface-0 border border-surface-1 rounded-lg text-sm text-text placeholder-overlay focus:outline-none focus:border-accent"
                 onKeyDown={(e) => e.key === 'Enter' && handleConnect()}
               />
               <div className="flex items-center justify-between">
@@ -128,14 +128,14 @@ export default function PublishModal({ onClose, getHtml }: PublishModalProps) {
                   href="https://github.com/settings/tokens/new?scopes=gist,repo&description=CryptoBlocks"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-[#89b4fa] hover:underline"
+                  className="text-xs text-accent hover:underline"
                 >
                   Create a token
                 </a>
                 <button
                   onClick={handleConnect}
                   disabled={!token.trim() || connecting}
-                  className="px-4 py-2 text-sm font-semibold bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 rounded-lg transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-semibold bg-success text-base hover:bg-success/80 rounded-lg transition-colors disabled:opacity-50"
                 >
                   {connecting ? 'Connecting...' : 'Connect'}
                 </button>
@@ -147,10 +147,10 @@ export default function PublishModal({ onClose, getHtml }: PublishModalProps) {
           {step === 'choose' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[#a6adc8]">
-                  Connected as <span className="font-semibold text-[#cdd6f4]">{username}</span>
+                <span className="text-sm text-subtext">
+                  Connected as <span className="font-semibold text-text">{username}</span>
                 </span>
-                <button onClick={handleDisconnect} className="text-xs text-[#f38ba8] hover:underline">
+                <button onClick={handleDisconnect} className="text-xs text-danger hover:underline">
                   Disconnect
                 </button>
               </div>
@@ -161,36 +161,36 @@ export default function PublishModal({ onClose, getHtml }: PublishModalProps) {
                   onClick={() => setTarget('gist')}
                   className={`p-3 rounded-lg border text-left transition-colors ${
                     target === 'gist'
-                      ? 'border-[#89b4fa] bg-[#89b4fa]/10'
-                      : 'border-[#45475a] hover:border-[#6c7086]'
+                      ? 'border-accent bg-accent/10'
+                      : 'border-surface-1 hover:border-overlay'
                   }`}
                 >
-                  <div className="text-sm font-semibold text-[#cdd6f4]">Gist</div>
-                  <div className="text-xs text-[#6c7086] mt-1">Instant shareable link</div>
+                  <div className="text-sm font-semibold text-text">Gist</div>
+                  <div className="text-xs text-overlay mt-1">Instant shareable link</div>
                 </button>
                 <button
                   onClick={() => setTarget('pages')}
                   className={`p-3 rounded-lg border text-left transition-colors ${
                     target === 'pages'
-                      ? 'border-[#89b4fa] bg-[#89b4fa]/10'
-                      : 'border-[#45475a] hover:border-[#6c7086]'
+                      ? 'border-accent bg-accent/10'
+                      : 'border-surface-1 hover:border-overlay'
                   }`}
                 >
-                  <div className="text-sm font-semibold text-[#cdd6f4]">Pages</div>
-                  <div className="text-xs text-[#6c7086] mt-1">Live site on github.io</div>
+                  <div className="text-sm font-semibold text-text">Pages</div>
+                  <div className="text-xs text-overlay mt-1">Live site on github.io</div>
                 </button>
               </div>
 
               {/* Project name for Pages */}
               {target === 'pages' && (
                 <div>
-                  <label className="block text-xs text-[#6c7086] mb-1">Repository name</label>
+                  <label className="block text-xs text-overlay mb-1">Repository name</label>
                   <input
                     value={projectName}
                     onChange={(e) => setProjectName(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#313244] border border-[#45475a] rounded-lg text-sm text-[#cdd6f4] focus:outline-none focus:border-[#89b4fa]"
+                    className="w-full px-3 py-2 bg-surface-0 border border-surface-1 rounded-lg text-sm text-text focus:outline-none focus:border-accent"
                   />
-                  <p className="text-xs text-[#6c7086] mt-1">
+                  <p className="text-xs text-overlay mt-1">
                     {username}.github.io/{sanitizeRepoName(projectName) || '...'}
                   </p>
                 </div>
@@ -199,7 +199,7 @@ export default function PublishModal({ onClose, getHtml }: PublishModalProps) {
               <div className="flex justify-end">
                 <button
                   onClick={handlePublish}
-                  className="px-4 py-2 text-sm font-semibold bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-semibold bg-success text-base hover:bg-success/80 rounded-lg transition-colors"
                 >
                   Publish
                 </button>
@@ -210,33 +210,33 @@ export default function PublishModal({ onClose, getHtml }: PublishModalProps) {
           {/* Publishing Step */}
           {step === 'publishing' && (
             <div className="flex flex-col items-center py-6 gap-3">
-              <div className="w-8 h-8 border-2 border-[#89b4fa] border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-[#a6adc8]">{statusText}</p>
+              <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-subtext">{statusText}</p>
             </div>
           )}
 
           {/* Result Step */}
           {step === 'result' && (
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-[#a6e3a1]">
+              <div className="flex items-center gap-2 text-success">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
                 <span className="text-sm font-semibold">Published!</span>
               </div>
 
-              <div className="bg-[#313244] rounded-lg p-3 flex items-center gap-2">
+              <div className="bg-surface-0 rounded-lg p-3 flex items-center gap-2">
                 <a
                   href={liveUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-[#89b4fa] hover:underline truncate flex-1"
+                  className="text-sm text-accent hover:underline truncate flex-1"
                 >
                   {liveUrl}
                 </a>
                 <button
                   onClick={handleCopyUrl}
-                  className="px-2 py-1 text-xs font-medium bg-[#45475a] hover:bg-[#585b70] text-[#cdd6f4] rounded transition-colors shrink-0"
+                  className="px-2 py-1 text-xs font-medium bg-surface-1 hover:bg-[#585b70] text-text rounded transition-colors shrink-0"
                 >
                   Copy
                 </button>
@@ -247,14 +247,14 @@ export default function PublishModal({ onClose, getHtml }: PublishModalProps) {
                   href={secondaryUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-[#6c7086] hover:text-[#89b4fa] hover:underline block"
+                  className="text-xs text-overlay hover:text-accent hover:underline block"
                 >
                   {target === 'gist' ? 'View on GitHub Gist' : 'View repository'}
                 </a>
               )}
 
               {isPages && (
-                <p className="text-xs text-[#f9e2af]">
+                <p className="text-xs text-warn">
                   GitHub Pages may take 1-2 minutes to go live.
                 </p>
               )}
@@ -262,7 +262,7 @@ export default function PublishModal({ onClose, getHtml }: PublishModalProps) {
               <div className="flex justify-end">
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-[#cdd6f4] hover:bg-[#313244] rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-text hover:bg-surface-0 rounded-lg transition-colors"
                 >
                   Done
                 </button>
@@ -273,13 +273,13 @@ export default function PublishModal({ onClose, getHtml }: PublishModalProps) {
           {/* Error Step */}
           {step === 'error' && (
             <div className="space-y-4">
-              <div className="bg-[#f38ba8]/10 border border-[#f38ba8]/30 rounded-lg p-3">
-                <p className="text-sm text-[#f38ba8]">{errorMsg}</p>
+              <div className="bg-danger/10 border border-danger/30 rounded-lg p-3">
+                <p className="text-sm text-danger">{errorMsg}</p>
               </div>
               <div className="flex justify-end">
                 <button
                   onClick={() => setStep(username ? 'choose' : 'token')}
-                  className="px-4 py-2 text-sm font-semibold bg-[#89b4fa] text-[#1e1e2e] hover:bg-[#89b4fa]/80 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-semibold bg-accent text-base hover:bg-accent/80 rounded-lg transition-colors"
                 >
                   Try Again
                 </button>

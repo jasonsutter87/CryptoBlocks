@@ -39,7 +39,7 @@ export function AchievementToast({ achievement, onDismiss }: AchievementToastPro
 
   return (
     <div
-      className={`fixed bottom-6 right-6 bg-[#313244] text-[#cdd6f4] rounded-lg shadow-2xl p-4 min-w-[320px] max-w-[400px] border border-[#45475a] transition-all duration-300 ${
+      className={`fixed bottom-6 right-6 bg-surface-0 text-text rounded-lg shadow-2xl p-4 min-w-[320px] max-w-[400px] border border-surface-1 transition-all duration-300 ${
         isVisible ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0'
       }`}
       style={{ zIndex: 9999 }}
@@ -47,7 +47,7 @@ export function AchievementToast({ achievement, onDismiss }: AchievementToastPro
       <div className="flex items-start gap-3">
         <div className="text-4xl flex-shrink-0">{achievement.icon}</div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-[#f9e2af] mb-1">Achievement Unlocked!</div>
+          <div className="text-sm font-semibold text-warn mb-1">Achievement Unlocked!</div>
           <div className="font-bold text-base mb-1">{achievement.name}</div>
           <div className="text-sm text-[#bac2de] mb-2">{achievement.description}</div>
           <div className="inline-block">

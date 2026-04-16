@@ -216,15 +216,15 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-[#1e1e2e] border border-[#313244] rounded-xl w-[900px] max-h-[90vh] flex flex-col shadow-2xl">
+      <div className="bg-base border border-surface-0 rounded-xl w-[900px] max-h-[90vh] flex flex-col shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#313244]">
-          <h2 className="text-lg font-bold text-[#cdd6f4]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-0">
+          <h2 className="text-lg font-bold text-text">
             {isEditing ? 'Edit Block' : 'Create Block'}
           </h2>
           <button
             onClick={onClose}
-            className="text-[#6c7086] hover:text-[#cdd6f4] transition-colors"
+            className="text-overlay hover:text-text transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -237,24 +237,24 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
           {/* Name + Description row */}
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-xs font-semibold text-[#a6adc8] mb-1">Name</label>
+              <label className="block text-xs font-semibold text-subtext mb-1">Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="my_block"
                 disabled={isEditing}
-                className="w-full px-3 py-2 text-sm bg-[#181825] border border-[#313244] rounded-lg text-[#cdd6f4] placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa] disabled:opacity-50"
+                className="w-full px-3 py-2 text-sm bg-mantle border border-surface-0 rounded-lg text-text placeholder-overlay focus:outline-none focus:border-accent disabled:opacity-50"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-semibold text-[#a6adc8] mb-1">Description</label>
+              <label className="block text-xs font-semibold text-subtext mb-1">Description</label>
               <input
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="What does this block do?"
-                className="w-full px-3 py-2 text-sm bg-[#181825] border border-[#313244] rounded-lg text-[#cdd6f4] placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa]"
+                className="w-full px-3 py-2 text-sm bg-mantle border border-surface-0 rounded-lg text-text placeholder-overlay focus:outline-none focus:border-accent"
               />
             </div>
           </div>
@@ -262,11 +262,11 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
           {/* Category + Shape + Color row */}
           <div className="flex gap-4">
             <div className="w-40">
-              <label className="block text-xs font-semibold text-[#a6adc8] mb-1">Category</label>
+              <label className="block text-xs font-semibold text-subtext mb-1">Category</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as BlockCategory)}
-                className="w-full px-3 py-2 text-sm bg-[#181825] border border-[#313244] rounded-lg text-[#cdd6f4] focus:outline-none focus:border-[#89b4fa]"
+                className="w-full px-3 py-2 text-sm bg-mantle border border-surface-0 rounded-lg text-text focus:outline-none focus:border-accent"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -274,14 +274,14 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-[#a6adc8] mb-1">Shape</label>
-              <div className="flex rounded-lg overflow-hidden border border-[#313244]">
+              <label className="block text-xs font-semibold text-subtext mb-1">Shape</label>
+              <div className="flex rounded-lg overflow-hidden border border-surface-0">
                 <button
                   onClick={() => setShape('statement')}
                   className={`px-3 py-2 text-xs font-medium transition-colors ${
                     shape === 'statement'
-                      ? 'bg-[#a6e3a1] text-[#1e1e2e]'
-                      : 'bg-[#181825] text-[#6c7086] hover:text-[#cdd6f4]'
+                      ? 'bg-success text-base'
+                      : 'bg-mantle text-overlay hover:text-text'
                   }`}
                   title="Stackable puzzle piece - chains with other blocks"
                 >
@@ -292,10 +292,10 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
                 </button>
                 <button
                   onClick={() => setShape('value')}
-                  className={`px-3 py-2 text-xs font-medium transition-colors border-l border-[#313244] ${
+                  className={`px-3 py-2 text-xs font-medium transition-colors border-l border-surface-0 ${
                     shape === 'value'
-                      ? 'bg-[#89b4fa] text-[#1e1e2e]'
-                      : 'bg-[#181825] text-[#6c7086] hover:text-[#cdd6f4]'
+                      ? 'bg-accent text-base'
+                      : 'bg-mantle text-overlay hover:text-text'
                   }`}
                   title="Oval value - plugs into another block's input"
                 >
@@ -307,7 +307,7 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
               </div>
             </div>
             <div className="flex-1">
-              <label className="block text-xs font-semibold text-[#a6adc8] mb-1">Color</label>
+              <label className="block text-xs font-semibold text-subtext mb-1">Color</label>
               <div className="flex flex-wrap gap-1.5">
                 {PRESET_COLORS.map((c) => (
                   <button
@@ -327,20 +327,20 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold text-[#a6adc8]">Inputs</label>
+                <label className="text-xs font-semibold text-subtext">Inputs</label>
                 {!inputsManuallyEdited && (
-                  <span className="text-[10px] text-[#6c7086] bg-[#313244] px-1.5 py-0.5 rounded">auto-detected from code</span>
+                  <span className="text-[10px] text-overlay bg-surface-0 px-1.5 py-0.5 rounded">auto-detected from code</span>
                 )}
               </div>
               <button
                 onClick={addInput}
-                className="text-xs text-[#89b4fa] hover:text-[#b4d0fb] transition-colors"
+                className="text-xs text-accent hover:text-[#b4d0fb] transition-colors"
               >
                 + Add Input
               </button>
             </div>
             {inputs.length === 0 && (
-              <p className="text-xs text-[#6c7086]">No inputs. Click "+ Add Input" to add one.</p>
+              <p className="text-xs text-overlay">No inputs. Click "+ Add Input" to add one.</p>
             )}
             <div className="space-y-2">
               {inputs.map((inp, i) => (
@@ -350,12 +350,12 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
                     value={inp.name}
                     onChange={(e) => updateInput(i, 'name', e.target.value)}
                     placeholder="input_name"
-                    className="flex-1 px-2 py-1.5 text-sm bg-[#181825] border border-[#313244] rounded text-[#cdd6f4] placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa]"
+                    className="flex-1 px-2 py-1.5 text-sm bg-mantle border border-surface-0 rounded text-text placeholder-overlay focus:outline-none focus:border-accent"
                   />
                   <select
                     value={inp.type}
                     onChange={(e) => updateInput(i, 'type', e.target.value)}
-                    className="px-2 py-1.5 text-sm bg-[#181825] border border-[#313244] rounded text-[#cdd6f4] focus:outline-none"
+                    className="px-2 py-1.5 text-sm bg-mantle border border-surface-0 rounded text-text focus:outline-none"
                   >
                     {INPUT_TYPES.map((t) => (
                       <option key={t} value={t}>{t}</option>
@@ -363,7 +363,7 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
                   </select>
                   <button
                     onClick={() => removeInput(i)}
-                    className="text-[#f38ba8] hover:text-[#f38ba8]/80 text-sm px-1"
+                    className="text-danger hover:text-danger/80 text-sm px-1"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -378,20 +378,20 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold text-[#a6adc8]">Outputs</label>
+                <label className="text-xs font-semibold text-subtext">Outputs</label>
                 {!outputsManuallyEdited && (
-                  <span className="text-[10px] text-[#6c7086] bg-[#313244] px-1.5 py-0.5 rounded">auto-detected from code</span>
+                  <span className="text-[10px] text-overlay bg-surface-0 px-1.5 py-0.5 rounded">auto-detected from code</span>
                 )}
               </div>
               <button
                 onClick={addOutput}
-                className="text-xs text-[#89b4fa] hover:text-[#b4d0fb] transition-colors"
+                className="text-xs text-accent hover:text-[#b4d0fb] transition-colors"
               >
                 + Add Output
               </button>
             </div>
             {outputs.length === 0 && (
-              <p className="text-xs text-[#6c7086]">No outputs = statement block. Add an output to make it a value block.</p>
+              <p className="text-xs text-overlay">No outputs = statement block. Add an output to make it a value block.</p>
             )}
             <div className="space-y-2">
               {outputs.map((out, i) => (
@@ -401,12 +401,12 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
                     value={out.name}
                     onChange={(e) => updateOutput(i, 'name', e.target.value)}
                     placeholder="output_name"
-                    className="flex-1 px-2 py-1.5 text-sm bg-[#181825] border border-[#313244] rounded text-[#cdd6f4] placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa]"
+                    className="flex-1 px-2 py-1.5 text-sm bg-mantle border border-surface-0 rounded text-text placeholder-overlay focus:outline-none focus:border-accent"
                   />
                   <select
                     value={out.type}
                     onChange={(e) => updateOutput(i, 'type', e.target.value)}
-                    className="px-2 py-1.5 text-sm bg-[#181825] border border-[#313244] rounded text-[#cdd6f4] focus:outline-none"
+                    className="px-2 py-1.5 text-sm bg-mantle border border-surface-0 rounded text-text focus:outline-none"
                   >
                     {INPUT_TYPES.map((t) => (
                       <option key={t} value={t}>{t}</option>
@@ -414,7 +414,7 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
                   </select>
                   <button
                     onClick={() => removeOutput(i)}
-                    className="text-[#f38ba8] hover:text-[#f38ba8]/80 text-sm px-1"
+                    className="text-danger hover:text-danger/80 text-sm px-1"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -427,15 +427,15 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
 
           {/* Code editors side by side */}
           <div>
-            <label className="block text-xs font-semibold text-[#a6adc8] mb-2">Implementations</label>
+            <label className="block text-xs font-semibold text-subtext mb-2">Implementations</label>
             <div className="flex gap-3">
               {/* JS Editor */}
-              <div className="flex-1 border border-[#313244] rounded-lg overflow-hidden">
-                <div className="flex items-center justify-between px-3 py-1.5 bg-[#181825] border-b border-[#313244]">
-                  <span className="text-xs font-semibold text-[#f9e2af]">JavaScript</span>
+              <div className="flex-1 border border-surface-0 rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-1.5 bg-mantle border-b border-surface-0">
+                  <span className="text-xs font-semibold text-warn">JavaScript</span>
                   <button
                     onClick={() => jsFileRef.current?.click()}
-                    className="text-[10px] text-[#6c7086] hover:text-[#cdd6f4] transition-colors flex items-center gap-1"
+                    className="text-[10px] text-overlay hover:text-text transition-colors flex items-center gap-1"
                   >
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -481,12 +481,12 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
               </div>
 
               {/* Python Editor */}
-              <div className="flex-1 border border-[#313244] rounded-lg overflow-hidden">
-                <div className="flex items-center justify-between px-3 py-1.5 bg-[#181825] border-b border-[#313244]">
-                  <span className="text-xs font-semibold text-[#89b4fa]">Python</span>
+              <div className="flex-1 border border-surface-0 rounded-lg overflow-hidden">
+                <div className="flex items-center justify-between px-3 py-1.5 bg-mantle border-b border-surface-0">
+                  <span className="text-xs font-semibold text-accent">Python</span>
                   <button
                     onClick={() => pyFileRef.current?.click()}
-                    className="text-[10px] text-[#6c7086] hover:text-[#cdd6f4] transition-colors flex items-center gap-1"
+                    className="text-[10px] text-overlay hover:text-text transition-colors flex items-center gap-1"
                   >
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -535,23 +535,23 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
 
           {/* Error message */}
           {error && (
-            <div className="text-sm text-[#f38ba8] bg-[#f38ba8]/10 px-3 py-2 rounded-lg">
+            <div className="text-sm text-danger bg-danger/10 px-3 py-2 rounded-lg">
               {error}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#313244]">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-surface-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-[#cdd6f4] hover:bg-[#313244] rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-text hover:bg-surface-0 rounded-lg transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleBuild}
-            className="px-5 py-2 text-sm font-semibold rounded-lg bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 transition-colors"
+            className="px-5 py-2 text-sm font-semibold rounded-lg bg-success text-base hover:bg-success/80 transition-colors"
           >
             {isEditing ? 'Save Block' : 'Build Block'}
           </button>

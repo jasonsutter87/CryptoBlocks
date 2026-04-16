@@ -83,6 +83,11 @@ function createOutputCollector(onOutput?: (line: string) => void) {
 // string mixing CSP, console bridge, error handling, and user-code exec.
 // ---------------------------------------------------------------------------
 
+// unsafe-eval is required because user-authored code is compiled via
+// `new Function(code)` inside the sandbox iframe. Without it, the
+// entire execution model breaks. This is acceptable because the iframe
+// has no allow-same-origin (can't touch parent localStorage/cookies)
+// and connect-src is 'none' (can't exfiltrate data over the network).
 const SANDBOX_CSP = [
   "default-src 'none'",
   "script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://jasonsutter87.github.io",

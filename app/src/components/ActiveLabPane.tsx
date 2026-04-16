@@ -36,16 +36,16 @@ export default function ActiveLabPane(props: ActiveLabPaneProps) {
       />
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
         <div className={`${showOutput ? 'h-1/2 md:h-full md:w-1/2' : 'h-full w-full'} flex flex-col`}>
-          <div className="flex items-center gap-2 px-4 py-2 bg-[#181825] border-b border-[#313244]">
-            <span className="text-xs text-[#6c7086] uppercase tracking-wide font-semibold mr-2">Code Lab</span>
-            <span className="text-xs text-[#f9e2af] bg-[#313244] px-2 py-0.5 rounded">JavaScript</span>
+          <div className="flex items-center gap-2 px-4 py-2 bg-mantle border-b border-surface-0">
+            <span className="text-xs text-overlay uppercase tracking-wide font-semibold mr-2">Code Lab</span>
+            <span className="text-xs text-warn bg-surface-0 px-2 py-0.5 rounded">JavaScript</span>
           </div>
           <div className="flex-1 min-h-0">
             <CodeMirrorEditor code={labCode} onChange={onLabCodeChange} language="javascript" height="100%" />
           </div>
         </div>
         {showOutput && (
-          <div className="h-1/2 md:h-full md:w-1/2 border-t md:border-t-0 md:border-l border-[#313244]">
+          <div className="h-1/2 md:h-full md:w-1/2 border-t md:border-t-0 md:border-l border-surface-0">
             <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
           </div>
         )}

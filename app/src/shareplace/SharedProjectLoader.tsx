@@ -46,21 +46,21 @@ export default function SharedProjectLoader() {
 
   if (error) {
     return (
-      <div className="h-full flex items-center justify-center bg-[#1e1e2e]">
+      <div className="h-full flex items-center justify-center bg-base">
         <div className="text-center">
           <span className="text-5xl block mb-4">😕</span>
-          <h1 className="text-xl font-bold text-[#cdd6f4] mb-2">{error}</h1>
-          <a href="/" className="text-sm text-[#89b4fa] hover:text-[#74c7ec]">← Back to Editor</a>
+          <h1 className="text-xl font-bold text-text mb-2">{error}</h1>
+          <a href="/" className="text-sm text-accent hover:text-sapphire">← Back to Editor</a>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="h-full flex items-center justify-center bg-[#1e1e2e]">
+    <div className="h-full flex items-center justify-center bg-base">
       <div className="text-center">
         <span className="text-5xl block mb-4 animate-bounce">🧱</span>
-        <h1 className="text-lg font-semibold text-[#cdd6f4] animate-pulse">Loading project...</h1>
+        <h1 className="text-lg font-semibold text-text animate-pulse">Loading project...</h1>
       </div>
     </div>
   )

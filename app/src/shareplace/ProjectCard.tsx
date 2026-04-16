@@ -6,12 +6,12 @@ interface ProjectCardProps {
 }
 
 const CATEGORY_GRADIENTS: Record<string, string> = {
-  Games: 'from-[#89b4fa]/30 to-[#74c7ec]/20',
-  Art: 'from-[#cba6f7]/30 to-[#f5c2e7]/20',
-  Web: 'from-[#f38ba8]/30 to-[#eba0ac]/20',
-  Sound: 'from-[#fab387]/30 to-[#f9e2af]/20',
-  Data: 'from-[#a6e3a1]/30 to-[#94e2d5]/20',
-  AI: 'from-[#f9e2af]/30 to-[#fab387]/20',
+  Games: 'from-accent/30 to-sapphire/20',
+  Art: 'from-purple/30 to-[#f5c2e7]/20',
+  Web: 'from-danger/30 to-[#eba0ac]/20',
+  Sound: 'from-peach/30 to-warn/20',
+  Data: 'from-success/30 to-[#94e2d5]/20',
+  AI: 'from-warn/30 to-peach/20',
 }
 
 const CATEGORY_ICON_COLORS: Record<string, string> = {
@@ -24,16 +24,16 @@ const CATEGORY_ICON_COLORS: Record<string, string> = {
 }
 
 const CATEGORY_PILL_COLORS: Record<string, string> = {
-  Games: 'bg-[#89b4fa]/15 text-[#89b4fa]',
-  Art: 'bg-[#cba6f7]/15 text-[#cba6f7]',
-  Web: 'bg-[#f38ba8]/15 text-[#f38ba8]',
-  Sound: 'bg-[#fab387]/15 text-[#fab387]',
-  Data: 'bg-[#a6e3a1]/15 text-[#a6e3a1]',
-  AI: 'bg-[#f9e2af]/15 text-[#f9e2af]',
+  Games: 'bg-accent/15 text-accent',
+  Art: 'bg-purple/15 text-purple',
+  Web: 'bg-danger/15 text-danger',
+  Sound: 'bg-peach/15 text-peach',
+  Data: 'bg-success/15 text-success',
+  AI: 'bg-warn/15 text-warn',
 }
 
 function CategoryThumbnail({ category }: { category: string }) {
-  const gradient = CATEGORY_GRADIENTS[category] ?? 'from-[#313244]/60 to-[#45475a]/40'
+  const gradient = CATEGORY_GRADIENTS[category] ?? 'from-surface-0/60 to-surface-1/40'
   const color = CATEGORY_ICON_COLORS[category] ?? '#6c7086'
 
   const icons: Record<string, React.ReactNode> = {
@@ -79,22 +79,22 @@ function CategoryThumbnail({ category }: { category: string }) {
 }
 
 export default function ProjectCard({ project, onClick }: ProjectCardProps) {
-  const pillClass = CATEGORY_PILL_COLORS[project.category] ?? 'bg-[#45475a]/40 text-[#a6adc8]'
+  const pillClass = CATEGORY_PILL_COLORS[project.category] ?? 'bg-surface-1/40 text-subtext'
 
   return (
     <div
       onClick={onClick}
-      className="group bg-[#313244] rounded-xl overflow-hidden cursor-pointer border border-transparent hover:border-[#45475a] hover:scale-[1.02] transition-all duration-200 hover:shadow-lg hover:shadow-black/30"
+      className="group bg-surface-0 rounded-xl overflow-hidden cursor-pointer border border-transparent hover:border-surface-1 hover:scale-[1.02] transition-all duration-200 hover:shadow-lg hover:shadow-black/30"
     >
       <CategoryThumbnail category={project.category} />
 
       <div className="p-4 flex flex-col gap-2">
         {/* Name + category pill + pro badge */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-[#cdd6f4] leading-tight">{project.name}</h3>
+          <h3 className="font-semibold text-text leading-tight">{project.name}</h3>
           <div className="flex items-center gap-1 shrink-0">
             {project.tags.some(t => t === 'pro' || t === 'sprite-editor' || t === 'level-editor' || t === 'gamepad') && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-[#cba6f7]/20 text-[#cba6f7]">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold bg-purple/20 text-purple">
                 ✨ Pro Tools
               </span>
             )}
@@ -105,15 +105,15 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
         </div>
 
         {/* Author + remix badge */}
-        <p className="text-xs text-[#6c7086]">
+        <p className="text-xs text-overlay">
           by {project.author}
           {project.parentId && (
-            <span className="ml-1.5 text-[#a6e3a1]">🔀 remix</span>
+            <span className="ml-1.5 text-success">🔀 remix</span>
           )}
         </p>
 
         {/* Description */}
-        <p className="text-sm text-[#a6adc8] line-clamp-2 leading-relaxed">
+        <p className="text-sm text-subtext line-clamp-2 leading-relaxed">
           {project.description}
         </p>
 
@@ -121,7 +121,7 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
         {project.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-1">
             {project.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="text-[10px] text-[#6c7086] bg-[#1e1e2e] px-1.5 py-0.5 rounded font-mono">
+              <span key={tag} className="text-[10px] text-overlay bg-base px-1.5 py-0.5 rounded font-mono">
                 #{tag}
               </span>
             ))}
@@ -129,26 +129,26 @@ export default function ProjectCard({ project, onClick }: ProjectCardProps) {
         )}
 
         {/* Stats row */}
-        <div className="flex items-center gap-3 mt-1 pt-2 border-t border-[#45475a]/50">
+        <div className="flex items-center gap-3 mt-1 pt-2 border-t border-surface-1/50">
           {/* Block count */}
-          <span className="flex items-center gap-1 text-xs text-[#a6adc8]">
-            <svg className="w-3.5 h-3.5 text-[#89b4fa]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <span className="flex items-center gap-1 text-xs text-subtext">
+            <svg className="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
             {project.blockCount}
           </span>
 
           {/* Downloads */}
-          <span className="flex items-center gap-1 text-xs text-[#a6adc8]">
-            <svg className="w-3.5 h-3.5 text-[#a6e3a1]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <span className="flex items-center gap-1 text-xs text-subtext">
+            <svg className="w-3.5 h-3.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
             </svg>
             {project.downloads.toLocaleString()}
           </span>
 
           {/* Likes */}
-          <span className="flex items-center gap-1 text-xs text-[#a6adc8]">
-            <svg className="w-3.5 h-3.5 text-[#f38ba8]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <span className="flex items-center gap-1 text-xs text-subtext">
+            <svg className="w-3.5 h-3.5 text-danger" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
             </svg>
             {project.likes}

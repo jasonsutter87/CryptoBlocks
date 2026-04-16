@@ -28,10 +28,10 @@ export function showToast(message: string, type: ToastType = 'info'): void {
 }
 
 const COLORS: Record<ToastType, { bg: string; border: string; text: string; icon: string }> = {
-  info: { bg: 'bg-[#313244]', border: 'border-[#45475a]', text: 'text-[#cdd6f4]', icon: 'ℹ️' },
-  success: { bg: 'bg-[#1a3e2a]', border: 'border-[#a6e3a1]/30', text: 'text-[#a6e3a1]', icon: '✅' },
-  error: { bg: 'bg-[#3e1a1a]', border: 'border-[#f38ba8]/30', text: 'text-[#f38ba8]', icon: '❌' },
-  signin: { bg: 'bg-[#1e1e3e]', border: 'border-[#89b4fa]/30', text: 'text-[#cdd6f4]', icon: '🔐' },
+  info: { bg: 'bg-surface-0', border: 'border-surface-1', text: 'text-text', icon: 'ℹ️' },
+  success: { bg: 'bg-[#1a3e2a]', border: 'border-success/30', text: 'text-success', icon: '✅' },
+  error: { bg: 'bg-[#3e1a1a]', border: 'border-danger/30', text: 'text-danger', icon: '❌' },
+  signin: { bg: 'bg-[#1e1e3e]', border: 'border-accent/30', text: 'text-text', icon: '🔐' },
 }
 
 export default function ToastContainer() {
@@ -75,7 +75,7 @@ export default function ToastContainer() {
               {toast.type === 'signin' && (
                 <div className="mt-2">
                   <SignInButton mode="modal">
-                    <button className="px-4 py-1.5 bg-[#cba6f7] text-[#1e1e2e] rounded-lg text-xs font-bold hover:bg-[#cba6f7]/80 transition-colors">
+                    <button className="px-4 py-1.5 bg-purple text-base rounded-lg text-xs font-bold hover:bg-purple/80 transition-colors">
                       Sign In — it's free
                     </button>
                   </SignInButton>
@@ -84,7 +84,7 @@ export default function ToastContainer() {
             </div>
             <button
               onClick={() => removeToast(toast.id)}
-              className="text-[#6c7086] hover:text-[#cdd6f4] shrink-0"
+              className="text-overlay hover:text-text shrink-0"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

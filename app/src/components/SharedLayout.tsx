@@ -38,8 +38,8 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
         to={to}
         className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
           isActive
-            ? 'text-[#89b4fa] bg-[#89b4fa]/10'
-            : 'text-[#a6adc8] hover:text-[#cdd6f4] hover:bg-[#313244]'
+            ? 'text-accent bg-accent/10'
+            : 'text-subtext hover:text-text hover:bg-surface-0'
         }`}
       >
         {label}
@@ -50,16 +50,16 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
   return (
     <div className="flex flex-col" style={{ minHeight: '100vh' }}>
       {/* Top nav */}
-      <nav className="shrink-0 h-14 bg-[#181825] border-b border-[#313244] flex items-center px-4 sm:px-6">
+      <nav className="shrink-0 h-14 bg-mantle border-b border-surface-0 flex items-center px-4 sm:px-6">
         <div className="flex items-center gap-3 mr-8">
           {/* Logo blocks */}
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-[#89b4fa]" />
-            <div className="w-4 h-4 rounded bg-[#f9e2af] -ml-1.5" />
-            <div className="w-4 h-4 rounded bg-[#a6e3a1] -ml-1.5" />
+            <div className="w-4 h-4 rounded bg-accent" />
+            <div className="w-4 h-4 rounded bg-warn -ml-1.5" />
+            <div className="w-4 h-4 rounded bg-success -ml-1.5" />
           </div>
-          <span className="font-bold text-[#cdd6f4] tracking-tight">CryptoBlocks</span>
-          <span className="text-[10px] text-[#6c7086] bg-[#313244] px-1.5 py-0.5 rounded font-mono hidden sm:inline">
+          <span className="font-bold text-text tracking-tight">CryptoBlocks</span>
+          <span className="text-[10px] text-overlay bg-surface-0 px-1.5 py-0.5 rounded font-mono hidden sm:inline">
             v0.3
           </span>
         </div>
@@ -75,7 +75,7 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
             href={isPro ? '/teacher' : '#'}
             onClick={(e) => { if (!isPro) { e.preventDefault(); openCheckout(getToken) } }}
             className={`px-2.5 py-1 rounded-md text-sm font-medium transition-colors flex items-center gap-1 ${
-              pathname === '/teacher' ? 'bg-[#313244] text-[#cdd6f4]' : 'text-[#6c7086] hover:text-[#a6adc8]'
+              pathname === '/teacher' ? 'bg-surface-0 text-text' : 'text-overlay hover:text-subtext'
             }`}
           >
             Classrooms
@@ -89,7 +89,7 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
         <div className="flex items-center gap-2">
           <SignedOut>
             <SignInButton mode="modal">
-              <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#cba6f7] text-[#1e1e2e] hover:bg-[#cba6f7]/80 transition-colors">
+              <button className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-purple text-base hover:bg-purple/80 transition-colors">
                 Sign In
               </button>
             </SignInButton>
@@ -112,24 +112,24 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
       </main>
 
       {/* Footer */}
-      <footer className="shrink-0 bg-[#181825] border-t border-[#313244] py-6 px-4 sm:px-6">
+      <footer className="shrink-0 bg-mantle border-t border-surface-0 py-6 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded bg-[#89b4fa]" />
-              <div className="w-3 h-3 rounded bg-[#f9e2af] -ml-1" />
-              <div className="w-3 h-3 rounded bg-[#a6e3a1] -ml-1" />
+              <div className="w-3 h-3 rounded bg-accent" />
+              <div className="w-3 h-3 rounded bg-warn -ml-1" />
+              <div className="w-3 h-3 rounded bg-success -ml-1" />
             </div>
-            <span className="text-sm text-[#a6adc8]">CryptoBlocks</span>
+            <span className="text-sm text-subtext">CryptoBlocks</span>
           </div>
-          <p className="text-xs text-[#6c7086]">
+          <p className="text-xs text-overlay">
             Built with blocks. Powered by curiosity.
           </p>
-          <div className="flex items-center gap-4 text-xs text-[#6c7086]">
-            <a href="https://github.com/jasonsutter87/CryptoBlocks" target="_blank" rel="noopener noreferrer" className="hover:text-[#cdd6f4] transition-colors">GitHub</a>
-            <Link to="/shareplace" className="hover:text-[#cdd6f4] transition-colors">Shareplace</Link>
-            <Link to="/dashboard" className="hover:text-[#cdd6f4] transition-colors">Dashboard</Link>
-            <Link to="/profile" className="hover:text-[#cdd6f4] transition-colors">Profile</Link>
+          <div className="flex items-center gap-4 text-xs text-overlay">
+            <a href="https://github.com/jasonsutter87/CryptoBlocks" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors">GitHub</a>
+            <Link to="/shareplace" className="hover:text-text transition-colors">Shareplace</Link>
+            <Link to="/dashboard" className="hover:text-text transition-colors">Dashboard</Link>
+            <Link to="/profile" className="hover:text-text transition-colors">Profile</Link>
           </div>
         </div>
       </footer>

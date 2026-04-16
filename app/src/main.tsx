@@ -36,7 +36,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthWrapper>
       <BrowserRouter>
-        <Suspense fallback={<div className="h-full w-full bg-[#1e1e2e]" />}>
+        <Suspense fallback={<div className="h-full w-full bg-base" />}>
           <Routes>
             <Route path="/" element={<App />} />
             <Route path="/collab/:roomCode" element={<CollabPage />} />

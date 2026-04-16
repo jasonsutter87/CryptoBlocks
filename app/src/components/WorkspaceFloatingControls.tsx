@@ -28,7 +28,7 @@ export default function WorkspaceFloatingControls({
           disabled={!timeTravelAvailable}
           title="Time Travel — scrub through your recent history"
           aria-label="Time Travel"
-          className={`pointer-events-auto w-9 h-9 flex items-center justify-center rounded-lg bg-[#181825]/90 backdrop-blur border border-[#313244] text-[#cdd6f4] hover:bg-[#313244] hover:border-[#45475a] shadow-lg transition-colors ${!timeTravelAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
+          className={`pointer-events-auto w-9 h-9 flex items-center justify-center rounded-lg bg-mantle/90 backdrop-blur border border-surface-0 text-text hover:bg-surface-0 hover:border-surface-1 shadow-lg transition-colors ${!timeTravelAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <circle cx="12" cy="12" r="9" />
@@ -44,8 +44,8 @@ export default function WorkspaceFloatingControls({
         aria-label="Slow-Mo"
         className={`pointer-events-auto w-9 h-9 flex items-center justify-center rounded-lg backdrop-blur border shadow-lg transition-colors ${
           slowMo
-            ? 'bg-[#f9e2af] border-[#f9e2af] text-[#1e1e2e]'
-            : 'bg-[#181825]/90 border-[#313244] text-[#cdd6f4] hover:bg-[#313244] hover:border-[#45475a]'
+            ? 'bg-warn border-warn text-base'
+            : 'bg-mantle/90 border-surface-0 text-text hover:bg-surface-0 hover:border-surface-1'
         } ${slowMoDisabled ? 'opacity-40 cursor-not-allowed' : ''} ${slowMo && slowMoDisabled ? 'animate-pulse' : ''}`}
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

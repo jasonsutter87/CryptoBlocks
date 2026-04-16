@@ -1015,11 +1015,11 @@ export default function App() {
         />
       )}
       {sharedProject && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 w-[min(92vw,500px)] bg-[#181825] border border-[#45475a] rounded-xl shadow-2xl p-3 flex items-center justify-between gap-3">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 w-[min(92vw,500px)] bg-mantle border border-surface-1 rounded-xl shadow-2xl p-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs text-[#6c7086]">Viewing shared project</div>
-            <div className="text-sm font-bold text-[#cdd6f4] truncate">{sharedProject.name}</div>
-            <div className="text-[10px] text-[#6c7086]">by {sharedProject.authorName} · read-only</div>
+            <div className="text-xs text-overlay">Viewing shared project</div>
+            <div className="text-sm font-bold text-text truncate">{sharedProject.name}</div>
+            <div className="text-[10px] text-overlay">by {sharedProject.authorName} · read-only</div>
           </div>
           <div className="flex gap-2 shrink-0">
             <button
@@ -1029,7 +1029,7 @@ export default function App() {
                 localStorage.removeItem('cryptoblocks_shared_view')
                 window.location.href = '/'
               }}
-              className="px-3 py-1.5 bg-[#a6e3a1] text-[#1e1e2e] rounded-lg text-xs font-bold hover:bg-[#a6e3a1]/80"
+              className="px-3 py-1.5 bg-success text-base rounded-lg text-xs font-bold hover:bg-success/80"
             >
               Make a Copy
             </button>
@@ -1038,7 +1038,7 @@ export default function App() {
                 localStorage.removeItem('cryptoblocks_shared_view')
                 window.location.href = '/'
               }}
-              className="px-3 py-1.5 bg-[#313244] text-[#cdd6f4] rounded-lg text-xs font-semibold hover:bg-[#45475a]"
+              className="px-3 py-1.5 bg-surface-0 text-text rounded-lg text-xs font-semibold hover:bg-surface-1"
             >
               Close
             </button>

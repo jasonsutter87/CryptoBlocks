@@ -120,7 +120,7 @@ export default function EditorPane(props: EditorPaneProps) {
 
       <div className="flex-1 flex flex-col md:flex-row min-h-0">
         <div
-          className="relative h-1/2 md:h-full border-b md:border-b-0 md:border-r border-[#313244]"
+          className="relative h-1/2 md:h-full border-b md:border-b-0 md:border-r border-surface-0"
           style={{ width: editorWidth }}
         >
           <BlockEditor
@@ -143,10 +143,10 @@ export default function EditorPane(props: EditorPaneProps) {
 
         {sideOpen && (
           <div
-            className="hidden md:flex items-center justify-center w-1.5 cursor-col-resize bg-[#313244] hover:bg-[#f9e2af] active:bg-[#f9e2af] transition-colors flex-shrink-0"
+            className="hidden md:flex items-center justify-center w-1.5 cursor-col-resize bg-surface-0 hover:bg-warn active:bg-warn transition-colors flex-shrink-0"
             onMouseDown={onSplitMouseDown}
           >
-            <div className="w-0.5 h-8 bg-[#6c7086] rounded-full" />
+            <div className="w-0.5 h-8 bg-overlay rounded-full" />
           </div>
         )}
 
@@ -156,7 +156,7 @@ export default function EditorPane(props: EditorPaneProps) {
               <CodeView code={code} language={language} onLanguageChange={onLanguageChange} />
             </div>
             {showOutput && (
-              <div className="h-1/2 border-t border-[#313244]">
+              <div className="h-1/2 border-t border-surface-0">
                 <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
               </div>
             )}
@@ -165,7 +165,7 @@ export default function EditorPane(props: EditorPaneProps) {
 
         {!showCode && showOutput && (
           <div
-            className="h-1/2 md:h-full border-t md:border-t-0 md:border-l border-[#313244]"
+            className="h-1/2 md:h-full border-t md:border-t-0 md:border-l border-surface-0"
             style={{ width: sideWidth }}
           >
             <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />

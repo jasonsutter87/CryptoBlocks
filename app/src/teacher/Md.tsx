@@ -13,8 +13,8 @@ const Markdown = lazy(() => import('react-markdown'))
 
 export function Md({ children }: { children: string }) {
   return (
-    <Suspense fallback={<span className="text-sm text-[#a6adc8]">{children}</span>}>
-      <div className="prose prose-invert prose-sm max-w-none [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm [&_p]:text-sm [&_p]:text-[#a6adc8] [&_a]:text-[#89b4fa] [&_code]:text-[#f9e2af] [&_code]:bg-[#313244] [&_code]:px-1 [&_code]:rounded [&_ul]:text-sm [&_ol]:text-sm [&_li]:text-[#a6adc8] [&_blockquote]:border-[#45475a] [&_blockquote]:text-[#6c7086] [&_hr]:border-[#313244]">
+    <Suspense fallback={<span className="text-sm text-subtext">{children}</span>}>
+      <div className="prose prose-invert prose-sm max-w-none [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm [&_p]:text-sm [&_p]:text-subtext [&_a]:text-accent [&_code]:text-warn [&_code]:bg-surface-0 [&_code]:px-1 [&_code]:rounded [&_ul]:text-sm [&_ol]:text-sm [&_li]:text-subtext [&_blockquote]:border-surface-1 [&_blockquote]:text-overlay [&_hr]:border-surface-0">
         <Markdown>{children}</Markdown>
       </div>
     </Suspense>
