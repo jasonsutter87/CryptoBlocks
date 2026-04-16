@@ -13,6 +13,7 @@ import { useLabMode } from './hooks/useLabMode'
 import { useAchievements } from './hooks/useAchievements'
 import { useCustomBlocks } from './hooks/useCustomBlocks'
 import { useFileOps } from './hooks/useFileOps'
+import { useRunPipeline } from './hooks/useRunPipeline'
 import { snapshotSandbox, enterMode, exitToSandbox } from './hooks/modeWorkspace'
 import { saveWorkspaceToLocal, loadFromLocalStorage } from './storage'
 import { countBlocks } from './challenges/validator'
@@ -31,17 +32,14 @@ import { initEasterEggs } from './easter-eggs'
 import { loadSettings } from './settings'
 import type { Achievement } from './achievements'
 import { checkAchievements } from './achievements'
-import { recordRun, recordChallengeComplete, recordGolfComplete, recordLabComplete, recordAchievement } from './stats'
+// stats helpers are called inside each mode/pipeline hook; no direct import needed here
 import { useCollabDoc } from './collab/CollabPage'
-import { bindRunBroadcast } from './collab/run-broadcast'
 import { ensureSpeechGlobal } from './speech/speech'
 import { ensureVisionGlobal } from './vision/vision-global'
 import { ensureGamepadGlobal } from './hardware/gamepad'
 import { initLocale } from './i18n'
 import ChallengeBanner from './daily/ChallengeBanner'
 import { getTodaysPuzzle } from './daily/getTodaysPuzzle'
-import { matchesTarget } from './daily/puzzles'
-import { markSolved, loadDailyState } from './daily/state'
 import { useTimeTravel } from './time-travel/useTimeTravel'
 import TimeTravelBar from './components/TimeTravelBar'
 
@@ -77,7 +75,6 @@ export default function App() {
   // Collab state
   const collabDoc = useCollabDoc()
   const isCollabMode = !!collabDoc
-  const runBroadcastRef = useRef<ReturnType<typeof bindRunBroadcast> | null>(null)
 
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
@@ -108,12 +105,6 @@ export default function App() {
   const isDailyChallenge =
     typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('daily') === '1'
   const dailyInfo = isDailyChallenge ? getTodaysPuzzle() : null
-  const [dailySolvedBlocks, setDailySolvedBlocks] = useState<number | null>(() => {
-    if (!isDailyChallenge || !dailyInfo) return null
-    const state = loadDailyState()
-    const entry = state.solved[dailyInfo.dayNumber]
-    return entry ? entry.blocks : null
-  })
 
   // Execution handle for stop button (CB-R2-002)
 
@@ -211,19 +202,6 @@ export default function App() {
     return Array.from(cats)
   }, [])
 
-  // Collab: bind "Run for Everyone" broadcast
-  const handleRunRef = useRef<() => void>(() => {})
-  useEffect(() => {
-    if (!collabDoc) return
-    const binding = bindRunBroadcast(collabDoc, () => {
-      handleRunRef.current()
-    })
-    runBroadcastRef.current = binding
-    return () => {
-      binding.destroy()
-      runBroadcastRef.current = null
-    }
-  }, [collabDoc])
 
   const handleWorkspaceChange = useCallback(
     (workspace: Blockly.WorkspaceSvg) => {
@@ -260,78 +238,13 @@ export default function App() {
     []
   )
 
-  const handleRun = useCallback(async () => {
-    // Cancel any leftover game loop from a previous run so two Runs don't
-    // pile up requestAnimationFrame callbacks on the same canvas.
-    const w = window as unknown as { __cbGameLoopId?: number }
-    if (w.__cbGameLoopId) {
-      cancelAnimationFrame(w.__cbGameLoopId)
-      w.__cbGameLoopId = 0
-    }
-
-    setShowOutput(true)
-
-    // Always execute as JS or Python — HTML peek is display-only
-    const execLang = language === 'html' ? 'javascript' : language
-    const traceEnabled = slowMo && execLang === 'javascript'
-    const execCode = traceEnabled && workspaceRef.current
-      ? generateCode(workspaceRef.current, language === 'html' ? 'javascript' : language, true)
-      : language === 'html' && workspaceRef.current
-        ? generateCode(workspaceRef.current, 'javascript')
-        : code
-    setLastExecCode(execCode)
-
-    const traceLog: string[] = []
-
-    const execResult = await exec.run({
-      code: execCode,
-      language: execLang,
-      onTrace: traceEnabled ? (blockId) => { traceLog.push(blockId) } : undefined,
-      onCanvasUpdate: (dataUrl) => {
-        exec.patchResult((prev) => prev
-          ? { ...prev, canvasDataUrl: dataUrl }
-          : { output: [], error: null, returnValue: undefined, duration: 0, canvasDataUrl: dataUrl })
-      },
-    })
-
-    // Replay trace highlights with delay so user can follow along
-    if (traceEnabled && traceLog.length > 0) {
-      exec.finish(execResult)
-      for (const blockId of traceLog) {
-        workspaceRef.current?.highlightBlock(blockId)
-        await new Promise(r => setTimeout(r, 200))
-      }
-      workspaceRef.current?.highlightBlock(null as unknown as string)
-    } else {
-      exec.finish(execResult)
-    }
-
-    // Track stats + check achievements
-    const blocks = workspaceRef.current ? countBlocks(workspaceRef.current) : 0
-    const lineCount = execCode.split('\n').length
-    recordRun({ language: language as 'javascript' | 'python' | 'html', blockCount: blocks, lineCount })
-
-    const newAchievements = checkAchievements({
-      event: 'run',
-      output: execResult.output,
-      hasError: !!execResult.error,
-      blockCount: blocks,
-      categoriesUsed: getUsedCategories(),
-      language: language,
-    })
-    processAchievements(newAchievements)
-
-    // Daily Challenge: check if the run matches today's target output
-    if (isDailyChallenge && dailyInfo && !execResult.error) {
-      if (matchesTarget(execResult.output, dailyInfo.puzzle)) {
-        markSolved(dailyInfo.dayNumber, blocks)
-        setDailySolvedBlocks(blocks)
-      }
-    }
-  }, [code, language, slowMo, processAchievements, getUsedCategories, isDailyChallenge, dailyInfo, exec])
-
-  // Keep run ref up to date for collab broadcast
-  handleRunRef.current = handleRun
+  const runPipeline = useRunPipeline({
+    workspaceRef, exec, code, language, slowMo,
+    processAchievements, getUsedCategories,
+    setLastExecCode, setShowOutput,
+    collabDoc, isDailyChallenge, dailyInfo,
+  })
+  const { handleRun, requestRunForEveryone, dailySolvedBlocks } = runPipeline
 
   // Split pane drag handler
   const handleSplitMouseDown = useCallback((e: React.MouseEvent) => {
@@ -521,10 +434,7 @@ export default function App() {
         onSaveToDashboard={handleSaveToDashboard}
         onOpenSpriteEditor={() => modals.setSpriteEditor(true)}
         onOpenLevelEditor={() => modals.setLevelEditor(true)}
-        onRunForEveryone={() => {
-          runBroadcastRef.current?.requestRunForEveryone()
-          handleRun()
-        }}
+        onRunForEveryone={requestRunForEveryone}
       />
 
       {/* Challenge Browser Mode */}
