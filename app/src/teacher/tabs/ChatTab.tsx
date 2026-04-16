@@ -10,6 +10,7 @@ import { fetchChat, sendChat } from '../api'
 import type { ChatMessage } from '../api'
 import { formatAge } from '../formatAge'
 import { Avatar } from '../Avatar'
+import { mergeUnique } from '../../utils/mergeUnique'
 
 interface ChatTabProps {
   classroomId: string
@@ -68,13 +69,6 @@ export default function ChatTab({ classroomId, active }: ChatTabProps) {
     }
   }
 
-  // When the poll and a manual send race, both can fetch the same tail.
-  // Dedup by message id so the user never sees their own message twice.
-  function mergeUnique(prev: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] {
-    const seen = new Set(prev.map((m) => m.id))
-    const fresh = incoming.filter((m) => !seen.has(m.id))
-    return fresh.length === 0 ? prev : [...prev, ...fresh]
-  }
 
   return (
     <div className="flex flex-col h-[50vh]">
