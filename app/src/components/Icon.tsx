@@ -15,7 +15,7 @@
 
 import type { CSSProperties } from 'react'
 
-type IconName =
+export type IconName =
   | 'chevron-down' | 'folder' | 'plus' | 'bars' | 'dots-vertical'
   | 'download' | 'upload' | 'cloud-up' | 'cube' | 'check' | 'clock'
   | 'trash' | 'cog' | 'mobile-app' | 'code-brackets' | 'link'

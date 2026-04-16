@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react'
 import type { Language } from '../types/block'
 import { Icon } from './Icon'
+import DropdownMenu from './DropdownMenu'
+import type { MenuItem } from './DropdownMenu'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '@clerk/clerk-react'
@@ -354,42 +356,16 @@ export default function Toolbar({
 
             {/* Build dropdown */}
             <div className="relative hidden md:block">
-              <button
-                onClick={() => toggleMenu('build')}
-                className={`${btn} text-[#f9e2af] hover:bg-[#313244]`}
-              >
-                <Icon name="plus" className="w-4 h-4" />
-                Build
-                {chevron}
+              <button onClick={() => toggleMenu('build')} className={`${btn} text-[#f9e2af] hover:bg-[#313244]`}>
+                <Icon name="plus" className="w-4 h-4" /> Build {chevron}
               </button>
-
               {openMenu === 'build' && (
-                <div className={menuDropdown}>
-                  <button onClick={() => requirePro(() => { onCreateBlock(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="plus" className="w-4 h-4 text-[#f9e2af]" />
-                    Create Block
-                    {!isPro && <span className="ml-auto"><ProBadge /></span>}
-                  </button>
-                  <button onClick={() => requirePro(() => { onCodeToBlocks(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="pages" className="w-4 h-4 text-[#cba6f7]" />
-                    Code to Blocks
-                    {!isPro && <span className="ml-auto"><ProBadge /></span>}
-                  </button>
-                  {onOpenSpriteEditor && (
-                    <button onClick={() => requirePro(() => { onOpenSpriteEditor(); setOpenMenu(null) })} className={menuItem}>
-                      <span className="text-base leading-none">🎨</span>
-                      Sprite Editor
-                      {!isPro && <span className="ml-auto"><ProBadge /></span>}
-                    </button>
-                  )}
-                  {onOpenLevelEditor && (
-                    <button onClick={() => requirePro(() => { onOpenLevelEditor(); setOpenMenu(null) })} className={menuItem}>
-                      <span className="text-base leading-none">🗺️</span>
-                      Level Editor
-                      {!isPro && <span className="ml-auto"><ProBadge /></span>}
-                    </button>
-                  )}
-                </div>
+                <DropdownMenu items={[
+                  { kind: 'button', icon: 'plus', iconCls: 'w-4 h-4 text-[#f9e2af]', label: 'Create Block', onClick: () => requirePro(() => { onCreateBlock(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
+                  { kind: 'button', icon: 'pages', iconCls: 'w-4 h-4 text-[#cba6f7]', label: 'Code to Blocks', onClick: () => requirePro(() => { onCodeToBlocks(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
+                  ...(onOpenSpriteEditor ? [{ kind: 'button' as const, emoji: '🎨', label: 'Sprite Editor', onClick: () => requirePro(() => { onOpenSpriteEditor(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined }] : []),
+                  ...(onOpenLevelEditor ? [{ kind: 'button' as const, emoji: '🗺️', label: 'Level Editor', onClick: () => requirePro(() => { onOpenLevelEditor(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined }] : []),
+                ] satisfies MenuItem[]} />
               )}
             </div>
 
