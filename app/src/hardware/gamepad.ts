@@ -50,6 +50,12 @@ const state: GamepadState = {
 
 let polling = false
 
+/** Snapshot of current gamepad state — used by the sandbox bridge to
+ *  forward input into the iframe once per animation frame. */
+export function getGamepadSnapshot(): GamepadState {
+  return { ...state }
+}
+
 function poll() {
   const gamepads = navigator.getGamepads ? navigator.getGamepads() : []
   let found = false

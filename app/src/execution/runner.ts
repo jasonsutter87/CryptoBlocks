@@ -1,5 +1,35 @@
 import type { Language } from '../types/block'
 import { generateSafetyPreamble } from '../safety'
+import { getGamepadSnapshot } from '../hardware/gamepad'
+import { getKeyboardSnapshot } from '../hardware/keyboard'
+import { getSensorState as getMicrobitSensors, isConnected as isMicrobitConnected } from '../hardware/microbit'
+
+/** Shape posted to the iframe for micro:bit — both connection flag
+ *  and latest sensor readings, rolled up once per animation frame. */
+function getMicrobitSnapshot() {
+  const s = getMicrobitSensors()
+  return {
+    connected: isMicrobitConnected(),
+    buttonA: s.buttonA,
+    buttonB: s.buttonB,
+    accelX: s.accelX,
+    accelY: s.accelY,
+    accelZ: s.accelZ,
+    temperature: s.temperature,
+    light: s.lightLevel,
+  }
+}
+
+/** Dispatch an outbound command from the sandbox iframe. Routes to the
+ *  matching parent-side API. Silently ignored if the target is unknown. */
+function dispatchCommand(target: string, action: string, args: unknown[]): void {
+  try {
+    if (target === 'microbit') {
+      const api = (window as unknown as { __microbit?: Record<string, (...a: unknown[]) => unknown> }).__microbit
+      if (api && typeof api[action] === 'function') api[action](...args)
+    }
+  } catch { /* iframe command errors are reported by the iframe itself */ }
+}
 
 export interface ExecutionResult {
   output: string[]
@@ -99,6 +129,82 @@ const SANDBOX_CSP = [
   "object-src 'none'",
 ].join('; ')
 
+/**
+ * Capability bridge — runs inside the sandbox iframe before user code.
+ *
+ * The sandbox has null origin, so it cannot reach the parent's
+ * `window.__gamepad`, `window.__keys`, `window.__microbit` etc.
+ * directly. This shim recreates those globals INSIDE the iframe, backed
+ * by a cache that the parent refreshes via postMessage every animation
+ * frame. Outbound commands (micro:bit actions like showIcon) are posted
+ * back to the parent, which calls the real hardware API.
+ *
+ * Block implementations reference `window.__gamepad.buttonA()` etc.
+ * unchanged — the shim keeps that contract stable across the security
+ * fix that removed the parent-window execution path.
+ */
+const CAPABILITY_BRIDGE = `
+var __bridgeCache = { gamepad: {}, keys: {}, microbit: {} };
+
+window.addEventListener('message', function(e) {
+  var m = e.data;
+  if (!m || m.__cryptoblocks !== true || m.type !== 'input') return;
+  if (m.gamepad)  __bridgeCache.gamepad  = m.gamepad;
+  if (m.keys)     __bridgeCache.keys     = m.keys;
+  if (m.microbit) __bridgeCache.microbit = m.microbit;
+});
+
+function __cmd(target, action, args) {
+  parent.postMessage({
+    __cryptoblocks: true, type: 'cmd',
+    target: target, action: action, args: args || []
+  }, '*');
+}
+
+window.__gamepad = {
+  isConnected:  function() { return !!__bridgeCache.gamepad.connected; },
+  buttonA:      function() { return !!__bridgeCache.gamepad.buttonA; },
+  buttonB:      function() { return !!__bridgeCache.gamepad.buttonB; },
+  buttonX:      function() { return !!__bridgeCache.gamepad.buttonX; },
+  buttonY:      function() { return !!__bridgeCache.gamepad.buttonY; },
+  buttonLB:     function() { return !!__bridgeCache.gamepad.buttonLB; },
+  buttonRB:     function() { return !!__bridgeCache.gamepad.buttonRB; },
+  dpadUp:       function() { return !!__bridgeCache.gamepad.dpadUp; },
+  dpadDown:     function() { return !!__bridgeCache.gamepad.dpadDown; },
+  dpadLeft:     function() { return !!__bridgeCache.gamepad.dpadLeft; },
+  dpadRight:    function() { return !!__bridgeCache.gamepad.dpadRight; },
+  leftStickX:   function() { return __bridgeCache.gamepad.leftStickX  || 0; },
+  leftStickY:   function() { return __bridgeCache.gamepad.leftStickY  || 0; },
+  rightStickX:  function() { return __bridgeCache.gamepad.rightStickX || 0; },
+  rightStickY:  function() { return __bridgeCache.gamepad.rightStickY || 0; },
+  anyButton:    function() { return !!__bridgeCache.gamepad.anyButton; }
+};
+
+// Proxy-style keyboard: user code reads window.__keys['ArrowLeft'] etc.
+window.__keys = new Proxy({}, {
+  get: function(_, key) { return !!__bridgeCache.keys[key]; },
+  has: function(_, key) { return !!__bridgeCache.keys[key]; }
+});
+
+// Micro:bit: readable sensors from cache; commands posted back to parent.
+window.__microbit = {
+  isConnected:    function() { return !!__bridgeCache.microbit.connected; },
+  buttonA:        function() { return !!__bridgeCache.microbit.buttonA; },
+  buttonB:        function() { return !!__bridgeCache.microbit.buttonB; },
+  accelerometerX: function() { return __bridgeCache.microbit.accelX || 0; },
+  accelerometerY: function() { return __bridgeCache.microbit.accelY || 0; },
+  accelerometerZ: function() { return __bridgeCache.microbit.accelZ || 0; },
+  temperature:    function() { return __bridgeCache.microbit.temperature || 0; },
+  light:          function() { return __bridgeCache.microbit.light || 0; },
+  showIcon:   function(icon)  { __cmd('microbit', 'showIcon',   [icon]); },
+  showString: function(s)     { __cmd('microbit', 'showString', [s]); },
+  showNumber: function(n)     { __cmd('microbit', 'showNumber', [n]); },
+  clear:      function()      { __cmd('microbit', 'clear',      []); },
+  plotPixel:  function(x, y)  { __cmd('microbit', 'plotPixel',  [x, y]); },
+  unplotPixel:function(x, y)  { __cmd('microbit', 'unplotPixel',[x, y]); }
+};
+`.trim()
+
 const CONSOLE_BRIDGE = `
 var __sendMsg = function(type, data) {
   parent.postMessage({ __cryptoblocks: true, type: type, data: data }, '*');
@@ -149,6 +255,7 @@ function buildSandboxHtml(code: string, safetyPreamble: string): string {
 <script src="https://cdn.tailwindcss.com"><\/script>
 <script>
 ${CONSOLE_BRIDGE}
+${CAPABILITY_BRIDGE}
 ${safetyPreamble}
 ${userCodeRunner(encoded)}
 <\/script></head><body><div id="cb-page" style="display:none"></div><canvas id="cb-canvas" width="400" height="400" style="display:none"></canvas></body></html>`
@@ -167,8 +274,13 @@ function tryIframeExecution(
 ): Promise<{ result: ExecutionResult; cleanup: () => void } | null> {
   return new Promise((resolve) => {
     let iframe: HTMLIFrameElement | null = null
+    let inputRAF: number | null = null
 
     const cleanup = () => {
+      if (inputRAF !== null) {
+        cancelAnimationFrame(inputRAF)
+        inputRAF = null
+      }
       if (iframe) {
         // Stop any animation loops running in the iframe (allow-same-origin keeps them alive)
         try {
@@ -222,6 +334,25 @@ function tryIframeExecution(
       })
     }
 
+    // Input-forwarding pump — once the iframe is alive, post current
+    // gamepad/keyboard/microbit state every animation frame. Stopped on
+    // cleanup or when execution finishes.
+    const startInputPump = () => {
+      if (inputRAF !== null) return
+      const tick = () => {
+        if (!iframe?.contentWindow) { inputRAF = null; return }
+        iframe.contentWindow.postMessage({
+          __cryptoblocks: true,
+          type: 'input',
+          gamepad: getGamepadSnapshot(),
+          keys: getKeyboardSnapshot(),
+          microbit: getMicrobitSnapshot(),
+        }, '*')
+        inputRAF = requestAnimationFrame(tick)
+      }
+      inputRAF = requestAnimationFrame(tick)
+    }
+
     const handler = (event: MessageEvent) => {
       // Validate: sandbox iframe has no `allow-same-origin`, so its origin
       // reports as the literal string "null". Source must be our iframe and
@@ -238,6 +369,7 @@ function tryIframeExecution(
         mainTimer = setTimeout(() => {
           finish('Execution timed out (30 seconds)', null)
         }, EXECUTION_TIMEOUT)
+        startInputPump()
       }
 
       if (msg.type === 'trace') {
@@ -249,6 +381,9 @@ function tryIframeExecution(
         onCanvasUpdate?.(canvasDataUrl)
       } else if (msg.type === 'html') {
         htmlOutput = String(msg.data)
+      } else if (msg.type === 'cmd') {
+        // Outbound command from user code (micro:bit actions, etc.)
+        dispatchCommand(msg.target, msg.action, Array.isArray(msg.args) ? msg.args : [])
       } else if (msg.type === 'error') {
         finish(String(msg.data), null)
       } else if (msg.type === 'done') {

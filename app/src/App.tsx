@@ -37,6 +37,7 @@ import { useCollabDoc } from './collab/CollabPage'
 import { ensureSpeechGlobal } from './speech/speech'
 import { ensureVisionGlobal } from './vision/vision-global'
 import { ensureGamepadGlobal } from './hardware/gamepad'
+import { ensureKeyboardGlobal } from './hardware/keyboard'
 import { initLocale } from './i18n'
 import ChallengeBanner from './daily/ChallengeBanner'
 import { getTodaysPuzzle } from './daily/getTodaysPuzzle'
@@ -157,6 +158,7 @@ export default function App() {
     ensureSpeechGlobal()
     ensureVisionGlobal()
     ensureGamepadGlobal()
+    ensureKeyboardGlobal()
     initLocale()
 
     // Apply theme from settings
