@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { useUser, useAuth, SignedIn, SignedOut, SignInButton } from '../auth'
 import { loadStats } from '../stats'
 import type { SharedProject } from '../types/shareplace'
-import { fetchMyProjects, fetchProject } from '../shareplace/api'
+import { fetchMyProjects, fetchProject, deleteProject } from '../shareplace/api'
 import { showToast } from '../components/Toast'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
@@ -135,7 +135,12 @@ export default function DashboardPage() {
           ) : myProjects.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {myProjects.map((project) => (
-                <MyProjectCard key={project.id} project={project} getToken={getToken} />
+                <MyProjectCard
+                  key={project.id}
+                  project={project}
+                  getToken={getToken}
+                  onDeleted={(id) => setMyProjects((prev) => prev.filter((p) => p.id !== id))}
+                />
               ))}
             </div>
           ) : (
@@ -173,11 +178,14 @@ export default function DashboardPage() {
 function MyProjectCard({
   project,
   getToken,
+  onDeleted,
 }: {
   project: SharedProject
   getToken: () => Promise<string | null>
+  onDeleted: (id: string) => void
 }) {
   const [opening, setOpening] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const handleOpen = async () => {
     if (opening) return
@@ -199,6 +207,24 @@ function MyProjectCard({
     window.location.href = '/'
   }
 
+  const handleDelete = async () => {
+    if (deleting) return
+    if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
+    setDeleting(true)
+    const token = await getToken().catch(() => null)
+    const result = await deleteProject(project.id, token ?? undefined)
+    if (result && 'ok' in result) {
+      showToast('Deleted', 'success')
+      onDeleted(project.id)
+    } else if (result && 'error' in result) {
+      showToast(result.error, 'error')
+      setDeleting(false)
+    } else {
+      showToast('Delete failed — try again', 'error')
+      setDeleting(false)
+    }
+  }
+
   return (
     <div className="bg-mantle border border-surface-0 rounded-xl p-4 flex flex-col gap-2 hover:border-surface-1 transition-colors">
       <div>
@@ -210,13 +236,24 @@ function MyProjectCard({
       {project.description && (
         <p className="text-xs text-subtext line-clamp-2">{project.description}</p>
       )}
-      <button
-        onClick={handleOpen}
-        disabled={opening}
-        className="mt-auto px-3 py-2 text-sm font-bold text-base bg-accent hover:bg-sapphire rounded-lg disabled:opacity-50 transition-colors"
-      >
-        {opening ? 'Opening...' : 'Open in Editor'}
-      </button>
+      <div className="mt-auto flex gap-2">
+        <button
+          onClick={handleOpen}
+          disabled={opening || deleting}
+          className="flex-1 px-3 py-2 text-sm font-bold text-base bg-accent hover:bg-sapphire rounded-lg disabled:opacity-50 transition-colors"
+        >
+          {opening ? 'Opening...' : 'Open in Editor'}
+        </button>
+        <button
+          onClick={handleDelete}
+          disabled={opening || deleting}
+          aria-label="Delete project"
+          title="Delete project"
+          className="px-3 py-2 text-sm font-bold text-text bg-surface-0 hover:bg-danger hover:text-base rounded-lg disabled:opacity-50 transition-colors"
+        >
+          {deleting ? '...' : '🗑'}
+        </button>
+      </div>
     </div>
   )
 }

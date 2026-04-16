@@ -173,6 +173,26 @@ export async function updateProject(
   }
 }
 
+/** Delete a project — owner or admin only on the server. */
+export async function deleteProject(
+  id: string,
+  clerkToken?: string,
+): Promise<{ ok: true } | { error: string } | null> {
+  try {
+    const headers: Record<string, string> = {}
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`
+    const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      headers,
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) return { error: data.error || 'Delete failed' }
+    return { ok: true }
+  } catch {
+    return null
+  }
+}
+
 export async function fetchMyProjects(clerkToken?: string): Promise<SharedProject[]> {
   try {
     const headers: Record<string, string> = {}
