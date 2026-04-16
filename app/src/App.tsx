@@ -300,6 +300,26 @@ export default function App() {
     return execResult.error ? null : execResult
   }, [code, language, exec])
 
+  const handleClear = useCallback(() => {
+    exec.abort()
+    workspaceRef.current?.clear()
+    exec.setResult(null)
+    setShowOutput(false)
+  }, [exec])
+
+  const handleBackToSandbox = useCallback(() => {
+    setMode('sandbox')
+    setTimeout(() => {
+      exitToSandbox(workspaceRef.current, savedSandboxState.current)
+    }, 0)
+  }, [])
+
+  // Gameplay mode hooks — each owns its own state + handlers
+  const modeDeps = { workspaceRef, modeRef, mode, setMode, setBlockCount, beginModeEntry, handleBackToSandbox, runCurrentCode, processAchievements, exec, setShowOutput }
+  const challenge = useChallengeMode(modeDeps)
+  const blockset = useBlocksetMode(modeDeps)
+  const golf = useGolfMode(modeDeps)
+  const lab = useLabMode(modeDeps)
 
   const handleSelectExample = useCallback((example: Example) => {
     modals.setExamples(false)
