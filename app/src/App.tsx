@@ -5,6 +5,7 @@ import { generateCode, generateHtmlMarkup, registerSingleBlock, unregisterBlock,
 import { registry } from './blocks/registry'
 import type { ExecutionResult } from './execution/runner'
 import { useExecution } from './hooks/useExecution'
+import { useModalState } from './hooks/useModalState'
 import { snapshotSandbox, enterMode, exitToSandbox } from './hooks/modeWorkspace'
 import {
   saveCustomBlocksToLocal,
@@ -72,10 +73,7 @@ export default function App() {
   const [showOutput, setShowOutput] = useState(false)
   const exec = useExecution()
   const { isRunning, result, liveOutput } = exec
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showExamples, setShowExamples] = useState(false)
-  const [showCodeToBlocks, setShowCodeToBlocks] = useState(false)
-  const [showPublishModal, setShowPublishModal] = useState(false)
+  const modals = useModalState()
   const [editingBlock, setEditingBlock] = useState<BlockDefinition | null>(null)
   const [customBlocks, setCustomBlocks] = useState<BlockDefinition[]>([])
   const [initialWorkspaceState, setInitialWorkspaceState] = useState<Record<string, unknown> | null>(null)
@@ -112,19 +110,10 @@ export default function App() {
   // Achievement + Stats state
   const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null)
   const achievementQueue = useRef<Achievement[]>([])
-  const [showStats, setShowStats] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('cryptoblocks-tutorial-seen'))
-  const [showTutorial, setShowTutorial] = useState(false)
 
   // Collab state
   const collabDoc = useCollabDoc()
   const isCollabMode = !!collabDoc
-  const [showCollabModal, setShowCollabModal] = useState(false)
-  const [collabRoomCreated, setCollabRoomCreated] = useState<{ code: string; name: string } | null>(null)
-  const [showScratchImport, setShowScratchImport] = useState(false)
-  const [showSpriteEditor, setShowSpriteEditor] = useState(false)
-  const [showLevelEditor, setShowLevelEditor] = useState(false)
   const runBroadcastRef = useRef<ReturnType<typeof bindRunBroadcast> | null>(null)
 
   // Store sandbox workspace before entering challenge mode
@@ -731,7 +720,7 @@ export default function App() {
   }, [])
 
   const handleSelectExample = useCallback((example: Example) => {
-    setShowExamples(false)
+    modals.setExamples(false)
 
     // Kill any running execution (camera, animation loops, etc.)
     exec.abort()
@@ -786,7 +775,7 @@ export default function App() {
       }
     }, 0)
 
-    setShowCodeToBlocks(false)
+    modals.setCodeToBlocks(false)
   }, [])
 
   const handleCreateBlock = useCallback((block: BlockDefinition) => {
@@ -803,7 +792,7 @@ export default function App() {
       return updated
     })
 
-    setShowCreateModal(false)
+    modals.setCreateBlock(false)
     setEditingBlock(null)
 
     // Check architect achievement
@@ -813,7 +802,7 @@ export default function App() {
 
   const handleEditBlock = useCallback((blockDef: BlockDefinition) => {
     setEditingBlock(blockDef)
-    setShowCreateModal(true)
+    modals.setCreateBlock(true)
   }, [])
 
   const handleDeleteBlock = useCallback((blockDef: BlockDefinition) => {
@@ -863,7 +852,7 @@ export default function App() {
       color: '#F59E0B',
       shape: 'statement',
     })
-    setShowCreateModal(true)
+    modals.setCreateBlock(true)
   }, [])
 
   const handleClear = useCallback(() => {
@@ -874,7 +863,7 @@ export default function App() {
   }, [exec])
 
   const closeModal = useCallback(() => {
-    setShowCreateModal(false)
+    modals.setCreateBlock(false)
     setEditingBlock(null)
   }, [])
 
@@ -972,7 +961,7 @@ export default function App() {
         color: '#F59E0B',
         shape: 'statement',
       })
-      setShowCreateModal(true)
+      modals.setCreateBlock(true)
     } catch (err) {
       console.error('Failed to import .blocks file as block:', err)
     }
@@ -1064,8 +1053,8 @@ export default function App() {
         onStop={handleStop}
         showCode={showCode}
         onToggleCode={() => setShowCode((prev) => !prev)}
-        onCreateBlock={() => setShowCreateModal(true)}
-        onCodeToBlocks={() => setShowCodeToBlocks(true)}
+        onCreateBlock={() => modals.setCreateBlock(true)}
+        onCodeToBlocks={() => modals.setCodeToBlocks(true)}
         onExport={handleExport}
         onImport={handleImport}
         onImportAsBlock={handleImportAsBlock}
@@ -1075,15 +1064,15 @@ export default function App() {
           exportAsPwa(code)
         }}
         onCopyEmbed={handleCopyEmbed}
-        onPublish={() => setShowPublishModal(true)}
+        onPublish={() => modals.setPublish(true)}
         onClear={handleClear}
         mode={mode}
         onOpenChallenges={handleOpenChallenges}
         onOpenBlocksets={handleOpenBlocksets}
         onOpenGolf={handleOpenGolf}
         onOpenLab={handleOpenLab}
-        onOpenExamples={() => setShowExamples(true)}
-        onOpenStats={() => setShowStats(true)}
+        onOpenExamples={() => modals.setExamples(true)}
+        onOpenStats={() => modals.setStats(true)}
         blockCount={blockCount}
         onSaveCheckpoint={() => setShowCheckpointModal(true)}
         onOpenHistory={() => setShowHistory(true)}
@@ -1091,14 +1080,14 @@ export default function App() {
         onUndo={() => workspaceRef.current?.undo(false)}
         onRedo={() => workspaceRef.current?.undo(true)}
         onFitView={() => workspaceRef.current?.zoomToFit()}
-        onOpenSettings={() => setShowSettings(true)}
-        onOpenTutorial={() => setShowTutorial(true)}
-        onOpenCollab={() => setShowCollabModal(true)}
+        onOpenSettings={() => modals.setSettings(true)}
+        onOpenTutorial={() => modals.setTutorial(true)}
+        onOpenCollab={() => modals.setCollabModal(true)}
         isCollabMode={isCollabMode}
-        onImportScratch={() => setShowScratchImport(true)}
+        onImportScratch={() => modals.setScratchImport(true)}
         onSaveToDashboard={handleSaveToDashboard}
-        onOpenSpriteEditor={() => setShowSpriteEditor(true)}
-        onOpenLevelEditor={() => setShowLevelEditor(true)}
+        onOpenSpriteEditor={() => modals.setSpriteEditor(true)}
+        onOpenLevelEditor={() => modals.setLevelEditor(true)}
         onRunForEveryone={() => {
           runBroadcastRef.current?.requestRunForEveryone()
           handleRun()
@@ -1189,38 +1178,16 @@ export default function App() {
       )}
 
       <AppModals
-        showCreateModal={showCreateModal}
-        showExamples={showExamples}
-        showCodeToBlocks={showCodeToBlocks}
-        showPublishModal={showPublishModal}
+        modals={modals}
         showComplete={showComplete}
         showBlocksetComplete={showBlocksetComplete}
         showGolfComplete={showGolfComplete}
         showLabComplete={showLabComplete}
-        showStats={showStats}
         showCheckpointModal={showCheckpointModal}
         showHistory={showHistory}
-        showSettings={showSettings}
-        showWelcome={showWelcome}
-        showTutorial={showTutorial}
-        showCollabModal={showCollabModal}
-        showScratchImport={showScratchImport}
-        showSpriteEditor={showSpriteEditor}
-        showLevelEditor={showLevelEditor}
         closeCreateModal={closeModal}
-        setShowExamples={setShowExamples}
-        setShowCodeToBlocks={setShowCodeToBlocks}
-        setShowPublishModal={setShowPublishModal}
-        setShowStats={setShowStats}
         setShowCheckpointModal={setShowCheckpointModal}
         setShowHistory={setShowHistory}
-        setShowSettings={setShowSettings}
-        setShowWelcome={setShowWelcome}
-        setShowTutorial={setShowTutorial}
-        setShowCollabModal={setShowCollabModal}
-        setShowScratchImport={setShowScratchImport}
-        setShowSpriteEditor={setShowSpriteEditor}
-        setShowLevelEditor={setShowLevelEditor}
         activeChallenge={activeChallenge}
         activeBlockset={activeBlockset}
         activeGolfProblem={activeGolfProblem}
@@ -1248,8 +1215,6 @@ export default function App() {
         rollbackTo={rollbackTo}
         resetAutoSave={resetAutoSave}
         workspaceRef={workspaceRef}
-        collabRoomCreated={collabRoomCreated}
-        setCollabRoomCreated={setCollabRoomCreated}
         currentAchievement={currentAchievement}
         showNextAchievement={showNextAchievement}
       />

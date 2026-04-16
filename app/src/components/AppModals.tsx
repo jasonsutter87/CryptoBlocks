@@ -48,41 +48,23 @@ const RoomCreatedModal = lazy(() => import('../collab/RoomCreatedModal'))
 const ScratchImportModal = lazy(() => import('./ScratchImportModal'))
 
 export interface AppModalsProps {
-  // Visibility flags
-  showCreateModal: boolean
-  showExamples: boolean
-  showCodeToBlocks: boolean
-  showPublishModal: boolean
+  // All modal visibility + setters from useModalState
+  modals: import('../hooks/useModalState').ModalState
+
+  // Gameplay completion (not in useModalState — tied to mode state)
   showComplete: boolean
   showBlocksetComplete: boolean
   showGolfComplete: boolean
   showLabComplete: boolean
-  showStats: boolean
+
+  // Version control modals (from useVersionControl, not useModalState)
   showCheckpointModal: boolean
   showHistory: boolean
-  showSettings: boolean
-  showWelcome: boolean
-  showTutorial: boolean
-  showCollabModal: boolean
-  showScratchImport: boolean
-  showSpriteEditor: boolean
-  showLevelEditor: boolean
-
-  // Open / close setters and chained actions
-  closeCreateModal: () => void
-  setShowExamples: (open: boolean) => void
-  setShowCodeToBlocks: (open: boolean) => void
-  setShowPublishModal: (open: boolean) => void
-  setShowStats: (open: boolean) => void
   setShowCheckpointModal: (open: boolean) => void
   setShowHistory: (open: boolean) => void
-  setShowSettings: (open: boolean) => void
-  setShowWelcome: (open: boolean) => void
-  setShowTutorial: (open: boolean) => void
-  setShowCollabModal: (open: boolean) => void
-  setShowScratchImport: (open: boolean) => void
-  setShowSpriteEditor: (open: boolean) => void
-  setShowLevelEditor: (open: boolean) => void
+
+  // Close handler for create-block modal (resets editingBlock too)
+  closeCreateModal: () => void
 
   // Active gameplay context — drives the completion overlays
   activeChallenge: Challenge | null
@@ -119,10 +101,6 @@ export interface AppModalsProps {
   // Workspace ref for lazy editors that touch Blockly
   workspaceRef: React.RefObject<Blockly.WorkspaceSvg | null>
 
-  // Collab
-  collabRoomCreated: { code: string; name: string } | null
-  setCollabRoomCreated: (v: { code: string; name: string } | null) => void
-
   // Achievements + always-on layers
   currentAchievement: Achievement | null
   showNextAchievement: () => void
@@ -132,27 +110,27 @@ export default function AppModals(p: AppModalsProps) {
   return (
     <>
       {/* === Creator tools === */}
-      {p.showCreateModal && (
+      {p.modals.createBlock && (
         <CreateBlockModal
           onBuild={p.handleCreateBlock}
           onClose={p.closeCreateModal}
           editBlock={p.editingBlock}
         />
       )}
-      {p.showExamples && (
+      {p.modals.examples && (
         <ExamplesBrowser
           onSelectExample={p.handleSelectExample}
-          onClose={() => p.setShowExamples(false)}
+          onClose={() => p.modals.setExamples(false)}
         />
       )}
-      {p.showCodeToBlocks && (
+      {p.modals.codeToBlocks && (
         <CodeToBlocksModal
           onConvert={p.handleCodeToBlocks}
-          onClose={() => p.setShowCodeToBlocks(false)}
+          onClose={() => p.modals.setCodeToBlocks(false)}
         />
       )}
-      {p.showPublishModal && (
-        <GitHubPublishModal onClose={() => p.setShowPublishModal(false)} />
+      {p.modals.publish && (
+        <GitHubPublishModal onClose={() => p.modals.setPublish(false)} />
       )}
 
       {/* === Gameplay completion overlays === */}
@@ -194,7 +172,7 @@ export default function AppModals(p: AppModalsProps) {
       )}
 
       {/* === System: stats, settings, version control, welcome === */}
-      {p.showStats && <StatsPanel onClose={() => p.setShowStats(false)} />}
+      {p.modals.stats && <StatsPanel onClose={() => p.modals.setStats(false)} />}
       {p.showCheckpointModal && (
         <CheckpointModal
           onSave={async (label) => {
@@ -215,33 +193,33 @@ export default function AppModals(p: AppModalsProps) {
           onClose={() => p.setShowHistory(false)}
         />
       )}
-      {p.showSettings && (
+      {p.modals.settings && (
         <SettingsModal
-          onClose={() => p.setShowSettings(false)}
+          onClose={() => p.modals.setSettings(false)}
           onSettingsChanged={p.resetAutoSave}
         />
       )}
-      {p.showWelcome && (
+      {p.modals.welcome && (
         <WelcomeModal
           onStartTour={() => {
-            p.setShowWelcome(false)
-            p.setShowTutorial(true)
+            p.modals.setWelcome(false)
+            p.modals.setTutorial(true)
           }}
-          onSkip={() => p.setShowWelcome(false)}
+          onSkip={() => p.modals.setWelcome(false)}
         />
       )}
-      {p.showTutorial && (
+      {p.modals.tutorial && (
         <TutorialOverlay
-          onFinish={() => p.setShowTutorial(false)}
-          onSkip={() => p.setShowTutorial(false)}
+          onFinish={() => p.modals.setTutorial(false)}
+          onSkip={() => p.modals.setTutorial(false)}
         />
       )}
 
       {/* === Lazy-loaded heavy editors === */}
-      {p.showScratchImport && (
+      {p.modals.scratchImport && (
         <Suspense fallback={null}>
           <ScratchImportModal
-            onClose={() => p.setShowScratchImport(false)}
+            onClose={() => p.modals.setScratchImport(false)}
             onImport={(ws) => {
               if (p.workspaceRef.current) {
                 p.workspaceRef.current.clear()
@@ -253,57 +231,57 @@ export default function AppModals(p: AppModalsProps) {
           />
         </Suspense>
       )}
-      {p.showSpriteEditor && (
+      {p.modals.spriteEditor && (
         <Suspense fallback={null}>
           <SpriteEditor
-            onClose={() => p.setShowSpriteEditor(false)}
+            onClose={() => p.modals.setSpriteEditor(false)}
             onSave={(dataUrl, name, frames) => {
               const sprites = JSON.parse(localStorage.getItem('cryptoblocks-sprites') || '{}')
               sprites[name] = { dataUrl, frames, size: 16 }
               localStorage.setItem('cryptoblocks-sprites', JSON.stringify(sprites))
-              p.setShowSpriteEditor(false)
+              p.modals.setSpriteEditor(false)
             }}
           />
         </Suspense>
       )}
-      {p.showLevelEditor && (
+      {p.modals.levelEditor && (
         <Suspense fallback={null}>
           <LevelEditor
-            onClose={() => p.setShowLevelEditor(false)}
+            onClose={() => p.modals.setLevelEditor(false)}
             onExport={(platforms, spawnX, spawnY) => {
               if (!p.workspaceRef.current) return
               loadLevelIntoWorkspace(p.workspaceRef.current, platforms, spawnX, spawnY)
-              p.setShowLevelEditor(false)
+              p.modals.setLevelEditor(false)
             }}
           />
         </Suspense>
       )}
 
       {/* === Collab === */}
-      {p.showCollabModal && (
+      {p.modals.collabModal && (
         <Suspense fallback={null}>
           <CollabModal
-            onClose={() => p.setShowCollabModal(false)}
+            onClose={() => p.modals.setCollabModal(false)}
             onCreateRoom={(_roomId, code, name) => {
-              p.setShowCollabModal(false)
-              p.setCollabRoomCreated({ code, name })
+              p.modals.setCollabModal(false)
+              p.modals.setCollabRoomCreated({ code, name })
               localStorage.setItem(`collab-room-name-${code}`, name)
             }}
             onJoinRoom={(code) => {
-              p.setShowCollabModal(false)
+              p.modals.setCollabModal(false)
               window.location.href = `/collab/${code}`
             }}
           />
         </Suspense>
       )}
-      {p.collabRoomCreated && (
+      {p.modals.collabRoomCreated && (
         <Suspense fallback={null}>
           <RoomCreatedModal
-            roomCode={p.collabRoomCreated.code}
-            roomName={p.collabRoomCreated.name}
+            roomCode={p.modals.collabRoomCreated.code}
+            roomName={p.modals.collabRoomCreated.name}
             onClose={() => {
-              const code = p.collabRoomCreated!.code
-              p.setCollabRoomCreated(null)
+              const code = p.modals.collabRoomCreated!.code
+              p.modals.setCollabRoomCreated(null)
               window.location.href = `/collab/${code}`
             }}
           />
