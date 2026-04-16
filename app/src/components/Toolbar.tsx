@@ -4,6 +4,8 @@ import { Icon } from './Icon'
 import DropdownMenu from './DropdownMenu'
 import type { MenuItem } from './DropdownMenu'
 import FileMenu from './toolbar-menus/FileMenu'
+import MainMenu from './toolbar-menus/MainMenu'
+import MobileMenu from './toolbar-menus/MobileMenu'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '../auth'
@@ -272,80 +274,20 @@ export default function Toolbar({
               </button>
 
               {openMenu === 'menu' && (
-                <div className={menuDropdown}>
-                  {onOpenCollab && (
-                    <button onClick={() => { onOpenCollab(); setOpenMenu(null) }} className={menuItem}>
-                      <Icon name="users" className="w-4 h-4 text-accent" />
-                      Code with Friends
-                    </button>
-                  )}
-                  <a href="/shareplace" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <Icon name="bolt" className="w-4 h-4 text-success" />
-                    Shareplace
-                  </a>
-                  <a href="/leaderboard" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <span className="w-4 h-4 flex items-center justify-center text-warn text-base">🏆</span>
-                    Leaderboard
-                  </a>
-                  <a href="/daily" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <span className="w-4 h-4 flex items-center justify-center text-peach text-base">🎯</span>
-                    Daily Challenge
-                    {dailyStreak > 0 && (
-                      <span className="ml-auto text-xs text-peach font-bold">{dailyStreak}🔥</span>
-                    )}
-                  </a>
-                  <button onClick={() => { onOpenStats(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="bars-chart" className="w-4 h-4 text-text" />
-                    Stats
-                  </button>
-                  <a href="/dashboard" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <Icon name="dashboard-grid" className="w-4 h-4 text-peach" />
-                    Dashboard
-                  </a>
-                  <a href="/profile" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <Icon name="user-circle" className="w-4 h-4 text-purple" />
-                    Profile & Settings
-                  </a>
-                  <a
-                    href={isPro ? '/teacher' : '#'}
-                    onClick={(e) => { if (!isPro) { e.preventDefault(); requirePro(() => {}) } else { setOpenMenu(null) } }}
-                    className={menuItem}
-                  >
-                    <span className="w-4 h-4 flex items-center justify-center text-base">🏫</span>
-                    Classrooms
-                    {!isPro && <span className="ml-auto"><ProBadge /></span>}
-                  </a>
-                  <div className={menuDivider} />
-                  <a href="/learn" onClick={() => setOpenMenu(null)} className={menuItem}>
-                    <Icon name="book-open" className="w-4 h-4 text-accent" />
-                    Learn JavaScript
-                  </a>
-                  <button onClick={() => { onOpenExamples(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="book" className="w-4 h-4 text-success" />
-                    Examples
-                  </button>
-                  <div className={menuDivider} />
-                  <button onClick={() => { onOpenChallenges(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="sparkles" className="w-4 h-4 text-warn" />
-                    Challenges
-                    {mode === 'challenges' && <span className="ml-auto text-xs text-warn font-bold">Active</span>}
-                  </button>
-                  <button onClick={() => { onOpenBlocksets(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="book" className="w-4 h-4 text-accent" />
-                    Blocksets
-                    {mode === 'blocksets' && <span className="ml-auto text-xs text-accent font-bold">Active</span>}
-                  </button>
-                  <button onClick={() => { onOpenGolf(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="flag" className="w-4 h-4 text-success" />
-                    Code Golf
-                    {mode === 'code-golf' ? <span className="ml-auto text-xs text-success font-bold">Active</span> : <span className="ml-auto"><ProBadge /></span>}
-                  </button>
-                  <button onClick={() => { onOpenLab(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="book-classroom" className="w-4 h-4 text-purple" />
-                    Code Lab
-                    {mode === 'code-lab' ? <span className="ml-auto text-xs text-purple font-bold">Active</span> : <span className="ml-auto"><ProBadge /></span>}
-                  </button>
-                </div>
+                <MainMenu
+                  mode={mode}
+                  isPro={isPro}
+                  dailyStreak={dailyStreak}
+                  requirePro={requirePro}
+                  close={() => setOpenMenu(null)}
+                  onOpenCollab={onOpenCollab}
+                  onOpenStats={onOpenStats}
+                  onOpenExamples={onOpenExamples}
+                  onOpenChallenges={onOpenChallenges}
+                  onOpenBlocksets={onOpenBlocksets}
+                  onOpenGolf={onOpenGolf}
+                  onOpenLab={onOpenLab}
+                />
               )}
             </div>
           </>
@@ -493,91 +435,28 @@ export default function Toolbar({
             </button>
 
             {openMenu === 'mobile' && (
-              <div className="absolute right-0 mt-1 w-56 bg-surface-0 border border-surface-1 rounded-lg shadow-xl z-50 py-1 max-h-[70vh] overflow-auto">
-                {onOpenCollab && (
-                  <button onClick={() => { onOpenCollab(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="users" className="w-4 h-4 text-accent" />
-                    Code with Friends
-                  </button>
-                )}
-                <button onClick={() => { onExport(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="download" className="w-4 h-4 text-accent" />
-                  Save .blocks
-                </button>
-                <button onClick={() => { fileInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="upload" className="w-4 h-4 text-accent" />
-                  Load .blocks
-                </button>
-                <button onClick={() => { importAsBlockInputRef.current?.click(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="cube" className="w-4 h-4 text-accent" />
-                  Import as Block
-                </button>
-                <div className={menuDivider} />
-                <button onClick={() => { onCreateBlock(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="plus" className="w-4 h-4 text-warn" />
-                  Create Block
-                </button>
-                <button onClick={() => { onCodeToBlocks(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="pages" className="w-4 h-4 text-purple" />
-                  Code to Blocks
-                </button>
-                <button onClick={() => { onOpenExamples(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="book" className="w-4 h-4 text-success" />
-                  Examples
-                </button>
-                <button onClick={() => { onOpenBlocksets(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="book" className="w-4 h-4 text-accent" />
-                  Blocksets
-                </button>
-                <button onClick={() => { onOpenGolf(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="flag" className="w-4 h-4 text-success" />
-                  Code Golf
-                </button>
-                <button onClick={() => { onOpenLab(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="book-classroom" className="w-4 h-4 text-purple" />
-                  Code Lab
-                </button>
-                <button onClick={() => { onOpenStats(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="bars-chart" className="w-4 h-4 text-accent" />
-                  Developer Stats
-                </button>
-                <div className={menuDivider} />
-                <button onClick={() => { onExportHtml(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="download" className="w-4 h-4 text-success" />
-                  Export HTML
-                </button>
-                <button onClick={() => { onPublish(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="cloud-up-arrow" className="w-4 h-4 text-purple" />
-                  Publish to GitHub
-                </button>
-                <div className={menuDivider} />
-                <button onClick={() => { onUndo(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="arrow-undo" className="w-4 h-4 text-text" />
-                  Undo
-                </button>
-                <button onClick={() => { onRedo(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="arrow-redo" className="w-4 h-4 text-text" />
-                  Redo
-                </button>
-                <button onClick={() => { onFitView(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="expand" className="w-4 h-4 text-accent" />
-                  Fit View
-                </button>
-                <div className={menuDivider} />
-                <button onClick={() => { onSaveCheckpoint(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="check" className="w-4 h-4 text-success" />
-                  Save Checkpoint
-                </button>
-                <button onClick={() => { onOpenHistory(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="clock" className="w-4 h-4 text-accent" />
-                  History
-                </button>
-                <div className={menuDivider} />
-                <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
-                  <Icon name="trash" className="w-4 h-4 text-danger" />
-                  Clear Workspace
-                </button>
-              </div>
+              <MobileMenu
+                fileInputRef={fileInputRef}
+                importAsBlockInputRef={importAsBlockInputRef}
+                close={() => setOpenMenu(null)}
+                onOpenCollab={onOpenCollab}
+                onExport={onExport}
+                onCreateBlock={onCreateBlock}
+                onCodeToBlocks={onCodeToBlocks}
+                onOpenExamples={onOpenExamples}
+                onOpenBlocksets={onOpenBlocksets}
+                onOpenGolf={onOpenGolf}
+                onOpenLab={onOpenLab}
+                onOpenStats={onOpenStats}
+                onExportHtml={onExportHtml}
+                onPublish={onPublish}
+                onUndo={onUndo}
+                onRedo={onRedo}
+                onFitView={onFitView}
+                onSaveCheckpoint={onSaveCheckpoint}
+                onOpenHistory={onOpenHistory}
+                onClear={onClear}
+              />
             )}
           </div>
         )}
