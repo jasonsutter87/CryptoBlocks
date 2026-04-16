@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { useUser, useAuth, SignedIn, SignedOut, SignInButton } from '../auth'
 import { loadStats } from '../stats'
 import type { SharedProject } from '../types/shareplace'
-import { fetchProjects, fetchProject } from '../shareplace/api'
+import { fetchMyProjects, fetchProject } from '../shareplace/api'
 import { showToast } from '../components/Toast'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
@@ -37,14 +37,21 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchProjects().then((all) => {
-      const authorName = user?.fullName || user?.username
-      if (authorName) {
-        setMyProjects(all.filter((p) => p.author === authorName))
+    if (!user) { setLoading(false); return }
+    let cancelled = false
+    ;(async () => {
+      // /api/projects/my returns the user's own projects — public AND private
+      // — keyed by Clerk user id, not by name. Save-to-Dashboard projects
+      // are always private and would be filtered out of the public feed.
+      const token = await getToken().catch(() => null)
+      const mine = await fetchMyProjects(token ?? undefined)
+      if (!cancelled) {
+        setMyProjects(mine)
+        setLoading(false)
       }
-      setLoading(false)
-    })
-  }, [user])
+    })()
+    return () => { cancelled = true }
+  }, [user, getToken])
 
   const statCards = [
     {
