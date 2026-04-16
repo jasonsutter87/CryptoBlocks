@@ -42,8 +42,8 @@ export default function ExampleLoader() {
   }, [id, navigate])
 
   return (
-    <div className="h-screen w-screen bg-[#1e1e2e] flex items-center justify-center">
-      <div className="text-[#cdd6f4] text-lg animate-pulse">Loading example...</div>
+    <div className="h-screen w-screen bg-base flex items-center justify-center">
+      <div className="text-text text-lg animate-pulse">Loading example...</div>
     </div>
   )
 }

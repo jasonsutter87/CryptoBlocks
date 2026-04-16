@@ -48,9 +48,9 @@ export default function BlockPreview({ workspaceJson }: BlockPreviewProps) {
   }, [])
 
   return (
-    <div className="rounded-lg border border-[#313244] overflow-hidden bg-[#11111b]">
-      <div className="flex items-center px-4 py-2 bg-[#181825] border-b border-[#313244]">
-        <span className="text-[10px] font-mono text-[#6c7086] uppercase tracking-wider select-none">
+    <div className="rounded-lg border border-surface-0 overflow-hidden bg-crust">
+      <div className="flex items-center px-4 py-2 bg-mantle border-b border-surface-0">
+        <span className="text-[10px] font-mono text-overlay uppercase tracking-wider select-none">
           Blocks
         </span>
       </div>

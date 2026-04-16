@@ -78,79 +78,79 @@ export default function DailyChallengePage() {
   }, [dayNumber])
 
   return (
-    <div className="min-h-full bg-[#1e1e2e]">
+    <div className="min-h-full bg-base">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1">
             <span className="text-4xl">🎯</span>
-            <h1 className="text-3xl font-bold text-[#cdd6f4] tracking-tight">
+            <h1 className="text-3xl font-bold text-text tracking-tight">
               Daily Challenge
             </h1>
           </div>
-          <p className="text-[#a6adc8]">
+          <p className="text-subtext">
             A new puzzle every day. Same puzzle for everyone. Keep your streak alive.
           </p>
         </div>
 
         {/* Streak + stats row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="bg-[#313244] rounded-xl p-5 flex flex-col gap-1">
-            <span className="text-3xl font-bold text-[#fab387]">
+          <div className="bg-surface-0 rounded-xl p-5 flex flex-col gap-1">
+            <span className="text-3xl font-bold text-peach">
               {effectiveStreak}
               <span className="text-lg ml-1">🔥</span>
             </span>
-            <span className="text-sm text-[#6c7086]">Current Streak</span>
+            <span className="text-sm text-overlay">Current Streak</span>
           </div>
-          <div className="bg-[#313244] rounded-xl p-5 flex flex-col gap-1">
-            <span className="text-3xl font-bold text-[#f9e2af]">{state.longestStreak}</span>
-            <span className="text-sm text-[#6c7086]">Longest Streak</span>
+          <div className="bg-surface-0 rounded-xl p-5 flex flex-col gap-1">
+            <span className="text-3xl font-bold text-warn">{state.longestStreak}</span>
+            <span className="text-sm text-overlay">Longest Streak</span>
           </div>
-          <div className="bg-[#313244] rounded-xl p-5 flex flex-col gap-1">
-            <span className="text-3xl font-bold text-[#a6e3a1]">{state.totalSolved}</span>
-            <span className="text-sm text-[#6c7086]">Total Solved</span>
+          <div className="bg-surface-0 rounded-xl p-5 flex flex-col gap-1">
+            <span className="text-3xl font-bold text-success">{state.totalSolved}</span>
+            <span className="text-sm text-overlay">Total Solved</span>
           </div>
-          <div className="bg-[#313244] rounded-xl p-5 flex flex-col gap-1">
-            <span className="text-3xl font-bold text-[#89b4fa]">#{dayNumber}</span>
-            <span className="text-sm text-[#6c7086]">Today's Day</span>
+          <div className="bg-surface-0 rounded-xl p-5 flex flex-col gap-1">
+            <span className="text-3xl font-bold text-accent">#{dayNumber}</span>
+            <span className="text-sm text-overlay">Today's Day</span>
           </div>
         </div>
 
         {/* Today's puzzle card */}
-        <div className="bg-[#181825] rounded-xl p-6 border border-[#313244] mb-8">
+        <div className="bg-mantle rounded-xl p-6 border border-surface-0 mb-8">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <div className="text-xs text-[#6c7086] uppercase tracking-wide mb-1">
+              <div className="text-xs text-overlay uppercase tracking-wide mb-1">
                 Today — Day {dayNumber}
               </div>
-              <h2 className="text-2xl font-bold text-[#cdd6f4] mb-2">{puzzle.title}</h2>
-              <p className="text-[#a6adc8]">{puzzle.description}</p>
+              <h2 className="text-2xl font-bold text-text mb-2">{puzzle.title}</h2>
+              <p className="text-subtext">{puzzle.description}</p>
             </div>
             <DifficultyBadge difficulty={puzzle.difficulty} />
           </div>
 
           {/* Target output preview */}
-          <div className="bg-[#11111b] rounded-lg p-4 mb-4 border border-[#313244]">
-            <div className="text-xs text-[#6c7086] uppercase tracking-wide mb-2">
+          <div className="bg-crust rounded-lg p-4 mb-4 border border-surface-0">
+            <div className="text-xs text-overlay uppercase tracking-wide mb-2">
               Target Output
             </div>
-            <pre className="text-[#a6e3a1] font-mono text-sm whitespace-pre-wrap">
+            <pre className="text-success font-mono text-sm whitespace-pre-wrap">
               {puzzle.targetOutput.join('\n')}
             </pre>
           </div>
 
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="text-sm text-[#6c7086]">
-              Par: <span className="text-[#cdd6f4] font-semibold">{puzzle.parBlocks} blocks</span>
+            <div className="text-sm text-overlay">
+              Par: <span className="text-text font-semibold">{puzzle.parBlocks} blocks</span>
             </div>
             {solvedToday ? (
               <div className="flex items-center gap-3">
-                <span className="text-[#a6e3a1] font-semibold flex items-center gap-1">
+                <span className="text-success font-semibold flex items-center gap-1">
                   ✓ Solved in {state.solved[dayNumber].blocks} blocks
                 </span>
                 <Link
                   to="/?daily=1"
-                  className="px-4 py-2 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-lg font-semibold transition-colors"
+                  className="px-4 py-2 bg-surface-0 hover:bg-surface-1 text-text rounded-lg font-semibold transition-colors"
                 >
                   Play Again
                 </Link>
@@ -158,7 +158,7 @@ export default function DailyChallengePage() {
             ) : (
               <Link
                 to="/?daily=1"
-                className="px-5 py-2.5 bg-[#89b4fa] hover:bg-[#74c7ec] text-[#1e1e2e] rounded-lg font-bold transition-colors"
+                className="px-5 py-2.5 bg-accent hover:bg-sapphire text-base rounded-lg font-bold transition-colors"
               >
                 Start Today's Challenge →
               </Link>
@@ -168,7 +168,7 @@ export default function DailyChallengePage() {
 
         {/* History grid */}
         <div className="mb-8">
-          <h3 className="text-sm font-semibold text-[#cdd6f4] mb-3 uppercase tracking-wide">
+          <h3 className="text-sm font-semibold text-text mb-3 uppercase tracking-wide">
             Last 10 Days
           </h3>
           <div className="grid grid-cols-10 gap-2">
@@ -188,14 +188,14 @@ export default function DailyChallengePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             {/* Top Solvers (all time) */}
             {topSolvers.length > 0 && (
-              <div className="bg-[#181825] border border-[#313244] rounded-xl p-5">
-                <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">🏆 Top Solvers</h3>
+              <div className="bg-mantle border border-surface-0 rounded-xl p-5">
+                <h3 className="text-xs font-semibold text-overlay uppercase tracking-wider mb-3">🏆 Top Solvers</h3>
                 <div className="flex flex-col gap-2">
                   {topSolvers.slice(0, 10).map((s, i) => (
                     <div key={s.userName} className="flex items-center gap-2">
                       <span className="w-5 text-center text-sm">{i < 3 ? MEDALS[i] : `${i + 1}`}</span>
-                      <span className="text-sm text-[#cdd6f4] flex-1 truncate">{s.userName}</span>
-                      <span className="text-xs text-[#a6e3a1] font-mono">{s.totalSolved} solved</span>
+                      <span className="text-sm text-text flex-1 truncate">{s.userName}</span>
+                      <span className="text-xs text-success font-mono">{s.totalSolved} solved</span>
                     </div>
                   ))}
                 </div>
@@ -204,14 +204,14 @@ export default function DailyChallengePage() {
 
             {/* Today's Solvers */}
             {todaySolvers.length > 0 && (
-              <div className="bg-[#181825] border border-[#313244] rounded-xl p-5">
-                <h3 className="text-xs font-semibold text-[#6c7086] uppercase tracking-wider mb-3">🎯 Today&apos;s Solvers</h3>
+              <div className="bg-mantle border border-surface-0 rounded-xl p-5">
+                <h3 className="text-xs font-semibold text-overlay uppercase tracking-wider mb-3">🎯 Today&apos;s Solvers</h3>
                 <div className="flex flex-col gap-2">
                   {todaySolvers.slice(0, 10).map((s, i) => (
                     <div key={s.userName} className="flex items-center gap-2">
                       <span className="w-5 text-center text-sm">{i < 3 ? MEDALS[i] : `${i + 1}`}</span>
-                      <span className="text-sm text-[#cdd6f4] flex-1 truncate">{s.userName}</span>
-                      <span className="text-xs text-[#89b4fa] font-mono">{s.blocksUsed} blocks</span>
+                      <span className="text-sm text-text flex-1 truncate">{s.userName}</span>
+                      <span className="text-xs text-accent font-mono">{s.blocksUsed} blocks</span>
                     </div>
                   ))}
                 </div>
@@ -221,7 +221,7 @@ export default function DailyChallengePage() {
         )}
 
         {/* Footer tip */}
-        <div className="text-center text-[#6c7086] text-sm">
+        <div className="text-center text-overlay text-sm">
           💡 New puzzle every day at midnight (your time).
         </div>
       </div>

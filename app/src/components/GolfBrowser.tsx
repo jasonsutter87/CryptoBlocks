@@ -39,17 +39,17 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
 
   const difficultyColor = (d: string) => {
     switch (d) {
-      case 'easy': return 'bg-[#a6e3a1] text-[#1e1e2e]'
-      case 'medium': return 'bg-[#f9e2af] text-[#1e1e2e]'
-      case 'hard': return 'bg-[#f38ba8] text-[#1e1e2e]'
-      default: return 'bg-[#6c7086] text-[#cdd6f4]'
+      case 'easy': return 'bg-success text-base'
+      case 'medium': return 'bg-warn text-base'
+      case 'hard': return 'bg-danger text-base'
+      default: return 'bg-overlay text-text'
     }
   }
 
   const efficiencyColor = (best: number, par: number) => {
-    if (best <= par) return 'text-[#a6e3a1]'
-    if (best <= par + 3) return 'text-[#f9e2af]'
-    return 'text-[#f38ba8]'
+    if (best <= par) return 'text-success'
+    if (best <= par + 3) return 'text-warn'
+    return 'text-danger'
   }
 
   const getCourseScorecard = (pack: GolfPack) => {
@@ -74,28 +74,28 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
   }
 
   const scoreLabel = (strokes: number, par: number, completed: number, total: number) => {
-    if (completed === 0) return { text: '—', color: 'text-[#6c7086]' }
-    if (completed < total) return { text: `${strokes} (${completed}/${total})`, color: 'text-[#f9e2af]' }
+    if (completed === 0) return { text: '—', color: 'text-overlay' }
+    if (completed < total) return { text: `${strokes} (${completed}/${total})`, color: 'text-warn' }
     const diff = strokes - par
-    if (diff < 0) return { text: `${strokes} (${diff})`, color: 'text-[#a6e3a1]' }
-    if (diff === 0) return { text: `${strokes} (E)`, color: 'text-[#89b4fa]' }
-    return { text: `${strokes} (+${diff})`, color: 'text-[#f38ba8]' }
+    if (diff < 0) return { text: `${strokes} (${diff})`, color: 'text-success' }
+    if (diff === 0) return { text: `${strokes} (E)`, color: 'text-accent' }
+    return { text: `${strokes} (+${diff})`, color: 'text-danger' }
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-[#1e1e2e] p-4 md:p-6">
+    <div className="flex-1 overflow-auto bg-base p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 md:mb-8">
           <div>
-            <h2 className="text-xl md:text-2xl font-bold text-[#cdd6f4]">Code Golf</h2>
-            <p className="text-xs md:text-sm text-[#6c7086] mt-1">Solve puzzles with the fewest blocks possible</p>
+            <h2 className="text-xl md:text-2xl font-bold text-text">Code Golf</h2>
+            <p className="text-xs md:text-sm text-overlay mt-1">Solve puzzles with the fewest blocks possible</p>
           </div>
           <div className="flex items-center gap-3 md:gap-4">
             <button
               onClick={() => setShowStats((v) => !v)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors ${
-                showStats ? 'bg-[#89b4fa] text-[#1e1e2e]' : 'bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a]'
+                showStats ? 'bg-accent text-base' : 'bg-surface-0 text-text hover:bg-surface-1'
               }`}
             >
               <span className="text-sm font-bold">{completedCount}</span>
@@ -103,7 +103,7 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
             </button>
             <button
               onClick={onBackToSandbox}
-              className="text-sm text-[#6c7086] hover:text-[#cdd6f4] transition-colors"
+              className="text-sm text-overlay hover:text-text transition-colors"
             >
               ← Back to Sandbox
             </button>
@@ -112,31 +112,31 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
 
         {/* Stats Dashboard */}
         {showStats && (
-          <div className="mb-6 rounded-xl border border-[#313244] bg-[#181825] p-4 md:p-5">
-            <h3 className="text-sm font-semibold text-[#cdd6f4] mb-4">Your Stats</h3>
+          <div className="mb-6 rounded-xl border border-surface-0 bg-mantle p-4 md:p-5">
+            <h3 className="text-sm font-semibold text-text mb-4">Your Stats</h3>
             <div className="grid grid-cols-3 gap-3 md:gap-4 mb-4">
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#a6e3a1]">{completedCount}</div>
-                <div className="text-xs text-[#6c7086]">Solved</div>
+                <div className="text-2xl font-bold text-success">{completedCount}</div>
+                <div className="text-xs text-overlay">Solved</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#89b4fa]">{underParCount}</div>
-                <div className="text-xs text-[#6c7086]">At/Under Par</div>
+                <div className="text-2xl font-bold text-accent">{underParCount}</div>
+                <div className="text-xs text-overlay">At/Under Par</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-[#cba6f7]">{totalAttempts}</div>
-                <div className="text-xs text-[#6c7086]">Attempts</div>
+                <div className="text-2xl font-bold text-purple">{totalAttempts}</div>
+                <div className="text-xs text-overlay">Attempts</div>
               </div>
             </div>
 
             <div className="mb-3">
-              <div className="flex justify-between text-xs text-[#6c7086] mb-1">
+              <div className="flex justify-between text-xs text-overlay mb-1">
                 <span>Overall Progress</span>
                 <span>{completedCount}/{totalProblems} problems</span>
               </div>
-              <div className="w-full h-2 bg-[#45475a] rounded-full">
+              <div className="w-full h-2 bg-surface-1 rounded-full">
                 <div
-                  className="h-full bg-[#89b4fa] rounded-full transition-all"
+                  className="h-full bg-accent rounded-full transition-all"
                   style={{ width: `${totalProblems > 0 ? (completedCount / totalProblems) * 100 : 0}%` }}
                 />
               </div>
@@ -149,8 +149,8 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
                 return (
                   <div key={pack.id} className="flex items-center gap-2 text-xs">
                     <span className="w-5 text-center">{pack.icon}</span>
-                    <span className="text-[#cdd6f4] w-20 md:w-28 truncate">{pack.name}</span>
-                    <div className="flex-1 h-1.5 bg-[#45475a] rounded-full">
+                    <span className="text-text w-20 md:w-28 truncate">{pack.name}</span>
+                    <div className="flex-1 h-1.5 bg-surface-1 rounded-full">
                       <div
                         className="h-full rounded-full transition-all"
                         style={{
@@ -159,7 +159,7 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
                         }}
                       />
                     </div>
-                    <span className="text-[#6c7086] w-8 text-right">{packCompleted}/{packTotal}</span>
+                    <span className="text-overlay w-8 text-right">{packCompleted}/{packTotal}</span>
                   </div>
                 )
               })}
@@ -174,10 +174,10 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
             const isExpanded = expandedPack === pack.id
 
             return (
-              <div key={pack.id} className="rounded-xl border border-[#313244] overflow-hidden">
+              <div key={pack.id} className="rounded-xl border border-surface-0 overflow-hidden">
                 <button
                   onClick={() => setExpandedPack(isExpanded ? null : pack.id)}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-[#313244]/50 transition-colors text-left"
+                  className="w-full flex items-center gap-4 p-4 hover:bg-surface-0/50 transition-colors text-left"
                 >
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
@@ -186,13 +186,13 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
                     {pack.icon}
                   </div>
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-[#cdd6f4]">{pack.name}</h3>
-                    <p className="text-sm text-[#6c7086]">{pack.description}</p>
+                    <h3 className="text-lg font-semibold text-text">{pack.name}</h3>
+                    <p className="text-sm text-overlay">{pack.description}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="text-right">
-                      <div className="text-sm font-medium text-[#cdd6f4]">{completed}/{pack.problems.length}</div>
-                      <div className="w-20 h-1.5 bg-[#45475a] rounded-full mt-1">
+                      <div className="text-sm font-medium text-text">{completed}/{pack.problems.length}</div>
+                      <div className="w-20 h-1.5 bg-surface-1 rounded-full mt-1">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
@@ -203,7 +203,7 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
                       </div>
                     </div>
                     <svg
-                      className={`w-5 h-5 text-[#6c7086] transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      className={`w-5 h-5 text-overlay transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -215,7 +215,7 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
                 </button>
 
                 {isExpanded && (
-                  <div className="border-t border-[#313244]">
+                  <div className="border-t border-surface-0">
                     {/* Course Scorecard (18-hole packs only) */}
                     {(() => {
                       const sc = getCourseScorecard(pack)
@@ -224,26 +224,26 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
                       const bScore = scoreLabel(sc.back.strokes, sc.back.par, sc.back.completed, sc.back.total)
                       const tScore = scoreLabel(sc.totalStrokes, sc.totalPar, sc.totalCompleted, 18)
                       return (
-                        <div className="px-4 py-3 bg-[#181825] border-b border-[#313244]">
+                        <div className="px-4 py-3 bg-mantle border-b border-surface-0">
                           <div className="flex items-center justify-between text-xs mb-2">
-                            <span className="text-[#a6adc8] font-semibold uppercase tracking-wide">Course Record</span>
-                            <span className="text-[#6c7086]">Par {sc.totalPar}</span>
+                            <span className="text-subtext font-semibold uppercase tracking-wide">Course Record</span>
+                            <span className="text-overlay">Par {sc.totalPar}</span>
                           </div>
                           <div className="grid grid-cols-3 gap-2 text-center">
                             <div>
-                              <div className="text-[10px] text-[#6c7086] mb-0.5">Front 9</div>
+                              <div className="text-[10px] text-overlay mb-0.5">Front 9</div>
                               <div className={`text-sm font-bold ${fScore.color}`}>{fScore.text}</div>
-                              <div className="text-[10px] text-[#6c7086]">Par {sc.front.par}</div>
+                              <div className="text-[10px] text-overlay">Par {sc.front.par}</div>
                             </div>
                             <div>
-                              <div className="text-[10px] text-[#6c7086] mb-0.5">Back 9</div>
+                              <div className="text-[10px] text-overlay mb-0.5">Back 9</div>
                               <div className={`text-sm font-bold ${bScore.color}`}>{bScore.text}</div>
-                              <div className="text-[10px] text-[#6c7086]">Par {sc.back.par}</div>
+                              <div className="text-[10px] text-overlay">Par {sc.back.par}</div>
                             </div>
                             <div>
-                              <div className="text-[10px] text-[#6c7086] mb-0.5">Total</div>
+                              <div className="text-[10px] text-overlay mb-0.5">Total</div>
                               <div className={`text-base font-bold ${tScore.color}`}>{tScore.text}</div>
-                              <div className="text-[10px] text-[#6c7086]">Par {sc.totalPar}</div>
+                              <div className="text-[10px] text-overlay">Par {sc.totalPar}</div>
                             </div>
                           </div>
                         </div>
@@ -252,7 +252,7 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
 
                     {/* Hole-by-hole divider for 18-hole courses */}
                     {pack.problems.length >= 18 && (
-                      <div className="px-4 py-1.5 bg-[#11111b] text-[10px] text-[#6c7086] font-semibold uppercase tracking-wider">
+                      <div className="px-4 py-1.5 bg-crust text-[10px] text-overlay font-semibold uppercase tracking-wider">
                         Front 9
                       </div>
                     )}
@@ -264,23 +264,23 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
                         <div key={problem.id}>
                           {/* Back 9 divider for 18-hole courses */}
                           {i === 9 && pack.problems.length >= 18 && (
-                            <div className="px-4 py-1.5 bg-[#11111b] text-[10px] text-[#6c7086] font-semibold uppercase tracking-wider border-t border-[#313244]">
+                            <div className="px-4 py-1.5 bg-crust text-[10px] text-overlay font-semibold uppercase tracking-wider border-t border-surface-0">
                               Back 9
                             </div>
                           )}
                         <button
                           onClick={() => onSelectProblem(problem)}
-                          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#313244]/50 cursor-pointer ${
-                            i < pack.problems.length - 1 ? 'border-b border-[#313244]/50' : ''
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-0/50 cursor-pointer ${
+                            i < pack.problems.length - 1 ? 'border-b border-surface-0/50' : ''
                           }`}
                         >
-                          <div className="w-8 h-8 rounded-lg bg-[#313244] flex items-center justify-center text-sm font-mono">
-                            <span className="text-[#cdd6f4]">{i + 1}</span>
+                          <div className="w-8 h-8 rounded-lg bg-surface-0 flex items-center justify-center text-sm font-mono">
+                            <span className="text-text">{i + 1}</span>
                           </div>
 
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-[#cdd6f4] truncate">{problem.title}</span>
+                              <span className="text-sm font-medium text-text truncate">{problem.title}</span>
                               <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${difficultyColor(problem.difficulty)}`}>
                                 {problem.difficulty}
                               </span>
@@ -289,7 +289,7 @@ export default function GolfBrowser({ onSelectProblem, onBackToSandbox }: GolfBr
 
                           {/* Par display */}
                           <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-xs text-[#6c7086]">Par {problem.par}</span>
+                            <span className="text-xs text-overlay">Par {problem.par}</span>
                             {progress?.completed && (
                               <span className={`text-xs font-bold ${efficiencyColor(progress.bestBlockCount, problem.par)}`}>
                                 Best: {progress.bestBlockCount}

@@ -70,21 +70,21 @@ export default function TimeTravelBar({
   const atEnd = currentIndex >= max
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[min(92vw,720px)] bg-[#181825] border border-[#45475a] rounded-xl shadow-2xl p-3">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[min(92vw,720px)] bg-mantle border border-surface-1 rounded-xl shadow-2xl p-3">
       {/* Top row: label + exit */}
       <div className="flex items-center justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-lg">🕰️</span>
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wide text-[#6c7086]">
+            <div className="text-[10px] uppercase tracking-wide text-overlay">
               Time Travel
             </div>
-            <div className="text-sm font-semibold text-[#cdd6f4] truncate">
+            <div className="text-sm font-semibold text-text truncate">
               {currentLabel}
             </div>
           </div>
         </div>
-        <div className="text-xs text-[#6c7086] tabular-nums whitespace-nowrap">
+        <div className="text-xs text-overlay tabular-nums whitespace-nowrap">
           {currentIndex + 1} / {snapshotCount}
         </div>
       </div>
@@ -99,7 +99,7 @@ export default function TimeTravelBar({
           setIsPlaying(false)
           onScrub(Number(e.target.value))
         }}
-        className="w-full accent-[#89b4fa] cursor-pointer"
+        className="w-full accent-accent cursor-pointer"
         aria-label="Time travel scrubber"
       />
 
@@ -110,7 +110,7 @@ export default function TimeTravelBar({
             type="button"
             onClick={() => { setIsPlaying(false); onStepBack() }}
             disabled={atStart}
-            className="w-8 h-8 flex items-center justify-center rounded-md bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-md bg-surface-0 hover:bg-surface-1 text-text disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             title="Step back (←)"
             aria-label="Step back"
           >
@@ -120,7 +120,7 @@ export default function TimeTravelBar({
             type="button"
             onClick={() => setIsPlaying((p) => !p)}
             disabled={atEnd && !isPlaying}
-            className="w-8 h-8 flex items-center justify-center rounded-md bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] disabled:opacity-40 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-md bg-surface-0 hover:bg-surface-1 text-text disabled:opacity-40 transition-colors"
             title={isPlaying ? 'Pause' : 'Play'}
             aria-label={isPlaying ? 'Pause' : 'Play'}
           >
@@ -130,7 +130,7 @@ export default function TimeTravelBar({
             type="button"
             onClick={() => { setIsPlaying(false); onStepForward() }}
             disabled={atEnd}
-            className="w-8 h-8 flex items-center justify-center rounded-md bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-md bg-surface-0 hover:bg-surface-1 text-text disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             title="Step forward (→)"
             aria-label="Step forward"
           >
@@ -143,7 +143,7 @@ export default function TimeTravelBar({
             type="button"
             onClick={onForkHere}
             disabled={atEnd}
-            className="px-3 py-1.5 rounded-md bg-[#f9e2af] hover:bg-[#f5d97a] text-[#1e1e2e] text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-3 py-1.5 rounded-md bg-warn hover:bg-[#f5d97a] text-base text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             title="Keep everything up to this point and discard the rest"
           >
             🌱 Fork Here
@@ -151,7 +151,7 @@ export default function TimeTravelBar({
           <button
             type="button"
             onClick={onExit}
-            className="px-3 py-1.5 rounded-md bg-[#89b4fa] hover:bg-[#74c7ec] text-[#1e1e2e] text-xs font-bold transition-colors"
+            className="px-3 py-1.5 rounded-md bg-accent hover:bg-sapphire text-base text-xs font-bold transition-colors"
             title="Return to latest state (Esc)"
           >
             Exit

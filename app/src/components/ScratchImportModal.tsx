@@ -67,16 +67,16 @@ export default function ScratchImportModal({ onClose, onImport }: ScratchImportM
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
       <div
-        className="bg-[#1e1e2e] border border-[#313244] rounded-2xl shadow-xl w-full max-w-md p-6"
+        className="bg-base border border-surface-0 rounded-2xl shadow-xl w-full max-w-md p-6"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-[#cdd6f4] flex items-center gap-2">
+          <h2 className="text-lg font-bold text-text flex items-center gap-2">
             <span className="text-2xl">🐱</span>
             Import from Scratch
           </h2>
-          <button onClick={onClose} className="text-[#6c7086] hover:text-[#cdd6f4]">
+          <button onClick={onClose} className="text-overlay hover:text-text">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -87,16 +87,16 @@ export default function ScratchImportModal({ onClose, onImport }: ScratchImportM
         {stage === 'pick' && (
           <div>
             <div
-              className="border-2 border-dashed border-[#45475a] rounded-xl p-8 text-center cursor-pointer hover:border-[#89b4fa] transition-colors"
+              className="border-2 border-dashed border-surface-1 rounded-xl p-8 text-center cursor-pointer hover:border-accent transition-colors"
               onClick={() => fileRef.current?.click()}
               onDragOver={e => e.preventDefault()}
               onDrop={handleDrop}
             >
               <div className="text-4xl mb-3">📂</div>
-              <p className="text-sm text-[#cdd6f4] font-medium mb-1">
+              <p className="text-sm text-text font-medium mb-1">
                 Drop a .sb3 file here
               </p>
-              <p className="text-xs text-[#6c7086]">
+              <p className="text-xs text-overlay">
                 or click to browse
               </p>
             </div>
@@ -120,7 +120,7 @@ export default function ScratchImportModal({ onClose, onImport }: ScratchImportM
         {stage === 'loading' && (
           <div className="text-center py-8">
             <div className="text-4xl mb-3 animate-bounce">🐱</div>
-            <p className="text-sm text-[#cdd6f4]">Converting Scratch blocks...</p>
+            <p className="text-sm text-text">Converting Scratch blocks...</p>
           </div>
         )}
 
@@ -128,31 +128,31 @@ export default function ScratchImportModal({ onClose, onImport }: ScratchImportM
         {stage === 'preview' && stats && (
           <div>
             {/* Stats */}
-            <div className="bg-[#313244] rounded-xl p-4 mb-4">
+            <div className="bg-surface-0 rounded-xl p-4 mb-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-[#6c7086]">Conversion rate</span>
-                <span className={`text-sm font-bold ${conversionRate > 60 ? 'text-[#a6e3a1]' : conversionRate > 30 ? 'text-[#f9e2af]' : 'text-[#f38ba8]'}`}>
+                <span className="text-sm text-overlay">Conversion rate</span>
+                <span className={`text-sm font-bold ${conversionRate > 60 ? 'text-success' : conversionRate > 30 ? 'text-warn' : 'text-danger'}`}>
                   {conversionRate}%
                 </span>
               </div>
-              <div className="w-full h-2 bg-[#45475a] rounded-full overflow-hidden mb-3">
+              <div className="w-full h-2 bg-surface-1 rounded-full overflow-hidden mb-3">
                 <div
-                  className={`h-full rounded-full transition-all ${conversionRate > 60 ? 'bg-[#a6e3a1]' : conversionRate > 30 ? 'bg-[#f9e2af]' : 'bg-[#f38ba8]'}`}
+                  className={`h-full rounded-full transition-all ${conversionRate > 60 ? 'bg-success' : conversionRate > 30 ? 'bg-warn' : 'bg-danger'}`}
                   style={{ width: `${conversionRate}%` }}
                 />
               </div>
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
                 <div>
-                  <div className="text-[#cdd6f4] font-bold">{stats.totalScratchBlocks}</div>
-                  <div className="text-[#6c7086]">Scratch blocks</div>
+                  <div className="text-text font-bold">{stats.totalScratchBlocks}</div>
+                  <div className="text-overlay">Scratch blocks</div>
                 </div>
                 <div>
-                  <div className="text-[#a6e3a1] font-bold">{stats.converted}</div>
-                  <div className="text-[#6c7086]">Converted</div>
+                  <div className="text-success font-bold">{stats.converted}</div>
+                  <div className="text-overlay">Converted</div>
                 </div>
                 <div>
-                  <div className="text-[#f9e2af] font-bold">{stats.skipped}</div>
-                  <div className="text-[#6c7086]">Skipped</div>
+                  <div className="text-warn font-bold">{stats.skipped}</div>
+                  <div className="text-overlay">Skipped</div>
                 </div>
               </div>
             </div>
@@ -160,10 +160,10 @@ export default function ScratchImportModal({ onClose, onImport }: ScratchImportM
             {/* Variables found */}
             {stats.variables.length > 0 && (
               <div className="mb-3">
-                <p className="text-xs text-[#6c7086] mb-1">Variables imported:</p>
+                <p className="text-xs text-overlay mb-1">Variables imported:</p>
                 <div className="flex flex-wrap gap-1">
                   {stats.variables.map((v, i) => (
-                    <span key={i} className="text-xs bg-[#313244] text-[#89b4fa] px-2 py-0.5 rounded">
+                    <span key={i} className="text-xs bg-surface-0 text-accent px-2 py-0.5 rounded">
                       {v.name} = {String(v.value)}
                     </span>
                   ))}
@@ -174,10 +174,10 @@ export default function ScratchImportModal({ onClose, onImport }: ScratchImportM
             {/* Skipped opcodes */}
             {stats.skippedOpcodes.length > 0 && (
               <div className="mb-4">
-                <p className="text-xs text-[#6c7086] mb-1">Not converted (Scratch-only features):</p>
+                <p className="text-xs text-overlay mb-1">Not converted (Scratch-only features):</p>
                 <div className="flex flex-wrap gap-1">
                   {stats.skippedOpcodes.slice(0, 10).map((op, i) => (
-                    <span key={i} className="text-xs bg-[#313244] text-[#f9e2af] px-2 py-0.5 rounded font-mono">
+                    <span key={i} className="text-xs bg-surface-0 text-warn px-2 py-0.5 rounded font-mono">
                       {op.replace(/_/g, ' ')}
                     </span>
                   ))}
@@ -201,13 +201,13 @@ export default function ScratchImportModal({ onClose, onImport }: ScratchImportM
                   if (workspace) onImport(workspace)
                   onClose()
                 }}
-                className="flex-1 py-2.5 bg-[#a6e3a1] text-[#1e1e2e] font-semibold rounded-lg hover:bg-[#a6e3a1]/80 transition-colors text-sm"
+                className="flex-1 py-2.5 bg-success text-base font-semibold rounded-lg hover:bg-success/80 transition-colors text-sm"
               >
                 Import to Workspace
               </button>
               <button
                 onClick={onClose}
-                className="px-4 py-2.5 text-[#6c7086] hover:text-[#cdd6f4] text-sm transition-colors"
+                className="px-4 py-2.5 text-overlay hover:text-text text-sm transition-colors"
               >
                 Cancel
               </button>
@@ -219,10 +219,10 @@ export default function ScratchImportModal({ onClose, onImport }: ScratchImportM
         {stage === 'error' && (
           <div className="text-center py-6">
             <div className="text-3xl mb-3">❌</div>
-            <p className="text-sm text-[#f38ba8] mb-4">{error}</p>
+            <p className="text-sm text-danger mb-4">{error}</p>
             <button
               onClick={() => setStage('pick')}
-              className="text-sm text-[#89b4fa] hover:underline"
+              className="text-sm text-accent hover:underline"
             >
               Try another file
             </button>

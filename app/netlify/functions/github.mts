@@ -5,50 +5,40 @@
  * user signed in with GitHub.
  *
  * POST /api/github/repos      → list user's repos
- * POST /api/github/create-repo → create a new repo
- * POST /api/github/push        → push a .blocks file to a repo
+ * POST /api/github/create-repo → create a new repo (CreateRepoInput)
+ * POST /api/github/push        → push a .blocks file to a repo (PushFileInput)
  */
 
-async function verifyClerkToken(token: string): Promise<{ sub: string } | null> {
-  if (!token) return null
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-    return payload.sub ? { sub: payload.sub } : null
-  } catch (_e) { return null }
-}
-
-let _lastDebugLog: string[] = []
+import {
+  json, cors, logError, withRequest, parsePath, verifyFromRequest, requireAuth,
+} from './_lib/index.js'
+import { CreateRepoInput, PushFileInput } from '../../src/schema/index.js'
 
 async function getGitHubToken(clerkUserId: string): Promise<string | null> {
   if (!process.env.CLERK_SECRET_KEY) return null
-  // Clerk provider IDs vary — try all known variants
+  // Clerk provider IDs vary by configuration — try known variants in order
   const providers = ['oauth_github', 'github', 'oauth_custom_github']
-  const debugLog: string[] = []; _lastDebugLog = debugLog
   for (const provider of providers) {
     try {
-      const url = `https://api.clerk.com/v1/users/${clerkUserId}/oauth_access_tokens/${provider}`
+      const url = `https://api.clerk.com/v1/users/${encodeURIComponent(clerkUserId)}/oauth_access_tokens/${provider}`
       const res = await fetch(url, {
         headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` },
       })
-      const text = await res.text()
-      debugLog.push(`${provider}: ${res.status} ${text.slice(0, 200)}`)
       if (!res.ok) continue
-      const data = JSON.parse(text)
+      const data = await res.json()
       if (Array.isArray(data) && data.length > 0 && data[0].token) {
-        return data[0].token
+        return String(data[0].token)
       }
-    } catch (_e) {
-      debugLog.push(`${provider}: error ${_e}`)
-      continue
+    } catch (err) {
+      logError(`github:${provider}`, err)
     }
   }
-  console.error('[github] No OAuth token found. Debug:', debugLog.join(' | '))
   return null
 }
 
-async function githubApi(path: string, ghToken: string, method = 'GET', body?: unknown): Promise<{ ok: boolean; data: unknown; status: number }> {
+async function githubApi(
+  path: string, ghToken: string, method = 'GET', body?: unknown,
+): Promise<{ ok: boolean; data: unknown; status: number }> {
   const res = await fetch(`https://api.github.com${path}`, {
     method,
     headers: {
@@ -63,100 +53,89 @@ async function githubApi(path: string, ghToken: string, method = 'GET', body?: u
   return { ok: res.ok, data, status: res.status }
 }
 
-function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' },
-  })
-}
+async function handler(req: Request) {
+  if (req.method === 'OPTIONS') return cors()
 
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' } })
+  const segments = parsePath(req, 'github')
+  const user = await verifyFromRequest(req)
 
-  const url = new URL(req.url)
-  const path = url.pathname.replace('/.netlify/functions/github', '').replace('/api/github', '')
-  const segments = path.split('/').filter(Boolean)
+  const authErr = requireAuth(user, 'Sign in to use GitHub integration')
+  if (authErr) return authErr
 
-  const authHeader = req.headers.get('Authorization') || ''
-  const user = await verifyClerkToken(authHeader.replace('Bearer ', ''))
-  if (!user) return json({ error: 'Sign in to use GitHub integration' }, 401)
-
-  const ghToken = await getGitHubToken(user.sub)
+  const ghToken = await getGitHubToken(user!.sub)
   if (!ghToken) {
-    // Debug: try to see what external accounts the user has
-    let debugInfo = ''
-    try {
-      const userRes = await fetch(`https://api.clerk.com/v1/users/${user.sub}`, {
-        headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` },
-      })
-      if (userRes.ok) {
-        const userData = await userRes.json()
-        const accounts = userData.external_accounts?.map((a: { provider: string; provider_user_id: string }) => a.provider) || []
-        debugInfo = `Connected providers: ${accounts.join(', ') || 'none'}`
-      }
-    } catch (_e) {}
-    return json({ error: `No GitHub OAuth token found. ${debugInfo}. Attempts: ${_lastDebugLog.join(' | ')}`, needsGithub: true }, 403)
+    return json({
+      error: 'No GitHub OAuth token found — sign in with GitHub to enable this feature.',
+      needsGithub: true,
+    }, 403)
   }
 
   try {
-    // POST /api/github/repos — list user's repos
+    // List user's repos
     if (segments[0] === 'repos') {
       const result = await githubApi('/user/repos?sort=updated&per_page=30', ghToken)
       if (!result.ok) return json({ error: 'Failed to fetch repos' }, 500)
       const repos = (result.data as Array<{ name: string; full_name: string; html_url: string; private: boolean; description: string | null }>)
-        .map(r => ({ name: r.name, fullName: r.full_name, url: r.html_url, private: r.private, description: r.description }))
+        .map((r) => ({
+          name: r.name, fullName: r.full_name, url: r.html_url,
+          private: r.private, description: r.description,
+        }))
       return json({ repos })
     }
 
-    // POST /api/github/create-repo — create a new repo
+    // Create a new repo
     if (segments[0] === 'create-repo') {
-      const body = await req.json() as { name: string; description?: string }
-      if (!body.name) return json({ error: 'Repo name required' }, 400)
+      const raw = await req.json().catch(() => null)
+      const parsed = CreateRepoInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+
       const result = await githubApi('/user/repos', ghToken, 'POST', {
-        name: body.name,
-        description: body.description || 'Created with CryptoBlocks',
+        name: parsed.data.name,
+        description: parsed.data.description || 'Created with CryptoBlocks',
         auto_init: true,
         private: false,
       })
-      if (!result.ok) {
-        const err = result.data as { message?: string }
-        return json({ error: err.message || 'Failed to create repo' }, result.status)
-      }
+      if (!result.ok) return json({ error: 'Failed to create repo' }, result.status)
       const repo = result.data as { full_name: string; html_url: string }
       return json({ fullName: repo.full_name, url: repo.html_url })
     }
 
-    // POST /api/github/push — push a file to a repo
+    // Push a file to a repo (path-traversal protected via SafeFilename)
     if (segments[0] === 'push') {
-      const body = await req.json() as { repo: string; filename: string; content: string; message?: string }
-      if (!body.repo || !body.filename || !body.content) {
-        return json({ error: 'repo, filename, and content required' }, 400)
+      const raw = await req.json().catch(() => null)
+      const parsed = PushFileInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      const { repo, filename, content, message } = parsed.data
+
+      // Defense-in-depth: belt-and-suspenders check against schema-validated values
+      // (RepoFullName + SafeFilename already block this, but interpolating into
+      // URL paths warrants a second check)
+      if (repo.includes('..') || filename.includes('..') || filename.startsWith('/')) {
+        return json({ error: 'Invalid path' }, 400)
       }
+      const contentB64 = Buffer.from(content).toString('base64')
+      const safePath = `/repos/${repo}/contents/${filename}`
 
-      // Base64 encode the content
-      const contentB64 = Buffer.from(body.content).toString('base64')
-
-      // Check if file already exists (need SHA to update)
-      const existing = await githubApi(`/repos/${body.repo}/contents/${body.filename}`, ghToken)
+      // GitHub requires the file's SHA to update an existing file
+      const existing = await githubApi(safePath, ghToken)
       const sha = existing.ok ? (existing.data as { sha?: string }).sha : undefined
 
-      const result = await githubApi(`/repos/${body.repo}/contents/${body.filename}`, ghToken, 'PUT', {
-        message: body.message || `Update ${body.filename} via CryptoBlocks`,
+      const result = await githubApi(safePath, ghToken, 'PUT', {
+        message: message || `Update ${filename} via CryptoBlocks`,
         content: contentB64,
         ...(sha ? { sha } : {}),
       })
 
-      if (!result.ok) {
-        const err = result.data as { message?: string }
-        return json({ error: err.message || 'Failed to push file' }, result.status)
-      }
-
+      if (!result.ok) return json({ error: 'Failed to push file' }, result.status)
       const file = result.data as { content?: { html_url?: string } }
-      return json({ ok: true, url: file.content?.html_url || `https://github.com/${body.repo}` })
+      return json({ ok: true, url: file.content?.html_url || `https://github.com/${repo}` })
     }
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    return json({ error: 'Internal error', detail: err instanceof Error ? err.message : String(err) }, 500)
+    logError('github', err)
+    return json({ error: 'Internal error' }, 500)
   }
 }
+
+export default withRequest(handler)

@@ -1,83 +1,28 @@
 /**
- * Netlify Function — Admin API.
+ * Netlify Function — Admin API. ALL endpoints require admin email allowlist.
  *
  * GET  /api/admin/stats       → dashboard metrics
- * GET  /api/admin/users       → recent users from projects/classrooms
  * GET  /api/admin/overrides   → list free overrides
- * POST /api/admin/overrides   → add/remove free override
- * GET  /api/admin/reported    → reported projects
- * GET  /api/admin/tables      → row counts per table
+ * POST /api/admin/overrides   → add a free override (FreeOverrideInput)
+ * DELETE /api/admin/overrides → remove a free override (by email)
+ * GET  /api/admin/analytics   → block usage, categories, hour heatmap
+ * GET  /api/admin/tables      → row counts per known table
  */
 
-interface TursoRow { [key: string]: unknown }
+import {
+  json, cors, logError, withRequest, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  isAdmin,
+} from './_lib/index.js'
+import { FreeOverrideInput, Email } from '../../src/schema/index.js'
 
-async function tursoExecute(sql: string, args: (string | number | null)[] = []): Promise<{ rows: TursoRow[] }> {
-  const baseUrl = (process.env.TURSO_URL || '').replace('libsql://', 'https://')
-  const token = process.env.TURSO_AUTH_TOKEN || ''
-  const res = await fetch(`${baseUrl}/v3/pipeline`, {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      requests: [
-        { type: 'execute', stmt: { sql, args: args.map((a) => {
-          if (a === null) return { type: 'null', value: null }
-          if (typeof a === 'number') return { type: Number.isInteger(a) ? 'integer' : 'float', value: String(a) }
-          return { type: 'text', value: String(a) }
-        }) } },
-        { type: 'close' },
-      ],
-    }),
-  })
-  if (!res.ok) throw new Error(`Turso ${res.status}`)
-  const data = await res.json()
-  const result = data?.results?.[0]?.response?.result
-  if (!result) return { rows: [] }
-  const cols: string[] = result.cols.map((c: { name: string }) => c.name)
-  return {
-    rows: result.rows.map((row: Array<{ value: unknown }>) => {
-      const obj: TursoRow = {}
-      for (let i = 0; i < cols.length; i++) obj[cols[i]] = row[i]?.value ?? null
-      return obj
-    }),
-  }
-}
+async function handler(req: Request) {
+  if (req.method === 'OPTIONS') return cors()
 
-function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' },
-  })
-}
+  const user = await verifyFromRequest(req)
+  if (!isAdmin(user)) return json({ error: 'Admin access required' }, 403)
+  if (!isTursoConfigured()) return json({ error: 'DB not configured' }, 500)
 
-async function verifyAdmin(req: Request): Promise<boolean> {
-  const authHeader = req.headers.get('Authorization') || ''
-  const token = authHeader.replace('Bearer ', '')
-  if (!token) return false
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return false
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-    if (!payload.sub || !process.env.CLERK_SECRET_KEY) return false
-    const res = await fetch(`https://api.clerk.com/v1/users/${payload.sub}`, {
-      headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` },
-    })
-    if (!res.ok) return false
-    const user = await res.json()
-    const email = user.email_addresses?.[0]?.email_address?.toLowerCase() || ''
-    const adminEmails = (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase()).filter(Boolean)
-    return adminEmails.includes(email)
-  } catch (_e) { return false }
-}
-
-export default async function handler(req: Request) {
-  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' } })
-
-  if (!await verifyAdmin(req)) return json({ error: 'Admin access required' }, 403)
-  if (!process.env.TURSO_URL) return json({ error: 'DB not configured' }, 500)
-
-  const url = new URL(req.url)
-  const path = url.pathname.replace('/.netlify/functions/admin', '').replace('/api/admin', '')
-  const segments = path.split('/').filter(Boolean)
+  const segments = parsePath(req, 'admin')
 
   try {
     // GET /api/admin/stats — dashboard metrics
@@ -145,46 +90,65 @@ export default async function handler(req: Request) {
       })
     }
 
-    // POST /api/admin/overrides — add override
+    // POST /api/admin/overrides — add a free override
     if (segments[0] === 'overrides' && req.method === 'POST') {
-      const body = await req.json() as { email: string; plan: string; note?: string }
-      if (!body.email) return json({ error: 'email required' }, 400)
+      const raw = await req.json().catch(() => null)
+      const parsed = FreeOverrideInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      const { email, plan, note } = parsed.data
       await tursoExecute(
         'INSERT OR REPLACE INTO free_overrides (email, plan, note, created_at) VALUES (?, ?, ?, ?)',
-        [body.email.toLowerCase().trim(), body.plan || 'pro', body.note || '', Date.now()],
+        [email, plan ?? 'pro', note ?? '', Date.now()],
       )
       return json({ ok: true })
     }
 
-    // DELETE /api/admin/overrides — remove override
+    // DELETE /api/admin/overrides — remove a free override (by email)
     if (segments[0] === 'overrides' && req.method === 'DELETE') {
-      const body = await req.json() as { email: string }
-      if (!body.email) return json({ error: 'email required' }, 400)
-      await tursoExecute('DELETE FROM free_overrides WHERE email = ?', [body.email.toLowerCase().trim()])
+      const raw = await req.json().catch(() => null)
+      const emailParsed = Email.safeParse((raw as { email?: unknown })?.email ?? '')
+      if (!emailParsed.success) return json({ error: 'Invalid email' }, 400)
+      await tursoExecute('DELETE FROM free_overrides WHERE email = ?', [emailParsed.data])
       return json({ ok: true })
     }
 
     // GET /api/admin/analytics — block usage, categories, activity patterns
     if (segments[0] === 'analytics') {
-      // Parse workspace JSON from projects to count block usage
-      const workspaces = await tursoExecute('SELECT workspace_json FROM projects WHERE workspace_json IS NOT NULL LIMIT 200')
+      // Parse workspace JSON from projects to count block usage.
+      // Skip rows larger than MAX_WORKSPACE_BYTES — with a 2MB schema cap
+      // and LIMIT 200, one dashboard load could otherwise hold ~400MB in
+      // a single function invocation (caps memory usage to prevent OOM on admin dashboard load).
+      const MAX_WORKSPACE_BYTES = 256 * 1024
+      const workspaces = await tursoExecute(
+        `SELECT workspace_json FROM projects
+         WHERE workspace_json IS NOT NULL
+           AND length(workspace_json) <= ?
+         LIMIT 200`,
+        [MAX_WORKSPACE_BYTES],
+      )
       const blockCounts: Record<string, number> = {}
+      const MAX_BLOCK_DEPTH = 50 // prevents stack overflow on cyclic/malicious workspace JSON
       for (const row of workspaces.rows) {
         try {
           const ws = JSON.parse(String(row.workspace_json))
           const blocks = ws?.blocks?.blocks || []
-          const countBlocks = (block: Record<string, unknown>): void => {
-            if (!block) return
-            if (block.type) blockCounts[String(block.type).replace('cb_', '')] = (blockCounts[String(block.type).replace('cb_', '')] || 0) + 1
-            if (block.next && typeof block.next === 'object') countBlocks((block.next as Record<string, unknown>).block as Record<string, unknown>)
+          const countBlocks = (block: Record<string, unknown>, depth: number): void => {
+            if (!block || depth >= MAX_BLOCK_DEPTH) return
+            if (block.type) {
+              const k = String(block.type).replace('cb_', '')
+              blockCounts[k] = (blockCounts[k] || 0) + 1
+            }
+            if (block.next && typeof block.next === 'object') {
+              countBlocks((block.next as Record<string, unknown>).block as Record<string, unknown>, depth + 1)
+            }
             if (block.inputs && typeof block.inputs === 'object') {
               for (const v of Object.values(block.inputs as Record<string, Record<string, unknown>>)) {
-                if (v?.block) countBlocks(v.block as Record<string, unknown>)
-                if (v?.shadow) countBlocks(v.shadow as Record<string, unknown>)
+                if (v?.block) countBlocks(v.block as Record<string, unknown>, depth + 1)
+                if (v?.shadow) countBlocks(v.shadow as Record<string, unknown>, depth + 1)
               }
             }
           }
-          for (const b of blocks) countBlocks(b as Record<string, unknown>)
+          for (const b of blocks) countBlocks(b as Record<string, unknown>, 0)
         } catch (_e) { /* skip */ }
       }
       const topBlocks = Object.entries(blockCounts).sort((a, b) => b[1] - a[1]).slice(0, 30).map(([name, count]) => ({ name, count }))
@@ -211,21 +175,27 @@ export default async function handler(req: Request) {
       })
     }
 
-    // GET /api/admin/tables — row counts
+    // GET /api/admin/tables — row counts (parallel)
     if (segments[0] === 'tables') {
-      const ALLOWED_TABLES = new Set(['projects', 'classrooms', 'class_members', 'assignments', 'submissions',
+      const ALLOWED_TABLES = ['projects', 'classrooms', 'class_members', 'assignments', 'submissions',
         'discussions', 'replies', 'chat_messages', 'daily_scores', 'notifications',
-        'subscriptions', 'free_overrides'])
-      const counts: Record<string, number> = {}
-      for (const table of ALLOWED_TABLES) {
-        const r = await tursoExecute(`SELECT COUNT(*) as c FROM "${table.replace(/"/g, '')}"`)
-        counts[table] = Number(r.rows[0]?.c ?? 0)
-      }
+        'subscriptions', 'free_overrides'] as const
+      const results = await Promise.all(
+        ALLOWED_TABLES.map((t) =>
+          tursoExecute(`SELECT COUNT(*) as c FROM "${t.replace(/"/g, '')}"`)
+            .then((r) => [t, Number(r.rows[0]?.c ?? 0)] as const)
+            .catch(() => [t, 0] as const),
+        ),
+      )
+      const counts: Record<string, number> = Object.fromEntries(results)
       return json({ tables: counts })
     }
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    return json({ error: 'Internal error', detail: err instanceof Error ? err.message : String(err) }, 500)
+    logError('admin', err)
+    return json({ error: 'Internal error' }, 500)
   }
 }
+
+export default withRequest(handler)

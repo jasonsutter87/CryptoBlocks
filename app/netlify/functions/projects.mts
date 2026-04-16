@@ -1,275 +1,155 @@
 /**
  * Netlify Function — Shareplace projects API.
  *
- * Uses Turso's raw Hrana HTTP API (fetch-based, no @libsql/client needed)
- * to avoid bundler/runtime compatibility issues in Netlify Functions.
- *
  * Routes:
- *   GET  /api/projects          → list projects (paginated, filterable)
- *   GET  /api/projects/:id      → single project
- *   POST /api/projects          → publish a new project
- *   POST /api/projects/:id/like → increment likes
+ *   GET  /api/projects          → list projects (paginated, filterable, public only)
+ *   GET  /api/projects/my       → list own projects (private + public)
+ *   GET  /api/projects/:id      → single project (private only visible to owner)
+ *   POST /api/projects          → publish a new project (auth required)
+ *   POST /api/projects/:id/like → increment likes (auth required)
+ *   POST /api/projects/:id/download → increment download count
+ *   POST /api/projects/:id/report   → report for review (auth required)
+ *   DELETE /api/projects/:id    → admin or owner only
  */
 
-// -- Clerk JWT verification (lightweight, no SDK dependency) ----------------
+import {
+  json, cors, logError, withRequest, parsePath, parsePagination, getQueryParam,
+  verifyFromRequest, tursoExecute, isTursoConfigured,
+  moderateContent, requireAuth, isAdmin,
+} from './_lib/index.js'
+import type { ClerkUser, TursoRow } from './_lib/index.js'
+import {
+  PublishProjectInput, ReportProjectInput, Category,
+} from '../../src/schema/index.js'
 
-interface ClerkTokenPayload {
-  sub: string
-  name?: string
-  email?: string
-}
+// Per-instance migration state. These live at module scope (not on
+// globalThis) because a Netlify function instance is its own module
+// instance — the values reset on cold start and stay set across warm
+// invocations. No reason for them to be visible to anything else.
+let migrated = false
+let migrating: Promise<void> | null = null
 
-async function verifyClerkToken(token: string): Promise<ClerkTokenPayload | null> {
-  if (!token) return null
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-    if (!payload.sub) return null
-    if (process.env.CLERK_SECRET_KEY) {
-      try {
-        const res = await fetch(`https://api.clerk.com/v1/users/${payload.sub}`, {
-          headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` },
-        })
-        if (res.ok) {
-          const user = await res.json()
-          return {
-            sub: payload.sub,
-            name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || undefined,
-            email: user.email_addresses?.[0]?.email_address,
-          }
-        }
-      } catch {}
-    }
-    return { sub: payload.sub }
-  } catch {
-    return null
+/**
+ * One-time schema migration. Serialized per instance: on a cold-start burst
+ * of N parallel requests against the same instance, the first one runs the
+ * migration and the rest await the same promise instead of each issuing
+ * their own ALTER/CREATE (defends against a prior incident where parallel
+ * cold-start requests duplicated migration work).
+ *
+ * Drop this once a real migration tool replaces the in-handler ALTERs.
+ */
+async function ensureSchema(): Promise<void> {
+  if (migrated) return
+  if (migrating) {
+    await migrating
+    return
   }
+  migrating = (async () => {
+    // Migration steps log under their own scope so a real failure (DB down,
+    // bad credentials) is still observable in Netlify logs. The "column
+    // already exists" / "table already exists" errors that are EXPECTED on
+    // every run after the first are filtered to a debug line.
+    const expected = (msg: string) =>
+      /already exists|duplicate column/i.test(msg)
+    const migrate = (label: string, sql: string) =>
+      tursoExecute(sql).catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (!expected(msg)) logError(`projects:migrate:${label}`, err)
+      })
+
+    await Promise.all([
+      migrate('add-visibility', "ALTER TABLE projects ADD COLUMN visibility TEXT DEFAULT 'public'"),
+      migrate('create-likes', `CREATE TABLE IF NOT EXISTS project_likes (
+        project_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (project_id, user_id)
+      )`),
+      migrate('create-reports', `CREATE TABLE IF NOT EXISTS project_reports (
+        id TEXT PRIMARY KEY,
+        project_id TEXT NOT NULL,
+        reporter_id TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        detail TEXT,
+        created_at INTEGER NOT NULL
+      )`),
+      // One-time cleanup: rows inserted before the visibility column existed
+      // have NULL. Normalize so every subsequent check can assume a concrete
+      // value and we can drop the `visibility IS NULL OR ...` branch.
+      migrate('backfill-visibility', "UPDATE projects SET visibility = 'public' WHERE visibility IS NULL"),
+    ])
+    migrated = true
+  })()
+  await migrating
 }
 
-// -- Content moderation -----------------------------------------------------
-
-const BANNED_WORDS = [
-  'fuck', 'shit', 'bitch', 'ass', 'damn', 'dick', 'pussy', 'cock', 'cunt',
-  'nigger', 'nigga', 'faggot', 'retard', 'slut', 'whore', 'porn', 'xxx',
-  'kill yourself', 'kys',
-]
-
-const URL_PATTERN = /https?:\/\/[^\s]+|www\.[^\s]+/gi
-
-function moderateContent(name: string, description: string): string | null {
-  const combined = ` ${name} ${description} `.toLowerCase()
-
-  for (const word of BANNED_WORDS) {
-    // Use word boundary check so "classic" doesn't match "ass"
-    const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`)
-    if (re.test(combined)) {
-      return 'Project contains inappropriate language. Please edit and try again.'
-    }
-  }
-
-  if (URL_PATTERN.test(name) || URL_PATTERN.test(description)) {
-    return 'URLs are not allowed in project names or descriptions.'
-  }
-
-  return null
-}
-
-// -- Minimal Turso HTTP client via fetch -----------------------------------
-
-interface TursoRow {
-  [key: string]: unknown
-}
-
-interface TursoResult {
-  rows: TursoRow[]
-}
-
-async function tursoExecute(
-  sql: string,
-  args: (string | number | null)[] = [],
-): Promise<TursoResult> {
-  const baseUrl = (process.env.TURSO_URL || '').replace('libsql://', 'https://')
-  const token = process.env.TURSO_AUTH_TOKEN || ''
-
-  const res = await fetch(`${baseUrl}/v3/pipeline`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      requests: [
-        {
-          type: 'execute',
-          stmt: {
-            sql,
-            args: args.map((a) => {
-              if (a === null) return { type: 'null', value: null }
-              if (typeof a === 'number') return { type: Number.isInteger(a) ? 'integer' : 'float', value: String(a) }
-              return { type: 'text', value: String(a) }
-            }),
-          },
-        },
-        { type: 'close' },
-      ],
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`Turso HTTP ${res.status}: ${body.slice(0, 200)}`)
-  }
-
-  const data = await res.json()
-  const result = data?.results?.[0]?.response?.result
-
-  if (!result) {
-    // DDL or write operations might not return result rows
-    return { rows: [] }
-  }
-
-  // Convert columnar response → array of objects
-  const cols: string[] = result.cols.map((c: { name: string }) => c.name)
-  const rows: TursoRow[] = result.rows.map((row: Array<{ value: unknown }>) => {
-    const obj: TursoRow = {}
-    for (let i = 0; i < cols.length; i++) {
-      obj[cols[i]] = row[i]?.value ?? null
-    }
-    return obj
-  })
-
-  return { rows }
-}
-
-// -- HTTP helpers -----------------------------------------------------------
-
-function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
-
-function cors(): Response {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    },
-  })
-}
-
-// -- Handler ----------------------------------------------------------------
-
-export default async function handler(req: Request) {
+async function handler(req: Request) {
   if (req.method === 'OPTIONS') return cors()
 
-  const url = new URL(req.url)
-  const cleanPath = url.pathname
-    .replace('/.netlify/functions/projects', '')
-    .replace('/api/projects', '')
-  const segments = cleanPath.split('/').filter(Boolean)
+  const segments = parsePath(req, 'projects')
 
   try {
-    if (!process.env.TURSO_URL || !process.env.TURSO_AUTH_TOKEN) {
+    if (!isTursoConfigured()) {
       return json({ error: 'Database not configured' }, 500)
     }
+    await ensureSchema()
 
-    // Auto-migrate: add visibility column if missing (runs once per cold start)
-    if (!(globalThis as any).__visibilityMigrated) {
-      await tursoExecute("ALTER TABLE projects ADD COLUMN visibility TEXT DEFAULT 'public'").catch(() => {})
-      ;(globalThis as any).__visibilityMigrated = true
-    }
-    }
+    const user: ClerkUser | null = await verifyFromRequest(req)
 
     // POST /api/projects — publish a project (requires Clerk auth)
     if (req.method === 'POST' && segments.length === 0) {
-      // Verify Clerk JWT from Authorization header
-      const authHeader = req.headers.get('Authorization') || ''
-      const token = authHeader.replace('Bearer ', '')
-      const clerkUser = await verifyClerkToken(token)
+      const authErr = requireAuth(user, 'Sign in to upload projects')
+      if (authErr) return authErr
 
-      if (!clerkUser && process.env.CLERK_SECRET_KEY) {
-        return json({ error: 'Sign in to upload projects' }, 401)
-      }
+      const raw = await req.json().catch(() => null)
+      const parsed = PublishProjectInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
 
-      const body = await req.json()
-      const { name, authorName, description, category, workspaceJson, tags, blockCount, parentId } = body
+      const {
+        name, authorName, description, category, workspaceJson, tags,
+        blockCount, parentId, visibility,
+      } = parsed.data
 
-      if (!name || !workspaceJson) {
-        return json({ error: 'name and workspaceJson are required' }, 400)
-      }
-
-      // --- Content moderation ---
-      const moderationError = moderateContent(String(name), String(description || ''))
-      if (moderationError) {
-        return json({ error: moderationError }, 400)
-      }
+      // Content moderation
+      const modErr = moderateContent(name, description ?? '')
+      if (modErr) return json({ error: modErr }, 400)
 
       const id = crypto.randomUUID()
       const now = Date.now()
-
-      const visibility = body.visibility === 'private' ? 'private' : 'public'
+      const finalAuthorName = (authorName || user!.name || 'Anonymous').slice(0, 50)
 
       await tursoExecute(
         `INSERT INTO projects (id, name, author_id, author_name, description, category, workspace_json, tags, block_count, parent_id, visibility, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          id,
-          String(name).slice(0, 100),
-          clerkUser?.sub || 'anonymous',
-          String(authorName || clerkUser?.name || 'Anonymous').slice(0, 50),
-          String(description || '').slice(0, 500),
-          String(category || 'General').slice(0, 50),
-          String(workspaceJson),
-          JSON.stringify(tags || []),
-          Number(blockCount) || 0,
-          parentId || null,
-          visibility,
-          now,
+          id, name, user!.sub, finalAuthorName,
+          description ?? '', category ?? 'General',
+          workspaceJson, JSON.stringify(tags ?? []),
+          blockCount ?? 0, parentId ?? null,
+          visibility ?? 'public', now,
         ],
       )
 
-      // Notify the original author if this is a remix
-      if (parentId && clerkUser) {
-        const parent = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [parentId])
-        const parentAuthor = parent.rows[0]?.author_id
-        if (parentAuthor && parentAuthor !== clerkUser.sub) {
-          await createNotificationDirect(
-            String(parentAuthor), 'remix',
-            'Your project was remixed!',
-            `Someone remixed "${parent.rows[0]?.name}" into "${String(name).slice(0, 50)}"`,
-            `/shareplace`,
-          )
-        }
+      // Notify original author on remix
+      if (parentId) {
+        await notifyAuthor(parentId, user!.sub, 'remix', 'Your project was remixed!',
+          (parentName) => `Someone remixed "${parentName}" into "${name.slice(0, 50)}"`,
+          '/shareplace')
       }
 
       return json({ id, name, createdAt: now }, 201)
     }
 
-    // DELETE /api/projects/:id — admin only
+    // DELETE /api/projects/:id — admin or owner
     if (req.method === 'DELETE' && segments.length === 1) {
-      const authHeader = req.headers.get('Authorization') || ''
-      const delUser = await verifyClerkToken(authHeader.replace('Bearer ', ''))
-      if (!delUser) return json({ error: 'Sign in' }, 401)
-      // Check admin OR project owner
-      const adminEmails = (process.env.ADMIN_EMAILS || process.env.VITE_ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
-      const userEmail = delUser.email?.toLowerCase() || ''
-      const isAdmin = adminEmails.length > 0 && adminEmails.includes(userEmail)
+      const authErr = requireAuth(user)
+      if (authErr) return authErr
 
-      if (!isAdmin) {
+      if (!isAdmin(user)) {
         // Non-admins can only delete their own projects
         const project = await tursoExecute('SELECT author_id FROM projects WHERE id = ?', [segments[0]])
         if (project.rows.length === 0) return json({ error: 'Not found' }, 404)
-        if (project.rows[0].author_id !== delUser.sub) {
+        if (project.rows[0].author_id !== user!.sub) {
           return json({ error: 'You can only delete your own projects' }, 403)
         }
       }
@@ -279,19 +159,21 @@ export default async function handler(req: Request) {
 
     // POST /api/projects/:id/report — flag a project for review
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'report') {
-      const reportAuth = req.headers.get('Authorization') || ''
-      const reportUser = await verifyClerkToken(reportAuth.replace('Bearer ', ''))
-      if (!reportUser && process.env.CLERK_SECRET_KEY) {
-        return json({ error: 'Sign in to report' }, 401)
-      }
-      const body = await req.json()
-      const reason = String(body.reason || 'No reason given').slice(0, 500)
-      // eslint-disable-next-line no-console
-      console.log(`[REPORT] Project ${segments[0]} reported by ${reportUser?.sub || 'anon'}: ${reason}`)
+      const authErr = requireAuth(user, 'Sign in to report')
+      if (authErr) return authErr
+
+      const raw = await req.json().catch(() => null)
+      const parsed = ReportProjectInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+
+      await tursoExecute(
+        'INSERT INTO project_reports (id, project_id, reporter_id, reason, detail, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [crypto.randomUUID(), segments[0], user!.sub, parsed.data.reason, parsed.data.detail ?? '', Date.now()],
+      )
       return json({ ok: true, message: 'Thank you for reporting. We will review this project.' })
     }
 
-    // POST /api/projects/:id/download — increment download count
+    // POST /api/projects/:id/download — increment download count (no auth by design)
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'download') {
       await tursoExecute(
         'UPDATE projects SET downloads = downloads + 1 WHERE id = ?',
@@ -300,31 +182,30 @@ export default async function handler(req: Request) {
       return json({ ok: true })
     }
 
-    // POST /api/projects/:id/like (auth required to prevent spam)
+    // POST /api/projects/:id/like — auth required, one like per user (PK enforced)
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'like') {
-      const authHeader = req.headers.get('Authorization') || ''
-      const likeToken = authHeader.replace('Bearer ', '')
-      const likeUser = await verifyClerkToken(likeToken)
-      if (!likeUser && process.env.CLERK_SECRET_KEY) {
-        return json({ error: 'Sign in to like projects' }, 401)
-      }
+      const authErr = requireAuth(user, 'Sign in to like projects')
+      if (authErr) return authErr
+
+      const projectId = segments[0]
+      const existing = await tursoExecute(
+        'SELECT 1 FROM project_likes WHERE project_id = ? AND user_id = ?',
+        [projectId, user!.sub],
+      )
+      if (existing.rows.length > 0) return json({ ok: true, alreadyLiked: true })
+
+      await tursoExecute(
+        'INSERT INTO project_likes (project_id, user_id, created_at) VALUES (?, ?, ?)',
+        [projectId, user!.sub, Date.now()],
+      )
       await tursoExecute(
         'UPDATE projects SET likes = likes + 1 WHERE id = ?',
-        [segments[0]],
+        [projectId],
       )
-      // Notify the project author
-      if (likeUser) {
-        const project = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [segments[0]])
-        const authorId = project.rows[0]?.author_id
-        if (authorId && authorId !== likeUser.sub) {
-          await createNotificationDirect(
-            String(authorId), 'like',
-            'New like!',
-            `Someone liked your project "${project.rows[0]?.name}"`,
-            `/shareplace`,
-          )
-        }
-      }
+
+      await notifyAuthor(projectId, user!.sub, 'like', 'New like!',
+        (name) => `Someone liked your project "${name}"`,
+        '/shareplace')
       return json({ ok: true })
     }
 
@@ -332,32 +213,35 @@ export default async function handler(req: Request) {
     if (req.method === 'GET' && segments.length === 2 && segments[1] === 'tree') {
       const projectId = segments[0]
 
-      // Get ancestors (walk parent_id chain up)
-      const ancestors: TursoRow[] = []
-      let currentId: string | null = projectId
-      while (currentId) {
-        const row = await tursoExecute(
-          'SELECT id, name, author_name, parent_id, created_at, likes FROM projects WHERE id = ?',
-          [currentId],
-        )
-        if (row.rows.length === 0) break
-        const r = row.rows[0]
-        if (String(r.id) !== projectId) ancestors.unshift(r)
-        currentId = r.parent_id ? String(r.parent_id) : null
-      }
+      // Ancestors via recursive CTE — one round-trip, bounded depth, cycle-safe
+      // (MAX_ANCESTORS limits iterations even if parent_id ever formed a loop)
+      const MAX_ANCESTORS = 50
+      const ancestors = await tursoExecute(
+        `WITH RECURSIVE anc(id, name, author_name, parent_id, created_at, likes, depth) AS (
+           SELECT id, name, author_name, parent_id, created_at, likes, 0 FROM projects WHERE id = ?
+           UNION ALL
+           SELECT p.id, p.name, p.author_name, p.parent_id, p.created_at, p.likes, a.depth + 1
+           FROM projects p JOIN anc a ON p.id = a.parent_id
+           WHERE a.depth < ?
+         )
+         SELECT id, name, author_name, parent_id, created_at, likes
+         FROM anc WHERE id != ? ORDER BY depth DESC`,
+        [projectId, MAX_ANCESTORS, projectId],
+      )
 
-      // Get direct descendants (one level — children that have parent_id = this project)
+      // Direct children (one level)
       const children = await tursoExecute(
         'SELECT id, name, author_name, parent_id, created_at, likes FROM projects WHERE parent_id = ? ORDER BY created_at ASC',
         [projectId],
       )
 
-      // Get total remix count (recursive — all descendants)
+      // Total recursive remix count
       const allDescendants = await tursoExecute(
-        `WITH RECURSIVE tree AS (
-           SELECT id FROM projects WHERE parent_id = ?
+        `WITH RECURSIVE tree(id, depth) AS (
+           SELECT id, 0 FROM projects WHERE parent_id = ?
            UNION ALL
-           SELECT p.id FROM projects p JOIN tree t ON p.parent_id = t.id
+           SELECT p.id, t.depth + 1 FROM projects p JOIN tree t ON p.parent_id = t.id
+           WHERE t.depth < 100
          )
          SELECT COUNT(*) as count FROM tree`,
         [projectId],
@@ -365,7 +249,7 @@ export default async function handler(req: Request) {
       const remixCount = Number(allDescendants.rows[0]?.count ?? 0)
 
       return json({
-        ancestors: ancestors.map(formatTreeNode),
+        ancestors: ancestors.rows.map(formatTreeNode),
         children: children.rows.map(formatTreeNode),
         remixCount,
       })
@@ -380,9 +264,7 @@ export default async function handler(req: Request) {
       if (result.rows.length === 0) return json({ error: 'Not found' }, 404)
       const project = result.rows[0]
       if (project.visibility === 'private') {
-        const authHeader = req.headers.get('Authorization') || ''
-        const viewer = await verifyClerkToken(authHeader.replace('Bearer ', ''))
-        if (!viewer || viewer.sub !== project.author_id) {
+        if (!user || user.sub !== project.author_id) {
           return json({ error: 'Not found' }, 404)
         }
       }
@@ -391,28 +273,44 @@ export default async function handler(req: Request) {
 
     // GET /api/projects/my — user's own projects (private + public)
     if (req.method === 'GET' && segments[0] === 'my') {
-      if (!clerkUser?.sub) return json({ error: 'Sign in required' }, 401)
-      const limit = Math.min(50, Number(url.searchParams.get('limit')) || 50)
-      const offset = Number(url.searchParams.get('offset')) || 0
+      const authErr = requireAuth(user)
+      if (authErr) return authErr
+
+      const page = parsePagination(req)
+      if (page instanceof Response) return page
+      const { limit, offset } = page
+
       const result = await tursoExecute(
         'SELECT * FROM projects WHERE author_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
-        [clerkUser.sub, limit, offset],
+        [user!.sub, limit, offset],
       )
       return json({ projects: result.rows.map(formatProject), limit, offset })
     }
 
     // GET /api/projects — public listing (excludes private projects)
     if (req.method === 'GET' && segments.length === 0) {
-      const category = url.searchParams.get('category')
-      const search = url.searchParams.get('search')
-      const limit = Math.min(50, Number(url.searchParams.get('limit')) || 20)
-      const offset = Number(url.searchParams.get('offset')) || 0
+      const page = parsePagination(req)
+      if (page instanceof Response) return page
+      const { limit, offset } = page
+
+      // Validate category — reject unknown values instead of passing them to SQL
+      const rawCategory = getQueryParam(req, 'category')
+      let category: string | null = null
+      if (rawCategory && rawCategory !== 'All') {
+        const cat = Category.safeParse(rawCategory)
+        if (!cat.success) return json({ error: 'Invalid category' }, 400)
+        category = cat.data
+      }
+
+      // Bound search term
+      const rawSearch = getQueryParam(req, 'search')
+      const search = rawSearch ? rawSearch.slice(0, 100) : null
 
       let sql = 'SELECT * FROM projects'
       const args: (string | number)[] = []
-      const conditions: string[] = ["(visibility IS NULL OR visibility = 'public')"]
+      const conditions: string[] = ["visibility = 'public'"]
 
-      if (category && category !== 'All') {
+      if (category) {
         conditions.push('category = ?')
         args.push(category)
       }
@@ -430,9 +328,8 @@ export default async function handler(req: Request) {
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('Projects API error:', message)
-    return json({ error: 'Internal server error', detail: message }, 500)
+    logError('projects', err)
+    return json({ error: 'Internal server error' }, 500)
   }
 }
 
@@ -455,29 +352,36 @@ function formatProject(row: TursoRow) {
   }
 }
 
+/** Tree node — subset of formatProject for the remix-lineage endpoint */
 function formatTreeNode(row: TursoRow) {
-  return {
-    id: row.id,
-    name: row.name,
-    authorName: row.author_name,
-    parentId: row.parent_id,
-    createdAt: row.created_at,
-    likes: row.likes,
-  }
+  const { id, name, authorName, parentId, createdAt, likes } = formatProject(row)
+  return { id, name, authorName, parentId, createdAt, likes }
 }
 
 function tryParse(s: string): unknown {
   try { return JSON.parse(s) } catch { return [] }
 }
 
-async function createNotificationDirect(userId: string, type: string, title: string, body: string, link: string): Promise<void> {
-  try {
-    const baseUrl = (process.env.TURSO_URL || '').replace('libsql://', 'https://')
-    const token = process.env.TURSO_AUTH_TOKEN || ''
-    if (!baseUrl || !token) return
-    await tursoExecute(
-      'INSERT INTO notifications (id, user_id, type, title, body, link, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [crypto.randomUUID(), userId, type, title, body, link, Date.now()],
-    )
-  } catch {}
+async function createNotification(
+  userId: string, type: string, title: string, body: string, link: string,
+): Promise<void> {
+  await tursoExecute(
+    'INSERT INTO notifications (id, user_id, type, title, body, link, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [crypto.randomUUID(), userId, type, title, body, link, Date.now()],
+  ).catch((err) => logError('projects:createNotification', err))
 }
+
+/** Notify a project author of an event, unless they're the actor themselves */
+async function notifyAuthor(
+  projectId: string, actorSub: string,
+  type: string, title: string, bodyTemplate: (name: string) => string, link: string,
+): Promise<void> {
+  const project = await tursoExecute('SELECT author_id, name FROM projects WHERE id = ?', [projectId])
+  const row = project.rows[0]
+  if (!row) return
+  const authorId = String(row.author_id ?? '')
+  if (!authorId || authorId === actorSub) return
+  await createNotification(authorId, type, title, bodyTemplate(String(row.name ?? '')), link)
+}
+
+export default withRequest(handler)

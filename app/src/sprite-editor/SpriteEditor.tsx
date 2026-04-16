@@ -259,18 +259,18 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
       <div
-        className="bg-[#1e1e2e] border border-[#313244] rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-base border border-surface-0 rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#313244]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-surface-0">
           <div className="flex items-center gap-3">
             <span className="text-xl">🎨</span>
             <input
               type="text"
               value={project.name}
               onChange={e => setProject(prev => ({ ...prev, name: e.target.value }))}
-              className="bg-transparent text-[#cdd6f4] font-bold text-lg outline-none border-b border-transparent focus:border-[#89b4fa] w-40"
+              className="bg-transparent text-text font-bold text-lg outline-none border-b border-transparent focus:border-accent w-40"
               spellCheck={false}
             />
             <span className="text-xs text-[#585b70]">{size}x{size}</span>
@@ -278,11 +278,11 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
           <div className="flex items-center gap-2">
             <button
               onClick={handleSave}
-              className="px-4 py-1.5 bg-[#a6e3a1] text-[#1e1e2e] text-sm font-semibold rounded-lg hover:bg-[#a6e3a1]/80"
+              className="px-4 py-1.5 bg-success text-base text-sm font-semibold rounded-lg hover:bg-success/80"
             >
               Save Sprite
             </button>
-            <button onClick={onClose} className="text-[#6c7086] hover:text-[#cdd6f4]">
+            <button onClick={onClose} className="text-overlay hover:text-text">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -292,7 +292,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
 
         <div className="flex flex-1 min-h-0">
           {/* Left — Tools + Palette */}
-          <div className="w-48 border-r border-[#313244] p-3 flex flex-col gap-4 overflow-y-auto">
+          <div className="w-48 border-r border-surface-0 p-3 flex flex-col gap-4 overflow-y-auto">
             {/* Tools */}
             <div>
               <p className="text-[10px] uppercase text-[#585b70] mb-2 tracking-wider">Tools</p>
@@ -302,7 +302,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
                     key={t.id}
                     onClick={() => setTool(t.id)}
                     className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-lg transition-colors ${
-                      tool === t.id ? 'bg-[#89b4fa] text-[#1e1e2e] font-semibold' : 'text-[#cdd6f4] hover:bg-[#313244]'
+                      tool === t.id ? 'bg-accent text-base font-semibold' : 'text-text hover:bg-surface-0'
                     }`}
                   >
                     <span>{t.icon}</span>
@@ -317,7 +317,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
               <p className="text-[10px] uppercase text-[#585b70] mb-2 tracking-wider">Color</p>
               <div className="flex items-center gap-2">
                 <div
-                  className="w-8 h-8 rounded-lg border border-[#45475a]"
+                  className="w-8 h-8 rounded-lg border border-surface-1"
                   style={{ background: color }}
                 />
                 <input
@@ -338,7 +338,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
                     key={i}
                     onClick={() => { setColor(c); setTool('draw') }}
                     className={`w-7 h-7 rounded border transition-transform ${
-                      color === c ? 'border-white scale-110' : 'border-[#45475a] hover:scale-105'
+                      color === c ? 'border-white scale-110' : 'border-surface-1 hover:scale-105'
                     }`}
                     style={{ background: c }}
                     title={c}
@@ -364,7 +364,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
                       setActiveFrame(0)
                     }}
                     className={`flex-1 py-1 text-xs rounded ${
-                      s === size ? 'bg-[#89b4fa] text-[#1e1e2e] font-bold' : 'text-[#6c7086] hover:bg-[#313244]'
+                      s === size ? 'bg-accent text-base font-bold' : 'text-overlay hover:bg-surface-0'
                     }`}
                   >
                     {s}
@@ -376,7 +376,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
             {/* Preview */}
             <div>
               <p className="text-[10px] uppercase text-[#585b70] mb-2 tracking-wider">Preview</p>
-              <div className="bg-[#313244] rounded-lg p-3 flex flex-col items-center gap-2">
+              <div className="bg-surface-0 rounded-lg p-3 flex flex-col items-center gap-2">
                 <canvas
                   ref={previewRef}
                   style={{ imageRendering: 'pixelated', width: 64, height: 64 }}
@@ -385,7 +385,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
                 {project.frames.length > 1 && (
                   <button
                     onClick={() => { setPlaying(!playing); setPlayFrame(0) }}
-                    className={`text-xs px-3 py-1 rounded ${playing ? 'bg-[#f38ba8] text-[#1e1e2e]' : 'bg-[#45475a] text-[#cdd6f4]'}`}
+                    className={`text-xs px-3 py-1 rounded ${playing ? 'bg-danger text-base' : 'bg-surface-1 text-text'}`}
                   >
                     {playing ? '⏹ Stop' : '▶ Play'}
                   </button>
@@ -395,7 +395,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
           </div>
 
           {/* Center — Canvas */}
-          <div className="flex-1 flex flex-col items-center justify-center p-4 bg-[#11111b]">
+          <div className="flex-1 flex flex-col items-center justify-center p-4 bg-crust">
             <canvas
               ref={canvasRef}
               style={{ imageRendering: 'pixelated', cursor: tool === 'pick' ? 'crosshair' : 'pointer' }}
@@ -417,7 +417,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
           </div>
 
           {/* Right — Frames */}
-          <div className="w-36 border-l border-[#313244] p-3 flex flex-col gap-2 overflow-y-auto">
+          <div className="w-36 border-l border-surface-0 p-3 flex flex-col gap-2 overflow-y-auto">
             <p className="text-[10px] uppercase text-[#585b70] tracking-wider">Frames</p>
 
             {project.frames.map((f, i) => (
@@ -425,10 +425,10 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
                 key={i}
                 onClick={() => { setActiveFrame(i); setPlaying(false) }}
                 className={`p-2 rounded-lg text-left transition-colors ${
-                  i === activeFrame ? 'bg-[#313244] border border-[#89b4fa]' : 'hover:bg-[#313244] border border-transparent'
+                  i === activeFrame ? 'bg-surface-0 border border-accent' : 'hover:bg-surface-0 border border-transparent'
                 }`}
               >
-                <div className="text-[10px] text-[#6c7086] mb-1">{f.name}</div>
+                <div className="text-[10px] text-overlay mb-1">{f.name}</div>
                 <FrameThumbnail frame={f} size={size} />
               </button>
             ))}
@@ -436,14 +436,14 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
             <div className="flex gap-1 mt-1">
               <button
                 onClick={addFrame}
-                className="flex-1 py-1.5 text-xs bg-[#313244] text-[#cdd6f4] rounded hover:bg-[#45475a]"
+                className="flex-1 py-1.5 text-xs bg-surface-0 text-text rounded hover:bg-surface-1"
                 title="New frame"
               >
                 +
               </button>
               <button
                 onClick={duplicateFrame}
-                className="flex-1 py-1.5 text-xs bg-[#313244] text-[#cdd6f4] rounded hover:bg-[#45475a]"
+                className="flex-1 py-1.5 text-xs bg-surface-0 text-text rounded hover:bg-surface-1"
                 title="Duplicate frame"
               >
                 📋
@@ -451,7 +451,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
               {project.frames.length > 1 && (
                 <button
                   onClick={deleteFrame}
-                  className="flex-1 py-1.5 text-xs bg-[#313244] text-[#f38ba8] rounded hover:bg-[#45475a]"
+                  className="flex-1 py-1.5 text-xs bg-surface-0 text-danger rounded hover:bg-surface-1"
                   title="Delete frame"
                 >
                   🗑
@@ -493,7 +493,7 @@ function FrameThumbnail({ frame, size }: { frame: SpriteFrame; size: number }) {
     <canvas
       ref={ref}
       style={{ imageRendering: 'pixelated', width: '100%', height: 'auto' }}
-      className="rounded bg-[#11111b]"
+      className="rounded bg-crust"
     />
   )
 }

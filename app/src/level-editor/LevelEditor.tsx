@@ -103,29 +103,29 @@ export default function LevelEditor({ onClose, onExport }: LevelEditorProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-      <div className="bg-[#1e1e2e] border border-[#313244] rounded-xl shadow-2xl w-full max-w-[880px] overflow-hidden">
+      <div className="bg-base border border-surface-0 rounded-xl shadow-2xl w-full max-w-[880px] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 border-b border-[#313244]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-surface-0">
           <div className="flex items-center gap-3">
             <span className="text-xl">🗺️</span>
-            <h2 className="text-[#cdd6f4] font-bold text-base">Level Editor</h2>
-            <span className="text-xs text-[#6c7086]">{platforms.length} platforms</span>
+            <h2 className="text-text font-bold text-base">Level Editor</h2>
+            <span className="text-xs text-overlay">{platforms.length} platforms</span>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setPlatforms([])}
-              className="px-3 py-1.5 text-xs text-[#f38ba8] bg-[#f38ba8]/10 hover:bg-[#f38ba8]/20 rounded-lg"
+              className="px-3 py-1.5 text-xs text-danger bg-danger/10 hover:bg-danger/20 rounded-lg"
             >
               Clear All
             </button>
             <button
               onClick={() => onExport(platforms, spawnX, spawnY)}
               disabled={platforms.length === 0}
-              className="px-4 py-1.5 text-xs font-bold text-[#1e1e2e] bg-[#a6e3a1] hover:bg-[#a6e3a1]/80 rounded-lg disabled:opacity-40"
+              className="px-4 py-1.5 text-xs font-bold text-base bg-success hover:bg-success/80 rounded-lg disabled:opacity-40"
             >
               Export to Editor →
             </button>
-            <button onClick={onClose} className="text-[#6c7086] hover:text-[#cdd6f4] p-1">
+            <button onClick={onClose} className="text-overlay hover:text-text p-1">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -134,7 +134,7 @@ export default function LevelEditor({ onClose, onExport }: LevelEditorProps) {
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-3 px-5 py-2 border-b border-[#313244] bg-[#181825]">
+        <div className="flex items-center gap-3 px-5 py-2 border-b border-surface-0 bg-mantle">
           {/* Tools */}
           {[
             { key: 'platform' as const, label: '▬ Platform', icon: '▬' },
@@ -146,15 +146,15 @@ export default function LevelEditor({ onClose, onExport }: LevelEditorProps) {
               onClick={() => setTool(t.key)}
               className={`px-3 py-1.5 text-xs rounded-lg font-semibold transition-colors ${
                 tool === t.key
-                  ? 'bg-[#89b4fa] text-[#1e1e2e]'
-                  : 'bg-[#313244] text-[#a6adc8] hover:bg-[#45475a]'
+                  ? 'bg-accent text-base'
+                  : 'bg-surface-0 text-subtext hover:bg-surface-1'
               }`}
             >
               {t.label}
             </button>
           ))}
 
-          <span className="text-[#45475a]">|</span>
+          <span className="text-surface-1">|</span>
 
           {/* Color picker */}
           <div className="flex items-center gap-1">
@@ -174,7 +174,7 @@ export default function LevelEditor({ onClose, onExport }: LevelEditorProps) {
         {/* Canvas */}
         <div
           ref={canvasRef}
-          className="relative bg-[#11111b] cursor-crosshair select-none overflow-hidden"
+          className="relative bg-crust cursor-crosshair select-none overflow-hidden"
           style={{ width: CANVAS_W, height: CANVAS_H, margin: '0 auto' }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -218,7 +218,7 @@ export default function LevelEditor({ onClose, onExport }: LevelEditorProps) {
         </div>
 
         {/* Footer hint */}
-        <div className="px-5 py-2 text-center text-[10px] text-[#6c7086] border-t border-[#313244]">
+        <div className="px-5 py-2 text-center text-[10px] text-overlay border-t border-surface-0">
           Click + drag to draw platforms · Click 🦊 tool then click canvas to set spawn · Export loads the level into the editor with blocks
         </div>
       </div>

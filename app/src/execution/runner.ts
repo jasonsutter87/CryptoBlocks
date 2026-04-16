@@ -73,15 +73,89 @@ function createOutputCollector(onOutput?: (line: string) => void) {
   }
 }
 
-/**
- * Format a value for console output (same as iframe version).
- */
-function formatArg(a: unknown): string {
-  return typeof a === 'object' ? JSON.stringify(a) : String(a)
+// ---------------------------------------------------------------------------
+// Strategy 1: Sandboxed iframe (most secure, but blocked by some browsers)
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Sandbox HTML template — broken into named pieces so each layer is
+// readable on its own. The old version was a single 60-line backtick
+// string mixing CSP, console bridge, error handling, and user-code exec.
+// ---------------------------------------------------------------------------
+
+// unsafe-eval is required because user-authored code is compiled via
+// `new Function(code)` inside the sandbox iframe. Without it, the
+// entire execution model breaks. This is acceptable because the iframe
+// has no allow-same-origin (can't touch parent localStorage/cookies)
+// and connect-src is 'none' (can't exfiltrate data over the network).
+const SANDBOX_CSP = [
+  "default-src 'none'",
+  "script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://jasonsutter87.github.io",
+  "connect-src 'none'",
+  "style-src 'unsafe-inline' https://cdn.tailwindcss.com",
+  "img-src data: https:",
+  "frame-src 'none'",
+  "worker-src blob:",
+  "object-src 'none'",
+].join('; ')
+
+const CONSOLE_BRIDGE = `
+var __sendMsg = function(type, data) {
+  parent.postMessage({ __cryptoblocks: true, type: type, data: data }, '*');
+};
+var __formatArg = function(a) { return typeof a === 'object' ? JSON.stringify(a) : String(a); };
+Object.defineProperty(console, 'log', { value: function() { __sendMsg('log', Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'warn', { value: function() { __sendMsg('log', '[warn] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'error', { value: function() { __sendMsg('log', '[error] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'info', { value: function() { __sendMsg('log', '[info] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'debug', { value: function() {}, configurable: false, writable: false });
+window.onerror = function(msg, src, line, col, err) { __sendMsg('log', '[error] ' + (err ? err.message : msg)); };
+window.addEventListener('unhandledrejection', function(e) { __sendMsg('log', '[error] ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))); });
+`.trim()
+
+function userCodeRunner(encodedBase64: string): string {
+  return `
+(async function() {
+  try {
+    if (!document.body) {
+      await new Promise(function(r) {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() { r(null); }, { once: true });
+        } else { r(null); }
+      });
+    }
+    var __code = decodeURIComponent(escape(atob("${encodedBase64}")));
+    var __fn = new Function("return (async function() {\\n" + __code + "\\n})()");
+    var __result = await __fn();
+    var __cvs = document.getElementById('cb-canvas');
+    if (__cvs && __cvs.width > 0 && __cvs.style.display !== 'none') {
+      try { parent.postMessage({ __cryptoblocks: true, type: 'canvas', data: __cvs.toDataURL('image/png') }, '*'); } catch(e) {}
+    }
+    var __page = document.getElementById('cb-page');
+    if (__page && __page.children.length > 0) {
+      parent.postMessage({ __cryptoblocks: true, type: 'html', data: __page.innerHTML }, '*');
+    }
+    parent.postMessage({ __cryptoblocks: true, type: 'done', data: __result }, '*');
+  } catch(e) {
+    parent.postMessage({ __cryptoblocks: true, type: 'error', data: e.message }, '*');
+  }
+})()`.trim()
+}
+
+function buildSandboxHtml(code: string, safetyPreamble: string): string {
+  const encoded = btoa(unescape(encodeURIComponent(code)))
+  return `<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Security-Policy" content="${SANDBOX_CSP}">
+<script src="https://cdn.tailwindcss.com"><\/script>
+<script>
+${CONSOLE_BRIDGE}
+${safetyPreamble}
+${userCodeRunner(encoded)}
+<\/script></head><body><div id="cb-page" style="display:none"></div><canvas id="cb-canvas" width="400" height="400" style="display:none"></canvas></body></html>`
 }
 
 // ---------------------------------------------------------------------------
-// Strategy 1: Sandboxed iframe (most secure, but blocked by some browsers)
+// Strategy 1: Sandboxed iframe (most secure)
 // ---------------------------------------------------------------------------
 
 function tryIframeExecution(
@@ -149,7 +223,11 @@ function tryIframeExecution(
     }
 
     const handler = (event: MessageEvent) => {
-      // Validate: must come from our iframe + carry our marker
+      // Validate: sandbox iframe has no `allow-same-origin`, so its origin
+      // reports as the literal string "null". Source must be our iframe and
+      // the message must carry our marker. The origin check stops cross-
+      // origin embeds or popups from spoofing execution events.
+      if (event.origin !== 'null') return
       if (event.source !== iframe?.contentWindow) return
       const msg = event.data
       if (!msg || typeof msg !== 'object' || msg.__cryptoblocks !== true) return
@@ -179,62 +257,16 @@ function tryIframeExecution(
     }
     window.addEventListener('message', handler)
 
-    const encoded = btoa(unescape(encodeURIComponent(code)))
-    const safetyPreamble = generateSafetyPreamble()
-
-    const html = `<!DOCTYPE html><html><head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://jasonsutter87.github.io; connect-src http://localhost:* http://127.0.0.1:* https: wss:; style-src 'unsafe-inline' https://cdn.tailwindcss.com; img-src data: https:; frame-src 'none'; worker-src blob:; object-src 'none';">
-<script src="https://cdn.tailwindcss.com"><\/script>
-<script>
-var __sendMsg = function(type, data) {
-  parent.postMessage({ __cryptoblocks: true, type: type, data: data }, '*');
-};
-var __formatArg = function(a) { return typeof a === 'object' ? JSON.stringify(a) : String(a); };
-Object.defineProperty(console, 'log', { value: function() { __sendMsg('log', Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
-Object.defineProperty(console, 'warn', { value: function() { __sendMsg('log', '[warn] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
-Object.defineProperty(console, 'error', { value: function() { __sendMsg('log', '[error] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
-Object.defineProperty(console, 'info', { value: function() { __sendMsg('log', '[info] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
-Object.defineProperty(console, 'debug', { value: function() {}, configurable: false, writable: false });
-window.onerror = function(msg, src, line, col, err) { __sendMsg('log', '[error] ' + (err ? err.message : msg)); };
-window.addEventListener('unhandledrejection', function(e) { __sendMsg('log', '[error] ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))); });
-${safetyPreamble}
-(async function() {
-  try {
-    // The head script runs before the parser reaches <body>. Any sync user
-    // code that touches document.body — set_canvas, game setup, etc. —
-    // would crash with a null appendChild. Wait until the body exists.
-    if (!document.body) {
-      await new Promise(function(r) {
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', function() { r(null); }, { once: true });
-        } else {
-          r(null);
-        }
-      });
-    }
-    var __code = decodeURIComponent(escape(atob("${encoded}")));
-    var __fn = new Function("return (async function() {\\n" + __code + "\\n})()");
-    var __result = await __fn();
-    var __cvs = document.getElementById('cb-canvas');
-    if (__cvs && __cvs.width > 0 && __cvs.style.display !== 'none') {
-      try { parent.postMessage({ __cryptoblocks: true, type: 'canvas', data: __cvs.toDataURL('image/png') }, '*'); } catch(e) {}
-    }
-    var __page = document.getElementById('cb-page');
-    if (__page && __page.children.length > 0) {
-      parent.postMessage({ __cryptoblocks: true, type: 'html', data: __page.innerHTML }, '*');
-    }
-    parent.postMessage({ __cryptoblocks: true, type: 'done', data: __result }, '*');
-  } catch(e) {
-    parent.postMessage({ __cryptoblocks: true, type: 'error', data: e.message }, '*');
-  }
-})()
-<\/script></head><body><div id="cb-page" style="display:none"></div><canvas id="cb-canvas" width="400" height="400" style="display:none"></canvas></body></html>`
+    const html = buildSandboxHtml(code, generateSafetyPreamble())
 
     iframe = document.createElement('iframe')
     iframe.style.display = 'none'
     iframe.sandbox.add('allow-scripts')
     iframe.sandbox.add('allow-modals')
-    iframe.sandbox.add('allow-same-origin')
+    // allow-same-origin deliberately OMITTED so the iframe document has a
+    // "null" origin and cannot read the parent window's localStorage. This
+    // closes the credential-theft path where kid-authored code in a shared
+    // Shareplace project could exfiltrate the viewer's Clerk session token.
     iframe.setAttribute('allow', 'camera; microphone')
     iframe.srcdoc = html
     document.body.appendChild(iframe)
@@ -242,94 +274,8 @@ ${safetyPreamble}
 }
 
 // ---------------------------------------------------------------------------
-// Strategy 2: Direct Function() eval with intercepted console (fallback)
-// ---------------------------------------------------------------------------
-
-async function directExecution(
-  code: string,
-  collector: ReturnType<typeof createOutputCollector>,
-  start: number,
-  onTrace?: (blockId: string) => void,
-): Promise<ExecutionResult> {
-  try {
-    // Build a function that receives a fake console object and __sendMsg
-    const fn = new Function(
-      '__console',
-      '__sendMsg',
-      `return (async function() {\n`
-        + `var console = __console;\n`
-        + code
-        + `\n})()`
-    )
-
-    const fakeSendMsg = onTrace
-      ? (type: string, data: string) => { if (type === 'trace') onTrace(data) }
-      : () => {}
-
-    const fakeConsole = {
-      log: (...args: unknown[]) => collector.push(args.map(formatArg).join(' ')),
-      warn: (...args: unknown[]) => collector.push('[warn] ' + args.map(formatArg).join(' ')),
-      error: (...args: unknown[]) => collector.push('[error] ' + args.map(formatArg).join(' ')),
-      info: (...args: unknown[]) => collector.push('[info] ' + args.map(formatArg).join(' ')),
-      debug: () => {},
-    }
-
-    // Create cb-canvas and cb-page if they don't exist (fallback mode)
-    let createdCanvas: HTMLCanvasElement | null = null
-    if (!document.getElementById('cb-canvas')) {
-      createdCanvas = document.createElement('canvas')
-      createdCanvas.id = 'cb-canvas'
-      createdCanvas.width = 400
-      createdCanvas.height = 400
-      createdCanvas.style.display = 'none'
-      document.body.appendChild(createdCanvas)
-    }
-    let createdPage: HTMLDivElement | null = null
-    if (!document.getElementById('cb-page')) {
-      createdPage = document.createElement('div')
-      createdPage.id = 'cb-page'
-      createdPage.style.display = 'none'
-      document.body.appendChild(createdPage)
-    }
-
-    const returnValue = await fn(fakeConsole, fakeSendMsg)
-
-    // Capture canvas output
-    let canvasDataUrl: string | undefined
-    const canvas = document.getElementById('cb-canvas') as HTMLCanvasElement | null
-    if (canvas && canvas.style.display !== 'none') {
-      try { canvasDataUrl = canvas.toDataURL('image/png') } catch { /* tainted canvas */ }
-    }
-    if (createdCanvas) createdCanvas.remove()
-
-    // Capture HTML output from cb-page
-    let htmlOutput: string | undefined
-    const page = document.getElementById('cb-page')
-    if (page && page.children.length > 0) {
-      htmlOutput = page.innerHTML
-    }
-    if (createdPage) createdPage.remove()
-
-    return {
-      output: collector.output,
-      error: null,
-      returnValue,
-      canvasDataUrl,
-      htmlOutput,
-      duration: performance.now() - start,
-    }
-  } catch (e) {
-    return {
-      output: collector.output,
-      error: e instanceof Error ? e.message : String(e),
-      returnValue: null,
-      duration: performance.now() - start,
-    }
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Main JS executor: iframe → fallback to direct
+// Main JS executor: iframe only — parent-window fallback was removed for
+// security (see H2). If the iframe can't run, the user sees an error.
 // ---------------------------------------------------------------------------
 
 function executeJavaScript(
@@ -342,31 +288,16 @@ function executeJavaScript(
   const start = performance.now()
   let aborted = false
 
-  // Code that uses fetch() or WebSocket needs direct execution — sandboxed
-  // iframes send Origin: null which breaks CORS/WS on most servers.
-  // micro:bit blocks touch the BLE connection held in the parent window,
-  // so they also need direct execution (the iframe is a separate context).
-  // Games rely on document-level keyboard events (when_key_pressed) and
-  // a live canvas visible in the output panel. The sandbox iframe is
-  // hidden, so it can't receive keystrokes — games have to run in the
-  // parent window to feel interactive.
-  const needsDirectExec =
-    /\bfetch\s*\(/.test(code) ||
-    /\bWebSocket\s*\(/.test(code) ||
-    /\b__microbit\b/.test(code) ||
-    /\b__speech\b/.test(code) ||
-    /\b__vision\b/.test(code) ||
-    /\b__game\b/.test(code) ||
-    /\b__gamepad\b/.test(code)
-
+  // SECURITY: user-authored code NEVER runs in the parent window. The former
+  // `directExecution` fallback + `needsDirectExec` regex shortcut was a full
+  // sandbox escape — any remixed Shareplace project containing the string
+  // `fetch(` could exfiltrate the viewer's Clerk JWT from localStorage.
+  // Features that relied on parent-window access (keyboard-driven games,
+  // BLE micro:bit, webcam vision, speech) will need to be reimplemented
+  // through a postMessage-bridged capability API before they can return.
   let iframeCleanup: (() => void) | null = null
 
   const promise = (async (): Promise<ExecutionResult> => {
-    if (needsDirectExec) {
-      return directExecution(code, collector, start, onTrace)
-    }
-
-    // Try iframe first (sandboxed, most secure)
     const iframeResult = await tryIframeExecution(code, collector, start, onTrace, onCanvasUpdate)
 
     if (iframeResult) {
@@ -374,12 +305,18 @@ function executeJavaScript(
       return iframeResult.result
     }
 
-    // Iframe was blocked (Brave Shields, etc.) — fall back to direct execution
     if (aborted) {
       return { output: collector.output, error: 'Execution stopped', returnValue: null, duration: performance.now() - start }
     }
 
-    return directExecution(code, collector, start, onTrace)
+    // Iframe creation failed (Brave Shields, extension blocker, etc.).
+    // Do NOT fall back to parent-window execution — error out instead.
+    return {
+      output: collector.output,
+      error: 'Sandbox unavailable — disable script-blocking extensions to run code.',
+      returnValue: null,
+      duration: performance.now() - start,
+    }
   })()
 
   return {

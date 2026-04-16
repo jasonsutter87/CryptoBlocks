@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useAuth, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
+import { useAuth, SignedIn, SignedOut, SignInButton } from '../auth'
 import {
   fetchClassrooms,
   fetchClassroom,
@@ -95,15 +95,15 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="min-h-full bg-[#1e1e2e]">
+    <div className="min-h-full bg-base">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-[#cdd6f4] tracking-tight mb-1">
+            <h1 className="text-3xl font-bold text-text tracking-tight mb-1">
               Classrooms
             </h1>
-            <p className="text-[#a6adc8]">
+            <p className="text-subtext">
               Create a classroom and share the join code with your students.
             </p>
           </div>
@@ -111,13 +111,13 @@ export default function TeacherDashboard() {
             <div className="flex gap-2">
               <button
                 onClick={() => setShowJoin(true)}
-                className="px-4 py-2.5 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-lg text-sm font-semibold transition-colors"
+                className="px-4 py-2.5 bg-surface-0 hover:bg-surface-1 text-text rounded-lg text-sm font-semibold transition-colors"
               >
                 Join Class
               </button>
               <button
                 onClick={() => setShowCreate(true)}
-                className="px-4 py-2.5 bg-[#89b4fa] hover:bg-[#74c7ec] text-[#1e1e2e] rounded-lg text-sm font-bold transition-colors"
+                className="px-4 py-2.5 bg-accent hover:bg-sapphire text-base rounded-lg text-sm font-bold transition-colors"
               >
                 + New Classroom
               </button>
@@ -126,12 +126,12 @@ export default function TeacherDashboard() {
         </div>
 
         <SignedOut>
-          <div className="bg-[#313244] rounded-xl p-8 text-center">
+          <div className="bg-surface-0 rounded-xl p-8 text-center">
             <span className="text-4xl mb-4 block">🏫</span>
-            <h2 className="text-xl font-bold text-[#cdd6f4] mb-2">Sign in to get started</h2>
-            <p className="text-[#6c7086] mb-4">Teachers create classrooms. Students join with a code.</p>
+            <h2 className="text-xl font-bold text-text mb-2">Sign in to get started</h2>
+            <p className="text-overlay mb-4">Teachers create classrooms. Students join with a code.</p>
             <SignInButton mode="modal">
-              <button className="px-5 py-2.5 bg-[#cba6f7] text-[#1e1e2e] rounded-lg font-bold hover:bg-[#cba6f7]/80 transition-colors">
+              <button className="px-5 py-2.5 bg-purple text-base rounded-lg font-bold hover:bg-purple/80 transition-colors">
                 Sign In
               </button>
             </SignInButton>
@@ -141,10 +141,10 @@ export default function TeacherDashboard() {
         <SignedIn>
           {/* Created code banner */}
           {createdCode && (
-            <div className="mb-6 bg-[#a6e3a1]/10 border border-[#a6e3a1]/30 rounded-xl p-5 flex items-center justify-between">
+            <div className="mb-6 bg-success/10 border border-success/30 rounded-xl p-5 flex items-center justify-between">
               <div>
-                <div className="text-sm text-[#a6adc8]">Classroom created! Share this code with your students:</div>
-                <div className="text-3xl font-mono font-bold text-[#a6e3a1] tracking-widest mt-1">{createdCode}</div>
+                <div className="text-sm text-subtext">Classroom created! Share this code with your students:</div>
+                <div className="text-3xl font-mono font-bold text-success tracking-widest mt-1">{createdCode}</div>
               </div>
               <div className="flex flex-col gap-2 items-end">
                 <button
@@ -153,7 +153,7 @@ export default function TeacherDashboard() {
                     navigator.clipboard.writeText(link)
                     setCreatedCode(null)
                   }}
-                  className="px-4 py-2 bg-[#a6e3a1] text-[#1e1e2e] rounded-lg text-sm font-bold"
+                  className="px-4 py-2 bg-success text-base rounded-lg text-sm font-bold"
                 >
                   Copy Invite Link
                 </button>
@@ -162,7 +162,7 @@ export default function TeacherDashboard() {
                     navigator.clipboard.writeText(createdCode!)
                     setCreatedCode(null)
                   }}
-                  className="text-xs text-[#6c7086] hover:text-[#a6adc8]"
+                  className="text-xs text-overlay hover:text-subtext"
                 >
                   or copy code only
                 </button>
@@ -173,20 +173,20 @@ export default function TeacherDashboard() {
           {/* Create classroom modal */}
           {showCreate && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) setShowCreate(false) }}>
-              <div className="bg-[#1e1e2e] border border-[#313244] rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
-                <h2 className="text-[#cdd6f4] font-semibold text-base mb-4">Create a Classroom</h2>
+              <div className="bg-base border border-surface-0 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+                <h2 className="text-text font-semibold text-base mb-4">Create a Classroom</h2>
                 <input
                   type="text"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   placeholder="e.g. Period 3 — Intro to Coding"
-                  className="w-full bg-[#313244] border border-[#45475a] text-[#cdd6f4] text-sm rounded-lg px-3 py-2.5 placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa] mb-4"
+                  className="w-full bg-surface-0 border border-surface-1 text-text text-sm rounded-lg px-3 py-2.5 placeholder-overlay focus:outline-none focus:border-accent mb-4"
                   onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                   autoFocus
                 />
                 <div className="flex gap-2 justify-end">
-                  <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-[#cdd6f4] bg-[#313244] hover:bg-[#45475a] rounded-lg">Cancel</button>
-                  <button onClick={handleCreate} disabled={creating || !newName.trim()} className="px-4 py-2 text-sm font-bold text-[#1e1e2e] bg-[#89b4fa] hover:bg-[#74c7ec] rounded-lg disabled:opacity-40">
+                  <button onClick={() => setShowCreate(false)} className="px-4 py-2 text-sm text-text bg-surface-0 hover:bg-surface-1 rounded-lg">Cancel</button>
+                  <button onClick={handleCreate} disabled={creating || !newName.trim()} className="px-4 py-2 text-sm font-bold text-base bg-accent hover:bg-sapphire rounded-lg disabled:opacity-40">
                     {creating ? 'Creating...' : 'Create'}
                   </button>
                 </div>
@@ -197,23 +197,23 @@ export default function TeacherDashboard() {
           {/* Join classroom modal */}
           {showJoin && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) setShowJoin(false) }}>
-              <div className="bg-[#1e1e2e] border border-[#313244] rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
-                <h2 className="text-[#cdd6f4] font-semibold text-base mb-2">Join a Classroom</h2>
-                <p className="text-[#6c7086] text-sm mb-4">Enter the 6-character code your teacher gave you.</p>
+              <div className="bg-base border border-surface-0 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+                <h2 className="text-text font-semibold text-base mb-2">Join a Classroom</h2>
+                <p className="text-overlay text-sm mb-4">Enter the 6-character code your teacher gave you.</p>
                 <input
                   type="text"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
                   placeholder="ABC123"
-                  className="w-full bg-[#313244] border border-[#45475a] text-[#cdd6f4] text-2xl font-mono text-center tracking-[0.3em] rounded-lg px-3 py-3 placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa] mb-2"
+                  className="w-full bg-surface-0 border border-surface-1 text-text text-2xl font-mono text-center tracking-[0.3em] rounded-lg px-3 py-3 placeholder-overlay focus:outline-none focus:border-accent mb-2"
                   onKeyDown={(e) => e.key === 'Enter' && handleJoin()}
                   autoFocus
                   maxLength={6}
                 />
-                {joinError && <p className="text-xs text-[#f38ba8] mb-2">{joinError}</p>}
+                {joinError && <p className="text-xs text-danger mb-2">{joinError}</p>}
                 <div className="flex gap-2 justify-end mt-3">
-                  <button onClick={() => setShowJoin(false)} className="px-4 py-2 text-sm text-[#cdd6f4] bg-[#313244] hover:bg-[#45475a] rounded-lg">Cancel</button>
-                  <button onClick={handleJoin} disabled={joining || joinCode.length < 4} className="px-4 py-2 text-sm font-bold text-[#1e1e2e] bg-[#a6e3a1] hover:bg-[#a6e3a1]/80 rounded-lg disabled:opacity-40">
+                  <button onClick={() => setShowJoin(false)} className="px-4 py-2 text-sm text-text bg-surface-0 hover:bg-surface-1 rounded-lg">Cancel</button>
+                  <button onClick={handleJoin} disabled={joining || joinCode.length < 4} className="px-4 py-2 text-sm font-bold text-base bg-success hover:bg-success/80 rounded-lg disabled:opacity-40">
                     {joining ? 'Joining...' : 'Join'}
                   </button>
                 </div>
@@ -223,12 +223,12 @@ export default function TeacherDashboard() {
 
           {/* Classroom list */}
           {loading ? (
-            <div className="text-[#6c7086] animate-pulse py-12 text-center">Loading classrooms...</div>
+            <div className="text-overlay animate-pulse py-12 text-center">Loading classrooms...</div>
           ) : classrooms.length === 0 ? (
-            <div className="bg-[#181825] border border-[#313244] rounded-xl p-12 text-center">
+            <div className="bg-mantle border border-surface-0 rounded-xl p-12 text-center">
               <span className="text-5xl block mb-4">🏫</span>
-              <p className="text-[#cdd6f4] font-semibold text-lg mb-1">No classrooms yet</p>
-              <p className="text-[#6c7086] text-sm">Create one to get started, or enter a join code from your teacher.</p>
+              <p className="text-text font-semibold text-lg mb-1">No classrooms yet</p>
+              <p className="text-overlay text-sm">Create one to get started, or enter a join code from your teacher.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -236,13 +236,13 @@ export default function TeacherDashboard() {
                 <button
                   key={c.id}
                   onClick={() => handleSelectClassroom(c.id)}
-                  className="bg-[#181825] border border-[#313244] rounded-xl p-5 text-left hover:border-[#45475a] transition-colors"
+                  className="bg-mantle border border-surface-0 rounded-xl p-5 text-left hover:border-surface-1 transition-colors"
                 >
-                  <div className="text-lg font-bold text-[#cdd6f4] mb-1">{c.name}</div>
-                  <div className="text-xs text-[#6c7086] mb-3">by {c.teacherName}</div>
+                  <div className="text-lg font-bold text-text mb-1">{c.name}</div>
+                  <div className="text-xs text-overlay mb-3">by {c.teacherName}</div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-[#89b4fa] font-mono tracking-wider">{c.joinCode}</span>
-                    <span className="text-xs text-[#6c7086]">{c.memberCount} member{c.memberCount !== 1 ? 's' : ''}</span>
+                    <span className="text-sm text-accent font-mono tracking-wider">{c.joinCode}</span>
+                    <span className="text-xs text-overlay">{c.memberCount} member{c.memberCount !== 1 ? 's' : ''}</span>
                   </div>
                 </button>
               ))}

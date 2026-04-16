@@ -30,18 +30,18 @@ function TreeNode({
       onClick={onClick}
       className={`flex items-center gap-2 px-3 py-2 rounded-lg text-left transition-colors w-full max-w-xs ${
         isCurrent
-          ? 'bg-[#89b4fa]/20 border border-[#89b4fa] text-[#cdd6f4]'
-          : 'bg-[#181825] border border-[#313244] text-[#a6adc8] hover:border-[#45475a] hover:bg-[#1e1e2e]'
+          ? 'bg-accent/20 border border-accent text-text'
+          : 'bg-mantle border border-surface-0 text-subtext hover:border-surface-1 hover:bg-base'
       }`}
     >
-      <div className="w-6 h-6 rounded-full bg-[#313244] flex items-center justify-center text-[10px] font-bold text-[#89b4fa] shrink-0">
+      <div className="w-6 h-6 rounded-full bg-surface-0 flex items-center justify-center text-[10px] font-bold text-accent shrink-0">
         {(node.authorName || '?').charAt(0).toUpperCase()}
       </div>
       <div className="min-w-0">
-        <div className={`text-xs font-semibold truncate ${isCurrent ? 'text-[#cdd6f4]' : ''}`}>
+        <div className={`text-xs font-semibold truncate ${isCurrent ? 'text-text' : ''}`}>
           {node.name}
         </div>
-        <div className="text-[10px] text-[#6c7086] truncate">
+        <div className="text-[10px] text-overlay truncate">
           by {node.authorName || 'Anonymous'}
           {node.likes != null && node.likes > 0 ? ` · ${node.likes} ♥` : ''}
         </div>
@@ -53,11 +53,11 @@ function TreeNode({
 function Connector({ label }: { label?: string }) {
   return (
     <div className="flex flex-col items-center gap-0">
-      <div className="w-px h-4 bg-[#45475a]" />
+      <div className="w-px h-4 bg-surface-1" />
       {label && (
-        <span className="text-[9px] text-[#6c7086] uppercase tracking-wider">{label}</span>
+        <span className="text-[9px] text-overlay uppercase tracking-wider">{label}</span>
       )}
-      <div className="w-px h-4 bg-[#45475a]" />
+      <div className="w-px h-4 bg-surface-1" />
     </div>
   )
 }

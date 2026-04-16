@@ -115,19 +115,19 @@ export default function ExerciseCard({ exercise, lessonId, isCompleted, onComple
   const hasMoreHints = !showHints || hintIndex < exercise.hints.length - 1
 
   const borderColor = checkState === 'pass'
-    ? 'border-[#a6e3a1] shadow-[0_0_12px_rgba(166,227,161,0.15)]'
+    ? 'border-success shadow-[0_0_12px_rgba(166,227,161,0.15)]'
     : checkState === 'fail'
-    ? 'border-[#f38ba8] shadow-[0_0_12px_rgba(243,139,168,0.15)]'
-    : 'border-[#313244]'
+    ? 'border-danger shadow-[0_0_12px_rgba(243,139,168,0.15)]'
+    : 'border-surface-0'
 
   return (
-    <div className={`my-6 border rounded-xl bg-[#181825] overflow-hidden transition-all ${borderColor}`}>
+    <div className={`my-6 border rounded-xl bg-mantle overflow-hidden transition-all ${borderColor}`}>
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-[#313244]/50 border-b border-[#313244]">
+      <div className="flex items-center gap-2 px-4 py-3 bg-surface-0/50 border-b border-surface-0">
         <span className="text-base">✏️</span>
-        <span className="text-sm font-semibold text-[#cdd6f4]">Exercise</span>
+        <span className="text-sm font-semibold text-text">Exercise</span>
         {completed && (
-          <span className="ml-auto flex items-center gap-1 text-xs text-[#a6e3a1]">
+          <span className="ml-auto flex items-center gap-1 text-xs text-success">
             <span>✓</span>
             <span>Completed</span>
           </span>
@@ -136,7 +136,7 @@ export default function ExerciseCard({ exercise, lessonId, isCompleted, onComple
 
       {/* Prompt */}
       <div className="px-4 pt-4 pb-3">
-        <p className="text-[#a6adc8] text-sm leading-relaxed">{exercise.prompt}</p>
+        <p className="text-subtext text-sm leading-relaxed">{exercise.prompt}</p>
       </div>
 
       {/* Code Editor */}
@@ -152,13 +152,13 @@ export default function ExerciseCard({ exercise, lessonId, isCompleted, onComple
           disabled={isRunning}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors border ${
             isRunning
-              ? 'bg-[#89b4fa]/5 text-[#89b4fa]/50 border-[#89b4fa]/20 cursor-not-allowed'
-              : 'bg-[#89b4fa]/10 text-[#89b4fa] border-[#89b4fa]/30 hover:bg-[#89b4fa]/20'
+              ? 'bg-accent/5 text-accent/50 border-accent/20 cursor-not-allowed'
+              : 'bg-accent/10 text-accent border-accent/30 hover:bg-accent/20'
           }`}
         >
           {runState === 'running' ? (
             <>
-              <span className="inline-block w-3 h-3 border border-[#89b4fa]/50 border-t-[#89b4fa] rounded-full animate-spin" />
+              <span className="inline-block w-3 h-3 border border-accent/50 border-t-[#89b4fa] rounded-full animate-spin" />
               Running...
             </>
           ) : (
@@ -175,13 +175,13 @@ export default function ExerciseCard({ exercise, lessonId, isCompleted, onComple
           disabled={isRunning}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors border ${
             isRunning
-              ? 'bg-[#a6e3a1]/5 text-[#a6e3a1]/50 border-[#a6e3a1]/20 cursor-not-allowed'
-              : 'bg-[#a6e3a1]/10 text-[#a6e3a1] border-[#a6e3a1]/30 hover:bg-[#a6e3a1]/20'
+              ? 'bg-success/5 text-success/50 border-success/20 cursor-not-allowed'
+              : 'bg-success/10 text-success border-success/30 hover:bg-success/20'
           }`}
         >
           {checkState === 'running' ? (
             <>
-              <span className="inline-block w-3 h-3 border border-[#a6e3a1]/50 border-t-[#a6e3a1] rounded-full animate-spin" />
+              <span className="inline-block w-3 h-3 border border-success/50 border-t-[#a6e3a1] rounded-full animate-spin" />
               Checking...
             </>
           ) : (
@@ -199,8 +199,8 @@ export default function ExerciseCard({ exercise, lessonId, isCompleted, onComple
             disabled={!hasMoreHints}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm font-medium transition-colors border ${
               !hasMoreHints
-                ? 'bg-[#f9e2af]/5 text-[#f9e2af]/40 border-[#f9e2af]/20 cursor-not-allowed'
-                : 'bg-[#f9e2af]/10 text-[#f9e2af] border-[#f9e2af]/30 hover:bg-[#f9e2af]/20'
+                ? 'bg-warn/5 text-warn/40 border-warn/20 cursor-not-allowed'
+                : 'bg-warn/10 text-warn border-warn/30 hover:bg-warn/20'
             }`}
           >
             <span className="text-xs">💡</span>
@@ -215,7 +215,7 @@ export default function ExerciseCard({ exercise, lessonId, isCompleted, onComple
           {visibleHints.map((hint, i) => (
             <div
               key={i}
-              className="flex gap-2 bg-[#f9e2af]/5 border border-[#f9e2af]/20 rounded-lg px-3 py-2 text-xs text-[#f9e2af]"
+              className="flex gap-2 bg-warn/5 border border-warn/20 rounded-lg px-3 py-2 text-xs text-warn"
             >
               <span className="shrink-0">💡</span>
               <span>{hint}</span>
@@ -226,26 +226,26 @@ export default function ExerciseCard({ exercise, lessonId, isCompleted, onComple
 
       {/* Output area */}
       {hasOutput && (
-        <div className="border-t border-[#313244] bg-[#0d0d1a]">
-          <div className="flex items-center gap-2 px-4 py-1.5 border-b border-[#313244]/50">
-            <span className="text-[10px] font-mono text-[#6c7086] uppercase tracking-wider">Output</span>
-            {checkState === 'pass' && <span className="w-1.5 h-1.5 rounded-full bg-[#a6e3a1] inline-block" />}
-            {checkState === 'fail' && <span className="w-1.5 h-1.5 rounded-full bg-[#f38ba8] inline-block" />}
-            {runState === 'done' && checkState === 'idle' && <span className="w-1.5 h-1.5 rounded-full bg-[#a6e3a1] inline-block" />}
-            {runState === 'error' && <span className="w-1.5 h-1.5 rounded-full bg-[#f38ba8] inline-block" />}
+        <div className="border-t border-surface-0 bg-[#0d0d1a]">
+          <div className="flex items-center gap-2 px-4 py-1.5 border-b border-surface-0/50">
+            <span className="text-[10px] font-mono text-overlay uppercase tracking-wider">Output</span>
+            {checkState === 'pass' && <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />}
+            {checkState === 'fail' && <span className="w-1.5 h-1.5 rounded-full bg-danger inline-block" />}
+            {runState === 'done' && checkState === 'idle' && <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />}
+            {runState === 'error' && <span className="w-1.5 h-1.5 rounded-full bg-danger inline-block" />}
           </div>
           <div className="px-4 py-3 min-h-[2rem] max-h-40 overflow-y-auto font-mono text-sm">
             {outputLines.map((line, i) => (
-              <div key={i} className="text-[#a6e3a1] leading-relaxed">{line}</div>
+              <div key={i} className="text-success leading-relaxed">{line}</div>
             ))}
             {errorMsg && (
-              <div className="text-[#f38ba8] leading-relaxed">{errorMsg}</div>
+              <div className="text-danger leading-relaxed">{errorMsg}</div>
             )}
             {checkState === 'pass' && checkMessage && (
-              <div className="text-[#a6e3a1] font-semibold mt-1">✅ {checkMessage}</div>
+              <div className="text-success font-semibold mt-1">✅ {checkMessage}</div>
             )}
             {checkState === 'fail' && checkMessage && (
-              <div className="text-[#f38ba8] mt-1">❌ {checkMessage}</div>
+              <div className="text-danger mt-1">❌ {checkMessage}</div>
             )}
           </div>
         </div>

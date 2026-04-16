@@ -9,7 +9,7 @@
 
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '../auth'
 import type { DailyPuzzle } from './puzzles'
 
 interface ChallengeBannerProps {
@@ -67,7 +67,7 @@ export default function ChallengeBanner({ puzzle, dayNumber, solvedBlocks }: Cha
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="absolute top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1 bg-[#89b4fa] text-[#1e1e2e] rounded-full text-xs font-bold shadow-lg hover:bg-[#74c7ec]"
+        className="absolute top-2 left-1/2 -translate-x-1/2 z-50 px-3 py-1 bg-accent text-base rounded-full text-xs font-bold shadow-lg hover:bg-sapphire"
       >
         🎯 Daily #{dayNumber}
       </button>
@@ -75,15 +75,15 @@ export default function ChallengeBanner({ puzzle, dayNumber, solvedBlocks }: Cha
   }
 
   return (
-    <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 w-[min(92vw,560px)] bg-[#181825] border border-[#45475a] rounded-xl shadow-2xl p-4">
+    <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 w-[min(92vw,560px)] bg-mantle border border-surface-1 rounded-xl shadow-2xl p-4">
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-xl">🎯</span>
           <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-wide text-[#6c7086]">
+            <div className="text-[10px] uppercase tracking-wide text-overlay">
               Daily #{dayNumber}
             </div>
-            <div className="text-sm font-bold text-[#cdd6f4] truncate">
+            <div className="text-sm font-bold text-text truncate">
               {puzzle.title}
             </div>
           </div>
@@ -91,42 +91,42 @@ export default function ChallengeBanner({ puzzle, dayNumber, solvedBlocks }: Cha
         <button
           type="button"
           onClick={() => setExpanded(false)}
-          className="text-[#6c7086] hover:text-[#cdd6f4] text-lg leading-none px-1"
+          className="text-overlay hover:text-text text-lg leading-none px-1"
           aria-label="Minimize"
         >
           −
         </button>
       </div>
 
-      <p className="text-xs text-[#a6adc8] mb-2">{puzzle.description}</p>
+      <p className="text-xs text-subtext mb-2">{puzzle.description}</p>
 
-      <div className="bg-[#11111b] rounded-md p-2 mb-2 border border-[#313244]">
-        <div className="text-[10px] text-[#6c7086] uppercase tracking-wide mb-1">
+      <div className="bg-crust rounded-md p-2 mb-2 border border-surface-0">
+        <div className="text-[10px] text-overlay uppercase tracking-wide mb-1">
           Target Output
         </div>
-        <pre className="text-[#a6e3a1] font-mono text-xs whitespace-pre-wrap max-h-24 overflow-auto">
+        <pre className="text-success font-mono text-xs whitespace-pre-wrap max-h-24 overflow-auto">
           {puzzle.targetOutput.join('\n')}
         </pre>
       </div>
 
       {solvedBlocks == null ? (
         <div className="flex items-center justify-between">
-          <span className="text-xs text-[#6c7086]">
-            Par: <span className="text-[#cdd6f4] font-semibold">{puzzle.parBlocks} blocks</span>
+          <span className="text-xs text-overlay">
+            Par: <span className="text-text font-semibold">{puzzle.parBlocks} blocks</span>
           </span>
           <Link
             to="/daily"
-            className="text-xs text-[#89b4fa] hover:text-[#74c7ec]"
+            className="text-xs text-accent hover:text-sapphire"
           >
             ← Back to Daily
           </Link>
         </div>
       ) : (
-        <div className="bg-[#1a3e2a] border border-[#a6e3a1] rounded-md p-3">
-          <div className="text-[#a6e3a1] font-bold text-sm mb-1">
+        <div className="bg-[#1a3e2a] border border-success rounded-md p-3">
+          <div className="text-success font-bold text-sm mb-1">
             ✓ Solved in {solvedBlocks} blocks! {stars}
           </div>
-          <div className="text-xs text-[#a6adc8] mb-2">
+          <div className="text-xs text-subtext mb-2">
             {solvedBlocks <= puzzle.parBlocks
               ? 'Under par — incredible!'
               : solvedBlocks === puzzle.parBlocks
@@ -137,13 +137,13 @@ export default function ChallengeBanner({ puzzle, dayNumber, solvedBlocks }: Cha
             <button
               type="button"
               onClick={handleShare}
-              className="flex-1 px-3 py-1.5 bg-[#89b4fa] hover:bg-[#74c7ec] text-[#1e1e2e] rounded-md text-xs font-bold transition-colors"
+              className="flex-1 px-3 py-1.5 bg-accent hover:bg-sapphire text-base rounded-md text-xs font-bold transition-colors"
             >
               {copied ? '✓ Copied!' : 'Share Result'}
             </button>
             <Link
               to="/daily"
-              className="flex-1 px-3 py-1.5 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-md text-xs font-bold text-center transition-colors"
+              className="flex-1 px-3 py-1.5 bg-surface-0 hover:bg-surface-1 text-text rounded-md text-xs font-bold text-center transition-colors"
             >
               Back to Daily
             </Link>

@@ -274,14 +274,19 @@ export interface ChatMessage {
   createdAt: number
 }
 
-export async function fetchChat(classroomId: string, after?: number): Promise<ChatMessage[]> {
+export async function fetchChat(
+  classroomId: string, after?: number, signal?: AbortSignal,
+): Promise<ChatMessage[]> {
   try {
     const params = after ? `?after=${after}` : ''
-    const res = await fetch(`${API}/${classroomId}/chat${params}`)
+    const res = await fetch(`${API}/${classroomId}/chat${params}`, { signal })
     if (!res.ok) return []
     const data = await res.json()
     return data.messages ?? []
-  } catch { return [] }
+  } catch (err) {
+    if ((err as { name?: string })?.name === 'AbortError') throw err
+    return []
+  }
 }
 
 export async function sendChat(

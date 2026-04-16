@@ -194,7 +194,7 @@ export default function TutorialOverlay({ onFinish, onSkip }: TutorialOverlayPro
 
       {/* Tooltip card */}
       <div
-        className="fixed z-[101] bg-[#1e1e2e] border-2 border-[#313244] rounded-2xl shadow-2xl"
+        className="fixed z-[101] bg-base border-2 border-surface-0 rounded-2xl shadow-2xl"
         style={{
           top: tooltipPos.top,
           left: tooltipPos.left,
@@ -204,16 +204,16 @@ export default function TutorialOverlay({ onFinish, onSkip }: TutorialOverlayPro
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-2">
-          <span className="text-xs text-[#6c7086] font-mono">{stepIndex + 1} / {TUTORIAL_STEPS.length}</span>
-          <button onClick={handleSkip} className="text-xs text-[#6c7086] hover:text-[#cdd6f4] transition-colors">
+          <span className="text-xs text-overlay font-mono">{stepIndex + 1} / {TUTORIAL_STEPS.length}</span>
+          <button onClick={handleSkip} className="text-xs text-overlay hover:text-text transition-colors">
             Skip Tour
           </button>
         </div>
 
         {/* Content */}
         <div className="px-6 pb-4">
-          <h3 className="text-xl font-bold text-[#cdd6f4] mb-3">{step.title}</h3>
-          <p className="text-[#a6adc8] text-sm leading-relaxed">{step.body}</p>
+          <h3 className="text-xl font-bold text-text mb-3">{step.title}</h3>
+          <p className="text-subtext text-sm leading-relaxed">{step.body}</p>
         </div>
 
         {/* Progress dots */}
@@ -222,7 +222,7 @@ export default function TutorialOverlay({ onFinish, onSkip }: TutorialOverlayPro
             <div
               key={i}
               className={`h-1.5 rounded-full transition-all ${
-                i === stepIndex ? 'w-4 bg-[#89b4fa]' : i < stepIndex ? 'w-1.5 bg-[#89b4fa]/50' : 'w-1.5 bg-[#313244]'
+                i === stepIndex ? 'w-4 bg-accent' : i < stepIndex ? 'w-1.5 bg-accent/50' : 'w-1.5 bg-surface-0'
               }`}
             />
           ))}
@@ -233,14 +233,14 @@ export default function TutorialOverlay({ onFinish, onSkip }: TutorialOverlayPro
           {!isFirst && (
             <button
               onClick={handlePrev}
-              className="px-4 py-2.5 text-sm font-medium text-[#a6adc8] hover:text-[#cdd6f4] transition-colors"
+              className="px-4 py-2.5 text-sm font-medium text-subtext hover:text-text transition-colors"
             >
               Back
             </button>
           )}
           <button
             onClick={handleNext}
-            className="flex-1 px-6 py-2.5 text-sm font-semibold bg-[#89b4fa] text-[#1e1e2e] rounded-lg hover:bg-[#89b4fa]/90 transition-colors"
+            className="flex-1 px-6 py-2.5 text-sm font-semibold bg-accent text-base rounded-lg hover:bg-accent/90 transition-colors"
           >
             {isLast ? 'Get Started!' : 'Next'}
           </button>

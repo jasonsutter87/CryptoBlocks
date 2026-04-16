@@ -12,22 +12,22 @@ const ExerciseCard = lazy(() => import('./ExerciseCard'))
 function HeadingBlock({ block }: { block: LessonBlock }) {
   const text = block.text ?? ''
   if (block.level === 1) {
-    return <h1 className="text-3xl font-bold text-[#cdd6f4] mt-8 mb-4 first:mt-0">{text}</h1>
+    return <h1 className="text-3xl font-bold text-text mt-8 mb-4 first:mt-0">{text}</h1>
   }
   if (block.level === 2) {
-    return <h2 className="text-xl font-semibold text-[#cdd6f4] mt-6 mb-3">{text}</h2>
+    return <h2 className="text-xl font-semibold text-text mt-6 mb-3">{text}</h2>
   }
-  return <h3 className="text-lg font-semibold text-[#cdd6f4] mt-4 mb-2">{text}</h3>
+  return <h3 className="text-lg font-semibold text-text mt-4 mb-2">{text}</h3>
 }
 
 function ParagraphBlock({ block }: { block: LessonBlock }) {
-  return <p className="text-[#a6adc8] leading-relaxed mb-4">{block.text}</p>
+  return <p className="text-subtext leading-relaxed mb-4">{block.text}</p>
 }
 
 function CodeBlock({ block }: { block: LessonBlock }) {
   if (block.runnable && block.code) {
     return (
-      <Suspense fallback={<div className="my-5 h-24 bg-[#11111b] border border-[#313244] rounded-lg animate-pulse" />}>
+      <Suspense fallback={<div className="my-5 h-24 bg-crust border border-surface-0 rounded-lg animate-pulse" />}>
         <RunnableCode code={block.code} language={block.language === 'html' ? 'javascript' : (block.language ?? 'javascript')} />
       </Suspense>
     )
@@ -35,8 +35,8 @@ function CodeBlock({ block }: { block: LessonBlock }) {
 
   return (
     <div className="my-5">
-      <pre className="bg-[#11111b] border border-[#313244] rounded-lg px-5 py-4 overflow-x-auto">
-        <code className="text-[#cdd6f4] font-mono text-sm leading-relaxed whitespace-pre">
+      <pre className="bg-crust border border-surface-0 rounded-lg px-5 py-4 overflow-x-auto">
+        <code className="text-text font-mono text-sm leading-relaxed whitespace-pre">
           {block.code}
         </code>
       </pre>
@@ -49,14 +49,14 @@ function CodeWithBlocksBlock({ block }: { block: LessonBlock }) {
   return (
     <div className="my-5 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
       <div>
-        <div className="mb-1.5 text-[10px] font-mono text-[#6c7086] uppercase tracking-wider">Code</div>
-        <Suspense fallback={<div className="h-24 bg-[#11111b] border border-[#313244] rounded-lg animate-pulse" />}>
+        <div className="mb-1.5 text-[10px] font-mono text-overlay uppercase tracking-wider">Code</div>
+        <Suspense fallback={<div className="h-24 bg-crust border border-surface-0 rounded-lg animate-pulse" />}>
           <RunnableCode code={block.code} language={block.language === 'html' ? 'javascript' : (block.language ?? 'javascript')} />
         </Suspense>
       </div>
       <div>
-        <div className="mb-1.5 text-[10px] font-mono text-[#6c7086] uppercase tracking-wider">As blocks</div>
-        <Suspense fallback={<div className="h-[216px] bg-[#11111b] border border-[#313244] rounded-lg animate-pulse" />}>
+        <div className="mb-1.5 text-[10px] font-mono text-overlay uppercase tracking-wider">As blocks</div>
+        <Suspense fallback={<div className="h-[216px] bg-crust border border-surface-0 rounded-lg animate-pulse" />}>
           <BlockPreview workspaceJson={block.blockWorkspace} />
         </Suspense>
       </div>
@@ -65,9 +65,9 @@ function CodeWithBlocksBlock({ block }: { block: LessonBlock }) {
 }
 
 const CALLOUT_STYLES: Record<string, { border: string; bg: string; icon: string; label: string }> = {
-  info:    { border: 'border-[#89b4fa]',  bg: 'bg-[#89b4fa]/10',  icon: 'ℹ️',  label: 'Info' },
-  tip:     { border: 'border-[#a6e3a1]',  bg: 'bg-[#a6e3a1]/10',  icon: '💡', label: 'Tip' },
-  warning: { border: 'border-[#f9e2af]',  bg: 'bg-[#f9e2af]/10',  icon: '⚠️', label: 'Note' },
+  info:    { border: 'border-accent',  bg: 'bg-accent/10',  icon: 'ℹ️',  label: 'Info' },
+  tip:     { border: 'border-success',  bg: 'bg-success/10',  icon: '💡', label: 'Tip' },
+  warning: { border: 'border-warn',  bg: 'bg-warn/10',  icon: '⚠️', label: 'Note' },
 }
 
 function CalloutBlock({ block }: { block: LessonBlock }) {
@@ -76,7 +76,7 @@ function CalloutBlock({ block }: { block: LessonBlock }) {
   return (
     <div className={`my-5 flex gap-3 border-l-4 ${styles.border} ${styles.bg} rounded-r-lg px-4 py-3`}>
       <span className="text-lg shrink-0">{styles.icon}</span>
-      <p className="text-[#cdd6f4] text-sm leading-relaxed">{block.text}</p>
+      <p className="text-text text-sm leading-relaxed">{block.text}</p>
     </div>
   )
 }
@@ -110,7 +110,7 @@ function LessonBlockRenderer({
       const isCompleted = progress[lessonId]?.exercisesCompleted?.includes(exercise.id) ?? false
       return (
         <Suspense fallback={
-          <div className="my-6 h-48 bg-[#181825] border border-[#313244] rounded-xl animate-pulse" />
+          <div className="my-6 h-48 bg-mantle border border-surface-0 rounded-xl animate-pulse" />
         }>
           <ExerciseCard
             exercise={exercise}
@@ -134,11 +134,11 @@ function LessonView({ lesson, onMarkComplete }: { lesson: Lesson; onMarkComplete
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-[#6c7086] font-mono uppercase tracking-wider">
+        <span className="text-xs text-overlay font-mono uppercase tracking-wider">
           {lesson.estimatedMinutes} min read
         </span>
         {complete && (
-          <span className="text-xs text-[#a6e3a1] flex items-center gap-1">
+          <span className="text-xs text-success flex items-center gap-1">
             <span>✓</span> Completed
           </span>
         )}
@@ -157,10 +157,10 @@ function LessonView({ lesson, onMarkComplete }: { lesson: Lesson; onMarkComplete
       </div>
 
       {!complete && (
-        <div className="mt-10 pt-6 border-t border-[#313244]">
+        <div className="mt-10 pt-6 border-t border-surface-0">
           <button
             onClick={onMarkComplete}
-            className="px-5 py-2.5 bg-[#89b4fa] text-[#1e1e2e] rounded-lg font-semibold text-sm hover:bg-[#b4d0fb] transition-colors"
+            className="px-5 py-2.5 bg-accent text-base rounded-lg font-semibold text-sm hover:bg-[#b4d0fb] transition-colors"
           >
             Mark as complete ✓
           </button>
@@ -186,9 +186,9 @@ function ChapterSidebar({
   onSelectLesson: (chapterId: string, lessonId: string) => void
 }) {
   return (
-    <aside className="w-64 shrink-0 bg-[#181825] border-r border-[#313244] overflow-y-auto">
-      <div className="px-4 py-5 border-b border-[#313244]">
-        <h2 className="text-sm font-bold text-[#cdd6f4] tracking-wide uppercase">Chapters</h2>
+    <aside className="w-64 shrink-0 bg-mantle border-r border-surface-0 overflow-y-auto">
+      <div className="px-4 py-5 border-b border-surface-0">
+        <h2 className="text-sm font-bold text-text tracking-wide uppercase">Chapters</h2>
       </div>
       <nav className="py-2">
         {chapters.map(chapter => {
@@ -201,15 +201,15 @@ function ChapterSidebar({
               {/* Chapter header */}
               <div
                 onClick={() => onSelectChapter(chapter.id)}
-                className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-[#313244]/30 transition-colors ${
-                  isCurrentChapter ? 'bg-[#313244]/50' : ''
+                className={`flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-surface-0/30 transition-colors ${
+                  isCurrentChapter ? 'bg-surface-0/50' : ''
                 }`}
               >
                 <span className="text-xl">{chapter.icon}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs text-[#6c7086] font-mono">Chapter {chapter.number}</div>
-                  <div className="text-sm font-semibold text-[#cdd6f4] truncate">{chapter.title}</div>
-                  <div className="text-xs text-[#6c7086] mt-0.5">
+                  <div className="text-xs text-overlay font-mono">Chapter {chapter.number}</div>
+                  <div className="text-sm font-semibold text-text truncate">{chapter.title}</div>
+                  <div className="text-xs text-overlay mt-0.5">
                     {completedLessons}/{totalLessons} done
                   </div>
                 </div>
@@ -227,8 +227,8 @@ function ChapterSidebar({
                         onClick={() => onSelectLesson(chapter.id, lesson.id)}
                         className={`w-full text-left flex items-center gap-3 px-4 pl-10 py-2.5 transition-colors ${
                           isActive
-                            ? 'bg-[#89b4fa]/10 text-[#89b4fa]'
-                            : 'text-[#a6adc8] hover:bg-[#313244]/50 hover:text-[#cdd6f4]'
+                            ? 'bg-accent/10 text-accent'
+                            : 'text-subtext hover:bg-surface-0/50 hover:text-text'
                         }`}
                       >
                         <span className="text-sm shrink-0">
@@ -259,8 +259,8 @@ function ChapterPicker({
 }) {
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold text-[#cdd6f4] mb-2">Learn JavaScript</h1>
-      <p className="text-[#a6adc8] mb-10 text-lg">
+      <h1 className="text-3xl font-bold text-text mb-2">Learn JavaScript</h1>
+      <p className="text-subtext mb-10 text-lg">
         A beginner-friendly course. Start from zero and build real things.
       </p>
       <div className="grid gap-4">
@@ -272,24 +272,24 @@ function ChapterPicker({
             <button
               key={chapter.id}
               onClick={() => onSelectChapter(chapter.id)}
-              className="text-left flex items-start gap-5 p-5 bg-[#181825] border border-[#313244] rounded-xl hover:border-[#89b4fa]/40 hover:bg-[#313244]/30 transition-all group"
+              className="text-left flex items-start gap-5 p-5 bg-mantle border border-surface-0 rounded-xl hover:border-accent/40 hover:bg-surface-0/30 transition-all group"
             >
               <span className="text-4xl">{chapter.icon}</span>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-[#6c7086] font-mono mb-1">Chapter {chapter.number}</div>
-                <div className="text-lg font-semibold text-[#cdd6f4] group-hover:text-[#89b4fa] transition-colors">
+                <div className="text-xs text-overlay font-mono mb-1">Chapter {chapter.number}</div>
+                <div className="text-lg font-semibold text-text group-hover:text-accent transition-colors">
                   {chapter.title}
                 </div>
-                <p className="text-sm text-[#a6adc8] mt-1">{chapter.description}</p>
-                <div className="flex items-center gap-4 mt-3 text-xs text-[#6c7086]">
+                <p className="text-sm text-subtext mt-1">{chapter.description}</p>
+                <div className="flex items-center gap-4 mt-3 text-xs text-overlay">
                   <span>{total} lessons</span>
                   <span>~{totalMins} min</span>
                   {done > 0 && (
-                    <span className="text-[#a6e3a1]">{done}/{total} completed</span>
+                    <span className="text-success">{done}/{total} completed</span>
                   )}
                 </div>
               </div>
-              <span className="text-[#6c7086] group-hover:text-[#89b4fa] transition-colors text-xl">→</span>
+              <span className="text-overlay group-hover:text-accent transition-colors text-xl">→</span>
             </button>
           )
         })}
@@ -334,14 +334,14 @@ export default function LearnPage() {
 
   if (!selectedChapterId) {
     return (
-      <div className="min-h-screen bg-[#1e1e2e]">
+      <div className="min-h-screen bg-base">
         <ChapterPicker chapters={ALL_CHAPTERS} onSelectChapter={handleSelectChapter} />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#1e1e2e] flex">
+    <div className="min-h-screen bg-base flex">
       <ChapterSidebar
         chapters={ALL_CHAPTERS}
         selectedChapterId={selectedChapterId}
@@ -354,7 +354,7 @@ export default function LearnPage() {
         {selectedLesson ? (
           <LessonView lesson={selectedLesson} onMarkComplete={handleMarkComplete} />
         ) : (
-          <div className="flex items-center justify-center h-64 text-[#6c7086]">
+          <div className="flex items-center justify-center h-64 text-overlay">
             Select a lesson to begin.
           </div>
         )}

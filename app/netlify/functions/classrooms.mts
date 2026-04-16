@@ -8,166 +8,59 @@
  *   POST /api/classrooms/join      → join with a code (student, auth required)
  */
 
-// -- Clerk JWT verification ------------------------------------------------
+import {
+  json, cors, logError, withRequest, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  moderateContent, secureRandomCode,
+  requireAuth, requireClassroomMember, requireClassroomTeacher,
+} from './_lib/index.js'
+import type { TursoRow } from './_lib/index.js'
+import {
+  CreateClassroomInput, CreateAssignmentInput, SubmitAssignmentInput,
+  FeedbackInput, CreateDiscussionInput, CreateReplyInput, SendChatInput,
+  JoinCode,
+} from '../../src/schema/index.js'
 
-async function verifyClerkToken(token: string): Promise<{ sub: string; name?: string; avatar?: string } | null> {
-  if (!token) return null
-  try {
-    // Decode JWT payload (Clerk session tokens are JWTs)
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))
-    if (!payload.sub) return null
-    // Fetch user details from Clerk Backend API for name/avatar
-    if (process.env.CLERK_SECRET_KEY) {
-      try {
-        const res = await fetch(`https://api.clerk.com/v1/users/${payload.sub}`, {
-          headers: { 'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}` },
-        })
-        if (res.ok) {
-          const user = await res.json()
-          return {
-            sub: payload.sub,
-            name: [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || undefined,
-            avatar: user.image_url || user.profile_image_url || undefined,
-          }
-        }
-      } catch {}
-    }
-    return { sub: payload.sub }
-  } catch {
-    return null
-  }
-}
-
-// -- Turso HTTP client (same as projects function) -------------------------
-
-interface TursoRow { [key: string]: unknown }
-interface TursoResult { rows: TursoRow[] }
-
-async function tursoExecute(sql: string, args: (string | number | null)[] = []): Promise<TursoResult> {
-  const baseUrl = (process.env.TURSO_URL || '').replace('libsql://', 'https://')
-  const token = process.env.TURSO_AUTH_TOKEN || ''
-
-  const res = await fetch(`${baseUrl}/v3/pipeline`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      requests: [
-        {
-          type: 'execute',
-          stmt: {
-            sql,
-            args: args.map((a) => {
-              if (a === null) return { type: 'null', value: null }
-              if (typeof a === 'number') return { type: Number.isInteger(a) ? 'integer' : 'float', value: String(a) }
-              return { type: 'text', value: String(a) }
-            }),
-          },
-        },
-        { type: 'close' },
-      ],
-    }),
-  })
-
-  if (!res.ok) {
-    const body = await res.text()
-    throw new Error(`Turso HTTP ${res.status}: ${body.slice(0, 200)}`)
-  }
-
-  const data = await res.json()
-  const result = data?.results?.[0]?.response?.result
-  if (!result) return { rows: [] }
-
-  const cols: string[] = result.cols.map((c: { name: string }) => c.name)
-  const rows: TursoRow[] = result.rows.map((row: Array<{ value: unknown }>) => {
-    const obj: TursoRow = {}
-    for (let i = 0; i < cols.length; i++) {
-      obj[cols[i]] = row[i]?.value ?? null
-    }
-    return obj
-  })
-  return { rows }
-}
-
-// -- HTTP helpers -----------------------------------------------------------
-
-function json(data: unknown, status = 200): Response {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  })
-}
-
-function cors(): Response {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  })
-}
-
+const JOIN_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 function generateJoinCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-  let code = ''
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)]
-  }
-  return code
+  return secureRandomCode(6, JOIN_CODE_ALPHABET)
 }
 
-// -- Handler ----------------------------------------------------------------
-
-export default async function handler(req: Request) {
+async function handler(req: Request) {
   if (req.method === 'OPTIONS') return cors()
 
-  const url = new URL(req.url)
-  const cleanPath = url.pathname
-    .replace('/.netlify/functions/classrooms', '')
-    .replace('/api/classrooms', '')
-  const segments = cleanPath.split('/').filter(Boolean)
+  const segments = parsePath(req, 'classrooms')
 
   try {
-    if (!process.env.TURSO_URL || !process.env.TURSO_AUTH_TOKEN) {
+    if (!isTursoConfigured()) {
       return json({ error: 'Database not configured' }, 500)
     }
 
-    const authHeader = req.headers.get('Authorization') || ''
-    const token = authHeader.replace('Bearer ', '')
-    const user = await verifyClerkToken(token)
+    const user = await verifyFromRequest(req)
 
     // POST /api/classrooms — create a classroom
     if (req.method === 'POST' && segments.length === 0) {
       if (!user) return json({ error: 'Sign in to create a classroom' }, 401)
 
-      const body = await req.json()
-      const { name } = body
-      if (!name) return json({ error: 'name is required' }, 400)
+      const raw = await req.json().catch(() => null)
+      const parsed = CreateClassroomInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      const { name, description } = parsed.data
+
+      const modErr = moderateContent(name, description ?? '')
+      if (modErr) return json({ error: modErr }, 400)
 
       const id = crypto.randomUUID()
       const joinCode = generateJoinCode()
       const now = Date.now()
+      const teacherName = (user.name || 'Teacher').slice(0, 50)
 
       await tursoExecute(
         'INSERT INTO classrooms (id, name, join_code, teacher_id, teacher_name, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [id, String(name).slice(0, 100), joinCode, user.sub, String(user.name || 'Teacher').slice(0, 50), now],
+        [id, name, joinCode, user.sub, teacherName, now],
       )
-
-      // Also add the teacher as a member with role "teacher"
       await tursoExecute(
         'INSERT INTO class_members (classroom_id, user_id, user_name, user_avatar, role, joined_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [id, user.sub, String(user.name || 'Teacher').slice(0, 50), user.avatar || '', 'teacher', now],
+        [id, user.sub, teacherName, user.avatar || '', 'teacher', now],
       )
 
       return json({ id, name, joinCode, createdAt: now }, 201)
@@ -177,20 +70,64 @@ export default async function handler(req: Request) {
     if (req.method === 'POST' && segments.length === 1 && segments[0] === 'join') {
       if (!user) return json({ error: 'Sign in to join a classroom' }, 401)
 
-      const body = await req.json()
-      const code = String(body.code || '').toUpperCase().trim()
-      if (!code) return json({ error: 'Join code is required' }, 400)
+      const raw = await req.json().catch(() => null)
+      const rawCode = String((raw as { code?: unknown })?.code ?? '').toUpperCase().trim()
+      const parsed = JoinCode.safeParse(rawCode)
+      if (!parsed.success) return json({ error: 'Invalid join code format' }, 400)
+      const code = parsed.data
+
+      // Rate-limit guessers. 6-char codes over a 32-char alphabet = ~10^9
+      // space; without a limit, one account at 1 req/ms enumerates it in
+      // ~11 days. Allow 10 wrong guesses per rolling hour per user.
+      const MAX_FAILS = 10
+      const WINDOW_MS = 60 * 60 * 1000
+      await tursoExecute(
+        `CREATE TABLE IF NOT EXISTS join_attempts (
+          user_id TEXT PRIMARY KEY,
+          fails INTEGER NOT NULL DEFAULT 0,
+          last_fail_at INTEGER NOT NULL DEFAULT 0
+        )`,
+      ).catch(() => { /* concurrent create */ })
+      const now = Date.now()
+      const prev = await tursoExecute(
+        'SELECT fails, last_fail_at FROM join_attempts WHERE user_id = ?',
+        [user.sub],
+      )
+      const fails = Number(prev.rows[0]?.fails ?? 0)
+      const lastFail = Number(prev.rows[0]?.last_fail_at ?? 0)
+      if (fails >= MAX_FAILS && now - lastFail < WINDOW_MS) {
+        return json({ error: 'Too many attempts — try again in an hour.' }, 429)
+      }
+      // Window expired — reset the counter.
+      if (fails > 0 && now - lastFail >= WINDOW_MS) {
+        await tursoExecute(
+          'UPDATE join_attempts SET fails = 0 WHERE user_id = ?',
+          [user.sub],
+        )
+      }
 
       const classroom = await tursoExecute(
         'SELECT id, name FROM classrooms WHERE join_code = ?',
         [code],
       )
       if (classroom.rows.length === 0) {
+        await tursoExecute(
+          `INSERT INTO join_attempts (user_id, fails, last_fail_at) VALUES (?, 1, ?)
+           ON CONFLICT (user_id) DO UPDATE SET
+             fails = fails + 1, last_fail_at = excluded.last_fail_at`,
+          [user.sub, now],
+        )
         return json({ error: 'Invalid join code' }, 404)
       }
 
       const classroomId = String(classroom.rows[0].id)
       const classroomName = String(classroom.rows[0].name)
+
+      // Successful match — reset the attempt counter.
+      await tursoExecute(
+        'DELETE FROM join_attempts WHERE user_id = ?',
+        [user.sub],
+      ).catch(() => { /* nothing to delete is fine */ })
 
       // Check if already a member
       const existing = await tursoExecute(
@@ -207,9 +144,11 @@ export default async function handler(req: Request) {
       return json({ classroomId, classroomName })
     }
 
-    // GET /api/classrooms/:id — classroom detail + members + their projects
+    // GET /api/classrooms/:id — classroom detail + members + their projects (members only)
     if (req.method === 'GET' && segments.length === 1) {
       const classroomId = segments[0]
+      const guardErr = await requireClassroomMember(classroomId, user)
+      if (guardErr) return guardErr
 
       const classroom = await tursoExecute(
         'SELECT * FROM classrooms WHERE id = ?',
@@ -236,11 +175,15 @@ export default async function handler(req: Request) {
       }
 
       const c = classroom.rows[0]
+      // Join code is a credential — only the teacher sees it. A student who
+      // had the code and later left the class could otherwise share it to
+      // auto-enroll alts, or leak it publicly.
+      const viewerIsTeacher = user?.sub === String(c.teacher_id)
       return json({
         id: c.id,
         name: c.name,
         description: c.description || '',
-        joinCode: c.join_code,
+        joinCode: viewerIsTeacher ? c.join_code : null,
         teacherId: c.teacher_id,
         teacherName: c.teacher_name,
         createdAt: c.created_at,
@@ -281,7 +224,8 @@ export default async function handler(req: Request) {
         classrooms: result.rows.map((c) => ({
           id: c.id,
           name: c.name,
-          joinCode: c.join_code,
+          // See detail endpoint: join code is teacher-only.
+          joinCode: String(c.teacher_id) === user.sub ? c.join_code : null,
           teacherId: c.teacher_id,
           teacherName: c.teacher_name,
           memberCount: Number(c.member_count),
@@ -292,27 +236,33 @@ export default async function handler(req: Request) {
 
     // POST /api/classrooms/:id/assignments — create an assignment (teacher only)
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'assignments') {
-      if (!user) return json({ error: 'Sign in to create assignments' }, 401)
-
       const classroomId = segments[0]
-      const body = await req.json()
-      const { title, description, dueDate } = body
-      if (!title) return json({ error: 'title is required' }, 400)
+      const guardErr = await requireClassroomTeacher(classroomId, user)
+      if (guardErr) return guardErr
+
+      const raw = await req.json().catch(() => null)
+      const parsed = CreateAssignmentInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      const { title, description, dueDate } = parsed.data
+      const modErr = moderateContent(title, description ?? '')
+      if (modErr) return json({ error: modErr }, 400)
 
       const id = crypto.randomUUID()
       const now = Date.now()
 
       await tursoExecute(
         'INSERT INTO assignments (id, classroom_id, title, description, due_date, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-        [id, classroomId, String(title).slice(0, 200), String(description || '').slice(0, 1000), dueDate || null, now],
+        [id, classroomId, title, description ?? '', dueDate ?? null, now],
       )
 
       return json({ id, title, createdAt: now }, 201)
     }
 
-    // GET /api/classrooms/:id/assignments — list assignments for a classroom
+    // GET /api/classrooms/:id/assignments — list assignments (members only)
     if (req.method === 'GET' && segments.length === 2 && segments[1] === 'assignments') {
       const classroomId = segments[0]
+      const guardErr = await requireClassroomMember(classroomId, user)
+      if (guardErr) return guardErr
 
       const assignments = await tursoExecute(
         'SELECT * FROM assignments WHERE classroom_id = ? ORDER BY created_at DESC',
@@ -343,28 +293,34 @@ export default async function handler(req: Request) {
     // POST /api/classrooms/:classroomId/assignments/:assignmentId/submit — student submits work
     // segments: ['classroomId', 'assignments', 'assignmentId', 'submit']
     if (req.method === 'POST' && segments.length === 4 && segments[1] === 'assignments' && segments[3] === 'submit') {
-      if (!user) return json({ error: 'Sign in to submit' }, 401)
-
+      const classroomId = segments[0]
       const assignmentId = segments[2]
-      const body = await req.json()
-      const { workspaceJson, blockCount } = body
-      if (!workspaceJson) return json({ error: 'workspaceJson is required' }, 400)
+      const guardErr = await requireClassroomMember(classroomId, user)
+      if (guardErr) return guardErr
+
+      const raw = await req.json().catch(() => null)
+      const parsed = SubmitAssignmentInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      const { workspaceJson, blockCount } = parsed.data
 
       const id = crypto.randomUUID()
       const now = Date.now()
 
       await tursoExecute(
         'INSERT INTO submissions (id, assignment_id, student_id, student_name, workspace_json, block_count, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [id, assignmentId, user.sub, String(user.name || 'Student').slice(0, 50), String(workspaceJson), Number(blockCount) || 0, now],
+        [id, assignmentId, user.sub, (user.name || 'Student').slice(0, 50), workspaceJson, blockCount ?? 0, now],
       )
 
       return json({ id, submittedAt: now }, 201)
     }
 
-    // GET /api/classrooms/:classroomId/assignments/:assignmentId/submissions — list submissions
+    // GET /api/classrooms/:classroomId/assignments/:assignmentId/submissions — list (teacher only)
     // segments: ['classroomId', 'assignments', 'assignmentId', 'submissions']
     if (req.method === 'GET' && segments.length === 4 && segments[1] === 'assignments' && segments[3] === 'submissions') {
+      const classroomId = segments[0]
       const assignmentId = segments[2]
+      const guardErr = await requireClassroomTeacher(classroomId, user)
+      if (guardErr) return guardErr
 
       const subs = await tursoExecute(
         'SELECT id, student_id, student_name, block_count, submitted_at, feedback, status FROM submissions WHERE assignment_id = ? ORDER BY submitted_at DESC',
@@ -387,15 +343,26 @@ export default async function handler(req: Request) {
     // POST /api/classrooms/:classroomId/assignments/:assignmentId/feedback/:submissionId — teacher feedback
     // segments: ['classroomId', 'assignments', 'assignmentId', 'feedback', 'submissionId']
     if (req.method === 'POST' && segments.length === 5 && segments[1] === 'assignments' && segments[3] === 'feedback') {
-      if (!user) return json({ error: 'Sign in to give feedback' }, 401)
-
+      const classroomId = segments[0]
       const submissionId = segments[4]
-      const body = await req.json()
-      const { feedback, status } = body
+      const guardErr = await requireClassroomTeacher(classroomId, user)
+      if (guardErr) return guardErr
 
+      const raw = await req.json().catch(() => null)
+      const parsed = FeedbackInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      const { feedback, status } = parsed.data
+
+      // Defense in depth: scope the UPDATE to the classroom so that a
+      // submission id from a different classroom cannot be overwritten
+      // even if the outer guard is ever weakened .
+      // submissions has no classroom_id column — gate via the parent
+      // assignment instead.
       await tursoExecute(
-        'UPDATE submissions SET feedback = ?, status = ? WHERE id = ?',
-        [String(feedback || '').slice(0, 500), String(status || 'reviewed'), submissionId],
+        `UPDATE submissions SET feedback = ?, status = ?
+         WHERE id = ?
+           AND assignment_id IN (SELECT id FROM assignments WHERE classroom_id = ?)`,
+        [feedback, status ?? 'reviewed', submissionId, classroomId],
       )
 
       return json({ ok: true })
@@ -404,6 +371,8 @@ export default async function handler(req: Request) {
     // GET /api/classrooms/:id/export — download all classroom data as JSON (teacher record)
     if (req.method === 'GET' && segments.length === 2 && segments[1] === 'export') {
       const classroomId = segments[0]
+      const guardErr = await requireClassroomTeacher(classroomId, user)
+      if (guardErr) return guardErr
       const classroom = await tursoExecute('SELECT * FROM classrooms WHERE id = ?', [classroomId])
       if (classroom.rows.length === 0) return json({ error: 'Not found' }, 404)
 
@@ -432,8 +401,15 @@ export default async function handler(req: Request) {
         [classroomId],
       )
 
+      // Privacy notice embedded in the export — this dump contains
+      // student-authored content, names, and chat messages. U.S. teachers
+      // using this in a school context are covered by FERPA; the notice
+      // reminds them not to redistribute and that former students' data
+      // is included .
       const exportData = {
         exportedAt: new Date().toISOString(),
+        privacyNotice: 'This export contains student work, identifiers, and chat history including former members. Treat as confidential educational records. Do not share outside authorized school staff. Delete copies when no longer needed.',
+        exportedBy: { userId: user!.sub, name: user!.name || null },
         classroom: classroom.rows[0],
         members: members.rows,
         assignments: assignments.rows,
@@ -448,18 +424,32 @@ export default async function handler(req: Request) {
         headers: {
           'Content-Type': 'application/json',
           'Content-Disposition': `attachment; filename="classroom-${String(c.name).replace(/[^a-zA-Z0-9]/g, '_')}-export.json"`,
-          'Access-Control-Allow-Origin': '*',
+          'Vary': 'Origin',
         },
       })
     }
 
     // POST /api/classrooms/:id/description — update classroom description (teacher)
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'description') {
-      if (!user) return json({ error: 'Sign in' }, 401)
-      const body = await req.json()
+      const classroomId = segments[0]
+      const guardErr = await requireClassroomTeacher(classroomId, user)
+      if (guardErr) return guardErr
+
+      const raw = await req.json().catch(() => null)
+      const rawDesc = typeof (raw as { description?: unknown })?.description === 'string'
+        ? (raw as { description: string }).description
+        : ''
+      const description = rawDesc.slice(0, 2000)
+      const modErr = moderateContent('', description)
+      if (modErr) return json({ error: modErr }, 400)
+
+      // Belt-and-suspenders against TOCTOU : the guard
+      // already verified teacher ownership above, but scope the UPDATE
+      // itself so that even if ownership flipped between the two queries
+      // we cannot write into someone else's row.
       await tursoExecute(
-        'UPDATE classrooms SET description = ? WHERE id = ?',
-        [String(body.description || '').slice(0, 2000), segments[0]],
+        'UPDATE classrooms SET description = ? WHERE id = ? AND teacher_id = ?',
+        [description, classroomId, user!.sub],
       )
       return json({ ok: true })
     }
@@ -468,23 +458,34 @@ export default async function handler(req: Request) {
 
     // POST /api/classrooms/:id/discussions — create a discussion post
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'discussions') {
-      if (!user) return json({ error: 'Sign in to post' }, 401)
-      const body = await req.json()
-      if (!body.title || !body.body) return json({ error: 'title and body required' }, 400)
+      const classroomId = segments[0]
+      const guardErr = await requireClassroomMember(classroomId, user)
+      if (guardErr) return guardErr
+
+      const raw = await req.json().catch(() => null)
+      const parsed = CreateDiscussionInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      const { title, body } = parsed.data
+      const modErr = moderateContent(title, body)
+      if (modErr) return json({ error: modErr }, 400)
       const id = crypto.randomUUID()
       await tursoExecute(
         'INSERT INTO discussions (id, classroom_id, author_id, author_name, author_avatar, title, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [id, segments[0], user.sub, String(user.name || 'Student').slice(0, 50), user.avatar || '', String(body.title).slice(0, 200), String(body.body).slice(0, 5000), Date.now()],
+        [id, classroomId, user.sub, (user.name || 'Student').slice(0, 50), user.avatar || '', title, body, Date.now()],
       )
       return json({ id }, 201)
     }
 
-    // GET /api/classrooms/:id/discussions — list discussions
+    // GET /api/classrooms/:id/discussions — list discussions (members only)
     if (req.method === 'GET' && segments.length === 2 && segments[1] === 'discussions') {
+      const classroomId = segments[0]
+      const guardErr = await requireClassroomMember(classroomId, user)
+      if (guardErr) return guardErr
+
       const result = await tursoExecute(
         `SELECT d.*, (SELECT COUNT(*) FROM replies WHERE discussion_id = d.id) as reply_count
          FROM discussions d WHERE d.classroom_id = ? ORDER BY d.created_at DESC LIMIT 50`,
-        [segments[0]],
+        [classroomId],
       )
       return json({
         discussions: result.rows.map((d) => ({
@@ -495,29 +496,35 @@ export default async function handler(req: Request) {
       })
     }
 
-    // GET /api/classrooms/:classroomId/discussions/:discussionId — get discussion + replies
-    if (req.method === 'GET' && segments.length === 2 && segments[0] !== 'join' && !['assignments', 'discussions', 'chat', 'description'].includes(segments[1])) {
-      // This is handled by the existing /:id route above
-    }
-
     // POST /api/classrooms/:classroomId/discussions/:discussionId/reply — add a reply
     // segments: ['classroomId', 'discussions', 'discussionId', 'reply']
     if (req.method === 'POST' && segments.length === 4 && segments[1] === 'discussions' && segments[3] === 'reply') {
-      if (!user) return json({ error: 'Sign in to reply' }, 401)
-      const body = await req.json()
-      if (!body.body) return json({ error: 'body required' }, 400)
+      const classroomId = segments[0]
+      const guardErr = await requireClassroomMember(classroomId, user)
+      if (guardErr) return guardErr
+
+      const raw = await req.json().catch(() => null)
+      const parsed = CreateReplyInput.safeParse(raw)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      const { body } = parsed.data
+      const modErr = moderateContent('', body)
+      if (modErr) return json({ error: modErr }, 400)
       const id = crypto.randomUUID()
       const discussionId = segments[2]
       await tursoExecute(
         'INSERT INTO replies (id, discussion_id, author_id, author_name, author_avatar, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [id, discussionId, user.sub, String(user.name || 'Student').slice(0, 50), user.avatar || '', String(body.body).slice(0, 5000), Date.now()],
+        [id, discussionId, user.sub, (user.name || 'Student').slice(0, 50), user.avatar || '', body, Date.now()],
       )
       return json({ id }, 201)
     }
 
-    // GET /api/classrooms/:classroomId/discussions/:discussionId/replies — get replies
+    // GET /api/classrooms/:classroomId/discussions/:discussionId/replies — get replies (members only)
     // segments: ['classroomId', 'discussions', 'discussionId', 'replies']
     if (req.method === 'GET' && segments.length === 4 && segments[1] === 'discussions' && segments[3] === 'replies') {
+      const classroomId = segments[0]
+      const guardErr = await requireClassroomMember(classroomId, user)
+      if (guardErr) return guardErr
+
       const result = await tursoExecute(
         'SELECT * FROM replies WHERE discussion_id = ? ORDER BY created_at ASC',
         [segments[2]],
@@ -535,25 +542,50 @@ export default async function handler(req: Request) {
 
     // POST /api/classrooms/:id/chat — send a message
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'chat') {
-      if (!user) return json({ error: 'Sign in to chat' }, 401)
-      const body = await req.json()
-      if (!body.message) return json({ error: 'message required' }, 400)
+      const classroomId = segments[0]
+      const guardErr = await requireClassroomMember(classroomId, user)
+      if (guardErr) return guardErr
+
+      const raw = await req.json().catch(() => null)
+      // Accept both body.message (legacy) and body.body (schema)
+      const normalized = raw && typeof raw === 'object'
+        ? { body: (raw as { body?: unknown; message?: unknown }).body ?? (raw as { message?: unknown }).message }
+        : null
+      const parsed = SendChatInput.safeParse(normalized)
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      const { body } = parsed.data
+      const modErr = moderateContent('', body)
+      if (modErr) return json({ error: modErr }, 400)
       const id = crypto.randomUUID()
       await tursoExecute(
         'INSERT INTO chat_messages (id, classroom_id, author_id, author_name, author_avatar, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [id, segments[0], user.sub, String(user.name || 'Student').slice(0, 50), user.avatar || '', String(body.message).slice(0, 1000), Date.now()],
+        [id, classroomId, user.sub, (user.name || 'Student').slice(0, 50), user.avatar || '', body, Date.now()],
       )
       return json({ id }, 201)
     }
 
-    // GET /api/classrooms/:id/chat — get recent messages
+    // GET /api/classrooms/:id/chat — get recent messages (members only)
     if (req.method === 'GET' && segments.length === 2 && segments[1] === 'chat') {
-      const after = url.searchParams.get('after')
+      const classroomId = segments[0]
+      const guardErr = await requireClassroomMember(classroomId, user)
+      if (guardErr) return guardErr
+
+      // Validate the `after` cursor — a non-numeric or out-of-range value
+      // falls through to "no cursor" instead of feeding NaN to the query.
+      // Non-integers, negatives, and future timestamps are rejected
+      // .
+      const rawAfter = new URL(req.url).searchParams.get('after')
+      let afterTs: number | null = null
+      if (rawAfter) {
+        const n = Number(rawAfter)
+        if (Number.isInteger(n) && n >= 0 && n <= Date.now()) afterTs = n
+      }
+
       let sql = 'SELECT * FROM chat_messages WHERE classroom_id = ?'
-      const args: (string | number)[] = [segments[0]]
-      if (after) {
+      const args: (string | number)[] = [classroomId]
+      if (afterTs !== null) {
         sql += ' AND created_at > ?'
-        args.push(Number(after))
+        args.push(afterTs)
       }
       sql += ' ORDER BY created_at DESC LIMIT 100'
       const result = await tursoExecute(sql, args)
@@ -571,24 +603,44 @@ export default async function handler(req: Request) {
     // GET /api/classrooms/:classroomId/submissions/:submissionId/download
     // segments: ['classroomId', 'submissions', 'submissionId', 'download']
     if (req.method === 'GET' && segments.length === 4 && segments[1] === 'submissions' && segments[3] === 'download') {
+      const authErr = requireAuth(user)
+      if (authErr) return authErr
+
+      const classroomId = segments[0]
+      const submissionId = segments[2]
+
+      // Fetch submission + verify it belongs to this classroom
       const sub = await tursoExecute(
-        'SELECT workspace_json, student_name FROM submissions WHERE id = ?',
-        [segments[2]],
+        `SELECT s.workspace_json, s.student_name, s.student_id, c.teacher_id
+         FROM submissions s
+         JOIN assignments a ON s.assignment_id = a.id
+         JOIN classrooms c ON a.classroom_id = c.id
+         WHERE s.id = ? AND c.id = ?`,
+        [submissionId, classroomId],
       )
       if (sub.rows.length === 0) return json({ error: 'Not found' }, 404)
-      return new Response(String(sub.rows[0].workspace_json), {
+
+      const row = sub.rows[0]
+      // Authorization: own submission OR classroom teacher
+      const isOwner = row.student_id === user!.sub
+      const isTeacher = row.teacher_id === user!.sub
+      if (!isOwner && !isTeacher) return json({ error: 'Forbidden' }, 403)
+
+      const safeFilename = String(row.student_name).replace(/[^a-zA-Z0-9]/g, '_').slice(0, 50) || 'submission'
+      return new Response(String(row.workspace_json), {
         headers: {
           'Content-Type': 'application/json',
-          'Content-Disposition': `attachment; filename="${String(sub.rows[0].student_name).replace(/[^a-zA-Z0-9]/g, '_')}-submission.blocks"`,
-          'Access-Control-Allow-Origin': '*',
+          'Content-Disposition': `attachment; filename="${safeFilename}-submission.blocks"`,
+          'Vary': 'Origin',
         },
       })
     }
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('Classrooms API error:', message)
-    return json({ error: 'Internal server error', detail: message }, 500)
+    logError('classrooms', err)
+    return json({ error: 'Internal server error' }, 500)
   }
 }
+
+export default withRequest(handler)

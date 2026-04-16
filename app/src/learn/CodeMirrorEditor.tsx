@@ -146,5 +146,5 @@ export default function CodeMirrorEditor({ code, onChange, language = 'javascrip
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, height])
 
-  return <div ref={containerRef} className="rounded-lg overflow-hidden border border-[#313244]" />
+  return <div ref={containerRef} className="rounded-lg overflow-hidden border border-surface-0" />
 }

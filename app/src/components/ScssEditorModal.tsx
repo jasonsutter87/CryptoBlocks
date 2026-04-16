@@ -13,7 +13,7 @@ function PlainScssEditor({ code, onChange }: { code: string; onChange: (v: strin
     <textarea
       value={code}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full h-full bg-[#1e1e2e] text-[13px] leading-relaxed text-[#cdd6f4] font-mono resize-none outline-none border-none p-3"
+      className="w-full h-full bg-base text-[13px] leading-relaxed text-text font-mono resize-none outline-none border-none p-3"
       spellCheck={false}
       autoCapitalize="off"
       autoCorrect="off"
@@ -57,13 +57,13 @@ export default function ScssEditorModal({ initialCode, onSave, onClose }: ScssEd
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
       onClick={handleBackdropClick}
     >
-      <div className="flex flex-col w-[720px] max-w-[95vw] h-[520px] max-h-[90vh] rounded-xl overflow-hidden shadow-2xl bg-[#181825] border border-[#313244]">
+      <div className="flex flex-col w-[720px] max-w-[95vw] h-[520px] max-h-[90vh] rounded-xl overflow-hidden shadow-2xl bg-mantle border border-surface-0">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-[#11111b] border-b border-[#313244]">
-          <span className="text-sm font-semibold text-[#cdd6f4]">Edit SCSS</span>
+        <div className="flex items-center justify-between px-4 py-3 bg-crust border-b border-surface-0">
+          <span className="text-sm font-semibold text-text">Edit SCSS</span>
           <button
             onClick={onClose}
-            className="text-[#6c7086] hover:text-[#cdd6f4] transition-colors text-lg leading-none"
+            className="text-overlay hover:text-text transition-colors text-lg leading-none"
             aria-label="Close"
           >
             ✕
@@ -115,16 +115,16 @@ export default function ScssEditorModal({ initialCode, onSave, onClose }: ScssEd
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-4 py-3 bg-[#11111b] border-t border-[#313244]">
+        <div className="flex items-center justify-end gap-3 px-4 py-3 bg-crust border-t border-surface-0">
           <button
             onClick={onClose}
-            className="px-4 py-1.5 text-sm text-[#cdd6f4] rounded-md hover:bg-[#313244] transition-colors"
+            className="px-4 py-1.5 text-sm text-text rounded-md hover:bg-surface-0 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-1.5 text-sm font-semibold bg-[#89b4fa] text-[#1e1e2e] rounded-md hover:bg-[#b4d0f7] transition-colors"
+            className="px-4 py-1.5 text-sm font-semibold bg-accent text-base rounded-md hover:bg-[#b4d0f7] transition-colors"
           >
             Save
           </button>

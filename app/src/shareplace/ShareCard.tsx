@@ -168,7 +168,7 @@ export default function ShareCardButton({ project }: ShareCardButtonProps) {
     <button
       onClick={handleGenerate}
       disabled={generating}
-      className="flex items-center gap-2 px-3 py-2 text-xs text-[#cdd6f4] bg-[#313244] hover:bg-[#45475a] rounded-lg transition-colors disabled:opacity-60"
+      className="flex items-center gap-2 px-3 py-2 text-xs text-text bg-surface-0 hover:bg-surface-1 rounded-lg transition-colors disabled:opacity-60"
       title="Download a shareable image card for social media"
     >
       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

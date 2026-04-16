@@ -90,11 +90,11 @@ export default function MicrobitStatus() {
       onClick={handleClick}
       disabled={busy}
       title={title}
-      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] disabled:opacity-60"
+      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors bg-surface-0 hover:bg-surface-1 text-text disabled:opacity-60"
     >
       <span
         className={`inline-block w-2 h-2 rounded-full ${
-          connected ? 'bg-[#a6e3a1] animate-pulse' : busy ? 'bg-[#f9e2af]' : 'bg-[#6c7086]'
+          connected ? 'bg-success animate-pulse' : busy ? 'bg-warn' : 'bg-overlay'
         }`}
       />
       <span className="hidden xl:inline whitespace-nowrap">

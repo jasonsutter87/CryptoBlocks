@@ -57,8 +57,8 @@ export default function ChallengeComplete({
       )}
 
       {/* Card */}
-      <div className="bg-[#1e1e2e] border border-[#313244] rounded-2xl p-8 max-w-sm w-full mx-4 text-center relative z-10">
-        <h2 className="text-2xl font-bold text-[#cdd6f4] mb-4">
+      <div className="bg-base border border-surface-0 rounded-2xl p-8 max-w-sm w-full mx-4 text-center relative z-10">
+        <h2 className="text-2xl font-bold text-text mb-4">
           {stars === 3 ? 'Perfect!' : stars === 2 ? 'Great Job!' : 'Completed!'}
         </h2>
 
@@ -69,8 +69,8 @@ export default function ChallengeComplete({
               key={i}
               className={`text-4xl transition-all duration-300 ${
                 i < animatedStars
-                  ? 'text-[#f9e2af] scale-100 opacity-100'
-                  : 'text-[#45475a] scale-75 opacity-50'
+                  ? 'text-warn scale-100 opacity-100'
+                  : 'text-surface-1 scale-75 opacity-50'
               }`}
               style={{
                 transitionDelay: `${i * 100}ms`,
@@ -82,13 +82,13 @@ export default function ChallengeComplete({
         </div>
 
         {/* Stats */}
-        <div className="bg-[#313244] rounded-lg px-4 py-3 mb-6">
-          <p className="text-sm text-[#cdd6f4]">
-            You used <span className="font-bold text-[#89b4fa]">{blockCount}</span> blocks
-            <span className="text-[#6c7086]"> (par: {par})</span>
+        <div className="bg-surface-0 rounded-lg px-4 py-3 mb-6">
+          <p className="text-sm text-text">
+            You used <span className="font-bold text-accent">{blockCount}</span> blocks
+            <span className="text-overlay"> (par: {par})</span>
           </p>
           {stars === 1 && (
-            <p className="text-xs text-[#f9e2af] mt-1">Try again with fewer blocks for more stars!</p>
+            <p className="text-xs text-warn mt-1">Try again with fewer blocks for more stars!</p>
           )}
         </div>
 
@@ -97,7 +97,7 @@ export default function ChallengeComplete({
           {hasNextChallenge && (
             <button
               onClick={onNextChallenge}
-              className="w-full px-4 py-2.5 text-sm font-semibold rounded-lg bg-[#a6e3a1] text-[#1e1e2e] hover:bg-[#a6e3a1]/80 transition-colors"
+              className="w-full px-4 py-2.5 text-sm font-semibold rounded-lg bg-success text-base hover:bg-success/80 transition-colors"
             >
               Next Challenge →
             </button>
@@ -105,14 +105,14 @@ export default function ChallengeComplete({
           {stars < 3 && (
             <button
               onClick={onRetry}
-              className="w-full px-4 py-2 text-sm font-medium rounded-lg bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a] transition-colors"
+              className="w-full px-4 py-2 text-sm font-medium rounded-lg bg-surface-0 text-text hover:bg-surface-1 transition-colors"
             >
               Try Again
             </button>
           )}
           <button
             onClick={onBackToChallenges}
-            className="w-full px-4 py-2 text-sm text-[#6c7086] hover:text-[#cdd6f4] transition-colors"
+            className="w-full px-4 py-2 text-sm text-overlay hover:text-text transition-colors"
           >
             Back to Challenges
           </button>

@@ -419,14 +419,14 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
         onClick={e => e.stopPropagation()}
       >
         {/* Title bar */}
-        <div className="flex items-center justify-between px-4 py-2 bg-[#181825] border-b border-[#313244]">
+        <div className="flex items-center justify-between px-4 py-2 bg-mantle border-b border-surface-0">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#f38ba8]" />
-            <div className="w-3 h-3 rounded-full bg-[#f9e2af]" />
-            <div className="w-3 h-3 rounded-full bg-[#a6e3a1]" />
+            <div className="w-3 h-3 rounded-full bg-danger" />
+            <div className="w-3 h-3 rounded-full bg-warn" />
+            <div className="w-3 h-3 rounded-full bg-success" />
           </div>
-          <span className="text-xs text-[#6c7086] font-mono">CONSOLE</span>
-          <button onClick={() => setOpen(false)} className="text-[#6c7086] hover:text-[#cdd6f4] text-lg leading-none">
+          <span className="text-xs text-overlay font-mono">CONSOLE</span>
+          <button onClick={() => setOpen(false)} className="text-overlay hover:text-text text-lg leading-none">
             ✕
           </button>
         </div>
@@ -443,7 +443,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSubmit} className="flex items-center px-4 py-2 border-t border-[#313244]">
+        <form onSubmit={handleSubmit} className="flex items-center px-4 py-2 border-t border-surface-0">
           <span className="text-sm mr-2" style={{ color: tc.prompt }}>$</span>
           <input
             ref={inputRef}
@@ -462,7 +462,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
 
       {/* Hint at bottom */}
       <div className="text-center mt-3 text-xs text-[#585b70]">
-        Press <kbd className="px-1 py-0.5 bg-[#313244] rounded text-[#6c7086]">`</kbd> or <kbd className="px-1 py-0.5 bg-[#313244] rounded text-[#6c7086]">ESC</kbd> to close
+        Press <kbd className="px-1 py-0.5 bg-surface-0 rounded text-overlay">`</kbd> or <kbd className="px-1 py-0.5 bg-surface-0 rounded text-overlay">ESC</kbd> to close
       </div>
     </div>
   )

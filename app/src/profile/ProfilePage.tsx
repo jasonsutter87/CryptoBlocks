@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
-import { useUser, useAuth, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
+import { useUser, useAuth, SignedIn, SignedOut, SignInButton } from '../auth'
 import { loadProfile, saveProfile, type UserProfile } from './profile-storage'
 import { loadSettings, saveSettings, type UserSettings } from '../settings'
 import { fetchProjects } from '../shareplace/api'
@@ -20,8 +20,8 @@ function getInitials(displayName: string, username: string): string {
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-[#313244] rounded-xl p-6 flex flex-col gap-5">
-      <h2 className="text-sm font-semibold text-[#a6adc8] uppercase tracking-widest">{title}</h2>
+    <div className="bg-surface-0 rounded-xl p-6 flex flex-col gap-5">
+      <h2 className="text-sm font-semibold text-subtext uppercase tracking-widest">{title}</h2>
       {children}
     </div>
   )
@@ -38,15 +38,15 @@ function Field({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-sm font-medium text-[#cdd6f4]">{label}</label>
+      <label className="text-sm font-medium text-text">{label}</label>
       {children}
-      {hint && <p className="text-xs text-[#6c7086]">{hint}</p>}
+      {hint && <p className="text-xs text-overlay">{hint}</p>}
     </div>
   )
 }
 
 const inputClass =
-  'w-full bg-[#1e1e2e] border border-[#45475a] rounded-lg px-3 py-2 text-sm text-[#cdd6f4] placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa] transition-colors'
+  'w-full bg-base border border-surface-1 rounded-lg px-3 py-2 text-sm text-text placeholder-overlay focus:outline-none focus:border-accent transition-colors'
 
 export default function ProfilePage() {
   const { user: clerkUser } = useUser()
@@ -118,37 +118,37 @@ export default function ProfilePage() {
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-10 flex flex-col gap-6">
       {/* Page header */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-[#cdd6f4]">Profile & Settings</h1>
-        <p className="text-sm text-[#6c7086]">Manage your identity, preferences, and data.</p>
+        <h1 className="text-2xl font-bold text-text">Profile & Settings</h1>
+        <p className="text-sm text-overlay">Manage your identity, preferences, and data.</p>
       </div>
 
       {/* Clerk identity card */}
       <SignedIn>
         {clerkUser && (
-          <div className="bg-[#313244] rounded-xl p-6 flex items-center gap-4">
+          <div className="bg-surface-0 rounded-xl p-6 flex items-center gap-4">
             {clerkUser.imageUrl ? (
               <img src={clerkUser.imageUrl} alt="" className="w-14 h-14 rounded-full" />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-[#89b4fa] flex items-center justify-center text-xl font-bold text-[#1e1e2e]">
+              <div className="w-14 h-14 rounded-full bg-accent flex items-center justify-center text-xl font-bold text-base">
                 {(clerkUser.fullName || clerkUser.username || '?').charAt(0).toUpperCase()}
               </div>
             )}
             <div>
-              <div className="text-lg font-bold text-[#cdd6f4]">{clerkUser.fullName || clerkUser.username}</div>
-              <div className="text-sm text-[#6c7086]">{clerkUser.primaryEmailAddress?.emailAddress}</div>
-              <div className="text-xs text-[#a6e3a1] mt-1">{myProjects.length} shared project{myProjects.length !== 1 ? 's' : ''}</div>
+              <div className="text-lg font-bold text-text">{clerkUser.fullName || clerkUser.username}</div>
+              <div className="text-sm text-overlay">{clerkUser.primaryEmailAddress?.emailAddress}</div>
+              <div className="text-xs text-success mt-1">{myProjects.length} shared project{myProjects.length !== 1 ? 's' : ''}</div>
             </div>
           </div>
         )}
       </SignedIn>
       <SignedOut>
-        <div className="bg-[#313244] rounded-xl p-6 flex items-center justify-between">
+        <div className="bg-surface-0 rounded-xl p-6 flex items-center justify-between">
           <div>
-            <div className="text-[#cdd6f4] font-semibold">Sign in to save your identity</div>
-            <div className="text-sm text-[#6c7086]">Your name and avatar will appear in collab and on shared projects.</div>
+            <div className="text-text font-semibold">Sign in to save your identity</div>
+            <div className="text-sm text-overlay">Your name and avatar will appear in collab and on shared projects.</div>
           </div>
           <SignInButton mode="modal">
-            <button className="px-4 py-2 bg-[#cba6f7] text-[#1e1e2e] rounded-lg text-sm font-bold hover:bg-[#cba6f7]/80 transition-colors">
+            <button className="px-4 py-2 bg-purple text-base rounded-lg text-sm font-bold hover:bg-purple/80 transition-colors">
               Sign In
             </button>
           </SignInButton>
@@ -163,39 +163,39 @@ export default function ProfilePage() {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">⭐</span>
                 <div>
-                  <div className="text-sm font-bold text-[#cdd6f4]">CryptoBlocks Pro</div>
-                  <div className="text-xs text-[#a6e3a1]">Active subscription</div>
+                  <div className="text-sm font-bold text-text">CryptoBlocks Pro</div>
+                  <div className="text-xs text-success">Active subscription</div>
                 </div>
               </div>
               <button
                 onClick={() => openPortal(getToken)}
-                className="px-4 py-2 bg-[#313244] hover:bg-[#45475a] text-[#cdd6f4] rounded-lg text-sm font-semibold transition-colors"
+                className="px-4 py-2 bg-surface-0 hover:bg-surface-1 text-text rounded-lg text-sm font-semibold transition-colors"
               >
                 Manage Subscription
               </button>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <div className="text-sm font-semibold text-[#cdd6f4]">Free Plan</div>
+              <div className="text-sm font-semibold text-text">Free Plan</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="bg-[#1e1e2e] rounded-xl p-4 border border-[#313244]">
-                  <div className="text-sm font-bold text-[#cdd6f4] mb-1">Pro</div>
-                  <div className="text-2xl font-bold text-[#f9e2af] mb-1">$10<span className="text-sm text-[#6c7086]">/mo</span></div>
-                  <div className="text-xs text-[#6c7086] mb-3">Build tools, exports, Sprite Editor, Level Editor</div>
+                <div className="bg-base rounded-xl p-4 border border-surface-0">
+                  <div className="text-sm font-bold text-text mb-1">Pro</div>
+                  <div className="text-2xl font-bold text-warn mb-1">$10<span className="text-sm text-overlay">/mo</span></div>
+                  <div className="text-xs text-overlay mb-3">Build tools, exports, Sprite Editor, Level Editor</div>
                   <button
                     onClick={() => openCheckout(getToken, 'pro')}
-                    className="w-full px-4 py-2 bg-gradient-to-r from-[#f9e2af] to-[#fab387] text-[#1e1e2e] rounded-lg text-sm font-bold hover:opacity-90 transition-opacity"
+                    className="w-full px-4 py-2 bg-gradient-to-r from-warn to-peach text-base rounded-lg text-sm font-bold hover:opacity-90 transition-opacity"
                   >
                     Upgrade to Pro
                   </button>
                 </div>
-                <div className="bg-[#1e1e2e] rounded-xl p-4 border border-[#89b4fa]/30">
-                  <div className="text-sm font-bold text-[#89b4fa] mb-1">Teacher</div>
-                  <div className="text-2xl font-bold text-[#89b4fa] mb-1">$25<span className="text-sm text-[#6c7086]">/mo + $3.50/student</span></div>
-                  <div className="text-xs text-[#6c7086] mb-3">Unlimited classrooms, assignments, students get Pro</div>
+                <div className="bg-base rounded-xl p-4 border border-accent/30">
+                  <div className="text-sm font-bold text-accent mb-1">Teacher</div>
+                  <div className="text-2xl font-bold text-accent mb-1">$25<span className="text-sm text-overlay">/mo + $3.50/student</span></div>
+                  <div className="text-xs text-overlay mb-3">Unlimited classrooms, assignments, students get Pro</div>
                   <button
                     onClick={() => openCheckout(getToken, 'teacher')}
-                    className="w-full px-4 py-2 bg-[#89b4fa] text-[#1e1e2e] rounded-lg text-sm font-bold hover:opacity-90 transition-opacity"
+                    className="w-full px-4 py-2 bg-accent text-base rounded-lg text-sm font-bold hover:opacity-90 transition-opacity"
                   >
                     Start Teacher Plan
                   </button>
@@ -211,12 +211,12 @@ export default function ProfilePage() {
         <SectionCard title="My Shared Projects">
           <div className="flex flex-col gap-2">
             {myProjects.map((p) => (
-              <div key={p.id} className="flex items-center justify-between bg-[#1e1e2e] rounded-lg px-4 py-3">
+              <div key={p.id} className="flex items-center justify-between bg-base rounded-lg px-4 py-3">
                 <div>
-                  <div className="text-sm font-semibold text-[#cdd6f4]">{p.name}</div>
-                  <div className="text-xs text-[#6c7086]">{p.category} · {p.blockCount} blocks · {p.likes} likes</div>
+                  <div className="text-sm font-semibold text-text">{p.name}</div>
+                  <div className="text-xs text-overlay">{p.category} · {p.blockCount} blocks · {p.likes} likes</div>
                 </div>
-                <a href="/shareplace" className="text-xs text-[#89b4fa] hover:text-[#74c7ec]">View</a>
+                <a href="/shareplace" className="text-xs text-accent hover:text-sapphire">View</a>
               </div>
             ))}
           </div>
@@ -226,17 +226,17 @@ export default function ProfilePage() {
       {/* Daily Challenge stats */}
       <SectionCard title="Daily Challenge">
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-[#fab387]">{dailyStreak}🔥</div>
-            <div className="text-[10px] text-[#6c7086]">Current Streak</div>
+          <div className="bg-base rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-peach">{dailyStreak}🔥</div>
+            <div className="text-[10px] text-overlay">Current Streak</div>
           </div>
-          <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-[#f9e2af]">{dailyState.longestStreak}</div>
-            <div className="text-[10px] text-[#6c7086]">Longest Streak</div>
+          <div className="bg-base rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-warn">{dailyState.longestStreak}</div>
+            <div className="text-[10px] text-overlay">Longest Streak</div>
           </div>
-          <div className="bg-[#1e1e2e] rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-[#a6e3a1]">{dailyState.totalSolved}</div>
-            <div className="text-[10px] text-[#6c7086]">Total Solved</div>
+          <div className="bg-base rounded-lg p-3 text-center">
+            <div className="text-2xl font-bold text-success">{dailyState.totalSolved}</div>
+            <div className="text-[10px] text-overlay">Total Solved</div>
           </div>
         </div>
       </SectionCard>
@@ -246,12 +246,12 @@ export default function ProfilePage() {
         <SectionCard title="My Classrooms">
           <div className="flex flex-col gap-2">
             {myClassrooms.map((c) => (
-              <a key={c.id} href="/teacher" className="flex items-center justify-between bg-[#1e1e2e] rounded-lg px-4 py-3 hover:bg-[#181825] transition-colors">
+              <a key={c.id} href="/teacher" className="flex items-center justify-between bg-base rounded-lg px-4 py-3 hover:bg-mantle transition-colors">
                 <div>
-                  <div className="text-sm font-semibold text-[#cdd6f4]">{c.name}</div>
-                  <div className="text-xs text-[#6c7086]">by {c.teacherName} · {c.memberCount} members</div>
+                  <div className="text-sm font-semibold text-text">{c.name}</div>
+                  <div className="text-xs text-overlay">by {c.teacherName} · {c.memberCount} members</div>
                 </div>
-                <span className="text-sm font-mono text-[#89b4fa]">{c.joinCode}</span>
+                <span className="text-sm font-mono text-accent">{c.joinCode}</span>
               </a>
             ))}
           </div>
@@ -263,17 +263,17 @@ export default function ProfilePage() {
         {/* Avatar + name row */}
         <div className="flex items-center gap-4">
           <div
-            className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold text-[#1e1e2e] shrink-0 select-none"
+            className="w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold text-base shrink-0 select-none"
             style={{ backgroundColor: profile.avatarColor }}
           >
             {initials}
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-[#cdd6f4]">
+            <span className="text-sm font-medium text-text">
               {profile.displayName || 'Anonymous'}
             </span>
             {profile.username && (
-              <span className="text-xs text-[#6c7086]">@{profile.username}</span>
+              <span className="text-xs text-overlay">@{profile.username}</span>
             )}
           </div>
         </div>
@@ -313,12 +313,12 @@ export default function ProfilePage() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleSaveProfile}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-[#89b4fa] text-[#1e1e2e] hover:bg-[#89b4fa]/90 transition-colors"
+            className="px-4 py-2 rounded-lg text-sm font-medium bg-accent text-base hover:bg-accent/90 transition-colors"
           >
             Save Profile
           </button>
           {profileSaved && (
-            <span className="text-xs text-[#a6e3a1]">Saved.</span>
+            <span className="text-xs text-success">Saved.</span>
           )}
         </div>
       </SectionCard>
@@ -328,19 +328,19 @@ export default function ProfilePage() {
         {/* Auto-save toggle */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex flex-col gap-0.5">
-            <span className="text-sm font-medium text-[#cdd6f4]">Auto-Save</span>
-            <span className="text-xs text-[#6c7086]">Automatically save your workspace at a set interval.</span>
+            <span className="text-sm font-medium text-text">Auto-Save</span>
+            <span className="text-xs text-overlay">Automatically save your workspace at a set interval.</span>
           </div>
           <button
             role="switch"
             aria-checked={settings.autoSaveEnabled}
             onClick={() => updateSettings({ autoSaveEnabled: !settings.autoSaveEnabled })}
             className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${
-              settings.autoSaveEnabled ? 'bg-[#89b4fa]' : 'bg-[#45475a]'
+              settings.autoSaveEnabled ? 'bg-accent' : 'bg-surface-1'
             }`}
           >
             <span
-              className={`absolute top-1 w-4 h-4 rounded-full bg-[#1e1e2e] transition-transform ${
+              className={`absolute top-1 w-4 h-4 rounded-full bg-base transition-transform ${
                 settings.autoSaveEnabled ? 'translate-x-5' : 'translate-x-1'
               }`}
             />
@@ -403,53 +403,53 @@ export default function ProfilePage() {
           {/* Export */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-[#cdd6f4]">Export All Data</span>
-              <span className="text-xs text-[#6c7086]">Download your workspace and settings as a JSON file.</span>
+              <span className="text-sm font-medium text-text">Export All Data</span>
+              <span className="text-xs text-overlay">Download your workspace and settings as a JSON file.</span>
             </div>
             <button
               disabled
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#313244] border border-[#45475a] text-[#6c7086] cursor-not-allowed opacity-60 shrink-0"
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-surface-0 border border-surface-1 text-overlay cursor-not-allowed opacity-60 shrink-0"
             >
               Export
             </button>
           </div>
 
-          <div className="border-t border-[#45475a]" />
+          <div className="border-t border-surface-1" />
 
           {/* Clear checkpoints */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-[#cdd6f4]">Clear Checkpoint History</span>
-              <span className="text-xs text-[#6c7086]">Remove all saved checkpoints from local storage.</span>
+              <span className="text-sm font-medium text-text">Clear Checkpoint History</span>
+              <span className="text-xs text-overlay">Remove all saved checkpoints from local storage.</span>
             </div>
             <button
               onClick={handleClearCheckpoints}
               onBlur={() => setClearCheckpointConfirm(false)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 ${
                 clearCheckpointConfirm
-                  ? 'bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/90'
-                  : 'bg-[#313244] border border-[#45475a] text-[#a6adc8] hover:border-[#f38ba8] hover:text-[#f38ba8]'
+                  ? 'bg-danger text-base hover:bg-danger/90'
+                  : 'bg-surface-0 border border-surface-1 text-subtext hover:border-danger hover:text-danger'
               }`}
             >
               {clearCheckpointConfirm ? 'Confirm?' : 'Clear'}
             </button>
           </div>
 
-          <div className="border-t border-[#45475a]" />
+          <div className="border-t border-surface-1" />
 
           {/* Clear workspace */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-[#cdd6f4]">Clear Workspace</span>
-              <span className="text-xs text-[#6c7086]">Wipe the saved workspace state from local storage.</span>
+              <span className="text-sm font-medium text-text">Clear Workspace</span>
+              <span className="text-xs text-overlay">Wipe the saved workspace state from local storage.</span>
             </div>
             <button
               onClick={handleClearWorkspace}
               onBlur={() => setClearWorkspaceConfirm(false)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 ${
                 clearWorkspaceConfirm
-                  ? 'bg-[#f38ba8] text-[#1e1e2e] hover:bg-[#f38ba8]/90'
-                  : 'bg-[#313244] border border-[#45475a] text-[#a6adc8] hover:border-[#f38ba8] hover:text-[#f38ba8]'
+                  ? 'bg-danger text-base hover:bg-danger/90'
+                  : 'bg-surface-0 border border-surface-1 text-subtext hover:border-danger hover:text-danger'
               }`}
             >
               {clearWorkspaceConfirm ? 'Confirm?' : 'Clear'}
@@ -462,22 +462,22 @@ export default function ProfilePage() {
       <SectionCard title="About">
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-[#a6adc8]">Version</span>
-            <span className="text-sm font-mono text-[#6c7086]">v0.2</span>
+            <span className="text-sm text-subtext">Version</span>
+            <span className="text-sm font-mono text-overlay">v0.2</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-[#a6adc8]">Source</span>
+            <span className="text-sm text-subtext">Source</span>
             <a
               href="https://github.com/jasonsutter87/CryptoBlocks"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-[#89b4fa] hover:underline"
+              className="text-sm text-accent hover:underline"
             >
               GitHub
             </a>
           </div>
-          <div className="border-t border-[#45475a] pt-3">
-            <p className="text-xs text-[#6c7086] italic">Built with blocks. Powered by curiosity.</p>
+          <div className="border-t border-surface-1 pt-3">
+            <p className="text-xs text-overlay italic">Built with blocks. Powered by curiosity.</p>
           </div>
         </div>
       </SectionCard>

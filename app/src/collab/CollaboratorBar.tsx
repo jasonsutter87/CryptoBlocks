@@ -14,9 +14,9 @@ interface CollaboratorBarProps {
 }
 
 const statusDot: Record<ConnectionStatus, string> = {
-  connected: 'bg-[#a6e3a1]',
-  connecting: 'bg-[#f9e2af] animate-pulse',
-  disconnected: 'bg-[#f38ba8]',
+  connected: 'bg-success',
+  connecting: 'bg-warn animate-pulse',
+  disconnected: 'bg-danger',
 }
 
 const statusLabel: Record<ConnectionStatus, string> = {
@@ -27,11 +27,11 @@ const statusLabel: Record<ConnectionStatus, string> = {
 
 export default function CollaboratorBar({ peers, status, roomCode, onLeave, onCopyLink }: CollaboratorBarProps) {
   return (
-    <div className="flex items-center gap-2 px-2 py-1 bg-[#313244] rounded-lg">
+    <div className="flex items-center gap-2 px-2 py-1 bg-surface-0 rounded-lg">
       {/* Status dot */}
       <div className="flex items-center gap-1.5" title={statusLabel[status]}>
         <div className={`w-2 h-2 rounded-full ${statusDot[status]}`} />
-        <span className="text-xs text-[#6c7086] font-mono">{roomCode}</span>
+        <span className="text-xs text-overlay font-mono">{roomCode}</span>
       </div>
 
       {/* Peer avatars */}
@@ -44,12 +44,12 @@ export default function CollaboratorBar({ peers, status, roomCode, onLeave, onCo
                 src={peer.user.avatar}
                 alt={peer.user.name}
                 title={peer.user.name}
-                className="w-6 h-6 rounded-full border-2 border-[#313244] object-cover"
+                className="w-6 h-6 rounded-full border-2 border-surface-0 object-cover"
               />
             ) : (
               <div
                 key={peer.user.id || i}
-                className="w-6 h-6 rounded-full border-2 border-[#313244] flex items-center justify-center text-[10px] font-bold text-white"
+                className="w-6 h-6 rounded-full border-2 border-surface-0 flex items-center justify-center text-[10px] font-bold text-white"
                 style={{ backgroundColor: peer.user.color || '#89b4fa' }}
                 title={peer.user.name}
               >
@@ -63,7 +63,7 @@ export default function CollaboratorBar({ peers, status, roomCode, onLeave, onCo
       {/* Copy invite link */}
       <button
         onClick={onCopyLink}
-        className="text-[#89b4fa] hover:text-[#b4befe] transition-colors"
+        className="text-accent hover:text-[#b4befe] transition-colors"
         title="Copy invite link"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -74,7 +74,7 @@ export default function CollaboratorBar({ peers, status, roomCode, onLeave, onCo
       {/* Leave */}
       <button
         onClick={onLeave}
-        className="text-xs text-[#f38ba8] hover:text-[#f38ba8]/80 font-medium transition-colors"
+        className="text-xs text-danger hover:text-danger/80 font-medium transition-colors"
         title="Leave room"
       >
         Leave

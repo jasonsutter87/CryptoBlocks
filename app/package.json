@@ -46,7 +46,8 @@
     "stripe": "^22.0.1",
     "vite-plugin-monaco-editor": "^1.1.0",
     "y-partykit": "^0.0.33",
-    "yjs": "^13.6.30"
+    "yjs": "^13.6.30",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
