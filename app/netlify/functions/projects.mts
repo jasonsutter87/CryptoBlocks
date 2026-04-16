@@ -150,9 +150,10 @@ async function handler(req: Request) {
 
       const projectId = segments[0]
       const owner = await tursoExecute('SELECT author_id FROM projects WHERE id = ?', [projectId])
-      if (owner.rows.length === 0) return json({ error: 'Not found' }, 404)
-      if (owner.rows[0].author_id !== user!.sub) {
-        return json({ error: 'You can only update your own projects' }, 403)
+      // Return 404 for both "does not exist" and "not yours" so an attacker
+      // cannot enumerate valid project ids through response-code probing.
+      if (owner.rows.length === 0 || owner.rows[0].author_id !== user!.sub) {
+        return json({ error: 'Not found' }, 404)
       }
 
       const raw = await req.json().catch(() => null)
@@ -185,11 +186,11 @@ async function handler(req: Request) {
       if (authErr) return authErr
 
       if (!isAdmin(user)) {
-        // Non-admins can only delete their own projects
+        // Non-admins can only delete their own projects. Use 404 for both
+        // "does not exist" and "not yours" to prevent id-enumeration.
         const project = await tursoExecute('SELECT author_id FROM projects WHERE id = ?', [segments[0]])
-        if (project.rows.length === 0) return json({ error: 'Not found' }, 404)
-        if (project.rows[0].author_id !== user!.sub) {
-          return json({ error: 'You can only delete your own projects' }, 403)
+        if (project.rows.length === 0 || project.rows[0].author_id !== user!.sub) {
+          return json({ error: 'Not found' }, 404)
         }
       }
       await tursoExecute('DELETE FROM projects WHERE id = ?', [segments[0]])
