@@ -10,7 +10,9 @@ const BANNED_WORDS = [
   'kill yourself', 'kys',
 ] as const
 
-const URL_PATTERN = /https?:\/\/[^\s]+|www\.[^\s]+/gi
+// No `g` flag — the prior version was stateful across .test() calls,
+// alternating true/false on consecutive inputs containing URLs.
+const URL_PATTERN = /https?:\/\/[^\s]+|www\.[^\s]+/i
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

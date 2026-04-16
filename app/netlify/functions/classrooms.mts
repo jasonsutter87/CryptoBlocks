@@ -424,7 +424,7 @@ async function handler(req: Request) {
         headers: {
           'Content-Type': 'application/json',
           'Content-Disposition': `attachment; filename="classroom-${String(c.name).replace(/[^a-zA-Z0-9]/g, '_')}-export.json"`,
-          'Access-Control-Allow-Origin': '*',
+          'Vary': 'Origin',
         },
       })
     }
@@ -631,7 +631,7 @@ async function handler(req: Request) {
         headers: {
           'Content-Type': 'application/json',
           'Content-Disposition': `attachment; filename="${safeFilename}-submission.blocks"`,
-          'Access-Control-Allow-Origin': '*',
+          'Vary': 'Origin',
         },
       })
     }
