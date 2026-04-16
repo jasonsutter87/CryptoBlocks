@@ -77,6 +77,82 @@ function createOutputCollector(onOutput?: (line: string) => void) {
 // Strategy 1: Sandboxed iframe (most secure, but blocked by some browsers)
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Sandbox HTML template — broken into named pieces so each layer is
+// readable on its own. The old version was a single 60-line backtick
+// string mixing CSP, console bridge, error handling, and user-code exec.
+// ---------------------------------------------------------------------------
+
+const SANDBOX_CSP = [
+  "default-src 'none'",
+  "script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://jasonsutter87.github.io",
+  "connect-src 'none'",
+  "style-src 'unsafe-inline' https://cdn.tailwindcss.com",
+  "img-src data: https:",
+  "frame-src 'none'",
+  "worker-src blob:",
+  "object-src 'none'",
+].join('; ')
+
+const CONSOLE_BRIDGE = `
+var __sendMsg = function(type, data) {
+  parent.postMessage({ __cryptoblocks: true, type: type, data: data }, '*');
+};
+var __formatArg = function(a) { return typeof a === 'object' ? JSON.stringify(a) : String(a); };
+Object.defineProperty(console, 'log', { value: function() { __sendMsg('log', Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'warn', { value: function() { __sendMsg('log', '[warn] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'error', { value: function() { __sendMsg('log', '[error] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'info', { value: function() { __sendMsg('log', '[info] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
+Object.defineProperty(console, 'debug', { value: function() {}, configurable: false, writable: false });
+window.onerror = function(msg, src, line, col, err) { __sendMsg('log', '[error] ' + (err ? err.message : msg)); };
+window.addEventListener('unhandledrejection', function(e) { __sendMsg('log', '[error] ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))); });
+`.trim()
+
+function userCodeRunner(encodedBase64: string): string {
+  return `
+(async function() {
+  try {
+    if (!document.body) {
+      await new Promise(function(r) {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() { r(null); }, { once: true });
+        } else { r(null); }
+      });
+    }
+    var __code = decodeURIComponent(escape(atob("${encodedBase64}")));
+    var __fn = new Function("return (async function() {\\n" + __code + "\\n})()");
+    var __result = await __fn();
+    var __cvs = document.getElementById('cb-canvas');
+    if (__cvs && __cvs.width > 0 && __cvs.style.display !== 'none') {
+      try { parent.postMessage({ __cryptoblocks: true, type: 'canvas', data: __cvs.toDataURL('image/png') }, '*'); } catch(e) {}
+    }
+    var __page = document.getElementById('cb-page');
+    if (__page && __page.children.length > 0) {
+      parent.postMessage({ __cryptoblocks: true, type: 'html', data: __page.innerHTML }, '*');
+    }
+    parent.postMessage({ __cryptoblocks: true, type: 'done', data: __result }, '*');
+  } catch(e) {
+    parent.postMessage({ __cryptoblocks: true, type: 'error', data: e.message }, '*');
+  }
+})()`.trim()
+}
+
+function buildSandboxHtml(code: string, safetyPreamble: string): string {
+  const encoded = btoa(unescape(encodeURIComponent(code)))
+  return `<!DOCTYPE html><html><head>
+<meta http-equiv="Content-Security-Policy" content="${SANDBOX_CSP}">
+<script src="https://cdn.tailwindcss.com"><\/script>
+<script>
+${CONSOLE_BRIDGE}
+${safetyPreamble}
+${userCodeRunner(encoded)}
+<\/script></head><body><div id="cb-page" style="display:none"></div><canvas id="cb-canvas" width="400" height="400" style="display:none"></canvas></body></html>`
+}
+
+// ---------------------------------------------------------------------------
+// Strategy 1: Sandboxed iframe (most secure)
+// ---------------------------------------------------------------------------
+
 function tryIframeExecution(
   code: string,
   collector: ReturnType<typeof createOutputCollector>,
@@ -176,56 +252,7 @@ function tryIframeExecution(
     }
     window.addEventListener('message', handler)
 
-    const encoded = btoa(unescape(encodeURIComponent(code)))
-    const safetyPreamble = generateSafetyPreamble()
-
-    const html = `<!DOCTYPE html><html><head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://cdn.jsdelivr.net https://jasonsutter87.github.io; connect-src 'none'; style-src 'unsafe-inline' https://cdn.tailwindcss.com; img-src data: https:; frame-src 'none'; worker-src blob:; object-src 'none';">
-<script src="https://cdn.tailwindcss.com"><\/script>
-<script>
-var __sendMsg = function(type, data) {
-  parent.postMessage({ __cryptoblocks: true, type: type, data: data }, '*');
-};
-var __formatArg = function(a) { return typeof a === 'object' ? JSON.stringify(a) : String(a); };
-Object.defineProperty(console, 'log', { value: function() { __sendMsg('log', Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
-Object.defineProperty(console, 'warn', { value: function() { __sendMsg('log', '[warn] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
-Object.defineProperty(console, 'error', { value: function() { __sendMsg('log', '[error] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
-Object.defineProperty(console, 'info', { value: function() { __sendMsg('log', '[info] ' + Array.prototype.slice.call(arguments).map(__formatArg).join(' ')); }, configurable: false, writable: false });
-Object.defineProperty(console, 'debug', { value: function() {}, configurable: false, writable: false });
-window.onerror = function(msg, src, line, col, err) { __sendMsg('log', '[error] ' + (err ? err.message : msg)); };
-window.addEventListener('unhandledrejection', function(e) { __sendMsg('log', '[error] ' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))); });
-${safetyPreamble}
-(async function() {
-  try {
-    // The head script runs before the parser reaches <body>. Any sync user
-    // code that touches document.body — set_canvas, game setup, etc. —
-    // would crash with a null appendChild. Wait until the body exists.
-    if (!document.body) {
-      await new Promise(function(r) {
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', function() { r(null); }, { once: true });
-        } else {
-          r(null);
-        }
-      });
-    }
-    var __code = decodeURIComponent(escape(atob("${encoded}")));
-    var __fn = new Function("return (async function() {\\n" + __code + "\\n})()");
-    var __result = await __fn();
-    var __cvs = document.getElementById('cb-canvas');
-    if (__cvs && __cvs.width > 0 && __cvs.style.display !== 'none') {
-      try { parent.postMessage({ __cryptoblocks: true, type: 'canvas', data: __cvs.toDataURL('image/png') }, '*'); } catch(e) {}
-    }
-    var __page = document.getElementById('cb-page');
-    if (__page && __page.children.length > 0) {
-      parent.postMessage({ __cryptoblocks: true, type: 'html', data: __page.innerHTML }, '*');
-    }
-    parent.postMessage({ __cryptoblocks: true, type: 'done', data: __result }, '*');
-  } catch(e) {
-    parent.postMessage({ __cryptoblocks: true, type: 'error', data: e.message }, '*');
-  }
-})()
-<\/script></head><body><div id="cb-page" style="display:none"></div><canvas id="cb-canvas" width="400" height="400" style="display:none"></canvas></body></html>`
+    const html = buildSandboxHtml(code, generateSafetyPreamble())
 
     iframe = document.createElement('iframe')
     iframe.style.display = 'none'
