@@ -10,6 +10,8 @@ import { useChallengeMode } from './hooks/useChallengeMode'
 import { useBlocksetMode } from './hooks/useBlocksetMode'
 import { useGolfMode } from './hooks/useGolfMode'
 import { useLabMode } from './hooks/useLabMode'
+import { useAchievements } from './hooks/useAchievements'
+import { useCustomBlocks } from './hooks/useCustomBlocks'
 import { snapshotSandbox, enterMode, exitToSandbox } from './hooks/modeWorkspace'
 import {
   saveCustomBlocksToLocal,
@@ -78,8 +80,10 @@ export default function App() {
   const exec = useExecution()
   const { isRunning, result, liveOutput } = exec
   const modals = useModalState()
-  const [editingBlock, setEditingBlock] = useState<BlockDefinition | null>(null)
-  const [customBlocks, setCustomBlocks] = useState<BlockDefinition[]>([])
+  const achievements = useAchievements()
+  const processAchievements = achievements.process
+  const showNextAchievement = achievements.showNext
+  const currentAchievement = achievements.currentAchievement
   const [initialWorkspaceState, setInitialWorkspaceState] = useState<Record<string, unknown> | null>(null)
   const [restored, setRestored] = useState(false)
 
@@ -93,10 +97,6 @@ export default function App() {
   // Resizable split pane state (percentage for left/block editor pane)
   const [splitPercent, setSplitPercent] = useState(50)
   const isDraggingSplit = useRef(false)
-
-  // Achievement + Stats state
-  const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null)
-  const achievementQueue = useRef<Achievement[]>([])
 
   // Collab state
   const collabDoc = useCollabDoc()
@@ -159,6 +159,23 @@ export default function App() {
     resetAutoSave,
   } = useVersionControl(workspaceRef, blockCount)
 
+  const customBlocksHook = useCustomBlocks({
+    workspaceRef,
+    closeCreateModal: () => modals.setCreateBlock(false),
+    openCreateModal: () => modals.setCreateBlock(true),
+    closeCodeToBlocksModal: () => modals.setCodeToBlocks(false),
+    processAchievements,
+  })
+  const {
+    customBlocks, setCustomBlocks, editingBlock, setEditingBlock,
+    handleCreate: handleCreateBlock,
+    handleEdit: handleEditBlock,
+    handleDelete: handleDeleteBlock,
+    handleSaveAsBlock,
+    handleCodeToBlocks,
+    closeEditor: closeModal,
+  } = customBlocksHook
+
   const languageRef = useRef(language)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const modeRef = useRef(mode)
@@ -203,46 +220,7 @@ export default function App() {
 
     setInitialWorkspaceState(workspaceState)
     setRestored(true)
-
-    // Listen for hacker mode activation — trigger achievement
-    const handleHackerMode = () => {
-      const newAchievements = checkAchievements({ event: 'hacker-mode' })
-      if (newAchievements.length > 0) {
-        for (const a of newAchievements) {
-          recordAchievement()
-          achievementQueue.current.push(a)
-        }
-        // Show first if not already showing
-        setCurrentAchievement((prev) => {
-          if (prev) return prev
-          return achievementQueue.current.shift() ?? null
-        })
-      }
-    }
-    document.addEventListener('cb:hacker-mode-changed', handleHackerMode)
-    return () => document.removeEventListener('cb:hacker-mode-changed', handleHackerMode)
   }, [])
-
-  // Process achievement queue — show one at a time
-  const showNextAchievement = useCallback(() => {
-    if (achievementQueue.current.length > 0) {
-      setCurrentAchievement(achievementQueue.current.shift()!)
-    } else {
-      setCurrentAchievement(null)
-    }
-  }, [])
-
-  const processAchievements = useCallback((newAchievements: Achievement[]) => {
-    if (newAchievements.length === 0) return
-    for (const a of newAchievements) {
-      recordAchievement()
-      achievementQueue.current.push(a)
-    }
-    // If not currently showing one, kick off the queue
-    if (!currentAchievement) {
-      showNextAchievement()
-    }
-  }, [currentAchievement, showNextAchievement])
 
   // Helper to get categories used in current workspace
   const getUsedCategories = useCallback((): string[] => {
@@ -459,128 +437,6 @@ export default function App() {
       }
     }, 0)
   }, [exec])
-
-  const handleCodeToBlocks = useCallback((result: ConversionResult) => {
-    // Register any new custom blocks
-    for (const blockDef of result.newBlocks) {
-      registry.register(blockDef)
-      registerSingleBlock(blockDef)
-    }
-
-    // Persist new blocks
-    if (result.newBlocks.length > 0) {
-      setCustomBlocks((prev) => {
-        const updated = [...prev]
-        for (const b of result.newBlocks) {
-          const idx = updated.findIndex((x) => x.name === b.name)
-          if (idx >= 0) updated[idx] = b
-          else updated.push(b)
-        }
-        saveCustomBlocksToLocal(updated)
-        return updated
-      })
-    }
-
-    // Update toolbox and load workspace
-    setTimeout(() => {
-      if (workspaceRef.current) {
-        workspaceRef.current.updateToolbox(getToolboxXml())
-        workspaceRef.current.clear()
-        Blockly.serialization.workspaces.load(result.workspace, workspaceRef.current)
-      }
-    }, 0)
-
-    modals.setCodeToBlocks(false)
-  }, [])
-
-  const handleCreateBlock = useCallback((block: BlockDefinition) => {
-    registry.register(block)
-    registerSingleBlock(block)
-    if (workspaceRef.current) {
-      workspaceRef.current.updateToolbox(getToolboxXml())
-    }
-
-    // Save custom blocks to localStorage
-    setCustomBlocks((prev) => {
-      const updated = [...prev.filter((b) => b.name !== block.name), block]
-      saveCustomBlocksToLocal(updated)
-      return updated
-    })
-
-    modals.setCreateBlock(false)
-    setEditingBlock(null)
-
-    // Check architect achievement
-    const newAchievements = checkAchievements({ event: 'custom-block' })
-    processAchievements(newAchievements)
-  }, [processAchievements])
-
-  const handleEditBlock = useCallback((blockDef: BlockDefinition) => {
-    setEditingBlock(blockDef)
-    modals.setCreateBlock(true)
-  }, [])
-
-  const handleDeleteBlock = useCallback((blockDef: BlockDefinition) => {
-    const displayName = blockDef.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-    if (!confirm(`Delete "${displayName}"? This will remove it from your saved blocks and the workspace.`)) return
-
-    // Remove all instances of this block from the workspace
-    if (workspaceRef.current) {
-      const blockType = `cb_${blockDef.name}`
-      const instances = workspaceRef.current.getBlocksByType(blockType, false)
-      for (const block of instances) {
-        block.dispose(false)
-      }
-    }
-
-    // Remove from registry (so getToolboxXml won't include it)
-    registry.unregister(blockDef.name)
-
-    // Remove from state and localStorage
-    setCustomBlocks((prev) => {
-      const updated = prev.filter((b) => b.name !== blockDef.name)
-      saveCustomBlocksToLocal(updated)
-      return updated
-    })
-
-    // Refresh toolbox BEFORE deleting from Blockly.Blocks
-    // (Blockly needs the block definition to cleanly remove it from the toolbox)
-    if (workspaceRef.current) {
-      workspaceRef.current.updateToolbox(getToolboxXml())
-    }
-
-    // Now safe to remove the Blockly block definition
-    unregisterBlock(blockDef.name)
-  }, [])
-
-  const handleSaveAsBlock = useCallback((jsCode: string, pyCode: string) => {
-    setEditingBlock({
-      name: '',
-      author: 'User',
-      version: '1.0.0',
-      description: '',
-      category: 'My Blocks',
-      inputs: [],
-      outputs: [],
-      implementations: { javascript: jsCode, python: pyCode },
-      tests: [],
-      color: '#F59E0B',
-      shape: 'statement',
-    })
-    modals.setCreateBlock(true)
-  }, [])
-
-  const handleClear = useCallback(() => {
-    exec.abort()
-    workspaceRef.current?.clear()
-    exec.setResult(null)
-    setShowOutput(false)
-  }, [exec])
-
-  const closeModal = useCallback(() => {
-    modals.setCreateBlock(false)
-    setEditingBlock(null)
-  }, [])
 
   const handleExportHtml = useCallback(() => {
     const jsCode = language === 'html' && workspaceRef.current
