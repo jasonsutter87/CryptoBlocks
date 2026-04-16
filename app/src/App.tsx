@@ -6,6 +6,10 @@ import { registry } from './blocks/registry'
 import type { ExecutionResult } from './execution/runner'
 import { useExecution } from './hooks/useExecution'
 import { useModalState } from './hooks/useModalState'
+import { useChallengeMode } from './hooks/useChallengeMode'
+import { useBlocksetMode } from './hooks/useBlocksetMode'
+import { useGolfMode } from './hooks/useGolfMode'
+import { useLabMode } from './hooks/useLabMode'
 import { snapshotSandbox, enterMode, exitToSandbox } from './hooks/modeWorkspace'
 import {
   saveCustomBlocksToLocal,
@@ -79,26 +83,9 @@ export default function App() {
   const [initialWorkspaceState, setInitialWorkspaceState] = useState<Record<string, unknown> | null>(null)
   const [restored, setRestored] = useState(false)
 
-  // Challenge state
+  // Mode + gameplay state — each mode hook owns its own slice
   const [mode, setMode] = useState<AppMode>('sandbox')
-  const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null)
   const [blockCount, setBlockCount] = useState(0)
-  const [showComplete, setShowComplete] = useState(false)
-  const [challengeStars, setChallengeStars] = useState(0)
-
-  // Blockset state
-  const [activeBlockset, setActiveBlockset] = useState<Blockset | null>(null)
-  const [showBlocksetComplete, setShowBlocksetComplete] = useState(false)
-
-  // Code Golf state
-  const [activeGolfProblem, setActiveGolfProblem] = useState<GolfProblem | null>(null)
-  const [showGolfComplete, setShowGolfComplete] = useState(false)
-  const [golfIsNewBest, setGolfIsNewBest] = useState(false)
-
-  // Code Lab state
-  const [activeLabExercise, setActiveLabExercise] = useState<LabExercise | null>(null)
-  const [showLabComplete, setShowLabComplete] = useState(false)
-  const [labCode, setLabCode] = useState('')
 
   // Slow-Mo trace state
   const [slowMo, setSlowMo] = useState(false)
@@ -446,278 +433,6 @@ export default function App() {
     return execResult.error ? null : execResult
   }, [code, language, exec])
 
-  const handleCheckSolution = useCallback(async () => {
-    if (!activeChallenge) return
-    const execResult = await runCurrentCode()
-    if (!execResult || !workspaceRef.current) return
-
-    const passed = validateOutput(execResult.output, activeChallenge.expectedOutput)
-    if (passed) {
-      const blocks = countBlocks(workspaceRef.current)
-      const stars = calculateStars(blocks, activeChallenge.par)
-      setChallengeStars(stars)
-
-      saveProgress({
-        challengeId: activeChallenge.id,
-        completed: true,
-        stars,
-        bestBlockCount: blocks,
-        attempts: 1,
-      })
-
-      recordChallengeComplete()
-      const newAchievements = checkAchievements({
-        event: 'challenge-complete',
-        challengeStars: stars,
-      })
-      processAchievements(newAchievements)
-
-      setShowComplete(true)
-    }
-  }, [activeChallenge, processAchievements, runCurrentCode])
-
-  const handleSelectChallenge = useCallback((challenge: Challenge) => {
-    beginModeEntry()
-    setActiveChallenge(challenge)
-    setMode('active-challenge')
-    setShowComplete(false)
-    setBlockCount(0)
-
-    setTimeout(() => {
-      enterMode(workspaceRef.current, {
-        allowedCategories: challenge.allowedCategories,
-        starterBlocks: challenge.starterBlocks,
-      })
-    }, 0)
-  }, [beginModeEntry])
-
-  const handleBackToSandbox = useCallback(() => {
-    setMode('sandbox')
-    setActiveChallenge(null)
-    setShowComplete(false)
-
-    setTimeout(() => {
-      exitToSandbox(workspaceRef.current, savedSandboxState.current)
-    }, 0)
-  }, [])
-
-  const handleBackToChallenges = useCallback(() => {
-    setMode('challenges')
-    setActiveChallenge(null)
-    setShowComplete(false)
-  }, [])
-
-  const handleNextChallenge = useCallback(() => {
-    if (!activeChallenge) return
-    const next = getNextChallenge(activeChallenge.id)
-    if (next) {
-      handleSelectChallenge(next)
-    } else {
-      handleBackToChallenges()
-    }
-  }, [activeChallenge, handleSelectChallenge, handleBackToChallenges])
-
-  const handleRetryChallenge = useCallback(() => {
-    setShowComplete(false)
-    exec.setResult(null)
-    setShowOutput(false)
-    enterMode(workspaceRef.current, {
-      allowedCategories: activeChallenge?.allowedCategories,
-      starterBlocks: activeChallenge?.starterBlocks,
-    })
-  }, [activeChallenge, exec])
-
-  const handleOpenChallenges = useCallback(() => {
-    if (mode === 'challenges') {
-      handleBackToSandbox()
-    } else {
-      setMode('challenges')
-    }
-  }, [mode, handleBackToSandbox])
-
-  // === Blockset handlers ===
-  const handleOpenBlocksets = useCallback(() => {
-    if (mode === 'blocksets') {
-      handleBackToSandbox()
-    } else {
-      setMode('blocksets')
-    }
-  }, [mode, handleBackToSandbox])
-
-  const handleSelectBlockset = useCallback((blockset: Blockset) => {
-    beginModeEntry()
-    setActiveBlockset(blockset)
-    setMode('active-blockset')
-    setShowBlocksetComplete(false)
-    setBlockCount(0)
-
-    setTimeout(() => {
-      enterMode(workspaceRef.current, { allowedCategories: blockset.allowedCategories })
-    }, 0)
-  }, [beginModeEntry])
-
-  const handleBackToBlocksets = useCallback(() => {
-    setMode('blocksets')
-    setActiveBlockset(null)
-    setShowBlocksetComplete(false)
-  }, [])
-
-  const handleNextBlockset = useCallback(() => {
-    if (!activeBlockset) return
-    const next = getNextBlockset(activeBlockset.id)
-    if (next) {
-      handleSelectBlockset(next)
-    } else {
-      handleBackToBlocksets()
-    }
-  }, [activeBlockset, handleSelectBlockset, handleBackToBlocksets])
-
-  const handleCheckBlocksetSolution = useCallback(async () => {
-    if (!activeBlockset) return
-    const execResult = await runCurrentCode()
-    if (!execResult) return
-
-    if (validateOutput(execResult.output, activeBlockset.expectedOutput)) {
-      saveBlocksetProgress({ blocksetId: activeBlockset.id, completed: true, attempts: 1 })
-      setShowBlocksetComplete(true)
-    }
-  }, [activeBlockset, runCurrentCode])
-
-  // === Code Golf handlers ===
-  const handleOpenGolf = useCallback(() => {
-    if (mode === 'code-golf') {
-      handleBackToSandbox()
-    } else {
-      setMode('code-golf')
-    }
-  }, [mode, handleBackToSandbox])
-
-  const handleSelectGolfProblem = useCallback((problem: GolfProblem) => {
-    beginModeEntry()
-    setActiveGolfProblem(problem)
-    setMode('active-golf')
-    setShowGolfComplete(false)
-    setBlockCount(0)
-    setGolfIsNewBest(false)
-
-    setTimeout(() => {
-      enterMode(workspaceRef.current, { allowedCategories: problem.allowedCategories })
-    }, 0)
-  }, [beginModeEntry])
-
-  const handleBackToGolf = useCallback(() => {
-    setMode('code-golf')
-    setActiveGolfProblem(null)
-    setShowGolfComplete(false)
-  }, [])
-
-  const handleNextGolfProblem = useCallback(() => {
-    if (!activeGolfProblem) return
-    const next = getNextProblem(activeGolfProblem.id)
-    if (next) {
-      handleSelectGolfProblem(next)
-    } else {
-      handleBackToGolf()
-    }
-  }, [activeGolfProblem, handleSelectGolfProblem, handleBackToGolf])
-
-  const handleRetryGolf = useCallback(() => {
-    setShowGolfComplete(false)
-    exec.setResult(null)
-    setShowOutput(false)
-    workspaceRef.current?.clear()
-  }, [exec])
-
-  const handleCheckGolfSolution = useCallback(async () => {
-    if (!activeGolfProblem) return
-    const execResult = await runCurrentCode()
-    if (!execResult || !workspaceRef.current) return
-
-    if (!validateOutput(execResult.output, activeGolfProblem.expectedOutput)) return
-
-    const blocks = countBlocks(workspaceRef.current)
-    const { getGolfProgressById } = await import('./code-golf/progress')
-    const prev = getGolfProgressById(activeGolfProblem.id)
-    setGolfIsNewBest(!prev || blocks < prev.bestBlockCount)
-
-    saveGolfProgress({ problemId: activeGolfProblem.id, completed: true, bestBlockCount: blocks, attempts: 1 })
-    recordGolfComplete()
-    processAchievements(checkAchievements({ event: 'golf-complete' }))
-    setShowGolfComplete(true)
-  }, [activeGolfProblem, processAchievements, runCurrentCode])
-
-  // === Code Lab handlers ===
-  const handleOpenLab = useCallback(() => {
-    if (mode === 'code-lab') {
-      handleBackToSandbox()
-    } else {
-      setMode('code-lab')
-    }
-  }, [mode, handleBackToSandbox])
-
-  const handleSelectExercise = useCallback((exercise: LabExercise) => {
-    beginModeEntry()
-    setActiveLabExercise(exercise)
-    setMode('active-lab')
-    setShowLabComplete(false)
-    setLabCode(exercise.starterCode || '')
-  }, [beginModeEntry])
-
-  const handleBackToLab = useCallback(() => {
-    setMode('code-lab')
-    setActiveLabExercise(null)
-    setShowLabComplete(false)
-    setLabCode('')
-  }, [])
-
-  const handleNextExercise = useCallback(() => {
-    if (!activeLabExercise) return
-    const next = getNextExercise(activeLabExercise.id)
-    if (next) {
-      handleSelectExercise(next)
-    } else {
-      handleBackToLab()
-    }
-  }, [activeLabExercise, handleSelectExercise, handleBackToLab])
-
-  const handleCheckLabSolution = useCallback(async () => {
-    if (!activeLabExercise) return
-
-    setShowOutput(true)
-    const execResult = await exec.run({ code: labCode, language: 'javascript' })
-    exec.finish(execResult)
-
-    if (execResult.error) return
-
-    if (validateOutput(execResult.output, activeLabExercise.expectedOutput)) {
-      saveLabProgress({
-        exerciseId: activeLabExercise.id,
-        completed: true,
-        attempts: 1,
-      })
-      recordLabComplete()
-      const newAchievements = checkAchievements({ event: 'lab-complete' })
-      processAchievements(newAchievements)
-      setShowLabComplete(true)
-    } else {
-      const expected = activeLabExercise.expectedOutput.join('\n')
-      const actual = execResult.output.length > 0 ? execResult.output.join('\n') : '(no output)'
-      exec.patchResult(() => ({
-        ...execResult,
-        output: [
-          ...execResult.output,
-          '',
-          '❌ Not quite! Make sure your code prints the result.',
-          `Expected output: ${expected}`,
-          `Your output: ${actual}`,
-        ],
-      }))
-    }
-  }, [labCode, activeLabExercise, processAchievements, exec])
-
-  const handleLabCodeChange = useCallback((newCode: string) => {
-    setLabCode(newCode)
-  }, [])
 
   const handleSelectExample = useCallback((example: Example) => {
     modals.setExamples(false)
@@ -1067,10 +782,10 @@ export default function App() {
         onPublish={() => modals.setPublish(true)}
         onClear={handleClear}
         mode={mode}
-        onOpenChallenges={handleOpenChallenges}
-        onOpenBlocksets={handleOpenBlocksets}
-        onOpenGolf={handleOpenGolf}
-        onOpenLab={handleOpenLab}
+        onOpenChallenges={challenge.handleOpen}
+        onOpenBlocksets={blockset.handleOpen}
+        onOpenGolf={golf.handleOpen}
+        onOpenLab={lab.handleOpen}
         onOpenExamples={() => modals.setExamples(true)}
         onOpenStats={() => modals.setStats(true)}
         blockCount={blockCount}
@@ -1097,7 +812,7 @@ export default function App() {
       {/* Challenge Browser Mode */}
       {mode === 'challenges' && (
         <ChallengeBrowser
-          onSelectChallenge={handleSelectChallenge}
+          onSelectChallenge={challenge.handleSelect}
           onBackToSandbox={handleBackToSandbox}
         />
       )}
@@ -1105,7 +820,7 @@ export default function App() {
       {/* Blockset Browser Mode */}
       {mode === 'blocksets' && (
         <BlocksetBrowser
-          onSelectBlockset={handleSelectBlockset}
+          onSelectBlockset={blockset.handleSelect}
           onBackToSandbox={handleBackToSandbox}
         />
       )}
@@ -1113,7 +828,7 @@ export default function App() {
       {/* Code Golf Browser Mode */}
       {mode === 'code-golf' && (
         <GolfBrowser
-          onSelectProblem={handleSelectGolfProblem}
+          onSelectProblem={golf.handleSelect}
           onBackToSandbox={handleBackToSandbox}
         />
       )}
@@ -1121,18 +836,18 @@ export default function App() {
       {/* Code Lab Browser Mode */}
       {mode === 'code-lab' && (
         <LabBrowser
-          onSelectExercise={handleSelectExercise}
+          onSelectExercise={lab.handleSelect}
           onBackToSandbox={handleBackToSandbox}
         />
       )}
 
-      {mode === 'active-lab' && activeLabExercise && (
+      {mode === 'active-lab' && lab.activeLabExercise && (
         <ActiveLabPane
-          exercise={activeLabExercise}
-          labCode={labCode}
-          onLabCodeChange={handleLabCodeChange}
-          onCheckSolution={handleCheckLabSolution}
-          onBack={handleBackToLab}
+          exercise={lab.activeLabExercise}
+          lab.labCode={lab.labCode}
+          onLabCodeChange={lab.handleLabCodeChange}
+          onCheckSolution={lab.handleCheckSolution}
+          onBack={lab.handleBackToBrowser}
           isRunning={isRunning}
           showOutput={showOutput}
           result={result}
@@ -1144,17 +859,17 @@ export default function App() {
       {(mode === 'sandbox' || mode === 'active-challenge' || mode === 'active-blockset' || mode === 'active-golf') && (
         <EditorPane
           mode={mode}
-          activeChallenge={activeChallenge}
-          activeBlockset={activeBlockset}
-          activeGolfProblem={activeGolfProblem}
+          challenge.activeChallenge={challenge.activeChallenge}
+          blockset.activeBlockset={blockset.activeBlockset}
+          golf.activeGolfProblem={golf.activeGolfProblem}
           blockCount={blockCount}
           isRunning={isRunning}
-          onCheckChallenge={handleCheckSolution}
-          onBackChallenge={handleBackToChallenges}
-          onCheckBlockset={handleCheckBlocksetSolution}
-          onBackBlockset={handleBackToBlocksets}
-          onCheckGolf={handleCheckGolfSolution}
-          onBackGolf={handleBackToGolf}
+          onCheckChallenge={challenge.handleCheckSolution}
+          onBackChallenge={challenge.handleBackToBrowser}
+          onCheckBlockset={blockset.handleCheckSolution}
+          onBackBlockset={blockset.handleBackToBrowser}
+          onCheckGolf={golf.handleCheckSolution}
+          onBackGolf={golf.handleBackToBrowser}
           onWorkspaceChange={handleWorkspaceChange}
           onEditBlock={handleEditBlock}
           onDeleteBlock={handleDeleteBlock}
@@ -1179,36 +894,36 @@ export default function App() {
 
       <AppModals
         modals={modals}
-        showComplete={showComplete}
-        showBlocksetComplete={showBlocksetComplete}
-        showGolfComplete={showGolfComplete}
-        showLabComplete={showLabComplete}
+        challenge.showComplete={challenge.showComplete}
+        blockset.showComplete={blockset.showComplete}
+        golf.showComplete={golf.showComplete}
+        lab.showComplete={lab.showComplete}
         showCheckpointModal={showCheckpointModal}
         showHistory={showHistory}
         closeCreateModal={closeModal}
         setShowCheckpointModal={setShowCheckpointModal}
         setShowHistory={setShowHistory}
-        activeChallenge={activeChallenge}
-        activeBlockset={activeBlockset}
-        activeGolfProblem={activeGolfProblem}
-        activeLabExercise={activeLabExercise}
-        challengeStars={challengeStars}
+        challenge.activeChallenge={challenge.activeChallenge}
+        blockset.activeBlockset={blockset.activeBlockset}
+        golf.activeGolfProblem={golf.activeGolfProblem}
+        lab.activeLabExercise={lab.activeLabExercise}
+        challenge.challengeStars={challenge.challengeStars}
         blockCount={blockCount}
-        golfIsNewBest={golfIsNewBest}
+        golf.golfIsNewBest={golf.golfIsNewBest}
         editingBlock={editingBlock}
         handleCreateBlock={handleCreateBlock}
         handleSelectExample={handleSelectExample}
         handleCodeToBlocks={handleCodeToBlocks}
-        handleNextChallenge={handleNextChallenge}
-        handleBackToChallenges={handleBackToChallenges}
-        handleRetryChallenge={handleRetryChallenge}
-        handleNextBlockset={handleNextBlockset}
-        handleBackToBlocksets={handleBackToBlocksets}
-        handleRetryGolf={handleRetryGolf}
-        handleNextGolfProblem={handleNextGolfProblem}
-        handleBackToGolf={handleBackToGolf}
-        handleNextExercise={handleNextExercise}
-        handleBackToLab={handleBackToLab}
+        challenge.handleNext={challenge.handleNext}
+        challenge.handleBackToBrowser={challenge.handleBackToBrowser}
+        challenge.handleRetry={challenge.handleRetry}
+        blockset.handleNext={blockset.handleNext}
+        blockset.handleBackToBrowser={blockset.handleBackToBrowser}
+        golf.handleRetry={golf.handleRetry}
+        golf.handleNext={golf.handleNext}
+        golf.handleBackToBrowser={golf.handleBackToBrowser}
+        lab.handleNext={lab.handleNext}
+        lab.handleBackToBrowser={lab.handleBackToBrowser}
         checkpoints={checkpoints}
         currentBranch={currentBranch}
         saveCheckpoint={saveCheckpoint}
