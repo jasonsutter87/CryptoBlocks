@@ -239,26 +239,6 @@ export const listsBlocks: BlockDefinition[] = [
     color: '#D97706',
   },
   {
-    name: 'transpose_matrix',
-    author: 'CryptoBlocks',
-    version: '1.0.0',
-    description: 'Transpose a matrix (swap rows and columns)',
-    category: 'Lists',
-    inputs: [
-      { name: 'name', type: 'string', description: 'Name of the matrix list to transpose' },
-    ],
-    outputs: [],
-    implementations: {
-      javascript: `function transposeMatrix(name) {\n  window.__vars = window.__vars || {};\n  const m = window.__vars[name];\n  if (!Array.isArray(m) || !Array.isArray(m[0])) return;\n  window.__vars[name] = m[0].map(function(_, i) { return m.map(function(row) { return row[i]; }); });\n}`,
-      python: `def transpose_matrix(name):\n    m = globals().get(name, [])\n    if m and isinstance(m[0], list):\n        globals()[name] = [list(row) for row in zip(*m)]`,
-    },
-    tests: [
-      { input: { name: 'matrix' }, expected: {} },
-    ],
-    color: '#D97706',
-    shape: 'statement',
-  },
-  {
     name: 'sort_list',
     author: 'CryptoBlocks',
     version: '1.0.0',

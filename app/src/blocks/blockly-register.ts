@@ -31,7 +31,7 @@ function typeToBlocklyCheck(type: string): string | null {
 }
 
 // --- Control flow block types ---
-const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat', 'cb_loop_index', 'cb_while'])
+const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat', 'cb_loop_index', 'cb_while', 'cb_break', 'cb_continue'])
 
 // --- HTML/CSS block types (native Blockly, not registry) ---
 const HTML_BLOCKS = new Set([
@@ -123,6 +123,28 @@ function registerControlFlowBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Keep running blocks while the condition is true')
+    },
+  }
+
+  // BREAK — exit the enclosing loop immediately
+  Blockly.Blocks['cb_break'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#059669')
+      this.appendDummyInput().appendField('break')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(false, null)
+      this.setTooltip('Exit the loop immediately')
+    },
+  }
+
+  // CONTINUE — skip to the next iteration of the enclosing loop
+  Blockly.Blocks['cb_continue'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#059669')
+      this.appendDummyInput().appendField('continue')
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(false, null)
+      this.setTooltip('Skip to the next iteration of the loop')
     },
   }
 
@@ -1078,6 +1100,14 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
       return language === 'javascript' ? '__loopIndex' : '__loopIndex'
     }
 
+    case 'cb_break': {
+      return 'break'
+    }
+
+    case 'cb_continue': {
+      return 'continue'
+    }
+
     default:
       return null
   }
@@ -1767,6 +1797,8 @@ function controlFlowToolboxXml(cat: string): string {
     '<block type="cb_repeat"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>' +
     '<block type="cb_loop_index"></block>' +
     '<block type="cb_while"></block>' +
+    '<block type="cb_break"></block>' +
+    '<block type="cb_continue"></block>' +
     '<sep gap="20"></sep>'
   )
 }

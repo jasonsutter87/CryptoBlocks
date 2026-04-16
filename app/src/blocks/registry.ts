@@ -5,6 +5,7 @@ import { mathBlocks } from './definitions/math'
 import { textBlocks } from './definitions/text'
 import { logicBlocks } from './definitions/logic'
 import { listsBlocks } from './definitions/lists'
+import { matrixBlocks } from './definitions/matrix'
 import { dataBlocks } from './definitions/data'
 import { webBlocks } from './definitions/web'
 import { artBlocks } from './definitions/art'
@@ -30,6 +31,7 @@ class BlockRegistry {
     this.registerAll(textBlocks)
     this.registerAll(logicBlocks)
     this.registerAll(listsBlocks)
+    this.registerAll(matrixBlocks)
     this.registerAll(dataBlocks)
     this.registerAll(databaseBlocks)
     this.registerAll(webBlocks)

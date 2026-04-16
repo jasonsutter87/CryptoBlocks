@@ -39,6 +39,7 @@ export type BlockCategory =
   | 'Math'
   | 'Text'
   | 'Lists'
+  | 'Matrix'
   | 'Logic'
   | 'Web'
   | 'Games'
@@ -63,6 +64,7 @@ export const CATEGORY_COLORS: Record<BlockCategory, string> = {
   Math: '#5B80A5',
   Text: '#8B5CF6',
   Lists: '#D97706',
+  Matrix: '#C2410C',
   Logic: '#059669',
   Web: '#DC2626',
   Games: '#EA580C',
