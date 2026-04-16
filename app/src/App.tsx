@@ -12,34 +12,10 @@ import { useGolfMode } from './hooks/useGolfMode'
 import { useLabMode } from './hooks/useLabMode'
 import { useAchievements } from './hooks/useAchievements'
 import { useCustomBlocks } from './hooks/useCustomBlocks'
+import { useFileOps } from './hooks/useFileOps'
 import { snapshotSandbox, enterMode, exitToSandbox } from './hooks/modeWorkspace'
-import {
-  saveCustomBlocksToLocal,
-  saveWorkspaceToLocal,
-  loadFromLocalStorage,
-  exportBlocksFile,
-  importBlocksFile,
-} from './storage'
-import {
-  generateStandaloneHtml,
-  generateEmbedSnippet,
-  downloadHtml,
-  copyToClipboard,
-} from './export-html'
-import { saveToDashboard } from './shareplace/api'
-import type { Challenge } from './challenges'
-import { getNextChallenge } from './challenges'
-import { validateOutput, calculateStars, countBlocks } from './challenges/validator'
-import { saveProgress } from './challenges/progress'
-import type { Blockset } from './blocksets'
-import { getNextBlockset } from './blocksets'
-import { saveBlocksetProgress } from './blocksets/progress'
-import type { GolfProblem } from './code-golf'
-import { getNextProblem } from './code-golf'
-import { saveGolfProgress } from './code-golf/progress'
-import type { LabExercise } from './code-lab'
-import { getNextExercise } from './code-lab'
-import { saveLabProgress } from './code-lab/progress'
+import { saveWorkspaceToLocal, loadFromLocalStorage } from './storage'
+import { countBlocks } from './challenges/validator'
 import Toolbar from './components/Toolbar'
 import EditorPane from './components/EditorPane'
 import ActiveLabPane from './components/ActiveLabPane'
@@ -438,129 +414,15 @@ export default function App() {
     }, 0)
   }, [exec])
 
-  const handleExportHtml = useCallback(() => {
-    const jsCode = language === 'html' && workspaceRef.current
-      ? generateCode(workspaceRef.current, 'javascript')
-      : code
-    const html = generateStandaloneHtml(jsCode, { title: 'CryptoBlocks Project' })
-    downloadHtml(html)
-  }, [code, language])
-
-  const handleCopyEmbed = useCallback(async () => {
-    const jsCode = language === 'html' && workspaceRef.current
-      ? generateCode(workspaceRef.current, 'javascript')
-      : code
-    const snippet = generateEmbedSnippet(jsCode)
-    await copyToClipboard(snippet)
-  }, [code, language])
-
-  const handleExport = useCallback(() => {
-    if (workspaceRef.current) {
-      exportBlocksFile(customBlocks, workspaceRef.current)
-    }
-  }, [customBlocks])
-
-  const handleSaveToDashboard = useCallback(async () => {
-    if (!workspaceRef.current) return
-    const { showToast } = await import('./components/Toast')
-    try {
-      const state = Blockly.serialization.workspaces.save(workspaceRef.current)
-      const workspaceJson = JSON.stringify(state)
-      const name = prompt('Project name:') || 'Untitled Project'
-      const token = await (window as any).Clerk?.session?.getToken() || undefined
-
-      const result = await saveToDashboard({
-        name,
-        workspaceJson,
-        blockCount: countBlocks(workspaceRef.current),
-        category: 'General',
-      }, token)
-
-      if (result && 'id' in result) {
-        showToast('Saved to your dashboard!', 'success')
-      } else if (result && 'error' in result) {
-        showToast(result.error, 'error')
-      } else {
-        showToast('Save failed — try again', 'error')
-      }
-    } catch (_e) {
-      showToast('Save failed', 'error')
-    }
-  }, [])
-
-  const handleImportAsBlock = useCallback(async (file: File) => {
-    try {
-      const data = await importBlocksFile(file)
-
-      // Register imported custom blocks so headless workspace can deserialize them
-      for (const block of data.customBlocks) {
-        registry.register(block)
-        registerSingleBlock(block)
-      }
-
-      // Create headless workspace and load state
-      const headless = new Blockly.Workspace()
-      Blockly.serialization.workspaces.load(data.workspaceState, headless)
-
-      // Generate code from the headless workspace
-      const jsCode = generateCode(headless, 'javascript')
-      const pyCode = generateCode(headless, 'python')
-      headless.dispose()
-
-      // Derive function name from filename (strip .blocks, sanitize to snake_case)
-      const baseName = file.name.replace(/\.blocks$/i, '')
-      const funcName = baseName
-        .replace(/[^a-zA-Z0-9]+/g, '_')
-        .replace(/^_+|_+$/g, '')
-        .toLowerCase() || 'imported_block'
-
-      // Wrap generated code in function definitions
-      const wrappedJs = `function ${funcName}() {\n${jsCode.split('\n').map(l => '  ' + l).join('\n')}\n}`
-      const wrappedPy = `def ${funcName}():\n${pyCode.split('\n').map(l => '    ' + l).join('\n')}`
-
-      // Pre-populate editingBlock and open CreateBlockModal
-      setEditingBlock({
-        name: funcName,
-        author: 'User',
-        version: '1.0.0',
-        description: `Imported from ${file.name}`,
-        category: 'My Blocks',
-        inputs: [],
-        outputs: [],
-        implementations: { javascript: wrappedJs, python: wrappedPy },
-        tests: [],
-        color: '#F59E0B',
-        shape: 'statement',
-      })
-      modals.setCreateBlock(true)
-    } catch (err) {
-      console.error('Failed to import .blocks file as block:', err)
-    }
-  }, [])
-
-  const handleImport = useCallback(async (file: File) => {
-    try {
-      const data = await importBlocksFile(file)
-
-      // Register imported custom blocks
-      for (const block of data.customBlocks) {
-        registry.register(block)
-        registerSingleBlock(block)
-      }
-
-      setCustomBlocks(data.customBlocks)
-      saveCustomBlocksToLocal(data.customBlocks)
-
-      // Load workspace
-      if (workspaceRef.current) {
-        workspaceRef.current.updateToolbox(getToolboxXml())
-        Blockly.serialization.workspaces.load(data.workspaceState, workspaceRef.current)
-        saveWorkspaceToLocal(workspaceRef.current)
-      }
-    } catch (err) {
-      console.error('Failed to import .blocks file:', err)
-    }
-  }, [])
+  const fileOps = useFileOps({
+    workspaceRef, language, code, customBlocks, setCustomBlocks,
+    setEditingBlock,
+    openCreateModal: () => modals.setCreateBlock(true),
+  })
+  const {
+    handleExportHtml, handleCopyEmbed, handleExport,
+    handleSaveToDashboard, handleImport, handleImportAsBlock,
+  } = fileOps
 
   // Don't render BlockEditor until we've loaded from localStorage
   if (!restored) return null
