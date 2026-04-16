@@ -11,10 +11,7 @@ import { useIsPro, openCheckout } from '../billing/useIsPro'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
 
-type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
-  | 'blocksets' | 'active-blockset'
-  | 'code-golf' | 'active-golf'
-  | 'code-lab' | 'active-lab'
+import type { AppMode } from '../types/appMode'
 
 interface ToolbarProps {
   language: Language

@@ -62,10 +62,7 @@ import { markSolved, loadDailyState } from './daily/state'
 import { useTimeTravel } from './time-travel/useTimeTravel'
 import TimeTravelBar from './components/TimeTravelBar'
 
-type AppMode = 'sandbox' | 'challenges' | 'active-challenge'
-  | 'blocksets' | 'active-blockset'
-  | 'code-golf' | 'active-golf'
-  | 'code-lab' | 'active-lab'
+import type { AppMode } from './types/appMode'
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('javascript')

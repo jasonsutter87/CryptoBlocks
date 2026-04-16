@@ -23,7 +23,9 @@ import BlocksetPanel from './BlocksetPanel'
 import GolfPanel from './GolfPanel'
 import WorkspaceFloatingControls from './WorkspaceFloatingControls'
 
-export type EditorMode = 'sandbox' | 'active-challenge' | 'active-blockset' | 'active-golf'
+import type { AppMode } from '../types/appMode'
+
+export type EditorMode = Extract<AppMode, 'sandbox' | 'active-challenge' | 'active-blockset' | 'active-golf'>
 
 interface EditorPaneProps {
   mode: EditorMode
