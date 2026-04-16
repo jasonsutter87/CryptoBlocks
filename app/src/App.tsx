@@ -472,7 +472,7 @@ export default function App() {
       {mode === 'active-lab' && lab.activeLabExercise && (
         <ActiveLabPane
           exercise={lab.activeLabExercise}
-          lab.labCode={lab.labCode}
+          labCode={lab.labCode}
           onLabCodeChange={lab.handleLabCodeChange}
           onCheckSolution={lab.handleCheckSolution}
           onBack={lab.handleBackToBrowser}
@@ -487,9 +487,9 @@ export default function App() {
       {(mode === 'sandbox' || mode === 'active-challenge' || mode === 'active-blockset' || mode === 'active-golf') && (
         <EditorPane
           mode={mode}
-          challenge.activeChallenge={challenge.activeChallenge}
-          blockset.activeBlockset={blockset.activeBlockset}
-          golf.activeGolfProblem={golf.activeGolfProblem}
+          activeChallenge={challenge.activeChallenge}
+          activeBlockset={blockset.activeBlockset}
+          activeGolfProblem={golf.activeGolfProblem}
           blockCount={blockCount}
           isRunning={isRunning}
           onCheckChallenge={challenge.handleCheckSolution}
@@ -522,36 +522,36 @@ export default function App() {
 
       <AppModals
         modals={modals}
-        challenge.showComplete={challenge.showComplete}
-        blockset.showComplete={blockset.showComplete}
-        golf.showComplete={golf.showComplete}
-        lab.showComplete={lab.showComplete}
+        showComplete={challenge.showComplete}
+        showBlocksetComplete={blockset.showComplete}
+        showGolfComplete={golf.showComplete}
+        showLabComplete={lab.showComplete}
         showCheckpointModal={showCheckpointModal}
         showHistory={showHistory}
         closeCreateModal={closeModal}
         setShowCheckpointModal={setShowCheckpointModal}
         setShowHistory={setShowHistory}
-        challenge.activeChallenge={challenge.activeChallenge}
-        blockset.activeBlockset={blockset.activeBlockset}
-        golf.activeGolfProblem={golf.activeGolfProblem}
-        lab.activeLabExercise={lab.activeLabExercise}
-        challenge.challengeStars={challenge.challengeStars}
+        activeChallenge={challenge.activeChallenge}
+        activeBlockset={blockset.activeBlockset}
+        activeGolfProblem={golf.activeGolfProblem}
+        activeLabExercise={lab.activeLabExercise}
+        challengeStars={challenge.challengeStars}
         blockCount={blockCount}
-        golf.golfIsNewBest={golf.golfIsNewBest}
+        golfIsNewBest={golf.golfIsNewBest}
         editingBlock={editingBlock}
         handleCreateBlock={handleCreateBlock}
         handleSelectExample={handleSelectExample}
         handleCodeToBlocks={handleCodeToBlocks}
-        challenge.handleNext={challenge.handleNext}
-        challenge.handleBackToBrowser={challenge.handleBackToBrowser}
-        challenge.handleRetry={challenge.handleRetry}
-        blockset.handleNext={blockset.handleNext}
-        blockset.handleBackToBrowser={blockset.handleBackToBrowser}
-        golf.handleRetry={golf.handleRetry}
-        golf.handleNext={golf.handleNext}
-        golf.handleBackToBrowser={golf.handleBackToBrowser}
-        lab.handleNext={lab.handleNext}
-        lab.handleBackToBrowser={lab.handleBackToBrowser}
+        handleNextChallenge={challenge.handleNext}
+        handleBackToChallenges={challenge.handleBackToBrowser}
+        handleRetryChallenge={challenge.handleRetry}
+        handleNextBlockset={blockset.handleNext}
+        handleBackToBlocksets={blockset.handleBackToBrowser}
+        handleRetryGolf={golf.handleRetry}
+        handleNextGolfProblem={golf.handleNext}
+        handleBackToGolf={golf.handleBackToBrowser}
+        handleNextExercise={lab.handleNext}
+        handleBackToLab={lab.handleBackToBrowser}
         checkpoints={checkpoints}
         currentBranch={currentBranch}
         saveCheckpoint={saveCheckpoint}

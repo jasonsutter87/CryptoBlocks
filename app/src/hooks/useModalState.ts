@@ -2,7 +2,7 @@
  * Consolidates the 15+ modal-visibility booleans from App.tsx into one hook.
  *
  * Cuts ~30 lines of useState declarations from App.tsx and gives AppModals
- * a single `modals` prop instead of 30+ individual show*/setShow* props.
+ * a single `modals` prop instead of 30+ individual show-flag / set-flag props.
  */
 
 import { useState, useCallback } from 'react'
