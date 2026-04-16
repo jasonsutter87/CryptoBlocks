@@ -3,6 +3,7 @@ import type { Language } from '../types/block'
 import { Icon } from './Icon'
 import DropdownMenu from './DropdownMenu'
 import type { MenuItem } from './DropdownMenu'
+import FileMenu from './toolbar-menus/FileMenu'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '../auth'
@@ -116,9 +117,6 @@ export default function Toolbar({
     if (isPro) { action(); return }
     openCheckout(getToken)
   }
-  const [embedCopied, setEmbedCopied] = useState(false)
-  const [shareLinkCopied, setShareLinkCopied] = useState(false)
-  const [sharing, setSharing] = useState(false)
   const menuContainerRef = useRef<HTMLDivElement>(null)
 
   // Logo click counter — 7 rapid clicks toggles hacker mode
@@ -213,144 +211,29 @@ export default function Toolbar({
               </button>
 
               {openMenu === 'file' && (
-                <div className={menuDropdown}>
-                  <button onClick={() => requireAuth(() => { onExport(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="download" className="w-4 h-4 text-accent" />
-                    Save .blocks
-                    {!isSignedIn && <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
-                  </button>
-                  <button onClick={() => requireAuth(() => { onSaveToDashboard(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="cloud-up" className="w-4 h-4 text-success" />
-                    Save to Dashboard
-                    {!isSignedIn && <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
-                  </button>
-                  <button onClick={() => requireAuth(() => { fileInputRef.current?.click(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="upload" className="w-4 h-4 text-accent" />
-                    Load .blocks
-                    {!isSignedIn && <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
-                  </button>
-                  <button onClick={() => requireAuth(() => { importAsBlockInputRef.current?.click(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="cube" className="w-4 h-4 text-accent" />
-                    Import as Block
-                    {!isSignedIn && <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
-                  </button>
-                  {onImportScratch && (
-                    <button onClick={() => { requirePro(() => { onImportScratch(); setOpenMenu(null) }) }} className={menuItem}>
-                      <span className="text-base leading-none">🐱</span>
-                      Import from Scratch
-                      {isPro ? <span className="ml-auto text-xs text-overlay">.sb3</span> : <span className="ml-auto"><ProBadge /></span>}
-                    </button>
-                  )}
-                  <div className={menuDivider} />
-                  <button onClick={() => requireAuth(() => { onSaveCheckpoint(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="check" className="w-4 h-4 text-success" />
-                    Save Checkpoint
-                    {!isSignedIn && <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
-                  </button>
-                  <button onClick={() => requireAuth(() => { onOpenHistory(); setOpenMenu(null) })} className={menuItem}>
-                    <Icon name="clock" className="w-4 h-4 text-accent" />
-                    History
-                    {currentBranchName && currentBranchName !== 'Main' && (
-                      <span className="ml-auto text-xs text-purple bg-base px-1.5 py-0.5 rounded font-mono">
-                        {currentBranchName}
-                      </span>
-                    )}
-                  </button>
-                  <button onClick={() => { onOpenSettings(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="cog" className="w-4 h-4 text-overlay" />
-                    Settings
-                  </button>
-                  {onOpenTutorial && (
-                    <button onClick={() => { onOpenTutorial(); setOpenMenu(null) }} className={menuItem}>
-                      <span className="text-base leading-none">🎓</span>
-                      Tutorial
-                    </button>
-                  )}
-                  <div className={menuDivider} />
-                  <button
-                    onClick={() => requirePro(() => { onExportHtml(); setOpenMenu(null) })}
-                    className={menuItem}
-                  >
-                    <Icon name="download" className="w-4 h-4 text-success" />
-                    Export as HTML
-                    {isPro ? <span className="ml-auto text-xs text-overlay">.html</span> : <span className="ml-auto"><ProBadge /></span>}
-                  </button>
-                  <button
-                    onClick={() => requirePro(() => { onExportPwa(); setOpenMenu(null) })}
-                    className={menuItem}
-                  >
-                    <Icon name="mobile-app" className="w-4 h-4 text-accent" />
-                    Export as App (PWA)
-                    {isPro ? <span className="ml-auto text-xs text-overlay">.zip</span> : <span className="ml-auto"><ProBadge /></span>}
-                  </button>
-                  <button
-                    onClick={async () => {
-                      requirePro(() => {
-                        onCopyEmbed()
-                        setEmbedCopied(true)
-                        setTimeout(() => setEmbedCopied(false), 2000)
-                      })
-                    }}
-                    className={menuItem}
-                  >
-                    <Icon name="code-brackets" className="w-4 h-4 text-accent" />
-                    {embedCopied ? 'Copied!' : 'Copy Embed Snippet'}
-                    {isPro ? <span className="ml-auto text-xs text-overlay">&lt;/&gt;</span> : <span className="ml-auto"><ProBadge /></span>}
-                  </button>
-                  <button
-                    onClick={() => requireAuth(() => { onPublish(); setOpenMenu(null) })}
-                    className={menuItem}
-                  >
-                    <Icon name="cloud-up-arrow" className="w-4 h-4 text-purple" />
-                    Publish to GitHub
-                    {isSignedIn ? <span className="ml-auto text-xs text-overlay">Live URL</span> : <span className="ml-auto text-[10px] text-overlay">Sign in</span>}
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (sharing) return
-                      const token = await getToken()
-                      if (!token) { showToast('Sign in to share your work!', 'signin'); return }
-                      setSharing(true)
-                      try {
-                        const ws = localStorage.getItem('cryptoblocks_workspace') || '{}'
-                        if (ws === '{}') { showToast('Build something first!', 'info'); setSharing(false); return }
-                        const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-                        if (token) headers['Authorization'] = `Bearer ${token}`
-                        const res = await fetch('/api/projects', {
-                          method: 'POST', headers,
-                          body: JSON.stringify({
-                            name: 'Shared Project — ' + new Date().toLocaleDateString(),
-                            authorName: 'Anonymous',
-                            description: 'Shared via link',
-                            category: 'General',
-                            workspaceJson: ws,
-                            tags: ['shared'],
-                            blockCount: (() => { try { return JSON.parse(ws)?.blocks?.blocks?.length ?? 0 } catch { return 0 } })(),
-                          }),
-                        })
-                        if (res.ok) {
-                          const data = await res.json()
-                          const link = `${window.location.origin}/project/${data.id}`
-                          await navigator.clipboard.writeText(link)
-                          setShareLinkCopied(true)
-                          setTimeout(() => setShareLinkCopied(false), 3000)
-                        }
-                      } catch {}
-                      setSharing(false)
-                      setOpenMenu(null)
-                    }}
-                    className={menuItem}
-                  >
-                    <Icon name="link" className="w-4 h-4 text-success" />
-                    {shareLinkCopied ? '✓ Link Copied!' : sharing ? 'Sharing...' : 'Share Link'}
-                    <span className="ml-auto text-xs text-overlay">🔗</span>
-                  </button>
-                  <div className={menuDivider} />
-                  <button onClick={() => { onClear(); setOpenMenu(null) }} className={menuItem}>
-                    <Icon name="trash" className="w-4 h-4 text-danger" />
-                    Clear Workspace
-                  </button>
-                </div>
+                <FileMenu
+                  isSignedIn={!!isSignedIn}
+                  isPro={isPro}
+                  currentBranchName={currentBranchName}
+                  fileInputRef={fileInputRef}
+                  importAsBlockInputRef={importAsBlockInputRef}
+                  getToken={getToken}
+                  requireAuth={requireAuth}
+                  requirePro={requirePro}
+                  close={() => setOpenMenu(null)}
+                  onExport={onExport}
+                  onSaveToDashboard={onSaveToDashboard}
+                  onImportScratch={onImportScratch}
+                  onSaveCheckpoint={onSaveCheckpoint}
+                  onOpenHistory={onOpenHistory}
+                  onOpenSettings={onOpenSettings}
+                  onOpenTutorial={onOpenTutorial}
+                  onExportHtml={onExportHtml}
+                  onExportPwa={onExportPwa}
+                  onCopyEmbed={onCopyEmbed}
+                  onPublish={onPublish}
+                  onClear={onClear}
+                />
               )}
             </div>
 
