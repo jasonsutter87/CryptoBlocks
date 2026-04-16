@@ -59,11 +59,9 @@ const STROKE_PATHS: Record<string, string> = {
   'swap': 'M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5',
 }
 
-const FILL_PATHS: Record<string, string> = {
-  'play': 'polygon:5,3 19,12 5,21',
-  'stop': 'rect:6 6 12 12',
-  'blocks-2x2': 'rect4',
-}
+// Solid-fill glyphs (play/stop/blocks-2x2) are rendered inline below
+// rather than stored as path strings, since each uses a different SVG
+// primitive (polygon / rect / four-rects).
 
 interface IconProps {
   name: IconName

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import * as Blockly from 'blockly'
-import type { Language, BlockDefinition } from './types/block'
-import { generateCode, generateHtmlMarkup, registerSingleBlock, unregisterBlock, getToolboxXml } from './blocks/blockly-register'
+import type { Language } from './types/block'
+import { generateCode, generateHtmlMarkup, registerSingleBlock, getToolboxXml } from './blocks/blockly-register'
 import { registry } from './blocks/registry'
 import type { ExecutionResult } from './execution/runner'
 import { useExecution } from './hooks/useExecution'
@@ -14,7 +14,7 @@ import { useAchievements } from './hooks/useAchievements'
 import { useCustomBlocks } from './hooks/useCustomBlocks'
 import { useFileOps } from './hooks/useFileOps'
 import { useRunPipeline } from './hooks/useRunPipeline'
-import { snapshotSandbox, enterMode, exitToSandbox } from './hooks/modeWorkspace'
+import { snapshotSandbox, exitToSandbox } from './hooks/modeWorkspace'
 import { saveWorkspaceToLocal, loadFromLocalStorage } from './storage'
 import { countBlocks } from './challenges/validator'
 import Toolbar from './components/Toolbar'
@@ -25,13 +25,10 @@ import ChallengeBrowser from './components/ChallengeBrowser'
 import BlocksetBrowser from './components/BlocksetBrowser'
 import GolfBrowser from './components/GolfBrowser'
 import LabBrowser from './components/LabBrowser'
-import type { ConversionResult } from './converters/js-to-workspace'
 import type { Example } from './examples'
 import { useVersionControl } from './version-control/useVersionControl'
 import { initEasterEggs } from './easter-eggs'
 import { loadSettings } from './settings'
-import type { Achievement } from './achievements'
-import { checkAchievements } from './achievements'
 // stats helpers are called inside each mode/pipeline hook; no direct import needed here
 import { useCollabDoc } from './collab/CollabPage'
 import { ensureSpeechGlobal } from './speech/speech'
@@ -330,11 +327,11 @@ export default function App() {
     exec.abort()
     exec.setResult(null)
 
-    // Ensure we're in sandbox mode
+    // Ensure we're in sandbox mode — the mode hooks' internal state is
+    // harmless when hidden; it gets replaced the next time the user
+    // enters that mode.
     if (modeRef.current !== 'sandbox') {
       setMode('sandbox')
-      setActiveChallenge(null)
-      setShowComplete(false)
     }
 
     setTimeout(() => {

@@ -168,9 +168,8 @@ export default function Toolbar({
 
   const inChallenge = mode === 'active-challenge' || mode === 'active-blockset' || mode === 'active-golf' || mode === 'active-lab'
 
-  const menuItem = 'flex items-center gap-2 w-full px-3 py-2.5 text-sm text-text hover:bg-surface-1 transition-colors text-left'
-  const menuDropdown = 'absolute right-0 mt-1 w-56 bg-surface-0 border border-surface-1 rounded-lg shadow-xl z-50 py-1'
-  const menuDivider = 'h-px bg-surface-1 my-1'
+  // menuItem / menuDropdown / menuDivider class strings moved to the
+  // per-menu files in toolbar-menus/ since the menus were extracted.
   const chevron = (
     <Icon name="chevron-down" className="w-3 h-3" />
   )

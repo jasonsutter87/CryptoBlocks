@@ -1169,7 +1169,7 @@ export const gamesBlocks: BlockDefinition[] = [
       { name: 'row', type: 'number', description: 'Row (y in grid coordinates)' },
     ],
     outputs: [
-      { name: 'value', type: 'number', description: 'Tile value at that position' },
+      { name: 'value', type: 'number' },
     ],
     implementations: {
       javascript: `function getTileAt(col, row) {
@@ -1231,7 +1231,7 @@ export const gamesBlocks: BlockDefinition[] = [
       { name: 'pixelY', type: 'number', description: 'Y position in pixels' },
     ],
     outputs: [
-      { name: 'result', type: 'any', description: '[col, row] array' },
+      { name: 'result', type: 'any' },
     ],
     implementations: {
       javascript: `function screenToGrid(pixelX, pixelY) {
@@ -1260,7 +1260,7 @@ export const gamesBlocks: BlockDefinition[] = [
       { name: 'row', type: 'number', description: 'Row in grid' },
     ],
     outputs: [
-      { name: 'result', type: 'any', description: '[x, y] array (center of tile in pixels)' },
+      { name: 'result', type: 'any' },
     ],
     implementations: {
       javascript: `function gridToScreen(col, row) {
