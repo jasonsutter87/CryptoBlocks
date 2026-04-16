@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, lazy, Suspense } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import * as Blockly from 'blockly'
 import type { Language, BlockDefinition } from './types/block'
 import { generateCode, generateHtmlMarkup, registerSingleBlock, unregisterBlock, getToolboxXml } from './blocks/blockly-register'
@@ -36,41 +36,19 @@ import { saveLabProgress } from './code-lab/progress'
 import Toolbar from './components/Toolbar'
 import EditorPane from './components/EditorPane'
 import ActiveLabPane from './components/ActiveLabPane'
-import CreateBlockModal from './components/CreateBlockModal'
+import AppModals from './components/AppModals'
 import ChallengeBrowser from './components/ChallengeBrowser'
-import ChallengeComplete from './components/ChallengeComplete'
 import BlocksetBrowser from './components/BlocksetBrowser'
-import BlocksetComplete from './components/BlocksetComplete'
 import GolfBrowser from './components/GolfBrowser'
-import GolfComplete from './components/GolfComplete'
 import LabBrowser from './components/LabBrowser'
-import LabPanel from './components/LabPanel'
-import LabComplete from './components/LabComplete'
-import ExamplesBrowser from './components/ExamplesBrowser'
-import CodeToBlocksModal from './components/CodeToBlocksModal'
-import GitHubPublishModal from './components/GitHubPublishModal'
 import type { ConversionResult } from './converters/js-to-workspace'
 import type { Example } from './examples'
 import { useVersionControl } from './version-control/useVersionControl'
-import CheckpointModal from './components/CheckpointModal'
-import HistoryPanel from './components/HistoryPanel'
-import SettingsModal from './components/SettingsModal'
-import WelcomeModal from './components/WelcomeModal'
-import TutorialOverlay from './components/TutorialOverlay'
 import { initEasterEggs } from './easter-eggs'
 import { loadSettings } from './settings'
 import type { Achievement } from './achievements'
 import { checkAchievements } from './achievements'
 import { recordRun, recordChallengeComplete, recordGolfComplete, recordLabComplete, recordAchievement } from './stats'
-import { AchievementToast } from './components/AchievementToast'
-import StatsPanel from './components/StatsPanel'
-import HackerTerminal from './components/HackerTerminal'
-import ToastContainer from './components/Toast'
-const SpriteEditor = lazy(() => import('./sprite-editor/SpriteEditor'))
-const LevelEditor = lazy(() => import('./level-editor/LevelEditor'))
-const CollabModal = lazy(() => import('./collab/CollabModal'))
-const RoomCreatedModal = lazy(() => import('./collab/RoomCreatedModal'))
-const ScratchImportModal = lazy(() => import('./components/ScratchImportModal'))
 import { useCollabDoc } from './collab/CollabPage'
 import { bindRunBroadcast } from './collab/run-broadcast'
 import { ensureSpeechGlobal } from './speech/speech'
@@ -1213,265 +1191,70 @@ export default function App() {
         />
       )}
 
-      {showCreateModal && (
-        <CreateBlockModal
-          onBuild={handleCreateBlock}
-          onClose={closeModal}
-          editBlock={editingBlock}
-        />
-      )}
-
-      {/* Examples Browser Modal */}
-      {showExamples && (
-        <ExamplesBrowser
-          onSelectExample={handleSelectExample}
-          onClose={() => setShowExamples(false)}
-        />
-      )}
-
-      {/* Code to Blocks Modal */}
-      {showCodeToBlocks && (
-        <CodeToBlocksModal
-          onConvert={handleCodeToBlocks}
-          onClose={() => setShowCodeToBlocks(false)}
-        />
-      )}
-
-      {/* Publish to GitHub Modal */}
-      {showPublishModal && (
-        <GitHubPublishModal
-          onClose={() => setShowPublishModal(false)}
-        />
-      )}
-
-      {/* Challenge Complete Overlay */}
-      {showComplete && activeChallenge && (
-        <ChallengeComplete
-          stars={challengeStars}
-          blockCount={blockCount}
-          par={activeChallenge.par}
-          onNextChallenge={handleNextChallenge}
-          onBackToChallenges={handleBackToChallenges}
-          onRetry={handleRetryChallenge}
-          hasNextChallenge={!!getNextChallenge(activeChallenge.id)}
-        />
-      )}
-
-      {/* Blockset Complete Overlay */}
-      {showBlocksetComplete && activeBlockset && (
-        <BlocksetComplete
-          onNextBlockset={handleNextBlockset}
-          onBackToBlocksets={handleBackToBlocksets}
-          hasNextBlockset={!!getNextBlockset(activeBlockset.id)}
-        />
-      )}
-
-      {/* Golf Complete Overlay */}
-      {showGolfComplete && activeGolfProblem && (
-        <GolfComplete
-          blockCount={blockCount}
-          par={activeGolfProblem.par}
-          isNewBest={golfIsNewBest}
-          onRetry={handleRetryGolf}
-          onNextProblem={handleNextGolfProblem}
-          onBackToGolf={handleBackToGolf}
-          hasNextProblem={!!getNextProblem(activeGolfProblem.id)}
-        />
-      )}
-
-      {/* Lab Complete Overlay */}
-      {showLabComplete && activeLabExercise && (
-        <LabComplete
-          onNextExercise={handleNextExercise}
-          onBackToLab={handleBackToLab}
-          hasNextExercise={!!getNextExercise(activeLabExercise.id)}
-        />
-      )}
-
-      {/* Stats Dashboard */}
-      {showStats && (
-        <StatsPanel onClose={() => setShowStats(false)} />
-      )}
-
-      {/* Checkpoint Modal */}
-      {showCheckpointModal && (
-        <CheckpointModal
-          onSave={async (label) => {
-            setShowCheckpointModal(false)
-            await saveCheckpoint(label)
-          }}
-          onCancel={() => setShowCheckpointModal(false)}
-        />
-      )}
-
-      {/* History Panel */}
-      {showHistory && (
-        <HistoryPanel
-          checkpoints={checkpoints}
-          currentBranch={currentBranch}
-          onRollback={async (id) => {
-            setShowHistory(false)
-            await rollbackTo(id)
-          }}
-          onClose={() => setShowHistory(false)}
-        />
-      )}
-
-      {/* Settings Modal */}
-      {showSettings && (
-        <SettingsModal
-          onClose={() => setShowSettings(false)}
-          onSettingsChanged={resetAutoSave}
-        />
-      )}
-
-      {/* Welcome Modal — shown on first visit */}
-      {showWelcome && (
-        <WelcomeModal
-          onStartTour={() => {
-            setShowWelcome(false)
-            setShowTutorial(true)
-          }}
-          onSkip={() => setShowWelcome(false)}
-        />
-      )}
-
-      {/* Scratch Import */}
-      {showScratchImport && (
-        <Suspense fallback={null}>
-          <ScratchImportModal
-            onClose={() => setShowScratchImport(false)}
-            onImport={(ws) => {
-              if (workspaceRef.current) {
-                workspaceRef.current.clear()
-                try {
-                  Blockly.serialization.workspaces.load(ws, workspaceRef.current)
-                } catch { /* partial import is fine */ }
-              }
-            }}
-          />
-        </Suspense>
-      )}
-
-      {/* Sprite Editor */}
-      {showSpriteEditor && (
-        <Suspense fallback={null}>
-          <SpriteEditor
-            onClose={() => setShowSpriteEditor(false)}
-            onSave={(dataUrl, name, frames) => {
-              // Store sprite in localStorage for use with Games blocks
-              const sprites = JSON.parse(localStorage.getItem('cryptoblocks-sprites') || '{}')
-              sprites[name] = { dataUrl, frames, size: 16 }
-              localStorage.setItem('cryptoblocks-sprites', JSON.stringify(sprites))
-              setShowSpriteEditor(false)
-            }}
-          />
-        </Suspense>
-      )}
-
-      {showLevelEditor && (
-        <Suspense fallback={null}>
-          <LevelEditor
-            onClose={() => setShowLevelEditor(false)}
-            onExport={(platforms, spawnX, spawnY) => {
-              if (!workspaceRef.current) return
-              const Bs = Blockly.serialization.workspaces
-              // Build workspace JSON for the level
-              const blocks: Record<string, unknown>[] = []
-              let id = 0
-              const nextId = () => `lvl_${++id}`
-
-              // set_canvas
-              blocks.push({ type: 'cb_set_canvas', id: nextId(), x: 50, y: 50, inputs: {
-                width: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: 640 } } },
-                height: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: 400 } } },
-                color: { shadow: { type: 'text', id: nextId(), fields: { TEXT: '#1e1e2e' } } },
-              }})
-
-              // set_gravity
-              blocks.push({ type: 'cb_set_gravity', id: nextId(), x: 50, y: 120, inputs: {
-                value: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: 0.4 } } },
-              }})
-
-              // create_sprite for player
-              blocks.push({ type: 'cb_create_sprite', id: nextId(), x: 50, y: 170, inputs: {
-                name: { shadow: { type: 'text', id: nextId(), fields: { TEXT: 'player' } } },
-                x: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: spawnX } } },
-                y: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: spawnY } } },
-                width: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: 40 } } },
-                height: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: 40 } } },
-                color: { shadow: { type: 'text', id: nextId(), fields: { TEXT: '#f9e2af' } } },
-                emoji: { shadow: { type: 'text', id: nextId(), fields: { TEXT: '🦊' } } },
-                image: { shadow: { type: 'text', id: nextId(), fields: { TEXT: '' } } },
-              }})
-
-              // add_platform for each platform
-              platforms.forEach((p, i) => {
-                blocks.push({ type: 'cb_add_platform', id: nextId(), x: 50, y: 350 + i * 80, inputs: {
-                  x: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: p.x } } },
-                  y: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: p.y } } },
-                  width: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: p.w } } },
-                  height: { shadow: { type: 'math_number', id: nextId(), fields: { NUM: p.h } } },
-                  color: { shadow: { type: 'text', id: nextId(), fields: { TEXT: p.color } } },
-                }})
-              })
-
-              // Load into workspace
-              workspaceRef.current.clear()
-              Bs.load({ blocks: { languageVersion: 0, blocks } }, workspaceRef.current)
-              setShowLevelEditor(false)
-            }}
-          />
-        </Suspense>
-      )}
-
-      {/* Hacker Terminal */}
-      <HackerTerminal blockCount={blockCount} />
-      <ToastContainer />
-
-      {/* Tutorial Overlay */}
-      {showTutorial && (
-        <TutorialOverlay
-          onFinish={() => setShowTutorial(false)}
-          onSkip={() => setShowTutorial(false)}
-        />
-      )}
-
-      {/* Collab modals */}
-      {showCollabModal && (
-        <Suspense fallback={null}>
-          <CollabModal
-            onClose={() => setShowCollabModal(false)}
-            onCreateRoom={(_roomId, code, name) => {
-              setShowCollabModal(false)
-              setCollabRoomCreated({ code, name })
-              localStorage.setItem(`collab-room-name-${code}`, name)
-            }}
-            onJoinRoom={(code) => {
-              setShowCollabModal(false)
-              window.location.href = `/collab/${code}`
-            }}
-          />
-        </Suspense>
-      )}
-
-      {collabRoomCreated && (
-        <Suspense fallback={null}>
-          <RoomCreatedModal
-            roomCode={collabRoomCreated.code}
-            roomName={collabRoomCreated.name}
-            onClose={() => {
-              setCollabRoomCreated(null)
-              window.location.href = `/collab/${collabRoomCreated.code}`
-            }}
-          />
-        </Suspense>
-      )}
-
-      {/* Achievement Toast */}
-      <AchievementToast
-        achievement={currentAchievement}
-        onDismiss={showNextAchievement}
+      <AppModals
+        showCreateModal={showCreateModal}
+        showExamples={showExamples}
+        showCodeToBlocks={showCodeToBlocks}
+        showPublishModal={showPublishModal}
+        showComplete={showComplete}
+        showBlocksetComplete={showBlocksetComplete}
+        showGolfComplete={showGolfComplete}
+        showLabComplete={showLabComplete}
+        showStats={showStats}
+        showCheckpointModal={showCheckpointModal}
+        showHistory={showHistory}
+        showSettings={showSettings}
+        showWelcome={showWelcome}
+        showTutorial={showTutorial}
+        showCollabModal={showCollabModal}
+        showScratchImport={showScratchImport}
+        showSpriteEditor={showSpriteEditor}
+        showLevelEditor={showLevelEditor}
+        closeCreateModal={closeModal}
+        setShowExamples={setShowExamples}
+        setShowCodeToBlocks={setShowCodeToBlocks}
+        setShowPublishModal={setShowPublishModal}
+        setShowStats={setShowStats}
+        setShowCheckpointModal={setShowCheckpointModal}
+        setShowHistory={setShowHistory}
+        setShowSettings={setShowSettings}
+        setShowWelcome={setShowWelcome}
+        setShowTutorial={setShowTutorial}
+        setShowCollabModal={setShowCollabModal}
+        setShowScratchImport={setShowScratchImport}
+        setShowSpriteEditor={setShowSpriteEditor}
+        setShowLevelEditor={setShowLevelEditor}
+        activeChallenge={activeChallenge}
+        activeBlockset={activeBlockset}
+        activeGolfProblem={activeGolfProblem}
+        activeLabExercise={activeLabExercise}
+        challengeStars={challengeStars}
+        blockCount={blockCount}
+        golfIsNewBest={golfIsNewBest}
+        editingBlock={editingBlock}
+        handleCreateBlock={handleCreateBlock}
+        handleSelectExample={handleSelectExample}
+        handleCodeToBlocks={handleCodeToBlocks}
+        handleNextChallenge={handleNextChallenge}
+        handleBackToChallenges={handleBackToChallenges}
+        handleRetryChallenge={handleRetryChallenge}
+        handleNextBlockset={handleNextBlockset}
+        handleBackToBlocksets={handleBackToBlocksets}
+        handleRetryGolf={handleRetryGolf}
+        handleNextGolfProblem={handleNextGolfProblem}
+        handleBackToGolf={handleBackToGolf}
+        handleNextExercise={handleNextExercise}
+        handleBackToLab={handleBackToLab}
+        checkpoints={checkpoints}
+        currentBranch={currentBranch}
+        saveCheckpoint={saveCheckpoint}
+        rollbackTo={rollbackTo}
+        resetAutoSave={resetAutoSave}
+        workspaceRef={workspaceRef}
+        collabRoomCreated={collabRoomCreated}
+        setCollabRoomCreated={setCollabRoomCreated}
+        currentAchievement={currentAchievement}
+        showNextAchievement={showNextAchievement}
       />
     </div>
   )
