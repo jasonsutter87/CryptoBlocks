@@ -22,51 +22,65 @@ import {
   PublishProjectInput, ReportProjectInput, Category,
 } from '../../src/schema/index.js'
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __projectsMigrated: boolean | undefined
-  // eslint-disable-next-line no-var
-  var __projectsMigrationPromise: Promise<void> | undefined
-}
+// Per-instance migration state. These live at module scope (not on
+// globalThis) because a Netlify function instance is its own module
+// instance — the values reset on cold start and stay set across warm
+// invocations. No reason for them to be visible to anything else.
+let migrated = false
+let migrating: Promise<void> | null = null
 
 /**
- * One-time schema migration. Serialized per process: on a cold-start burst
- * of N parallel requests on the same instance, the first one runs the
+ * One-time schema migration. Serialized per instance: on a cold-start burst
+ * of N parallel requests against the same instance, the first one runs the
  * migration and the rest await the same promise instead of each issuing
- * their own ALTER/CREATE (Black Team M2). Real migrations should move to
- * a dedicated tool once this transitional code is retired (2026-Q3).
+ * their own ALTER/CREATE (defends against a prior incident where parallel
+ * cold-start requests duplicated migration work).
+ *
+ * Drop this once a real migration tool replaces the in-handler ALTERs.
  */
 async function ensureSchema(): Promise<void> {
-  if (globalThis.__projectsMigrated) return
-  if (globalThis.__projectsMigrationPromise) {
-    await globalThis.__projectsMigrationPromise
+  if (migrated) return
+  if (migrating) {
+    await migrating
     return
   }
-  globalThis.__projectsMigrationPromise = (async () => {
+  migrating = (async () => {
+    // Migration steps log under their own scope so a real failure (DB down,
+    // bad credentials) is still observable in Netlify logs. The "column
+    // already exists" / "table already exists" errors that are EXPECTED on
+    // every run after the first are filtered to a debug line.
+    const expected = (msg: string) =>
+      /already exists|duplicate column/i.test(msg)
+    const migrate = (label: string, sql: string) =>
+      tursoExecute(sql).catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (!expected(msg)) logError(`projects:migrate:${label}`, err)
+      })
+
     await Promise.all([
-      tursoExecute("ALTER TABLE projects ADD COLUMN visibility TEXT DEFAULT 'public'").catch(() => {}),
-      tursoExecute(`CREATE TABLE IF NOT EXISTS project_likes (
+      migrate('add-visibility', "ALTER TABLE projects ADD COLUMN visibility TEXT DEFAULT 'public'"),
+      migrate('create-likes', `CREATE TABLE IF NOT EXISTS project_likes (
         project_id TEXT NOT NULL,
         user_id TEXT NOT NULL,
         created_at INTEGER NOT NULL,
         PRIMARY KEY (project_id, user_id)
-      )`).catch(() => {}),
-      tursoExecute(`CREATE TABLE IF NOT EXISTS project_reports (
+      )`),
+      migrate('create-reports', `CREATE TABLE IF NOT EXISTS project_reports (
         id TEXT PRIMARY KEY,
         project_id TEXT NOT NULL,
         reporter_id TEXT NOT NULL,
         reason TEXT NOT NULL,
         detail TEXT,
         created_at INTEGER NOT NULL
-      )`).catch(() => {}),
+      )`),
       // One-time cleanup: rows inserted before the visibility column existed
       // have NULL. Normalize so every subsequent check can assume a concrete
       // value and we can drop the `visibility IS NULL OR ...` branch.
-      tursoExecute("UPDATE projects SET visibility = 'public' WHERE visibility IS NULL").catch(() => {}),
+      migrate('backfill-visibility', "UPDATE projects SET visibility = 'public' WHERE visibility IS NULL"),
     ])
-    globalThis.__projectsMigrated = true
+    migrated = true
   })()
-  await globalThis.__projectsMigrationPromise
+  await migrating
 }
 
 async function handler(req: Request) {
@@ -354,7 +368,7 @@ async function createNotification(
   await tursoExecute(
     'INSERT INTO notifications (id, user_id, type, title, body, link, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
     [crypto.randomUUID(), userId, type, title, body, link, Date.now()],
-  ).catch(() => { /* non-fatal */ })
+  ).catch((err) => logError('projects:createNotification', err))
 }
 
 /** Notify a project author of an event, unless they're the actor themselves */
