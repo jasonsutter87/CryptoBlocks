@@ -23,6 +23,7 @@ interface ApiProject {
   parentId: string | null
   downloads: number
   likes: number
+  visibility?: string
   createdAt: number
 }
 
@@ -39,6 +40,7 @@ function toSharedProject(p: ApiProject): SharedProject {
     createdAt: new Date(Number(p.createdAt)).toISOString().slice(0, 10),
     tags: p.tags,
     parentId: p.parentId || null,
+    visibility: p.visibility || 'public',
   }
 }
 
@@ -109,6 +111,7 @@ export interface PublishPayload {
   tags?: string[]
   blockCount?: number
   parentId?: string
+  visibility?: string
 }
 
 export async function publishProject(payload: PublishPayload, clerkToken?: string): Promise<{ id: string } | { error: string } | null> {
@@ -163,7 +166,7 @@ export async function updateProject(
     const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       headers,
-      body: JSON.stringify({ ...payload, visibility: 'private' }),
+      body: JSON.stringify(payload),
     })
     const data = await res.json()
     if (!res.ok) return { error: data.error || 'Update failed' }

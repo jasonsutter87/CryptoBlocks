@@ -10,4 +10,5 @@ export interface SharedProject {
   createdAt: string
   tags: string[]
   parentId?: string | null
+  visibility?: string
 }
