@@ -1,42 +1,55 @@
 import { useState, useEffect } from 'react'
 import { useUser, useAuth } from '../auth'
-import { publishProject } from './api'
+import { publishProject, updateProject } from './api'
 
 interface UploadModalProps {
   onClose: () => void
   onPublished?: () => void
+  /** When set, modal pre-fills from this project and PATCHes on submit
+   *  instead of POSTing a new project. Used by dashboard "Publish". */
+  existingProject?: {
+    id: string
+    name: string
+    description?: string
+    category?: string
+    workspaceJson: string
+    blockCount: number
+  }
 }
 
 const CATEGORIES = ['Games', 'Art', 'Web', 'Sound', 'Data', 'AI'] as const
 
-export default function UploadModal({ onClose, onPublished }: UploadModalProps) {
+export default function UploadModal({ onClose, onPublished, existingProject }: UploadModalProps) {
   const { user } = useUser()
   const { getToken } = useAuth()
 
   // Check if this upload is a remix of another project
   const remixParent = (() => {
+    if (existingProject) return null
     try {
       const raw = localStorage.getItem('cryptoblocks_remix_parent')
       return raw ? JSON.parse(raw) as { id: string; name: string; author: string } : null
     } catch { return null }
   })()
 
-  const [name, setName] = useState(remixParent ? `${remixParent.name} (remix)` : '')
-  const [description, setDescription] = useState('')
-  const [category, setCategory] = useState<string>('Games')
+  const [name, setName] = useState(
+    existingProject?.name ?? (remixParent ? `${remixParent.name} (remix)` : ''),
+  )
+  const [description, setDescription] = useState(existingProject?.description ?? '')
+  const [category, setCategory] = useState<string>(existingProject?.category ?? 'Games')
   const [tags, setTags] = useState('')
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Read workspace from localStorage so kid doesn't have to pass it in
-  const workspaceJson = (() => {
+  // Use existing project's workspace if provided, otherwise read from localStorage
+  const workspaceJson = existingProject?.workspaceJson ?? (() => {
     try {
       return localStorage.getItem('cryptoblocks_workspace') || ''
     } catch {
       return ''
     }
   })()
-  const blockCount = (() => {
+  const blockCount = existingProject?.blockCount ?? (() => {
     try {
       const ws = JSON.parse(workspaceJson)
       return ws?.blocks?.blocks?.length ?? 0
@@ -61,7 +74,7 @@ export default function UploadModal({ onClose, onPublished }: UploadModalProps) 
     setUploading(true)
     setError(null)
     const token = await getToken() || undefined
-    const result = await publishProject({
+    const payload = {
       name: name.trim(),
       authorName: user?.fullName || user?.username || 'Anonymous',
       description: description.trim(),
@@ -70,7 +83,11 @@ export default function UploadModal({ onClose, onPublished }: UploadModalProps) 
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       blockCount,
       parentId: remixParent?.id,
-    }, token)
+      visibility: 'public' as const,
+    }
+    const result = existingProject
+      ? await updateProject(existingProject.id, payload, token)
+      : await publishProject(payload, token)
     setUploading(false)
     if (!result) {
       setError('Upload failed — check your connection and try again.')

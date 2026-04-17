@@ -2,7 +2,9 @@ import { useMemo, useState, useEffect } from 'react'
 import { useUser, useAuth, SignedIn, SignedOut, SignInButton } from '../auth'
 import { loadStats } from '../stats'
 import type { SharedProject } from '../types/shareplace'
-import { fetchMyProjects, fetchProject, deleteProject, updateProject } from '../shareplace/api'
+import { fetchMyProjects, fetchProject, deleteProject } from '../shareplace/api'
+import { lazy, Suspense } from 'react'
+const UploadModal = lazy(() => import('../shareplace/UploadModal'))
 import { showToast } from '../components/Toast'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
@@ -189,7 +191,8 @@ function MyProjectCard({
 }) {
   const [opening, setOpening] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const [publishing, setPublishing] = useState(false)
+  const [showPublish, setShowPublish] = useState(false)
+  const [publishData, setPublishData] = useState<{ id: string; name: string; description?: string; category?: string; workspaceJson: string; blockCount: number } | null>(null)
   const isPublic = project.visibility === 'public'
 
   const handleOpen = async () => {
@@ -213,31 +216,40 @@ function MyProjectCard({
   }
 
   const handlePublish = async () => {
-    if (publishing) return
-    const newVis = isPublic ? 'private' : 'public'
-    const msg = isPublic
-      ? 'Remove from Shareplace? It will become private.'
-      : `Publish "${project.name}" to Shareplace?`
-    if (!confirm(msg)) return
-    setPublishing(true)
+    if (isPublic) {
+      // Unpublish — simple PATCH via import
+      if (!confirm('Remove from Shareplace? It will become private.')) return
+      const token = await getToken().catch(() => null)
+      const full = await fetchProject(project.id, token ?? undefined)
+      if (!full) { showToast('Could not load project', 'error'); return }
+      const { updateProject: patch } = await import('../shareplace/api')
+      const result = await patch(project.id, {
+        name: project.name,
+        authorName: project.author || 'User',
+        workspaceJson: full.workspaceJson,
+        blockCount: project.blockCount,
+        category: project.category,
+        visibility: 'private',
+      }, token ?? undefined)
+      if (result && 'id' in result) {
+        showToast('Made private', 'success')
+        onUpdated(project.id, { visibility: 'private' })
+      } else { showToast('Failed', 'error') }
+      return
+    }
+    // Publish — fetch workspace, open the modal
     const token = await getToken().catch(() => null)
     const full = await fetchProject(project.id, token ?? undefined)
-    if (!full) { showToast('Could not load project', 'error'); setPublishing(false); return }
-    const result = await updateProject(project.id, {
+    if (!full) { showToast('Could not load project', 'error'); return }
+    setPublishData({
+      id: project.id,
       name: project.name,
-      authorName: project.author || 'User',
+      description: project.description,
+      category: project.category,
       workspaceJson: full.workspaceJson,
       blockCount: project.blockCount,
-      category: project.category,
-      visibility: newVis,
-    }, token ?? undefined)
-    if (result && 'id' in result) {
-      showToast(isPublic ? 'Made private' : 'Published to Shareplace!', 'success')
-      onUpdated(project.id, { visibility: newVis })
-    } else {
-      showToast('Failed', 'error')
-    }
-    setPublishing(false)
+    })
+    setShowPublish(true)
   }
 
   const handleDelete = async () => {
@@ -272,17 +284,26 @@ function MyProjectCard({
       {isPublic && (
         <div className="text-[10px] text-success font-semibold">Live on Shareplace</div>
       )}
+      {showPublish && publishData && (
+        <Suspense fallback={null}>
+          <UploadModal
+            existingProject={publishData}
+            onClose={() => setShowPublish(false)}
+            onPublished={() => onUpdated(project.id, { visibility: 'public' })}
+          />
+        </Suspense>
+      )}
       <div className="mt-auto flex gap-2">
         <button
           onClick={handleOpen}
-          disabled={opening || deleting || publishing}
+          disabled={opening || deleting || showPublish}
           className="flex-1 px-3 py-2 text-sm font-bold text-base bg-accent hover:bg-sapphire rounded-lg disabled:opacity-50 transition-colors"
         >
           {opening ? 'Opening...' : 'Open in Editor'}
         </button>
         <button
           onClick={handlePublish}
-          disabled={opening || deleting || publishing}
+          disabled={opening || deleting || showPublish}
           aria-label={isPublic ? 'Make private' : 'Publish to Shareplace'}
           title={isPublic ? 'Make private' : 'Publish to Shareplace'}
           className={`px-3 py-2 text-sm font-bold rounded-lg disabled:opacity-50 transition-colors ${
@@ -291,11 +312,11 @@ function MyProjectCard({
               : 'text-text bg-surface-0 hover:bg-success hover:text-base'
           }`}
         >
-          {publishing ? '...' : isPublic ? '🌐' : '🚀'}
+          {isPublic ? '🌐' : '🚀'}
         </button>
         <button
           onClick={handleDelete}
-          disabled={opening || deleting || publishing}
+          disabled={opening || deleting || showPublish}
           aria-label="Delete project"
           title="Delete project"
           className="px-3 py-2 text-sm font-bold text-text bg-surface-0 hover:bg-danger hover:text-base rounded-lg disabled:opacity-50 transition-colors"
