@@ -264,30 +264,67 @@ window.__microbit = {
 
 // Camera — getUserMedia can't run in a null-origin iframe. The parent
 // owns the camera stream; we request frames via postMessage.
-window.__cbCamera = true;  // Truthy so blocks don't bail on the null check
-window.__cbCameraReady = false;
+//
+// The block-generated startCamera() and captureFrame() are function
+// declarations that hoist above our bridge assignments. We can't
+// override them with window.X = ... because the hoisted function
+// declaration wins. Instead we make window.__cbCamera a fake video-like object
+// that satisfies all the checks those functions do, and intercept
+// the drawImage call by replacing the sampler canvas context.
 
-// Override startCamera to ask the parent instead of calling getUserMedia.
-window.startCamera = function() {
-  __cmd('camera', 'start', []);
-  window.__cbCameraReady = true;
-  return Promise.resolve();
+var __cameraStarted = false;
+
+// Fake video element — satisfies readyState / videoWidth checks and
+// provides a drawable surface (an OffscreenCanvas or regular canvas
+// that we paint frame data into when it arrives from the parent).
+var __fakeVideoCanvas = document.createElement('canvas');
+__fakeVideoCanvas.width = 640;
+__fakeVideoCanvas.height = 480;
+var __fakeVideoCtx = __fakeVideoCanvas.getContext('2d');
+
+window.__cbCamera = {
+  readyState: 0,
+  videoWidth: 0,
+  videoHeight: 0,
+  // drawImage compatibility — CanvasRenderingContext2D.drawImage
+  // accepts HTMLCanvasElement, so the block code's
+  // ctx.drawImage(v, ...) works when v = this fake canvas wrapper.
 };
 
-// Override captureFrame to request a frame from the parent.
-window.captureFrame = function() {
-  if (window.__cbCameraReady) __cmd('camera', 'capture', []);
-};
-
-// Listen for frame data from the parent.
+// Listen for frame data from the parent and paint it onto the fake
+// canvas so the block's captureFrame() can drawImage from it.
 window.addEventListener('message', function(e) {
   var m = e.data;
   if (!m || m.__cryptoblocks !== true || m.type !== 'frame') return;
-  window.__cbFrameData = new ImageData(
-    new Uint8ClampedArray(m.data),
-    m.width, m.height
-  );
+  __fakeVideoCanvas.width = m.width;
+  __fakeVideoCanvas.height = m.height;
+  var imgData = new ImageData(new Uint8ClampedArray(m.data), m.width, m.height);
+  __fakeVideoCtx.putImageData(imgData, 0, 0);
+  // Update the fake video properties so captureFrame's guards pass.
+  window.__cbCamera = __fakeVideoCanvas;
+  window.__cbCamera.readyState = 4;
+  window.__cbCamera.videoWidth = m.width;
+  window.__cbCamera.videoHeight = m.height;
+  // Also store as __cbFrameData for blocks that read it directly.
+  window.__cbFrameData = imgData;
 });
+
+// Patch startCamera: ask the parent to start its camera, then
+// continuously request frames. The original function declaration
+// will still exist but window.__cbCamera is already truthy so it
+// returns early (the "if (window.__cbCamera) return" guard).
+var __origStartCamera = window.startCamera;
+window.startCamera = async function() {
+  if (__cameraStarted) return;
+  __cameraStarted = true;
+  __cmd('camera', 'start', []);
+  // Poll for frames — parent responds with 'frame' messages.
+  (function __poll() {
+    if (window.__cbStopLoop) return;
+    __cmd('camera', 'capture', []);
+    setTimeout(__poll, 60);
+  })();
+};
 `.trim()
 
 const CONSOLE_BRIDGE = `
