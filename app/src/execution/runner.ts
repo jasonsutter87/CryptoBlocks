@@ -20,13 +20,71 @@ function getMicrobitSnapshot() {
   }
 }
 
+// Parent-side camera — the sandbox iframe can't call getUserMedia
+// (null origin isn't a secure context). The parent owns the stream
+// and captures frames on demand when the iframe requests them.
+let parentCamera: HTMLVideoElement | null = null
+let parentCameraCanvas: HTMLCanvasElement | null = null
+let parentCameraCtx: CanvasRenderingContext2D | null = null
+
+async function ensureParentCamera(): Promise<boolean> {
+  if (parentCamera) return true
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } })
+    const video = document.createElement('video')
+    video.srcObject = stream
+    video.autoplay = true
+    video.playsInline = true
+    video.muted = true
+    video.style.display = 'none'
+    document.body.appendChild(video)
+    await new Promise<void>((r) => { video.onloadedmetadata = () => r() })
+    await video.play()
+    parentCamera = video
+    parentCameraCanvas = document.createElement('canvas')
+    parentCameraCtx = parentCameraCanvas.getContext('2d', { willReadFrequently: true })
+    return true
+  } catch (err) {
+    console.error('[camera] Failed to start:', err instanceof Error ? err.message : err)
+    return false
+  }
+}
+
+function captureParentFrame(iframe: HTMLIFrameElement | null) {
+  if (!parentCamera || !parentCameraCanvas || !parentCameraCtx || !iframe?.contentWindow) return
+  const v = parentCamera
+  if (v.readyState < 2 || v.videoWidth === 0) return
+  parentCameraCanvas.width = v.videoWidth
+  parentCameraCanvas.height = v.videoHeight
+  const ctx = parentCameraCtx
+  // Mirror horizontally (selfie view)
+  ctx.save()
+  ctx.translate(v.videoWidth, 0)
+  ctx.scale(-1, 1)
+  ctx.drawImage(v, 0, 0)
+  ctx.restore()
+  const imageData = ctx.getImageData(0, 0, v.videoWidth, v.videoHeight)
+  // Transfer the pixel data to the iframe. Using transferable for zero-copy.
+  iframe.contentWindow.postMessage({
+    __cryptoblocks: true,
+    type: 'frame',
+    width: imageData.width,
+    height: imageData.height,
+    data: imageData.data.buffer,
+  }, '*', [imageData.data.buffer])
+}
+
 /** Dispatch an outbound command from the sandbox iframe. Routes to the
  *  matching parent-side API. Silently ignored if the target is unknown. */
-function dispatchCommand(target: string, action: string, args: unknown[]): void {
+function dispatchCommand(target: string, action: string, args: unknown[], iframe?: HTMLIFrameElement | null): void {
   try {
     if (target === 'microbit') {
       const api = (window as unknown as { __microbit?: Record<string, (...a: unknown[]) => unknown> }).__microbit
       if (api && typeof api[action] === 'function') api[action](...args)
+    }
+    if (target === 'camera') {
+      if (action === 'start') ensureParentCamera()
+      if (action === 'capture') captureParentFrame(iframe ?? null)
     }
   } catch { /* iframe command errors are reported by the iframe itself */ }
 }
@@ -203,6 +261,33 @@ window.__microbit = {
   plotPixel:  function(x, y)  { __cmd('microbit', 'plotPixel',  [x, y]); },
   unplotPixel:function(x, y)  { __cmd('microbit', 'unplotPixel',[x, y]); }
 };
+
+// Camera — getUserMedia can't run in a null-origin iframe. The parent
+// owns the camera stream; we request frames via postMessage.
+window.__cbCamera = true;  // Truthy so blocks don't bail on the null check
+window.__cbCameraReady = false;
+
+// Override startCamera to ask the parent instead of calling getUserMedia.
+window.startCamera = function() {
+  __cmd('camera', 'start', []);
+  window.__cbCameraReady = true;
+  return Promise.resolve();
+};
+
+// Override captureFrame to request a frame from the parent.
+window.captureFrame = function() {
+  if (window.__cbCameraReady) __cmd('camera', 'capture', []);
+};
+
+// Listen for frame data from the parent.
+window.addEventListener('message', function(e) {
+  var m = e.data;
+  if (!m || m.__cryptoblocks !== true || m.type !== 'frame') return;
+  window.__cbFrameData = new ImageData(
+    new Uint8ClampedArray(m.data),
+    m.width, m.height
+  );
+});
 `.trim()
 
 const CONSOLE_BRIDGE = `
@@ -383,7 +468,7 @@ function tryIframeExecution(
         htmlOutput = String(msg.data)
       } else if (msg.type === 'cmd') {
         // Outbound command from user code (micro:bit actions, etc.)
-        dispatchCommand(msg.target, msg.action, Array.isArray(msg.args) ? msg.args : [])
+        dispatchCommand(msg.target, msg.action, Array.isArray(msg.args) ? msg.args : [], iframe)
       } else if (msg.type === 'error') {
         finish(String(msg.data), null)
       } else if (msg.type === 'done') {
