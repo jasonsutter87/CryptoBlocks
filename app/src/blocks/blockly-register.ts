@@ -1127,8 +1127,9 @@ function generateVisionCode(block: Blockly.Block, language: Language): string | 
       const killCheck = `if (window.__cbStopLoop) return;`
       const localScope = `window.__localStack = window.__localStack || []; window.__localStack.push({});`
       const popScope = `window.__localStack.pop();`
-      // Throttle to ~15fps so the loop is more visible and doesn't burn CPU
-      const next = `setTimeout(function() { requestAnimationFrame(${loopName}); }, 60);`
+      // Use setTimeout only — requestAnimationFrame doesn't fire for hidden
+      // iframes (the sandbox iframe is display:none). ~15fps throttle.
+      const next = `setTimeout(${loopName}, 60);`
       if (!body) {
         return `(async function ${loopName}() {\n  ${killCheck}\n  ${stream}\n  ${next}\n})()`
       }
