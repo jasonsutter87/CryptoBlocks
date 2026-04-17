@@ -42,6 +42,7 @@ import HackerTerminal from './HackerTerminal'
 import ToastContainer from './Toast'
 
 const SpriteEditor = lazy(() => import('../sprite-editor/SpriteEditor'))
+const SpriteBrowser = lazy(() => import('../sprite-editor/SpriteBrowser'))
 const LevelEditor = lazy(() => import('../level-editor/LevelEditor'))
 const CollabModal = lazy(() => import('../collab/CollabModal'))
 const RoomCreatedModal = lazy(() => import('../collab/RoomCreatedModal'))
@@ -242,6 +243,11 @@ export default function AppModals(p: AppModalsProps) {
               p.modals.setSpriteEditor(false)
             }}
           />
+        </Suspense>
+      )}
+      {p.modals.spriteBrowser && (
+        <Suspense fallback={null}>
+          <SpriteBrowser onClose={() => p.modals.setSpriteBrowser(false)} />
         </Suspense>
       )}
       {p.modals.levelEditor && (

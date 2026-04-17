@@ -248,6 +248,33 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
     onSave(dataUrl, project.name, project.frames.length)
   }
 
+  async function handleShare() {
+    const dataUrl = exportSpriteSheet()
+    try {
+      const { showToast } = await import('../components/Toast')
+      const token = await (window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }).Clerk?.session?.getToken()
+      const res = await fetch('/api/sprites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          name: project.name,
+          dataUrl,
+          frames: project.frames.length,
+          size,
+          tags: [],
+        }),
+      })
+      if (res.ok) showToast('Shared to Sprite Library!', 'success')
+      else {
+        const data = await res.json().catch(() => ({}))
+        showToast(data.error || 'Share failed', 'error')
+      }
+    } catch {
+      const { showToast } = await import('../components/Toast')
+      showToast('Share failed — try again', 'error')
+    }
+  }
+
   // --- Tool buttons ---
   const tools: Array<{ id: Tool; icon: string; label: string }> = [
     { id: 'draw', icon: '✏️', label: 'Draw' },
@@ -276,6 +303,12 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
             <span className="text-xs text-[#585b70]">{size}x{size}</span>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="px-4 py-1.5 bg-accent text-base text-sm font-semibold rounded-lg hover:bg-accent/80"
+            >
+              Share
+            </button>
             <button
               onClick={handleSave}
               className="px-4 py-1.5 bg-success text-base text-sm font-semibold rounded-lg hover:bg-success/80"

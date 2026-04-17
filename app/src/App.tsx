@@ -470,6 +470,7 @@ export default function App() {
         onImportScratch={() => modals.setScratchImport(true)}
         onSaveToDashboard={handleSaveToDashboard}
         onOpenSpriteEditor={() => modals.setSpriteEditor(true)}
+        onOpenSpriteBrowser={() => modals.setSpriteBrowser(true)}
         onOpenLevelEditor={() => modals.setLevelEditor(true)}
         onRunForEveryone={requestRunForEveryone}
       />

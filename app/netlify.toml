@@ -70,6 +70,16 @@
   to = "/.netlify/functions/admin/:splat"
   status = 200
 
+[[redirects]]
+  from = "/api/sprites"
+  to = "/.netlify/functions/sprites"
+  status = 200
+
+[[redirects]]
+  from = "/api/sprites/*"
+  to = "/.netlify/functions/sprites/:splat"
+  status = 200
+
 # SPA — all other routes serve index.html
 [[redirects]]
   from = "/*"
