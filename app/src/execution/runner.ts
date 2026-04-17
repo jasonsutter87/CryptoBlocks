@@ -3,9 +3,20 @@ import { generateSafetyPreamble } from '../safety'
 import { getGamepadSnapshot } from '../hardware/gamepad'
 import { getKeyboardSnapshot } from '../hardware/keyboard'
 import { getSensorState as getMicrobitSensors, isConnected as isMicrobitConnected } from '../hardware/microbit'
+import type { VisionGlobal } from '../vision/vision-global'
 
 /** Shape posted to the iframe for micro:bit — both connection flag
  *  and latest sensor readings, rolled up once per animation frame. */
+function getVisionSnapshot() {
+  const api = (window as unknown as { __vision?: VisionGlobal }).__vision
+  if (!api) return { hand: null, classification: null }
+  try {
+    const hand = api.getHandState()
+    const cls = api.getLatestClassification()
+    return { hand, classification: cls }
+  } catch { return { hand: null, classification: null } }
+}
+
 function getMicrobitSnapshot() {
   const s = getMicrobitSensors()
   return {
@@ -85,6 +96,13 @@ function dispatchCommand(target: string, action: string, args: unknown[], iframe
     if (target === 'camera') {
       if (action === 'start') ensureParentCamera()
       if (action === 'capture') captureParentFrame(iframe ?? null)
+    }
+    if (target === 'vision') {
+      const api = (window as unknown as { __vision?: VisionGlobal }).__vision
+      if (!api) return
+      if (action === 'startHandTracking') api.startHandTracking()
+      if (action === 'stopHandTracking') api.stopHandTracking()
+      if (action === 'classifyCamera') api.classifyCamera()
     }
   } catch { /* iframe command errors are reported by the iframe itself */ }
 }
@@ -202,7 +220,7 @@ const SANDBOX_CSP = [
  * fix that removed the parent-window execution path.
  */
 const CAPABILITY_BRIDGE = `
-var __bridgeCache = { gamepad: {}, keys: {}, microbit: {} };
+var __bridgeCache = { gamepad: {}, keys: {}, microbit: {}, vision: {} };
 
 window.addEventListener('message', function(e) {
   var m = e.data;
@@ -210,6 +228,7 @@ window.addEventListener('message', function(e) {
   if (m.gamepad)  __bridgeCache.gamepad  = m.gamepad;
   if (m.keys)     __bridgeCache.keys     = m.keys;
   if (m.microbit) __bridgeCache.microbit = m.microbit;
+  if (m.vision)   __bridgeCache.vision   = m.vision;
 });
 
 function __cmd(target, action, args) {
@@ -260,6 +279,37 @@ window.__microbit = {
   clear:      function()      { __cmd('microbit', 'clear',      []); },
   plotPixel:  function(x, y)  { __cmd('microbit', 'plotPixel',  [x, y]); },
   unplotPixel:function(x, y)  { __cmd('microbit', 'unplotPixel',[x, y]); }
+};
+
+// Vision — MediaPipe runs in the parent. We shim window.__vision to
+// read state from the bridge cache and send commands back to the parent.
+window.__vision = {
+  startHandTracking: function() {
+    __cmd('vision', 'startHandTracking', []);
+    return Promise.resolve(true);
+  },
+  stopHandTracking: function() {
+    __cmd('vision', 'stopHandTracking', []);
+  },
+  getHandState: function() {
+    return __bridgeCache.vision && __bridgeCache.vision.hand
+      ? __bridgeCache.vision.hand
+      : { handCount: 0, indexX: 0, indexY: 0, thumbX: 0, thumbY: 0, palmX: 0, palmY: 0, isPinching: false, fingersUp: 0 };
+  },
+  classifyCamera: function() {
+    __cmd('vision', 'classifyCamera', []);
+    return Promise.resolve(__bridgeCache.vision && __bridgeCache.vision.classification
+      ? __bridgeCache.vision.classification
+      : { label: '', confidence: 0, topResults: [] });
+  },
+  classifyUrl: function() {
+    return Promise.resolve({ label: '', confidence: 0, topResults: [] });
+  },
+  getLatestClassification: function() {
+    return __bridgeCache.vision && __bridgeCache.vision.classification
+      ? __bridgeCache.vision.classification
+      : { label: '', confidence: 0, topResults: [] };
+  }
 };
 
 // Camera — getUserMedia can't run in a null-origin iframe. The parent
@@ -469,6 +519,7 @@ function tryIframeExecution(
           gamepad: getGamepadSnapshot(),
           keys: getKeyboardSnapshot(),
           microbit: getMicrobitSnapshot(),
+          vision: getVisionSnapshot(),
         }, '*')
         inputRAF = requestAnimationFrame(tick)
       }
