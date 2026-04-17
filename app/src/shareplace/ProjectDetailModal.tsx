@@ -447,6 +447,7 @@ export default function ProjectDetailModal({
         <EditListingModal
           project={project}
           onClose={() => setSubModal(null)}
+          onSaved={() => { _onEdit?.() }}
         />
       )}
       {subModal === 'remove' && (

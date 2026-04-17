@@ -1,18 +1,24 @@
 import { useState, useEffect } from 'react'
 import type { SharedProject } from '../types/shareplace'
+import { updateProject, fetchProject } from './api'
+import { useAuth } from '../auth'
+import { showToast } from '../components/Toast'
 
 interface EditListingModalProps {
   project: SharedProject
   onClose: () => void
+  onSaved?: () => void
 }
 
 const CATEGORIES = ['Games', 'Art', 'Web', 'Sound', 'Data', 'AI'] as const
 
-export default function EditListingModal({ project, onClose }: EditListingModalProps) {
+export default function EditListingModal({ project, onClose, onSaved }: EditListingModalProps) {
+  const { getToken } = useAuth()
   const [name, setName] = useState(project.name)
   const [description, setDescription] = useState(project.description)
   const [category, setCategory] = useState(project.category)
   const [tags, setTags] = useState(project.tags.join(', '))
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -22,9 +28,36 @@ export default function EditListingModal({ project, onClose }: EditListingModalP
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  const handleSave = () => {
-    console.log('Save listing changes (coming soon):', { name, description, category, tags })
-    onClose()
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      const token = await getToken() || undefined
+      // Need the workspaceJson for the PATCH — fetch the full project
+      const full = await fetchProject(project.id, token)
+      if (!full) { showToast('Could not load project', 'error'); setSaving(false); return }
+      const result = await updateProject(project.id, {
+        name: name.trim(),
+        authorName: project.author,
+        description: description.trim(),
+        category,
+        workspaceJson: full.workspaceJson,
+        blockCount: project.blockCount,
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        visibility: project.visibility ?? 'public',
+      }, token)
+      if (result && 'id' in result) {
+        showToast('Listing updated!', 'success')
+        onSaved?.()
+        onClose()
+      } else if (result && 'error' in result) {
+        showToast(result.error, 'error')
+      } else {
+        showToast('Save failed', 'error')
+      }
+    } catch {
+      showToast('Save failed', 'error')
+    }
+    setSaving(false)
   }
 
   const isValid = name.trim().length > 0 && description.trim().length > 0
@@ -112,10 +145,10 @@ export default function EditListingModal({ project, onClose }: EditListingModalP
           </button>
           <button
             onClick={handleSave}
-            disabled={!isValid}
+            disabled={!isValid || saving}
             className="px-4 py-2 text-sm font-semibold text-base bg-accent hover:bg-accent/80 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            Save Changes
+            {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>
