@@ -79,7 +79,7 @@ export function useFileOps(deps: Deps) {
       // First-time save — ask for a name and POST a new project.
       const name = prompt('Project name:') || 'Untitled Project'
       const result = await saveToDashboard({
-        name, workspaceJson, blockCount, category: 'General',
+        name, authorName: 'User', workspaceJson, blockCount, category: 'General',
       }, token)
 
       if (result && 'id' in result) {
