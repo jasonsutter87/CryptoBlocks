@@ -9,6 +9,7 @@ import { useState, type MutableRefObject } from 'react'
 import { Icon } from '../Icon'
 import { ProBadge } from '../../billing/UpgradeGate'
 import { showToast } from '../Toast'
+import { loadSettings, saveSettings } from '../../settings'
 
 const menuItem = 'flex items-center gap-2 w-full px-3 py-2.5 text-sm text-text hover:bg-surface-1 transition-colors text-left'
 const menuDropdown = 'absolute right-0 mt-1 w-56 bg-surface-0 border border-surface-1 rounded-lg shadow-xl z-50 py-1'
@@ -45,6 +46,23 @@ export default function FileMenu(p: FileMenuProps) {
   const [embedCopied, setEmbedCopied] = useState(false)
   const [shareLinkCopied, setShareLinkCopied] = useState(false)
   const [sharing, setSharing] = useState(false)
+  const [settings, setSettingsState] = useState(loadSettings)
+
+  const toggleTheme = () => {
+    const next = settings.theme === 'dark' ? 'light' : 'dark'
+    const updated = { ...settings, theme: next as 'dark' | 'light' }
+    saveSettings(updated)
+    setSettingsState(updated)
+    document.documentElement.setAttribute('data-theme', next)
+  }
+
+  const toggleLocale = () => {
+    const next = settings.locale === 'en' ? 'es' : 'en'
+    const updated = { ...settings, locale: next as 'en' | 'es' }
+    saveSettings(updated)
+    setSettingsState(updated)
+    showToast(`Language: ${next === 'en' ? 'English' : 'Español'}`, 'info')
+  }
 
   const handleCopyEmbed = () => {
     p.requirePro(() => {
@@ -171,6 +189,17 @@ export default function FileMenu(p: FileMenuProps) {
         <Icon name="link" className="w-4 h-4 text-success" />
         {shareLinkCopied ? '✓ Link Copied!' : sharing ? 'Sharing...' : 'Share Link'}
         <span className="ml-auto text-xs text-overlay">🔗</span>
+      </button>
+
+      <div className={menuDivider} />
+
+      <button onClick={toggleTheme} className={menuItem}>
+        <span className="text-base leading-none">{settings.theme === 'dark' ? '☀️' : '🌙'}</span>
+        {settings.theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+      </button>
+      <button onClick={toggleLocale} className={menuItem}>
+        <span className="text-base leading-none">🌐</span>
+        {settings.locale === 'en' ? 'Español' : 'English'}
       </button>
 
       <div className={menuDivider} />

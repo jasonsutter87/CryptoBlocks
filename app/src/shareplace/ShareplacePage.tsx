@@ -4,12 +4,14 @@ import type { SharedProject } from '../types/shareplace'
 import ProjectDetailModal from './ProjectDetailModal'
 import UploadModal from './UploadModal'
 import { fetchProjects } from './api'
+import { useUser } from '../auth'
 
 const CATEGORIES = ['All', 'Games', 'Art', 'Web', 'Sound', 'Data', 'AI'] as const
 
 type SortOption = 'newest' | 'downloads' | 'likes'
 
 export default function ShareplacePage() {
+  const { user } = useUser()
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string>('All')
   const [sort, setSort] = useState<SortOption>('newest')
@@ -181,8 +183,9 @@ export default function ShareplacePage() {
       {selectedProject && (
         <ProjectDetailModal
           project={selectedProject}
-          isOwner={false}
+          isOwner={!!(user && (user.fullName === selectedProject.author || user.username === selectedProject.author))}
           onClose={() => setSelectedProject(null)}
+          onEdit={loadProjects}
         />
       )}
 
