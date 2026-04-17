@@ -54,6 +54,7 @@ interface ToolbarProps {
   onSaveToDashboard: () => void
   onOpenSpriteEditor?: () => void
   onOpenSpriteBrowser?: () => void
+  onOpenPhotoToSprite?: () => void
   onOpenLevelEditor?: () => void
   onOpenCollab?: () => void
   onRunForEveryone?: () => void
@@ -99,6 +100,7 @@ export default function Toolbar({
   onSaveToDashboard,
   onOpenSpriteEditor,
   onOpenSpriteBrowser,
+  onOpenPhotoToSprite,
   onOpenLevelEditor,
   onOpenCollab,
   onRunForEveryone,
@@ -251,6 +253,7 @@ export default function Toolbar({
                   { kind: 'button', icon: 'pages', iconCls: 'w-4 h-4 text-purple', label: 'Code to Blocks', onClick: () => requirePro(() => { onCodeToBlocks(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
                   ...(onOpenSpriteEditor ? [{ kind: 'button' as const, emoji: '🎨', label: 'Sprite Editor', onClick: () => requirePro(() => { onOpenSpriteEditor(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined }] : []),
                   ...(onOpenSpriteBrowser ? [{ kind: 'button' as const, emoji: '🖼️', label: 'Browse Sprites', onClick: () => { onOpenSpriteBrowser(); setOpenMenu(null) } }] : []),
+                  ...(onOpenPhotoToSprite ? [{ kind: 'button' as const, emoji: '📸', label: 'Photo → Sprite', onClick: () => { onOpenPhotoToSprite(); setOpenMenu(null) } }] : []),
                   ...(onOpenLevelEditor ? [{ kind: 'button' as const, emoji: '🗺️', label: 'Level Editor', onClick: () => requirePro(() => { onOpenLevelEditor(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined }] : []),
                 ] satisfies MenuItem[]} />
               )}

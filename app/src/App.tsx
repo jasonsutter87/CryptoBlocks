@@ -471,6 +471,7 @@ export default function App() {
         onSaveToDashboard={handleSaveToDashboard}
         onOpenSpriteEditor={() => modals.setSpriteEditor(true)}
         onOpenSpriteBrowser={() => modals.setSpriteBrowser(true)}
+        onOpenPhotoToSprite={() => modals.setPhotoToSprite(true)}
         onOpenLevelEditor={() => modals.setLevelEditor(true)}
         onRunForEveryone={requestRunForEveryone}
       />

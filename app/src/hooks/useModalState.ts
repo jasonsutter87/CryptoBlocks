@@ -20,6 +20,7 @@ export function useModalState() {
   const [scratchImport, setScratchImport] = useState(false)
   const [spriteEditor, setSpriteEditor] = useState(false)
   const [spriteBrowser, setSpriteBrowser] = useState(false)
+  const [photoToSprite, setPhotoToSprite] = useState(false)
   const [levelEditor, setLevelEditor] = useState(false)
   const [collabRoomCreated, setCollabRoomCreated] = useState<{ code: string; name: string } | null>(null)
 
@@ -43,6 +44,7 @@ export function useModalState() {
     scratchImport, setScratchImport,
     spriteEditor, setSpriteEditor,
     spriteBrowser, setSpriteBrowser,
+    photoToSprite, setPhotoToSprite,
     levelEditor, setLevelEditor,
     collabRoomCreated, setCollabRoomCreated,
     closeAll,
