@@ -52,6 +52,9 @@ async function ensureParentCamera(): Promise<boolean> {
     await new Promise<void>((r) => { video.onloadedmetadata = () => r() })
     await video.play()
     parentCamera = video
+    // Also set window.__cbCamera so the hand tracker (which checks this
+    // global) can find the video element for its detection loop.
+    ;(window as unknown as { __cbCamera: HTMLVideoElement }).__cbCamera = video
     parentCameraCanvas = document.createElement('canvas')
     parentCameraCtx = parentCameraCanvas.getContext('2d', { willReadFrequently: true })
     return true
@@ -100,9 +103,14 @@ function dispatchCommand(target: string, action: string, args: unknown[], iframe
     if (target === 'vision') {
       const api = (window as unknown as { __vision?: VisionGlobal }).__vision
       if (!api) return
-      if (action === 'startHandTracking') api.startHandTracking()
+      if (action === 'startHandTracking') {
+        // Hand tracking needs the parent camera running — auto-start it
+        ensureParentCamera().then(() => api.startHandTracking())
+      }
       if (action === 'stopHandTracking') api.stopHandTracking()
-      if (action === 'classifyCamera') api.classifyCamera()
+      if (action === 'classifyCamera') {
+        ensureParentCamera().then(() => api.classifyCamera())
+      }
     }
   } catch { /* iframe command errors are reported by the iframe itself */ }
 }
