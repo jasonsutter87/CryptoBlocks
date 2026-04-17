@@ -32,6 +32,7 @@ function toSharedProject(p: ApiProject): SharedProject {
     id: p.id,
     name: p.name,
     author: p.authorName,
+    authorId: p.authorId,
     description: p.description,
     category: p.category,
     blockCount: p.blockCount,

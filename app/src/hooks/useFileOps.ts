@@ -65,7 +65,7 @@ export function useFileOps(deps: Deps) {
       if (deps.currentProject) {
         const result = await updateProject(deps.currentProject.id, {
           name: deps.currentProject.name,
-          authorName: 'User',
+          authorName: (window as unknown as { Clerk?: { user?: { fullName?: string; username?: string } } }).Clerk?.user?.fullName || (window as unknown as { Clerk?: { user?: { fullName?: string; username?: string } } }).Clerk?.user?.username || 'Anonymous',
           workspaceJson,
           blockCount,
           category: 'General',

@@ -2,6 +2,7 @@ export interface SharedProject {
   id: string
   name: string
   author: string
+  authorId?: string
   description: string
   category: string
   blockCount: number
