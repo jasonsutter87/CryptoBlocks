@@ -57,7 +57,7 @@ async function handler(req: Request) {
       const name = nameResult.data
       const dataUrl = typeof raw.dataUrl === 'string' ? raw.dataUrl : ''
       const frames = typeof raw.frames === 'number' ? Math.max(1, Math.min(raw.frames, 64)) : 1
-      const size = typeof raw.size === 'number' ? Math.max(8, Math.min(raw.size, 128)) : 16
+      const size = typeof raw.size === 'number' ? Math.max(8, Math.min(raw.size, 256)) : 16
       const tags = Array.isArray(raw.tags) ? raw.tags.filter((t: unknown) => typeof t === 'string').slice(0, 10) : []
 
       if (!dataUrl.startsWith('data:image/')) return json({ error: 'Invalid image data' }, 400)

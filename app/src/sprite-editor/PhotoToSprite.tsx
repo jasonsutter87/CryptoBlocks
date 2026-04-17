@@ -10,7 +10,7 @@ interface PhotoToSpriteProps {
   onClose: () => void
 }
 
-const SIZES = [8, 16, 32, 64] as const
+const SIZES = [8, 16, 32, 64, 128, 256] as const
 
 export default function PhotoToSprite({ onClose }: PhotoToSpriteProps) {
   const [sourceUrl, setSourceUrl] = useState<string | null>(null)
