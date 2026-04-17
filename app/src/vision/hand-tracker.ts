@@ -66,12 +66,15 @@ async function ensureLandmarker(): Promise<void> {
 export async function startHandTracking(): Promise<boolean> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const video = (window as any).__cbCamera as HTMLVideoElement | undefined
+  console.log('[hands] startHandTracking called, video=', !!video, video?.readyState, video?.videoWidth + 'x' + video?.videoHeight)
   if (!video) {
     console.warn('[hands] camera not started — call "start camera" first')
     return false
   }
   try {
+    console.log('[hands] loading model...')
     await ensureLandmarker()
+    console.log('[hands] model loaded, starting detection loop')
   } catch (err) {
     console.error('[hands] model load failed', err)
     return false
@@ -92,10 +95,12 @@ function scheduleFrame(): void {
   loopHandle = requestAnimationFrame(processFrame)
 }
 
+let frameCount = 0
 function processFrame(): void {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const video = (window as any).__cbCamera as HTMLVideoElement | undefined
   if (!handLandmarker || !video || video.readyState < 2 || video.videoWidth === 0) {
+    if (frameCount++ % 60 === 0) console.log('[hands] waiting for video...', { landmarker: !!handLandmarker, video: !!video, readyState: video?.readyState, w: video?.videoWidth })
     scheduleFrame()
     return
   }
@@ -104,6 +109,7 @@ function processFrame(): void {
     const result = handLandmarker.detectForVideo(video, performance.now())
     const landmarks = result.landmarks ?? []
     state.handCount = landmarks.length
+    if (frameCount++ % 30 === 0) console.log('[hands] detecting:', landmarks.length, 'hands, pinching:', state.isPinching)
 
     if (landmarks.length > 0) {
       const lm = landmarks[0] as Array<{ x: number; y: number; z: number }>
