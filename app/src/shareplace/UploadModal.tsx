@@ -92,7 +92,7 @@ export default function UploadModal({ onClose, onPublished, existingProject }: U
     if (!result) {
       setError('Upload failed — check your connection and try again.')
     } else if ('error' in result) {
-      setError(result.error)
+      setError(result.error + ((result as { detail?: string }).detail ? ': ' + (result as { detail?: string }).detail : ''))
     } else {
       localStorage.removeItem('cryptoblocks_remix_parent')
       onPublished?.()
