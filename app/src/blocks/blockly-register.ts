@@ -1491,6 +1491,12 @@ function generateLibraryCode(block: Blockly.Block, language: Language): string |
   if (block.type === 'cb_import_library') {
     const lib = block.getFieldValue('LIBRARY') ?? 'p5'
     const url = LIBRARY_CDNS[lib] ?? ''
+    // After loading confetti, bind it to the game canvas so it renders
+    // visibly (the sandbox iframe is hidden — a default confetti overlay
+    // would be invisible to the user).
+    const postLoad = lib === 'confetti'
+      ? `\nif (typeof confetti === 'function' && confetti.create) {\n  var __cbCanvas = document.getElementById('cb-canvas');\n  if (__cbCanvas) { __cbCanvas.style.display = 'block'; confetti = confetti.create(__cbCanvas, { resize: true }); }\n}`
+      : ''
     return [
       `await new Promise(function(resolve, reject) {`,
       `  var s = document.createElement('script');`,
@@ -1498,7 +1504,7 @@ function generateLibraryCode(block: Blockly.Block, language: Language): string |
       `  s.onload = resolve;`,
       `  s.onerror = function() { console.error('Failed to load ${lib}'); resolve(); };`,
       `  document.head.appendChild(s);`,
-      `});`,
+      `});${postLoad}`,
     ].join('\n')
   }
 
