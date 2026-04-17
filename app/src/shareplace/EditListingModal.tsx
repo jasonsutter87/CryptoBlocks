@@ -41,7 +41,7 @@ export default function EditListingModal({ project, onClose, onSaved }: EditList
         description: description.trim(),
         category,
         workspaceJson: full.workspaceJson,
-        blockCount: project.blockCount,
+        blockCount: Number(project.blockCount) || 0,
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         visibility: project.visibility ?? 'public',
       }, token)

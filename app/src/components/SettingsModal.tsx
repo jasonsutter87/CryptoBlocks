@@ -13,6 +13,7 @@ export default function SettingsModal({ onClose, onSettingsChanged }: SettingsMo
 
   const handleSave = () => {
     saveSettings(settings)
+    document.documentElement.setAttribute('data-theme', settings.theme)
     onSettingsChanged()
     onClose()
   }
@@ -46,6 +47,58 @@ export default function SettingsModal({ onClose, onSettingsChanged }: SettingsMo
               }`}
             />
           </button>
+        </div>
+
+        {/* Theme toggle */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm text-text font-medium">Theme</p>
+            <p className="text-xs text-overlay mt-0.5">Switch between dark and light mode</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSettings((s) => ({ ...s, theme: 'dark' as const }))}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                settings.theme === 'dark' ? 'bg-accent text-base' : 'bg-surface-0 text-text hover:bg-surface-1'
+              }`}
+            >
+              🌙 Dark
+            </button>
+            <button
+              onClick={() => setSettings((s) => ({ ...s, theme: 'light' as const }))}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                settings.theme === 'light' ? 'bg-accent text-base' : 'bg-surface-0 text-text hover:bg-surface-1'
+              }`}
+            >
+              ☀️ Light
+            </button>
+          </div>
+        </div>
+
+        {/* Language toggle */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm text-text font-medium">Language</p>
+            <p className="text-xs text-overlay mt-0.5">Interface language</p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setSettings((s) => ({ ...s, locale: 'en' as const }))}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                settings.locale === 'en' ? 'bg-accent text-base' : 'bg-surface-0 text-text hover:bg-surface-1'
+              }`}
+            >
+              English
+            </button>
+            <button
+              onClick={() => setSettings((s) => ({ ...s, locale: 'es' as const }))}
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                settings.locale === 'es' ? 'bg-accent text-base' : 'bg-surface-0 text-text hover:bg-surface-1'
+              }`}
+            >
+              Español
+            </button>
+          </div>
         </div>
 
         {/* Interval selector */}
