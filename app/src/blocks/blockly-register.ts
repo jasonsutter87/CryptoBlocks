@@ -70,12 +70,12 @@ function registerControlFlowBlocks() {
       this.setColour('#059669')
       this.appendValueInput('CONDITION')
         .setCheck('Boolean')
-        .appendField('if')
+        .appendField(t('if'))
       this.appendStatementInput('DO')
-        .appendField('do')
+        .appendField(t('do'))
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
-      this.setTooltip('Run blocks only if the condition is true')
+      this.setTooltip(t('Run blocks only if the condition is true'))
     },
   }
 
@@ -85,14 +85,14 @@ function registerControlFlowBlocks() {
       this.setColour('#059669')
       this.appendValueInput('CONDITION')
         .setCheck('Boolean')
-        .appendField('if')
+        .appendField(t('if'))
       this.appendStatementInput('DO')
-        .appendField('do')
+        .appendField(t('do'))
       this.appendStatementInput('ELSE')
-        .appendField('else')
+        .appendField(t('else'))
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
-      this.setTooltip('Run blocks if condition is true, otherwise run else blocks')
+      this.setTooltip(t('Run blocks if condition is true, otherwise run else blocks'))
     },
   }
 
@@ -102,12 +102,12 @@ function registerControlFlowBlocks() {
       this.setColour('#059669')
       this.appendValueInput('TIMES')
         .setCheck('Number')
-        .appendField('repeat')
+        .appendField(t('repeat'))
       this.appendStatementInput('DO')
-        .appendField('do')
+        .appendField(t('do'))
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
-      this.setTooltip('Repeat blocks a number of times')
+      this.setTooltip(t('Repeat blocks a number of times'))
     },
   }
 
@@ -117,34 +117,34 @@ function registerControlFlowBlocks() {
       this.setColour('#059669')
       this.appendValueInput('CONDITION')
         .setCheck('Boolean')
-        .appendField('while')
+        .appendField(t('while'))
       this.appendStatementInput('DO')
-        .appendField('do')
+        .appendField(t('do'))
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
-      this.setTooltip('Keep running blocks while the condition is true')
+      this.setTooltip(t('Keep running blocks while the condition is true'))
     },
   }
 
-  // BREAK — exit the enclosing loop immediately
+  // BREAK
   Blockly.Blocks['cb_break'] = {
     init: function (this: Blockly.Block) {
       this.setColour('#059669')
-      this.appendDummyInput().appendField('break')
+      this.appendDummyInput().appendField(t('break'))
       this.setPreviousStatement(true, null)
       this.setNextStatement(false, null)
-      this.setTooltip('Exit the loop immediately')
+      this.setTooltip(t('Exit the loop immediately'))
     },
   }
 
-  // CONTINUE — skip to the next iteration of the enclosing loop
+  // CONTINUE
   Blockly.Blocks['cb_continue'] = {
     init: function (this: Blockly.Block) {
       this.setColour('#059669')
-      this.appendDummyInput().appendField('continue')
+      this.appendDummyInput().appendField(t('continue'))
       this.setPreviousStatement(true, null)
       this.setNextStatement(false, null)
-      this.setTooltip('Skip to the next iteration of the loop')
+      this.setTooltip(t('Skip to the next iteration of the loop'))
     },
   }
 
@@ -759,12 +759,12 @@ export function registerCustomBlocks() {
             // Dropdown field — value is built into the block
             const options: [string, string][] = input.choices.map((c) => [c, c])
             this.appendDummyInput()
-              .appendField(input.name.replace(/_/g, ' '))
+              .appendField(t(input.name.replace(/_/g, ' ')))
               .appendField(new Blockly.FieldDropdown(options), input.name)
           } else {
             const check = typeToBlocklyCheck(input.type)
             const inputObj = this.appendValueInput(input.name)
-            inputObj.appendField(input.name.replace(/_/g, ' '))
+            inputObj.appendField(t(input.name.replace(/_/g, ' ')))
             if (check) inputObj.setCheck(check)
           }
         }
