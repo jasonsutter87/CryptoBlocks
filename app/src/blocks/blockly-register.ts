@@ -1130,9 +1130,9 @@ function generateVisionCode(block: Blockly.Block, language: Language): string | 
       // Throttle to ~15fps so the loop is more visible and doesn't burn CPU
       const next = `setTimeout(function() { requestAnimationFrame(${loopName}); }, 60);`
       if (!body) {
-        return `(function ${loopName}() {\n  ${killCheck}\n  ${stream}\n  ${next}\n})()`
+        return `(async function ${loopName}() {\n  ${killCheck}\n  ${stream}\n  ${next}\n})()`
       }
-      return `(function ${loopName}() {\n  ${killCheck}\n  ${localScope}\n  try {\n${indent(body, language)}\n  } catch(__e) { console.error('Loop error: ' + __e.message); }\n  ${popScope}\n  ${stream}\n  ${next}\n})()`
+      return `(async function ${loopName}() {\n  ${killCheck}\n  ${localScope}\n  try {\n${indent(body, language)}\n  } catch(__e) { console.error('Loop error: ' + __e.message); }\n  ${popScope}\n  ${stream}\n  ${next}\n})()`
     }
 
     default:
