@@ -19,6 +19,12 @@ import {
   getHandState,
   type HandState,
 } from './hand-tracker'
+import {
+  startPoseTracking,
+  stopPoseTracking,
+  getPoseState,
+  type PoseState,
+} from './pose-tracker'
 
 export interface VisionGlobal {
   classifyCamera: () => Promise<ClassificationResult>
@@ -27,6 +33,9 @@ export interface VisionGlobal {
   startHandTracking: () => Promise<boolean>
   stopHandTracking: () => void
   getHandState: () => Readonly<HandState>
+  startPoseTracking: () => Promise<boolean>
+  stopPoseTracking: () => void
+  getPoseState: () => Readonly<PoseState>
 }
 
 let installed = false
@@ -40,6 +49,9 @@ export function ensureVisionGlobal(): void {
     startHandTracking,
     stopHandTracking,
     getHandState,
+    startPoseTracking,
+    stopPoseTracking,
+    getPoseState,
   }
   ;(window as unknown as { __vision: VisionGlobal }).__vision = api
   installed = true

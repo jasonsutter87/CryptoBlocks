@@ -318,4 +318,102 @@ export const visionBlocks: BlockDefinition[] = [
     color: '#06B6D4',
     shape: 'value',
   },
+
+  // ─── Body Pose Tracking ───────────────────────────────────────────
+
+  {
+    name: 'start_pose_tracking',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Start body pose tracking — detects jump, duck, idle. Call "start camera" first.',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'success', type: 'boolean' }],
+    implementations: {
+      javascript: `async function start_pose_tracking() {
+  if (typeof window === 'undefined' || !window.__vision) return false;
+  return await window.__vision.startPoseTracking();
+}`,
+      python: `async def start_pose_tracking():\n    return False`,
+    },
+    tests: [],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+  {
+    name: 'body_pose',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Current body pose: "idle", "jumping", or "ducking"',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'pose', type: 'string' }],
+    implementations: {
+      javascript: `function body_pose() {
+  if (typeof window === 'undefined' || !window.__vision) return "idle";
+  return window.__vision.getPoseState().pose;
+}`,
+      python: `def body_pose():\n    return "idle"`,
+    },
+    tests: [],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+  {
+    name: 'is_jumping',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'True when the user is jumping (shoulders rise above baseline)',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'jumping', type: 'boolean' }],
+    implementations: {
+      javascript: `function is_jumping() {
+  if (typeof window === 'undefined' || !window.__vision) return false;
+  return window.__vision.getPoseState().pose === "jumping";
+}`,
+      python: `def is_jumping():\n    return False`,
+    },
+    tests: [],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+  {
+    name: 'is_ducking',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'True when the user is ducking (shoulders drop below baseline)',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'ducking', type: 'boolean' }],
+    implementations: {
+      javascript: `function is_ducking() {
+  if (typeof window === 'undefined' || !window.__vision) return false;
+  return window.__vision.getPoseState().pose === "ducking";
+}`,
+      python: `def is_ducking():\n    return False`,
+    },
+    tests: [],
+    color: '#06B6D4',
+    shape: 'value',
+  },
+  {
+    name: 'person_visible',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'True when the camera can see a person',
+    category: 'Vision',
+    inputs: [],
+    outputs: [{ name: 'visible', type: 'boolean' }],
+    implementations: {
+      javascript: `function person_visible() {
+  if (typeof window === 'undefined' || !window.__vision) return false;
+  return window.__vision.getPoseState().personVisible;
+}`,
+      python: `def person_visible():\n    return False`,
+    },
+    tests: [],
+    color: '#06B6D4',
+    shape: 'value',
+  },
 ]

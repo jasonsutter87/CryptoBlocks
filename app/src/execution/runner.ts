@@ -13,8 +13,9 @@ function getVisionSnapshot() {
   try {
     const hand = api.getHandState()
     const cls = api.getLatestClassification()
-    return { hand, classification: cls }
-  } catch { return { hand: null, classification: null } }
+    const pose = api.getPoseState ? api.getPoseState() : null
+    return { hand, classification: cls, pose }
+  } catch { return { hand: null, classification: null, pose: null } }
 }
 
 function getMicrobitSnapshot() {
@@ -126,10 +127,13 @@ function dispatchCommand(target: string, action: string, args: unknown[], iframe
       const api = (window as unknown as { __vision?: VisionGlobal }).__vision
       if (!api) return
       if (action === 'startHandTracking') {
-        // Hand tracking needs the parent camera running — auto-start it
         ensureParentCamera().then(() => api.startHandTracking())
       }
       if (action === 'stopHandTracking') api.stopHandTracking()
+      if (action === 'startPoseTracking') {
+        ensureParentCamera().then(() => api.startPoseTracking())
+      }
+      if (action === 'stopPoseTracking') api.stopPoseTracking()
       if (action === 'classifyCamera') {
         ensureParentCamera().then(() => api.classifyCamera())
       }
@@ -383,6 +387,18 @@ window.__vision = {
     return __bridgeCache.vision && __bridgeCache.vision.classification
       ? __bridgeCache.vision.classification
       : { label: '', confidence: 0, topResults: [] };
+  },
+  startPoseTracking: function() {
+    __cmd('vision', 'startPoseTracking', []);
+    return Promise.resolve(true);
+  },
+  stopPoseTracking: function() {
+    __cmd('vision', 'stopPoseTracking', []);
+  },
+  getPoseState: function() {
+    return __bridgeCache.vision && __bridgeCache.vision.pose
+      ? __bridgeCache.vision.pose
+      : { personVisible: false, pose: 'idle', headY: 0, shoulderY: 0 };
   }
 };
 
