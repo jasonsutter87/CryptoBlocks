@@ -10,7 +10,7 @@ interface PhotoToSpriteProps {
   onClose: () => void
 }
 
-const SIZES = [8, 16, 32, 64, 128, 256] as const
+const SIZES = [8, 16, 32, 64] as const
 
 export default function PhotoToSprite({ onClose }: PhotoToSpriteProps) {
   const [sourceUrl, setSourceUrl] = useState<string | null>(null)
@@ -76,21 +76,10 @@ export default function PhotoToSprite({ onClose }: PhotoToSpriteProps) {
     showToast(`"${name}" saved to sprites!`, 'success')
   }
 
-  const shareToLibrary = async () => {
-    if (!pixelUrl) return
-    try {
-      const token = await (window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }).Clerk?.session?.getToken()
-      const res = await fetch('/api/sprites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ name, dataUrl: pixelUrl, frames: 1, size, tags: ['photo'] }),
-      })
-      if (res.ok) showToast('Shared to Sprite Library!', 'success')
-      else showToast('Share failed', 'error')
-    } catch {
-      showToast('Share failed', 'error')
-    }
-  }
+  // No Share button — photo uploads must stay local-only. At any grid
+  // size a recognizable face or inappropriate image could land in the
+  // public Sprite Library. Hand-drawn sprites (via the Sprite Editor)
+  // can be shared because they're created in-editor, not uploaded.
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
@@ -174,13 +163,7 @@ export default function PhotoToSprite({ onClose }: PhotoToSpriteProps) {
                   onClick={saveToLibrary}
                   className="px-4 py-2 text-sm font-bold text-base bg-success hover:bg-success/80 rounded-lg"
                 >
-                  Save
-                </button>
-                <button
-                  onClick={shareToLibrary}
-                  className="px-4 py-2 text-sm font-bold text-base bg-accent hover:bg-accent/80 rounded-lg"
-                >
-                  Share
+                  Save to My Sprites
                 </button>
               </div>
 
