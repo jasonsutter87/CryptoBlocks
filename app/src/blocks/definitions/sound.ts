@@ -13,6 +13,7 @@ export const soundBlocks: BlockDefinition[] = [
     outputs: [],
     implementations: {
       javascript: `function playDrum(drumType) {
+  if (parent !== window) { parent.postMessage({ __cryptoblocks: true, type: 'cmd', target: 'audio', action: 'playDrum', args: [drumType] }, '*'); return; }
   var ctx = window.__audio = window.__audio || new (window.AudioContext || window.webkitAudioContext)();
   var t = ctx.currentTime;
   if (drumType === "kick") {
