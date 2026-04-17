@@ -74,7 +74,7 @@ async function getDetector(): Promise<void> {
     const model = hpd.SupportedModels.MediaPipeHands
     detector = await hpd.createDetector(model, {
       runtime: 'mediapipe',
-      solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands',
+      solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240',
       modelType: 'lite',
       maxHands: 2,
     })
