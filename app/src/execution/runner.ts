@@ -47,7 +47,17 @@ async function ensureParentCamera(): Promise<boolean> {
     video.autoplay = true
     video.playsInline = true
     video.muted = true
-    video.style.display = 'none'
+    // Show the camera feed so the user can see what the vision blocks see.
+    video.style.position = 'fixed'
+    video.style.bottom = '10px'
+    video.style.right = '10px'
+    video.style.width = '200px'
+    video.style.height = '150px'
+    video.style.borderRadius = '10px'
+    video.style.border = '2px solid #89b4fa'
+    video.style.zIndex = '9999'
+    video.style.transform = 'scaleX(-1)'
+    video.style.objectFit = 'cover'
     document.body.appendChild(video)
     await new Promise<void>((r) => { video.onloadedmetadata = () => r() })
     await video.play()
