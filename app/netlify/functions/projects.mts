@@ -104,7 +104,10 @@ async function handler(req: Request) {
 
       const raw = await req.json().catch(() => null)
       const parsed = PublishProjectInput.safeParse(raw)
-      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      if (!parsed.success) {
+        logError('projects:validate', new Error(JSON.stringify(parsed.error.issues)))
+        return json({ error: 'Invalid input', detail: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') }, 400)
+      }
 
       const {
         name, authorName, description, category, workspaceJson, tags,
@@ -158,7 +161,10 @@ async function handler(req: Request) {
 
       const raw = await req.json().catch(() => null)
       const parsed = PublishProjectInput.safeParse(raw)
-      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+      if (!parsed.success) {
+        logError('projects:validate', new Error(JSON.stringify(parsed.error.issues)))
+        return json({ error: 'Invalid input', detail: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ') }, 400)
+      }
       const { name, description, category, workspaceJson, tags, blockCount, visibility } = parsed.data
 
       const modErr = moderateContent(name, description ?? '')
