@@ -81,7 +81,7 @@ export default function UploadModal({ onClose, onPublished, existingProject }: U
       category,
       workspaceJson,
       tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-      blockCount,
+      blockCount: Number(blockCount) || 0,
       parentId: remixParent?.id,
       visibility: 'public' as const,
     }
