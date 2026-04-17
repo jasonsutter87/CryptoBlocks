@@ -183,7 +183,11 @@ export default function ShareplacePage() {
       {selectedProject && (
         <ProjectDetailModal
           project={selectedProject}
-          isOwner={!!(user && selectedProject.authorId && user.id === selectedProject.authorId)}
+          isOwner={!!(user && (
+            (selectedProject.authorId && user.id === selectedProject.authorId) ||
+            user.fullName === selectedProject.author ||
+            user.username === selectedProject.author
+          ))}
           onClose={() => setSelectedProject(null)}
           onEdit={loadProjects}
         />
