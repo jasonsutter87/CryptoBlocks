@@ -3,7 +3,7 @@ import { FieldMultilineInput } from '@blockly/field-multilineinput'
 import { compileString } from 'sass'
 import type { BlockDefinition, Language } from '../types/block'
 import { registry } from './registry'
-import { blockLabel } from '../i18n'
+import { blockLabel, t } from '../i18n'
 import { isHackerModeActive } from '../easter-eggs/hacker-mode'
 
 function typeToBlocklyField(type: string): string {
@@ -1832,7 +1832,7 @@ function inputShadowXml(input: { name: string; type: string; default?: string | 
 /** Generate the Functions toolbox category. */
 function functionsToolboxXml(): string {
   const hue = hexToHue(FUNCTION_COLOR)
-  let xml = `<category name="Functions" colour="${hue}">`
+  let xml = `<category name="${t('Functions')}" colour="${hue}">`
 
   xml += '<block type="cb_create_function">'
   xml += '<value name="PARAM1"><shadow type="text"><field name="TEXT"></field></shadow></value>'
@@ -1850,7 +1850,7 @@ function functionsToolboxXml(): string {
 /** Generate the Events toolbox category. */
 function eventsToolboxXml(): string {
   const hue = hexToHue(EVENT_COLOR)
-  let xml = `<category name="Events" colour="${hue}">`
+  let xml = `<category name="${t('Events')}" colour="${hue}">`
 
   xml += '<block type="cb_when_key_pressed"></block>'
 
@@ -1867,7 +1867,7 @@ function eventsToolboxXml(): string {
 /** Generate the HTML toolbox category with structure + CSS blocks. */
 function htmlToolboxXml(): string {
   const hue = hexToHue(HTML_COLOR)
-  let xml = `<category name="HTML" colour="${hue}">`
+  let xml = `<category name="${t('HTML')}" colour="${hue}">`
 
   // Structure blocks
   xml += '<block type="cb_container">'
@@ -1978,7 +1978,7 @@ export function getToolboxXml(): string {
     const color = registry.getCategoryColor(cat)
     // Convert hex color to Blockly hue (0-360)
     const hue = hexToHue(color)
-    xml += `<category name="${cat}" colour="${hue}">`
+    xml += `<category name="${t(cat)}" colour="${hue}">`
 
     // Add control flow blocks at the top of the Logic category
     xml += controlFlowToolboxXml(cat)
@@ -2011,7 +2011,7 @@ export function getToolboxXml(): string {
 
   // Add built-in Blockly blocks for values
   xml += '<sep></sep>'
-  xml += '<category name="Values" colour="230">'
+  xml += `<category name="${t('Values')}" colour="230">`
   xml += '<block type="math_number"><field name="NUM">0</field></block>'
   xml += '<block type="text"><field name="TEXT">hello</field></block>'
   xml += '<block type="logic_boolean"><field name="BOOL">TRUE</field></block>'
@@ -2035,7 +2035,7 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
     const blocks = registry.getByCategory(cat)
     const color = registry.getCategoryColor(cat)
     const hue = hexToHue(color)
-    xml += `<category name="${cat}" colour="${hue}">`
+    xml += `<category name="${t(cat)}" colour="${hue}">`
 
     // Add control flow blocks at the top of the Logic category
     xml += controlFlowToolboxXml(cat)
@@ -2076,7 +2076,7 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
 
   // Always include Values category
   xml += '<sep></sep>'
-  xml += '<category name="Values" colour="230">'
+  xml += `<category name="${t('Values')}" colour="230">`
   xml += '<block type="math_number"><field name="NUM">0</field></block>'
   xml += '<block type="text"><field name="TEXT">hello</field></block>'
   xml += '<block type="logic_boolean"><field name="BOOL">TRUE</field></block>'
@@ -2101,7 +2101,7 @@ function visionToolboxXml(cat: string): string {
 
 function librariesToolboxXml(): string {
   const hue = hexToHue(LIBRARY_COLOR)
-  let xml = `<category name="Libraries" colour="${hue}">`
+  let xml = `<category name="${t('Libraries')}" colour="${hue}">`
   xml += '<block type="cb_import_library"><field name="LIBRARY">p5</field></block>'
   xml += '<sep gap="12"></sep>'
   xml += '<block type="cb_import_prank"><field name="PRANK">theRickroll</field></block>'
