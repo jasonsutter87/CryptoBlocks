@@ -65,6 +65,7 @@ export function useFileOps(deps: Deps) {
       if (deps.currentProject) {
         const result = await updateProject(deps.currentProject.id, {
           name: deps.currentProject.name,
+          authorName: 'User',
           workspaceJson,
           blockCount,
           category: 'General',
