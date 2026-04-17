@@ -110,6 +110,18 @@ function dispatchCommand(target: string, action: string, args: unknown[], iframe
       if (action === 'start') ensureParentCamera()
       if (action === 'capture') captureParentFrame(iframe ?? null)
     }
+    if (target === 'audio') {
+      // AudioContext needs a user gesture — the parent page has one
+      // (the user clicked Run). Play sounds here, not in the iframe.
+      const w = window as unknown as { __audio?: AudioContext }
+      if (!w.__audio) w.__audio = new AudioContext()
+      const ctx = w.__audio
+      if (ctx.state === 'suspended') ctx.resume()
+      if (action === 'playDrum') {
+        const drumType = String(args[0] || 'kick')
+        playDrumInParent(ctx, drumType)
+      }
+    }
     if (target === 'vision') {
       const api = (window as unknown as { __vision?: VisionGlobal }).__vision
       if (!api) return
@@ -123,6 +135,43 @@ function dispatchCommand(target: string, action: string, args: unknown[], iframe
       }
     }
   } catch { /* iframe command errors are reported by the iframe itself */ }
+}
+
+function playDrumInParent(ctx: AudioContext, drumType: string): void {
+  const t = ctx.currentTime
+  if (drumType === 'kick') {
+    const osc = ctx.createOscillator(), gain = ctx.createGain()
+    osc.frequency.setValueAtTime(150, t); osc.frequency.exponentialRampToValueAtTime(50, t + 0.1)
+    gain.gain.setValueAtTime(1, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3)
+    osc.connect(gain); gain.connect(ctx.destination); osc.start(t); osc.stop(t + 0.3)
+  } else if (drumType === 'snare' || drumType === 'clap') {
+    const dur = drumType === 'snare' ? 0.2 : 0.15, freq = drumType === 'snare' ? 3000 : 2000
+    const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate)
+    const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+    const src = ctx.createBufferSource(); src.buffer = buf
+    const filt = ctx.createBiquadFilter(); filt.type = 'bandpass'; filt.frequency.value = freq
+    const gain = ctx.createGain(); gain.gain.setValueAtTime(0.8, t); gain.gain.exponentialRampToValueAtTime(0.01, t + dur)
+    src.connect(filt); filt.connect(gain); gain.connect(ctx.destination); src.start(t)
+  } else if (drumType === 'hi-hat') {
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate)
+    const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+    const src = ctx.createBufferSource(); src.buffer = buf
+    const filt = ctx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = 7000
+    const gain = ctx.createGain(); gain.gain.setValueAtTime(0.5, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05)
+    src.connect(filt); filt.connect(gain); gain.connect(ctx.destination); src.start(t)
+  } else if (drumType === 'tom') {
+    const osc = ctx.createOscillator(), gain = ctx.createGain()
+    osc.frequency.setValueAtTime(200, t); osc.frequency.exponentialRampToValueAtTime(80, t + 0.2)
+    gain.gain.setValueAtTime(0.8, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3)
+    osc.connect(gain); gain.connect(ctx.destination); osc.start(t); osc.stop(t + 0.3)
+  } else if (drumType === 'cymbal') {
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.5, ctx.sampleRate)
+    const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1
+    const src = ctx.createBufferSource(); src.buffer = buf
+    const filt = ctx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = 5000
+    const gain = ctx.createGain(); gain.gain.setValueAtTime(0.5, t); gain.gain.exponentialRampToValueAtTime(0.01, t + 0.5)
+    src.connect(filt); filt.connect(gain); gain.connect(ctx.destination); src.start(t)
+  }
 }
 
 export interface ExecutionResult {
@@ -297,6 +346,13 @@ window.__microbit = {
   clear:      function()      { __cmd('microbit', 'clear',      []); },
   plotPixel:  function(x, y)  { __cmd('microbit', 'plotPixel',  [x, y]); },
   unplotPixel:function(x, y)  { __cmd('microbit', 'unplotPixel',[x, y]); }
+};
+
+// Audio — AudioContext needs a user gesture that only the parent has.
+// Override playDrum to forward to the parent where the gesture exists.
+var __origPlayDrum = window.playDrum;
+window.playDrum = function(drumType) {
+  __cmd('audio', 'playDrum', [drumType]);
 };
 
 // Vision — MediaPipe runs in the parent. We shim window.__vision to
