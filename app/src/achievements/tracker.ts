@@ -143,6 +143,18 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
     case 'block-god':
       return (context.blockCount ?? 0) >= 1000
 
+    case 'block-2500':
+      return (context.blockCount ?? 0) >= 2500
+
+    case 'block-5000':
+      return (context.blockCount ?? 0) >= 5000
+
+    case 'block-7500':
+      return (context.blockCount ?? 0) >= 7500
+
+    case 'block-10000':
+      return (context.blockCount ?? 0) >= 10000
+
     case 'the-answer':
       if (!context.output) return false
       return context.output.some((line) => line.trim() === '42')
