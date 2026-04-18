@@ -140,6 +140,9 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
     case 'mad-scientist':
       return (context.categoriesUsed?.length ?? 0) >= 5
 
+    case 'block-god':
+      return (context.blockCount ?? 0) >= 1000
+
     case 'the-answer':
       if (!context.output) return false
       return context.output.some((line) => line.trim() === '42')

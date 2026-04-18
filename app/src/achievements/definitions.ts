@@ -309,6 +309,13 @@ export const achievements: Achievement[] = [
     rarity: 'legendary',
   },
   {
+    id: 'block-god',
+    name: 'Block God',
+    description: 'Use 1,000+ blocks in one program',
+    icon: '👑',
+    rarity: 'legendary',
+  },
+  {
     id: 'all-categories',
     name: 'Renaissance Coder',
     description: 'Use blocks from 10+ categories in one program',
