@@ -3,6 +3,7 @@ import type { SharedProject } from '../types/shareplace'
 import { updateProject, fetchProject } from './api'
 import { useAuth, useUser } from '../auth'
 import { showToast } from '../components/Toast'
+import TagSelector from '../components/TagSelector'
 
 interface EditListingModalProps {
   project: SharedProject
@@ -18,7 +19,7 @@ export default function EditListingModal({ project, onClose, onSaved }: EditList
   const [name, setName] = useState(project.name)
   const [description, setDescription] = useState(project.description)
   const [category, setCategory] = useState(project.category)
-  const [tags, setTags] = useState(project.tags.join(', '))
+  const [tags, setTags] = useState<string[]>(project.tags ?? [])
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export default function EditListingModal({ project, onClose, onSaved }: EditList
         category,
         workspaceJson: full.workspaceJson,
         blockCount: Number(project.blockCount) || 0,
-        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        tags,
         visibility: project.visibility ?? 'public',
       }, token)
       if (result && 'id' in result) {
@@ -124,15 +125,8 @@ export default function EditListingModal({ project, onClose, onSaved }: EditList
 
           {/* Tags */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-subtext">
-              Tags <span className="text-overlay font-normal">(comma-separated)</span>
-            </label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              className="w-full bg-surface-0 border border-surface-1 text-text text-sm rounded-lg px-3 py-2.5 placeholder-overlay focus:outline-none focus:border-accent transition-colors"
-            />
+            <label className="text-xs font-medium text-subtext">Tags</label>
+            <TagSelector selected={tags} onChange={setTags} />
           </div>
         </div>
 

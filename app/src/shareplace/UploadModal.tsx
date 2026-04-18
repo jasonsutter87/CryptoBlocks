@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import TagSelector from '../components/TagSelector'
 import { useUser, useAuth } from '../auth'
 import { publishProject, updateProject } from './api'
 
@@ -37,7 +38,7 @@ export default function UploadModal({ onClose, onPublished, existingProject }: U
   )
   const [description, setDescription] = useState(existingProject?.description ?? '')
   const [category, setCategory] = useState<string>(existingProject?.category ?? 'Games')
-  const [tags, setTags] = useState('')
+  const [tags, setTags] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -80,7 +81,7 @@ export default function UploadModal({ onClose, onPublished, existingProject }: U
       description: description.trim(),
       category,
       workspaceJson,
-      tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+      tags,
       blockCount: Number(blockCount) || 0,
       parentId: remixParent?.id,
       visibility: 'public' as const,
@@ -165,16 +166,8 @@ export default function UploadModal({ onClose, onPublished, existingProject }: U
 
           {/* Tags */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-subtext">
-              Tags <span className="text-overlay font-normal">(comma-separated)</span>
-            </label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="e.g. game, puzzle, beginner"
-              className="w-full bg-surface-0 border border-surface-1 text-text text-sm rounded-lg px-3 py-2.5 placeholder-overlay focus:outline-none focus:border-accent transition-colors"
-            />
+            <label className="text-xs font-medium text-subtext">Tags</label>
+            <TagSelector selected={tags} onChange={setTags} />
           </div>
 
           {/* Preview */}
