@@ -31,7 +31,7 @@ function typeToBlocklyCheck(type: string): string | null {
 }
 
 // --- Control flow block types ---
-const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat', 'cb_loop_index', 'cb_while', 'cb_break', 'cb_continue'])
+const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat', 'cb_count_from', 'cb_loop_index', 'cb_while', 'cb_break', 'cb_continue'])
 
 // --- HTML/CSS block types (native Blockly, not registry) ---
 const HTML_BLOCKS = new Set([
@@ -108,6 +108,27 @@ function registerControlFlowBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip(t('Repeat blocks a number of times'))
+    },
+  }
+
+  // COUNT FROM / TO / BY — custom for loop with start, end, step
+  Blockly.Blocks['cb_count_from'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#059669')
+      this.appendValueInput('FROM')
+        .setCheck('Number')
+        .appendField(t('count from'))
+      this.appendValueInput('TO')
+        .setCheck('Number')
+        .appendField(t('to'))
+      this.appendValueInput('BY')
+        .setCheck('Number')
+        .appendField(t('by'))
+      this.appendStatementInput('DO')
+        .appendField(t('do'))
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(true, null)
+      this.setTooltip(t('Count from a start to an end value with a custom step. Use negative step to count backwards.'))
     },
   }
 
@@ -1079,6 +1100,31 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
       }
     }
 
+    case 'cb_count_from': {
+      const fromBlock = block.getInputTargetBlock('FROM')
+      const toBlock = block.getInputTargetBlock('TO')
+      const byBlock = block.getInputTargetBlock('BY')
+      const from = fromBlock ? generateBlockCode(fromBlock, language) : '0'
+      const to = toBlock ? generateBlockCode(toBlock, language) : '10'
+      const by = byBlock ? generateBlockCode(byBlock, language) : '1'
+      const body = generateStatementCode(block, 'DO', language)
+      const loopVar = `__i${_loopVarCounter++}`
+      const savedVar = `__savedIndex${_loopVarCounter}`
+
+      if (language === 'javascript') {
+        // Direction-aware: if step is negative, use >=; if positive, use <=
+        // At runtime, check sign of step to pick comparison
+        const cond = `(${by}) > 0 ? ${loopVar} <= ${to} : ${loopVar} >= ${to}`
+        if (!body) return `for (var ${loopVar} = ${from}; ${cond}; ${loopVar} += ${by}) {}`
+        const indexSetup = `var ${savedVar} = typeof __loopIndex !== 'undefined' ? __loopIndex : 0;\n  var __loopIndex = ${loopVar};`
+        const indexRestore = `__loopIndex = ${savedVar};`
+        return `for (var ${loopVar} = ${from}; ${cond}; ${loopVar} += ${by}) {\n${indent(indexSetup, language)}\n${indent(body, language)}\n${indent(indexRestore, language)}\n}`
+      } else {
+        if (!body) return `for __loopIndex in range(int(${from}), int(${to}), int(${by})):\n    pass`
+        return `for __loopIndex in range(int(${from}), int(${to}), int(${by})):\n${indent(body, language)}`
+      }
+    }
+
     case 'cb_while': {
       const condBlock = block.getInputTargetBlock('CONDITION')
       const condition = condBlock
@@ -1802,6 +1848,7 @@ function controlFlowToolboxXml(cat: string): string {
     '<block type="cb_if"></block>' +
     '<block type="cb_if_else"></block>' +
     '<block type="cb_repeat"><value name="TIMES"><shadow type="math_number"><field name="NUM">10</field></shadow></value></block>' +
+    '<block type="cb_count_from"><value name="FROM"><shadow type="math_number"><field name="NUM">0</field></shadow></value><value name="TO"><shadow type="math_number"><field name="NUM">10</field></shadow></value><value name="BY"><shadow type="math_number"><field name="NUM">1</field></shadow></value></block>' +
     '<block type="cb_loop_index"></block>' +
     '<block type="cb_while"></block>' +
     '<block type="cb_break"></block>' +
