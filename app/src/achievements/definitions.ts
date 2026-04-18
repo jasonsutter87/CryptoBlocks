@@ -332,6 +332,43 @@ export const achievements: Achievement[] = [
   },
 
   // === v0.4 — Terminal easter egg achievements ===
+  // === Block Placement Milestones ===
+  {
+    id: 'mile-placer',
+    name: 'Mile Placer',
+    description: 'Place 1,600 blocks',
+    icon: '🧱',
+    rarity: 'rare',
+  },
+  {
+    id: 'block-10k',
+    name: '10K Club',
+    description: 'Place 10,000 blocks',
+    icon: '🏗️',
+    rarity: 'rare',
+  },
+  {
+    id: 'block-25k',
+    name: 'Quarter Century',
+    description: 'Place 25,000 blocks',
+    icon: '🏛️',
+    rarity: 'epic',
+  },
+  {
+    id: 'block-50k',
+    name: 'Block City',
+    description: 'Place 50,000 blocks',
+    icon: '🌆',
+    rarity: 'epic',
+  },
+  {
+    id: 'moon-walker',
+    name: 'Moon Walker',
+    description: 'Place 238,900 blocks — the distance to the moon in miles',
+    icon: '🌙',
+    rarity: 'legendary',
+  },
+
   // === Green Cube Collectors ===
   {
     id: 'green-cube-01',

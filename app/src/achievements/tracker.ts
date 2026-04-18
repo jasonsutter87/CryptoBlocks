@@ -143,6 +143,21 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
       if (!context.output) return false
       return context.output.some((line) => line.trim() === '42')
 
+    case 'mile-placer':
+      return loadStats().totalBlocks >= 1_600
+
+    case 'block-10k':
+      return loadStats().totalBlocks >= 10_000
+
+    case 'block-25k':
+      return loadStats().totalBlocks >= 25_000
+
+    case 'block-50k':
+      return loadStats().totalBlocks >= 50_000
+
+    case 'moon-walker':
+      return loadStats().totalBlocks >= 238_900
+
     case 'green-cube-01': {
       const stats = loadStats()
       const activeDays = Object.values(stats.runsByDate).filter((n) => n > 0).length
