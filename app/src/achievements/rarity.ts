@@ -10,7 +10,7 @@ export const RARITY_ORDER: Record<Rarity, number> = {
 /** Hex color per rarity — used anywhere a raw CSS color value is needed
  *  (inline styles, canvas, SVG filters). */
 export const RARITY_COLOR: Record<Rarity, string> = {
-  common: '#6c7086',
+  common: '#a6e3a1',
   rare: '#3b82f6',
   epic: '#a855f7',
   legendary: '#eab308',
@@ -46,9 +46,9 @@ export const RARITY_STYLES: Record<Rarity, { ring: string; glow: string; bg: str
     text: 'text-blue-400',
   },
   common: {
-    ring: 'ring-1 ring-surface-1',
-    glow: '',
-    bg: 'bg-surface-0',
-    text: 'text-overlay',
+    ring: 'ring-1 ring-success/50',
+    glow: 'shadow-[0_0_8px_rgba(166,227,161,0.2)]',
+    bg: 'bg-success/10',
+    text: 'text-success',
   },
 }
