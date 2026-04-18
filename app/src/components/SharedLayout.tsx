@@ -1,8 +1,9 @@
-import { type ReactNode, useEffect } from 'react'
+import { type ReactNode, useEffect, useState, lazy, Suspense } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '../auth'
 import { useIsPro, openCheckout } from '../billing/useIsPro'
 import { ProBadge } from '../billing/UpgradeGate'
+const StatsPanel = lazy(() => import('./StatsPanel'))
 
 interface SharedLayoutProps {
   children: ReactNode
@@ -12,6 +13,7 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
   const { pathname } = useLocation()
   const { isPro } = useIsPro()
   const { getToken } = useAuth()
+  const [showStats, setShowStats] = useState(false)
 
   // Apply theme
   useEffect(() => {
@@ -83,6 +85,12 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
           </a>
           {navLink('/dashboard', 'Dashboard')}
           {navLink('/profile', 'Profile')}
+          <button
+            onClick={() => setShowStats(true)}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors text-subtext hover:text-text hover:bg-surface-0"
+          >
+            Stats
+          </button>
         </div>
 
         {/* Auth */}
@@ -110,6 +118,13 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
           {children}
         </div>
       </main>
+
+      {/* Stats modal */}
+      {showStats && (
+        <Suspense fallback={null}>
+          <StatsPanel onClose={() => setShowStats(false)} />
+        </Suspense>
+      )}
 
       {/* Footer */}
       <footer className="shrink-0 bg-mantle border-t border-surface-0 py-6 px-4 sm:px-6">
