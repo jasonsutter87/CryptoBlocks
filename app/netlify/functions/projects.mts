@@ -399,8 +399,9 @@ async function handler(req: Request) {
       const args: (string | number)[] = []
       const conditions: string[] = [
         "visibility = 'public'",
-        // Hide seed-project remixes from the main feed — they have their own badge flow
+        // Hide seed projects and their remixes from the main feed — CTF discovery only
         "COALESCE(parent_id, '') NOT LIKE 'cb-seed-%'",
+        "COALESCE(id, '') NOT LIKE 'cb-seed-%' OR id = 'cb-seed-hello-world'",
       ]
 
       if (category) {
