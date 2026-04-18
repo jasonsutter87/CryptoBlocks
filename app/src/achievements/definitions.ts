@@ -341,6 +341,13 @@ export const achievements: Achievement[] = [
     rarity: 'rare',
   },
   {
+    id: 'block-5k',
+    name: '5K Runner',
+    description: 'Place 5,000 blocks',
+    icon: '🏃',
+    rarity: 'rare',
+  },
+  {
     id: 'block-10k',
     name: '10K Club',
     description: 'Place 10,000 blocks',

@@ -146,6 +146,9 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
     case 'mile-placer':
       return loadStats().totalBlocks >= 1_600
 
+    case 'block-5k':
+      return loadStats().totalBlocks >= 5_000
+
     case 'block-10k':
       return loadStats().totalBlocks >= 10_000
 
