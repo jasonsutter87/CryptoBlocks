@@ -371,6 +371,14 @@ export const achievements: Achievement[] = [
   // === v0.4 — Terminal easter egg achievements ===
   // === Crypto ===
   {
+    id: 'pi',
+    name: 'Irrational',
+    description: 'Place 31,415 blocks — the first 5 digits of Pi',
+    icon: '🥧',
+    rarity: 'legendary',
+    secret: true,
+  },
+  {
     id: 'finney',
     name: 'Finney',
     description: 'Use 6 unique Crypto blocks in one program',
