@@ -4,9 +4,7 @@ import type { ProjectHistory, Branch, Checkpoint } from './types'
 import { loadHistory, saveHistory } from './storage'
 import { loadSettings } from '../settings'
 
-const DEFAULT_PROJECT_ID = 'default'
-
-function initProject(): ProjectHistory {
+function initProject(projectId: string): ProjectHistory {
   const branchId = crypto.randomUUID()
   const now = Date.now()
 
@@ -21,7 +19,7 @@ function initProject(): ProjectHistory {
 
   return {
     version: 1,
-    projectId: DEFAULT_PROJECT_ID,
+    projectId,
     activeBranchId: branchId,
     branches: [mainBranch],
     checkpoints: [],
@@ -30,8 +28,10 @@ function initProject(): ProjectHistory {
 
 export function useVersionControl(
   workspaceRef: React.RefObject<Blockly.WorkspaceSvg | null>,
-  blockCount: number
+  blockCount: number,
+  projectId?: string | null,
 ) {
+  const activeProjectId = projectId || 'default'
   const [history, setHistory] = useState<ProjectHistory | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [showCheckpointModal, setShowCheckpointModal] = useState(false)
@@ -40,18 +40,18 @@ export function useVersionControl(
   const lastAutoSaveBlockCount = useRef<number>(-1)
   const autoSaveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Load or initialize history on mount
+  // Load or initialize history — reloads when project changes
   useEffect(() => {
-    loadHistory(DEFAULT_PROJECT_ID).then((loaded) => {
+    loadHistory(activeProjectId).then((loaded) => {
       if (loaded) {
         setHistory(loaded)
       } else {
-        const fresh = initProject()
+        const fresh = initProject(activeProjectId)
         setHistory(fresh)
-        saveHistory(DEFAULT_PROJECT_ID, fresh).catch(console.error)
+        saveHistory(activeProjectId, fresh).catch(console.error)
       }
     }).catch(console.error)
-  }, [])
+  }, [activeProjectId])
 
   // Keep a stable ref to blockCount so the interval callback always sees current value
   const blockCountRef = useRef(blockCount)
@@ -128,7 +128,7 @@ export function useVersionControl(
     }
 
     setHistory(updated)
-    await saveHistory(DEFAULT_PROJECT_ID, updated)
+    await saveHistory(activeProjectId, updated)
 
     // Fire checkpoint achievement
     const { checkAchievements } = await import('../achievements/tracker')
@@ -175,7 +175,7 @@ export function useVersionControl(
     }
 
     setHistory(updated)
-    await saveHistory(DEFAULT_PROJECT_ID, updated)
+    await saveHistory(activeProjectId, updated)
   }, [workspaceRef, history, currentBranch])
 
   return {

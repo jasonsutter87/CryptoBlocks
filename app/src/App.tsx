@@ -139,7 +139,7 @@ export default function App() {
     currentBranch,
     checkpoints,
     resetAutoSave,
-  } = useVersionControl(workspaceRef, blockCount)
+  } = useVersionControl(workspaceRef, blockCount, currentProject?.id)
 
   const customBlocksHook = useCustomBlocks({
     workspaceRef,
