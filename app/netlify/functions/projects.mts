@@ -78,6 +78,24 @@ async function ensureSchema(): Promise<void> {
       // have NULL. Normalize so every subsequent check can assume a concrete
       // value and we can drop the `visibility IS NULL OR ...` branch.
       migrate('backfill-visibility', "UPDATE projects SET visibility = 'public' WHERE visibility IS NULL"),
+      // Fix projects saved with hardcoded 'User' before the Clerk name fix.
+      // Looks up the real name from the most recent project by the same author_id
+      // that has a non-'User' name, or falls back to enrichment on next edit.
+      migrate('fix-user-authorname', `
+        UPDATE projects SET author_name = (
+          SELECT p2.author_name FROM projects p2
+          WHERE p2.author_id = projects.author_id
+            AND p2.author_name != 'User'
+            AND p2.author_name != 'Anonymous'
+          ORDER BY p2.created_at DESC LIMIT 1
+        ) WHERE author_name = 'User'
+          AND EXISTS (
+            SELECT 1 FROM projects p2
+            WHERE p2.author_id = projects.author_id
+              AND p2.author_name != 'User'
+              AND p2.author_name != 'Anonymous'
+          )
+      `),
     ])
     migrated = true
   })()
