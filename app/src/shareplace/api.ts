@@ -235,9 +235,11 @@ export async function fetchRemixTree(id: string): Promise<RemixTree | null> {
   }
 }
 
-export async function likeProject(id: string): Promise<boolean> {
+export async function likeProject(id: string, clerkToken?: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/${id}/like`, { method: 'POST' })
+    const headers: Record<string, string> = {}
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`
+    const res = await fetch(`${API_BASE}/${id}/like`, { method: 'POST', headers })
     return res.ok
   } catch {
     return false
