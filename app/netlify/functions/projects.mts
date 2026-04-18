@@ -78,6 +78,7 @@ async function ensureSchema(): Promise<void> {
       // have NULL. Normalize so every subsequent check can assume a concrete
       // value and we can drop the `visibility IS NULL OR ...` branch.
       migrate('backfill-visibility', "UPDATE projects SET visibility = 'public' WHERE visibility IS NULL"),
+      migrate('add-featured', "ALTER TABLE projects ADD COLUMN featured INTEGER DEFAULT 0"),
       // Fix projects saved with hardcoded 'User' before the Clerk name fix.
       // Looks up the real name from the most recent project by the same author_id
       // that has a non-'User' name, or falls back to enrichment on next edit.
@@ -382,6 +383,45 @@ async function handler(req: Request) {
       return json({ projects: result.rows.map(formatProject), limit, offset })
     }
 
+    // GET /api/projects/showcase — featured + random spotlight per category
+    if (req.method === 'GET' && segments[0] === 'showcase') {
+      // Featured projects (admin-picked)
+      const featured = await tursoExecute(
+        "SELECT * FROM projects WHERE featured = 1 AND visibility = 'public' ORDER BY created_at DESC LIMIT 10",
+      )
+
+      // Random spotlight — one random public project per category, rotates every 24h
+      // Uses date as seed so the "random" pick is stable for a day
+      const dayNumber = Math.floor(Date.now() / 86400000)
+      const spotlight = await tursoExecute(
+        `SELECT * FROM (
+          SELECT *, ROW_NUMBER() OVER (PARTITION BY category ORDER BY (likes + downloads + created_at/1000000 + ?) % 97) as rn
+          FROM projects
+          WHERE visibility = 'public' AND featured = 0
+            AND COALESCE(id, '') NOT LIKE 'cb-seed-%'
+            AND COALESCE(parent_id, '') NOT LIKE 'cb-seed-%'
+        ) WHERE rn = 1 LIMIT 10`,
+        [dayNumber],
+      )
+
+      return json({
+        featured: featured.rows.map(formatProject),
+        spotlight: spotlight.rows.map(formatProject),
+      })
+    }
+
+    // POST /api/projects/:id/feature — admin toggle featured flag
+    if (req.method === 'POST' && segments.length === 2 && segments[1] === 'feature') {
+      if (!isAdmin(user)) return json({ error: 'Admin required' }, 403)
+      const projectId = segments[0]
+      // Toggle: if featured, unfeature; if not, feature
+      const current = await tursoExecute('SELECT featured FROM projects WHERE id = ?', [projectId])
+      if (current.rows.length === 0) return json({ error: 'Not found' }, 404)
+      const newVal = current.rows[0].featured === 1 ? 0 : 1
+      await tursoExecute('UPDATE projects SET featured = ? WHERE id = ?', [newVal, projectId])
+      return json({ ok: true, featured: newVal === 1 })
+    }
+
     // GET /api/projects — public listing (excludes private projects)
     if (req.method === 'GET' && segments.length === 0) {
       const page = parsePagination(req)
@@ -448,6 +488,7 @@ function formatProject(row: TursoRow) {
     downloads: row.downloads,
     likes: row.likes,
     visibility: row.visibility || 'public',
+    featured: row.featured === 1,
     createdAt: row.created_at,
   }
 }

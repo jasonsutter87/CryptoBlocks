@@ -12,4 +12,5 @@ export interface SharedProject {
   tags: string[]
   parentId?: string | null
   visibility?: string
+  featured?: boolean
 }

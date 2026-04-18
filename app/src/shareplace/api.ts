@@ -24,6 +24,7 @@ interface ApiProject {
   downloads: number
   likes: number
   visibility?: string
+  featured?: boolean
   createdAt: number
 }
 
@@ -42,6 +43,7 @@ function toSharedProject(p: ApiProject): SharedProject {
     tags: p.tags,
     parentId: p.parentId || null,
     visibility: p.visibility || 'public',
+    featured: p.featured ?? false,
   }
 }
 
@@ -230,6 +232,38 @@ export async function fetchRemixTree(id: string): Promise<RemixTree | null> {
     const res = await fetch(`${API_BASE}/${id}/tree`)
     if (!res.ok) return null
     return await res.json()
+  } catch {
+    return null
+  }
+}
+
+export interface ShowcaseData {
+  featured: SharedProject[]
+  spotlight: SharedProject[]
+}
+
+export async function fetchShowcase(): Promise<ShowcaseData> {
+  try {
+    const res = await fetch(`${API_BASE}/showcase`)
+    if (!res.ok) return { featured: [], spotlight: [] }
+    const data = await res.json()
+    return {
+      featured: (data.featured ?? []).map(toSharedProject),
+      spotlight: (data.spotlight ?? []).map(toSharedProject),
+    }
+  } catch {
+    return { featured: [], spotlight: [] }
+  }
+}
+
+export async function toggleFeatured(id: string, clerkToken?: string): Promise<boolean | null> {
+  try {
+    const headers: Record<string, string> = {}
+    if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`
+    const res = await fetch(`${API_BASE}/${id}/feature`, { method: 'POST', headers })
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.featured ?? false
   } catch {
     return null
   }
