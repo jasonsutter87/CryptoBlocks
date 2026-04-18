@@ -513,46 +513,119 @@ const EVENT_COLOR = '#F59E0B'
 /** Register function definition and call blocks. */
 function registerFunctionBlocks() {
   Blockly.Blocks['cb_create_function'] = {
-    init: function (this: Blockly.Block) {
+    init: function (this: Blockly.Block & { paramCount_: number; addParam_: () => void; removeParam_: () => void }) {
+      this.paramCount_ = 3
       this.setColour(FUNCTION_COLOR)
-      this.appendDummyInput()
+      this.appendDummyInput('HEADER')
         .appendField('function')
         .appendField(new Blockly.FieldTextInput('myFunction'), 'NAME')
-      this.appendValueInput('PARAM1').setCheck('String').appendField('param 1')
-      this.appendValueInput('PARAM2').setCheck('String').appendField('param 2')
-      this.appendValueInput('PARAM3').setCheck('String').appendField('param 3')
+      for (let i = 1; i <= this.paramCount_; i++) {
+        this.appendValueInput(`PARAM${i}`).setCheck('String').appendField(`param ${i}`)
+      }
+      this.appendDummyInput('BUTTONS')
+        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#22c55e"/><path d="M8 4v8M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '+', () => this.addParam_()))
+        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#ef4444"/><path d="M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '-', () => this.removeParam_()))
       this.appendStatementInput('BODY').appendField('do')
-      this.setTooltip('Create a reusable function you can call from anywhere')
+      this.setTooltip('Create a reusable function. Click + / - to add or remove parameters.')
+
+      this.addParam_ = function () {
+        this.paramCount_++
+        this.removeInput('BUTTONS')
+        this.removeInput('BODY')
+        this.appendValueInput(`PARAM${this.paramCount_}`).setCheck('String').appendField(`param ${this.paramCount_}`)
+        this.appendDummyInput('BUTTONS')
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#22c55e"/><path d="M8 4v8M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '+', () => this.addParam_()))
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#ef4444"/><path d="M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '-', () => this.removeParam_()))
+        this.appendStatementInput('BODY').appendField('do')
+      }
+
+      this.removeParam_ = function () {
+        if (this.paramCount_ <= 0) return
+        this.removeInput('BUTTONS')
+        this.removeInput('BODY')
+        this.removeInput(`PARAM${this.paramCount_}`)
+        this.paramCount_--
+        this.appendDummyInput('BUTTONS')
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#22c55e"/><path d="M8 4v8M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '+', () => this.addParam_()))
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#ef4444"/><path d="M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '-', () => this.removeParam_()))
+        this.appendStatementInput('BODY').appendField('do')
+      }
     },
   }
 
   Blockly.Blocks['cb_call_function'] = {
-    init: function (this: Blockly.Block) {
+    init: function (this: Blockly.Block & { argCount_: number; addArg_: () => void; removeArg_: () => void }) {
+      this.argCount_ = 3
       this.setColour(FUNCTION_COLOR)
       this.appendDummyInput()
         .appendField('call')
         .appendField(new Blockly.FieldTextInput('myFunction'), 'NAME')
       this.appendValueInput('ARG1').appendField('with')
-      this.appendValueInput('ARG2').appendField('and')
-      this.appendValueInput('ARG3').appendField('and')
+      for (let i = 2; i <= this.argCount_; i++) {
+        this.appendValueInput(`ARG${i}`).appendField('and')
+      }
+      this.appendDummyInput('ARGBUTTONS')
+        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
+        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
-      this.setTooltip('Call a function by name')
+      this.setTooltip('Call a function by name. Click + / - to add or remove arguments.')
+
+      this.addArg_ = function () {
+        this.argCount_++
+        this.removeInput('ARGBUTTONS')
+        this.appendValueInput(`ARG${this.argCount_}`).appendField('and')
+        this.appendDummyInput('ARGBUTTONS')
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
+      }
+      this.removeArg_ = function () {
+        if (this.argCount_ <= 0) return
+        this.removeInput('ARGBUTTONS')
+        this.removeInput(`ARG${this.argCount_}`)
+        this.argCount_--
+        this.appendDummyInput('ARGBUTTONS')
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
+      }
     },
   }
 
   Blockly.Blocks['cb_call_function_return'] = {
-    init: function (this: Blockly.Block) {
+    init: function (this: Blockly.Block & { argCount_: number; addArg_: () => void; removeArg_: () => void }) {
+      this.argCount_ = 3
       this.setColour(FUNCTION_COLOR)
       this.appendDummyInput()
         .appendField('call')
         .appendField(new Blockly.FieldTextInput('myFunction'), 'NAME')
         .appendField('=')
       this.appendValueInput('ARG1').appendField('with')
-      this.appendValueInput('ARG2').appendField('and')
-      this.appendValueInput('ARG3').appendField('and')
+      for (let i = 2; i <= this.argCount_; i++) {
+        this.appendValueInput(`ARG${i}`).appendField('and')
+      }
+      this.appendDummyInput('ARGBUTTONS')
+        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
+        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
       this.setOutput(true, null)
-      this.setTooltip('Call a function and use its return value')
+      this.setTooltip('Call a function and use its return value. Click + / - to add or remove arguments.')
+
+      this.addArg_ = function () {
+        this.argCount_++
+        this.removeInput('ARGBUTTONS')
+        this.appendValueInput(`ARG${this.argCount_}`).appendField('and')
+        this.appendDummyInput('ARGBUTTONS')
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
+      }
+      this.removeArg_ = function () {
+        if (this.argCount_ <= 0) return
+        this.removeInput('ARGBUTTONS')
+        this.removeInput(`ARG${this.argCount_}`)
+        this.argCount_--
+        this.appendDummyInput('ARGBUTTONS')
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
+          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
+      }
     },
   }
 }
@@ -1197,7 +1270,9 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
       const name = block.getFieldValue('NAME') ?? 'myFunction'
       // Read param names from value inputs (text blocks)
       const paramList: string[] = []
-      for (const inputName of ['PARAM1', 'PARAM2', 'PARAM3']) {
+      const paramCount = (block as unknown as { paramCount_?: number }).paramCount_ ?? 5
+      for (let pi = 1; pi <= paramCount; pi++) {
+        const inputName = `PARAM${pi}`
         const paramBlock = block.getInputTargetBlock(inputName)
         if (paramBlock) {
           const val = generateBlockCode(paramBlock, language)
@@ -1249,7 +1324,9 @@ function generateFunctionCode(block: Blockly.Block, language: Language): string 
     case 'cb_call_function_return': {
       const name = block.getFieldValue('NAME') ?? 'myFunction'
       const args: string[] = []
-      for (const argName of ['ARG1', 'ARG2', 'ARG3']) {
+      const argCount = (block as unknown as { argCount_?: number }).argCount_ ?? 5
+      for (let ai = 1; ai <= argCount; ai++) {
+        const argName = `ARG${ai}`
         const argBlock = block.getInputTargetBlock(argName)
         if (argBlock && !argBlock.isShadow()) args.push(generateBlockCode(argBlock, language))
       }
