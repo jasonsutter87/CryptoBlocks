@@ -435,7 +435,7 @@ export default function App() {
         onRun={handleRun}
         onStop={handleStop}
         showCode={showCode}
-        onToggleCode={() => setShowCode((prev) => !prev)}
+        onToggleCode={() => setShowCode((prev) => { if (prev) setShowOutput(false); return !prev })}
         onCreateBlock={() => modals.setCreateBlock(true)}
         onCodeToBlocks={() => modals.setCodeToBlocks(true)}
         onExport={handleExport}
