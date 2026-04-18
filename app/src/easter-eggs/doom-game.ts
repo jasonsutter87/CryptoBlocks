@@ -143,11 +143,123 @@ function startGame(): void {
 
   let animId = 0
 
+  // -----------------------------------------------------------------------
+  // Audio — procedural dark ambient soundtrack + SFX via Web Audio API
+  // -----------------------------------------------------------------------
+  const audio = new AudioContext()
+  const masterGain = audio.createGain()
+  masterGain.gain.value = 0.3
+  masterGain.connect(audio.destination)
+
+  // Bass drone (E1 = 41.2 Hz)
+  const drone = audio.createOscillator()
+  drone.type = 'sawtooth'
+  drone.frequency.value = 41.2
+  const droneGain = audio.createGain()
+  droneGain.gain.value = 0.15
+  const droneFilter = audio.createBiquadFilter()
+  droneFilter.type = 'lowpass'
+  droneFilter.frequency.value = 120
+  drone.connect(droneFilter)
+  droneFilter.connect(droneGain)
+  droneGain.connect(masterGain)
+  drone.start()
+
+  // Sub-bass pulse
+  const sub = audio.createOscillator()
+  sub.type = 'sine'
+  sub.frequency.value = 30
+  const subGain = audio.createGain()
+  subGain.gain.value = 0.12
+  sub.connect(subGain)
+  subGain.connect(masterGain)
+  sub.start()
+
+  // LFO to modulate drone filter for movement
+  const lfo = audio.createOscillator()
+  lfo.type = 'sine'
+  lfo.frequency.value = 0.15
+  const lfoGain = audio.createGain()
+  lfoGain.gain.value = 60
+  lfo.connect(lfoGain)
+  lfoGain.connect(droneFilter.frequency)
+  lfo.start()
+
+  // Eerie high pad
+  const pad = audio.createOscillator()
+  pad.type = 'sine'
+  pad.frequency.value = 330
+  const padGain = audio.createGain()
+  padGain.gain.value = 0.04
+  const padFilter = audio.createBiquadFilter()
+  padFilter.type = 'bandpass'
+  padFilter.frequency.value = 400
+  padFilter.Q.value = 8
+  pad.connect(padFilter)
+  padFilter.connect(padGain)
+  padGain.connect(masterGain)
+  pad.start()
+
+  // Slow pitch drift on pad for unease
+  const padLfo = audio.createOscillator()
+  padLfo.type = 'triangle'
+  padLfo.frequency.value = 0.08
+  const padLfoGain = audio.createGain()
+  padLfoGain.gain.value = 15
+  padLfo.connect(padLfoGain)
+  padLfoGain.connect(pad.frequency)
+  padLfo.start()
+
+  // Shoot SFX
+  function playShootSound() {
+    const osc = audio.createOscillator()
+    osc.type = 'square'
+    osc.frequency.value = 150
+    osc.frequency.exponentialRampToValueAtTime(40, audio.currentTime + 0.15)
+    const g = audio.createGain()
+    g.gain.value = 0.25
+    g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.2)
+    // Noise burst via distortion
+    const dist = audio.createWaveShaper()
+    const curve = new Float32Array(256)
+    for (let i = 0; i < 256; i++) { const x = (i * 2) / 256 - 1; curve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x)) }
+    dist.curve = curve
+    osc.connect(dist)
+    dist.connect(g)
+    g.connect(masterGain)
+    osc.start()
+    osc.stop(audio.currentTime + 0.2)
+  }
+
+  // Kill SFX
+  function playKillSound() {
+    const osc = audio.createOscillator()
+    osc.type = 'sawtooth'
+    osc.frequency.value = 200
+    osc.frequency.exponentialRampToValueAtTime(80, audio.currentTime + 0.4)
+    const g = audio.createGain()
+    g.gain.value = 0.2
+    g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.5)
+    osc.connect(g)
+    g.connect(masterGain)
+    osc.start()
+    osc.stop(audio.currentTime + 0.5)
+  }
+
+  function stopAudio() {
+    masterGain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.5)
+    setTimeout(() => {
+      drone.stop(); sub.stop(); lfo.stop(); pad.stop(); padLfo.stop()
+      audio.close()
+    }, 600)
+  }
+
   function cleanup() {
     alive = false
     cancelAnimationFrame(animId)
     window.removeEventListener('keydown', keyDown)
     window.removeEventListener('keyup', keyUp)
+    stopAudio()
     canvas.remove()
   }
 
@@ -327,6 +439,11 @@ function startGame(): void {
         ctx.fillRect(W / 2 - 1, H / 2 - 15, 2, 15)
       }
 
+      // Shoot SFX on first frame
+      if (shootFrame === 7) {
+        playShootSound()
+      }
+
       // Hit check on first frame
       if (shootFrame === 7) {
         // Check center of screen for enemy hit
@@ -346,6 +463,7 @@ function startGame(): void {
             if (dist < wallDist) {
               e.alive = false
               kills++
+              playKillSound()
             }
           }
         }
