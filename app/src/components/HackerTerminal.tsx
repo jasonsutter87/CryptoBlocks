@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { launchSnakeGame } from '../easter-eggs/snake-game'
 import { launchInvadersGame } from '../easter-eggs/invaders-game'
 import { launchMatrixRain } from '../easter-eggs/matrix-rain'
+import { launchDoomGame } from '../easter-eggs/doom-game'
 
 const ASCII_LOGO = `
  ██████╗██████╗ ██╗   ██╗██████╗ ████████╗ ██████╗
@@ -162,6 +163,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
           { text: '  hack          initiate hack sequence', color: tc.dim },
           { text: '  snake         play snake (eats the page!)', color: tc.dim },
           { text: '  invaders      space invaders (aliens abduct your code!)', color: tc.dim },
+          { text: '  doom          can it run doom? yes.', color: tc.dim },
           { text: '  theme <name>  green | amber | blue', color: tc.dim },
           { text: '  history       command history', color: tc.dim },
           { text: '  clear         clear terminal', color: tc.dim },
@@ -330,6 +332,17 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
         setTimeout(() => {
           setOpen(false)
           launchInvadersGame()
+        }, 500)
+        break
+
+      case 'doom':
+        addLines(
+          { text: '  Launching CryptDOOM... 💀', color: '#a6e3a1' },
+          { text: '  WASD move, ←→ look, SPACE shoot, ESC quit', color: tc.dim },
+        )
+        setTimeout(() => {
+          setOpen(false)
+          launchDoomGame()
         }, 500)
         break
 
