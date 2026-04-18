@@ -13,6 +13,12 @@
   for = "/*"
   [headers.values]
     Permissions-Policy = "bluetooth=*, usb=*, serial=*, camera=*, microphone=*"
+    X-Frame-Options = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    # Disable legacy XSS filter — modern browsers don't need it and it can
+    # introduce vulnerabilities. CSP is the real protection layer.
+    X-XSS-Protection = "0"
 
 # Route API endpoints to Netlify Functions (must come before SPA catch-all)
 [[redirects]]
