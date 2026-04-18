@@ -1,5 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { SharedProject } from '../types/shareplace'
+import { deleteProject } from './api'
+import { useAuth } from '../auth'
+import { showToast } from '../components/Toast'
 
 interface RemoveListingModalProps {
   project: SharedProject
@@ -8,6 +11,9 @@ interface RemoveListingModalProps {
 }
 
 export default function RemoveListingModal({ project, onClose, onConfirm }: RemoveListingModalProps) {
+  const { getToken } = useAuth()
+  const [removing, setRemoving] = useState(false)
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -16,9 +22,17 @@ export default function RemoveListingModal({ project, onClose, onConfirm }: Remo
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
 
-  const handleConfirm = () => {
-    console.log('Remove listing (coming soon):', project.id)
-    onConfirm?.()
+  const handleConfirm = async () => {
+    setRemoving(true)
+    const token = await getToken().catch(() => null)
+    const result = await deleteProject(project.id, token ?? undefined)
+    if (result && 'ok' in result) {
+      showToast('Removed from Shareplace', 'success')
+      onConfirm?.()
+    } else {
+      showToast('Failed to remove', 'error')
+    }
+    setRemoving(false)
     onClose()
   }
 
@@ -54,9 +68,10 @@ export default function RemoveListingModal({ project, onClose, onConfirm }: Remo
           </button>
           <button
             onClick={handleConfirm}
-            className="px-4 py-2 text-sm font-semibold text-white bg-danger/80 hover:bg-danger rounded-lg transition-colors"
+            disabled={removing}
+            className="px-4 py-2 text-sm font-semibold text-white bg-danger/80 hover:bg-danger rounded-lg transition-colors disabled:opacity-50"
           >
-            Remove
+            {removing ? 'Removing...' : 'Remove'}
           </button>
         </div>
       </div>
