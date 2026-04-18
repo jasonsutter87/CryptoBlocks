@@ -18,7 +18,7 @@ export const Project = z.object({
   workspaceJson: WorkspaceJson,
   tags: Tags,
   blockCount: BlockCount,
-  parentId: Id.nullable().default(null),
+  parentId: z.string().min(1).max(100).regex(/^[a-zA-Z0-9_-]+$/).nullable().default(null),
   visibility: Visibility,
   downloads: Counter,
   likes: Counter,
