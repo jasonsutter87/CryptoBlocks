@@ -23,7 +23,7 @@ export const MAX_TAG = 30
 export const MAX_TAGS = 10
 export const MAX_ITEMS_PER_PAGE = 50
 export const MAX_BLOCK_COUNT = 10_000 // sanity cap on any workspace
-export const MAX_JSON_DEPTH = 50 // Blockly workspaces nest deeply (each block chain adds ~3-4 levels)
+export const MAX_JSON_DEPTH = 150 // Blockly workspaces nest deeply — 213-block Pac-Man project exceeded 50
 export const MAX_PAGE_SIZE = 50
 export const MAX_PAGE_OFFSET = 10_000 // don't let anyone paginate past this
 
