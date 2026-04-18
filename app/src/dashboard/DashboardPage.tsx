@@ -270,7 +270,7 @@ function MyProjectCard({
       const { updateProject: patch } = await import('../shareplace/api')
       const result = await patch(project.id, {
         name: project.name,
-        authorName: project.author || 'User',
+        authorName: project.author || 'Anonymous',
         workspaceJson: full.workspaceJson,
         blockCount: project.blockCount,
         category: project.category,

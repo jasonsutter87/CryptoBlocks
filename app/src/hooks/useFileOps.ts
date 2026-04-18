@@ -88,7 +88,7 @@ export function useFileOps(deps: Deps) {
 
       const name = prompt('Project name:') || 'Untitled Project'
       const result = await saveToDashboard({
-        name, parentId, authorName: 'User', workspaceJson, blockCount, category: 'General',
+        name, parentId, authorName: getClerkUserName(), workspaceJson, blockCount, category: 'General',
       }, token)
 
       if (result && 'id' in result) {
