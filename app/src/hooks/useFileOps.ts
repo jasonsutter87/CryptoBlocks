@@ -60,7 +60,7 @@ export function useFileOps(deps: Deps) {
     try {
       const state = Blockly.serialization.workspaces.save(deps.workspaceRef.current)
       const workspaceJson = JSON.stringify(state)
-      const token = await getClerkToken()
+      const token = await getClerkToken() ?? undefined
       const blockCount = countBlocks(deps.workspaceRef.current)
 
       // If we opened this project from the dashboard, update in place.
