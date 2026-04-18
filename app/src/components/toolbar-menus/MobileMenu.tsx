@@ -21,6 +21,7 @@ export interface MobileMenuProps {
   onOpenGolf: () => void
   onOpenLab: () => void
   onOpenStats: () => void
+  onOpenSettings: () => void
   onExportHtml: () => void
   onPublish: () => void
   onUndo: () => void
@@ -48,7 +49,11 @@ export default function MobileMenu(p: MobileMenuProps) {
     { kind: 'button', icon: 'book', iconCls: 'w-4 h-4 text-accent', label: 'Blocksets', onClick: act(p.onOpenBlocksets) },
     { kind: 'button', icon: 'flag', iconCls: 'w-4 h-4 text-success', label: 'Code Golf', onClick: act(p.onOpenGolf) },
     { kind: 'button', icon: 'book-classroom', iconCls: 'w-4 h-4 text-purple', label: 'Code Lab', onClick: act(p.onOpenLab) },
-    { kind: 'button', icon: 'bars-chart', iconCls: 'w-4 h-4 text-accent', label: 'Developer Stats', onClick: act(p.onOpenStats) },
+    { kind: 'button', icon: 'bars-chart', iconCls: 'w-4 h-4 text-accent', label: 'Stats & Badges', onClick: act(p.onOpenStats) },
+    { kind: 'button', icon: 'cog', iconCls: 'w-4 h-4 text-overlay', label: 'Settings', onClick: act(p.onOpenSettings) },
+    { kind: 'divider' },
+    { kind: 'button', icon: 'link', iconCls: 'w-4 h-4 text-success', label: 'Shareplace', onClick: act(() => { window.location.href = '/shareplace' }) },
+    { kind: 'button', icon: 'cloud-up', iconCls: 'w-4 h-4 text-accent', label: 'Dashboard', onClick: act(() => { window.location.href = '/dashboard' }) },
     { kind: 'divider' },
     { kind: 'button', icon: 'download', iconCls: 'w-4 h-4 text-success', label: 'Export HTML', onClick: act(p.onExportHtml) },
     { kind: 'button', icon: 'cloud-up-arrow', iconCls: 'w-4 h-4 text-purple', label: 'Publish to GitHub', onClick: act(p.onPublish) },

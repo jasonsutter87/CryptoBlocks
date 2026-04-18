@@ -479,6 +479,7 @@ export default function Toolbar({
                 onOpenGolf={onOpenGolf}
                 onOpenLab={onOpenLab}
                 onOpenStats={onOpenStats}
+                onOpenSettings={onOpenSettings}
                 onExportHtml={onExportHtml}
                 onPublish={onPublish}
                 onUndo={onUndo}
