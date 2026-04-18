@@ -20,7 +20,7 @@ function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, onClose
         <p className="text-subtext text-sm mb-6">{message}</p>
         <div className="flex gap-2 justify-end">
           <button onClick={onClose} className="px-4 py-2 text-sm text-text bg-surface-0 hover:bg-surface-1 rounded-lg transition-colors">Cancel</button>
-          <button onClick={onConfirm} className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${danger ? 'bg-red text-base hover:bg-red/80' : 'bg-accent text-base hover:bg-accent/80'}`}>{confirmLabel ?? 'Confirm'}</button>
+          <button onClick={onConfirm} className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${danger ? 'bg-red text-white hover:bg-red/80' : 'bg-accent text-base hover:bg-accent/80'}`}>{confirmLabel ?? 'Confirm'}</button>
         </div>
       </div>
     </div>
