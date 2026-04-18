@@ -1,3 +1,8 @@
+/**
+ * COD-style achievement unlock overlay.
+ * Dark backdrop, centered badge burst, rarity glow, text slide-up.
+ */
+
 import { useEffect, useState } from 'react'
 import type { Achievement } from '../achievements/types'
 
@@ -6,57 +11,127 @@ interface AchievementToastProps {
   onDismiss: () => void
 }
 
-const rarityColors = {
-  common: 'bg-gray-600 text-gray-100',
-  rare: 'bg-blue-600 text-blue-100',
-  epic: 'bg-purple-600 text-purple-100',
-  legendary: 'bg-yellow-600 text-yellow-100',
+const RARITY_COLOR: Record<string, string> = {
+  common: '#6c7086',
+  rare: '#3b82f6',
+  epic: '#a855f7',
+  legendary: '#eab308',
+}
+
+const RARITY_LABEL: Record<string, string> = {
+  common: 'COMMON',
+  rare: 'RARE',
+  epic: 'EPIC',
+  legendary: 'LEGENDARY',
 }
 
 export function AchievementToast({ achievement, onDismiss }: AchievementToastProps) {
-  const [isVisible, setIsVisible] = useState(false)
+  const [phase, setPhase] = useState<'hidden' | 'enter' | 'visible' | 'exit'>('hidden')
 
   useEffect(() => {
     if (achievement) {
-      // Trigger slide-in animation
-      setIsVisible(true)
-
-      // Auto-dismiss after 4 seconds
-      const timer = setTimeout(() => {
-        setIsVisible(false)
-        setTimeout(onDismiss, 300) // Wait for slide-out animation
-      }, 4000)
-
-      return () => clearTimeout(timer)
+      setPhase('enter')
+      const t1 = setTimeout(() => setPhase('visible'), 50)
+      const t2 = setTimeout(() => setPhase('exit'), 4500)
+      const t3 = setTimeout(() => { setPhase('hidden'); onDismiss() }, 5000)
+      return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
     } else {
-      setIsVisible(false)
+      setPhase('hidden')
     }
   }, [achievement, onDismiss])
 
-  if (!achievement) {
-    return null
-  }
+  if (!achievement || phase === 'hidden') return null
+
+  const color = RARITY_COLOR[achievement.rarity]
+  const isVisible = phase === 'visible' || phase === 'enter'
 
   return (
     <div
-      className={`fixed bottom-6 right-6 bg-surface-0 text-text rounded-lg shadow-2xl p-4 min-w-[320px] max-w-[400px] border border-surface-1 transition-all duration-300 ${
-        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-[120%] opacity-0'
-      }`}
-      style={{ zIndex: 9999 }}
+      className="fixed inset-0 z-[10000] flex items-center justify-center cursor-pointer"
+      onClick={() => { setPhase('hidden'); onDismiss() }}
     >
-      <div className="flex items-start gap-3">
-        <div className="text-4xl flex-shrink-0">{achievement.icon}</div>
-        <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-warn mb-1">Achievement Unlocked!</div>
-          <div className="font-bold text-base mb-1">{achievement.name}</div>
-          <div className="text-sm text-[#bac2de] mb-2">{achievement.description}</div>
-          <div className="inline-block">
-            <span
-              className={`text-xs font-semibold px-2 py-1 rounded ${rarityColors[achievement.rarity]}`}
-            >
-              {achievement.rarity.charAt(0).toUpperCase() + achievement.rarity.slice(1)}
-            </span>
-          </div>
+      {/* Backdrop */}
+      <div
+        className={`absolute inset-0 bg-black transition-opacity duration-500 ${
+          isVisible ? 'opacity-70' : 'opacity-0'
+        }`}
+      />
+
+      {/* Glow burst */}
+      <div
+        className={`absolute w-64 h-64 rounded-full animate-badge-glow ${
+          isVisible ? '' : 'opacity-0'
+        }`}
+        style={{
+          background: `radial-gradient(circle, ${color}40 0%, transparent 70%)`,
+          animationDelay: '0.1s',
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative flex flex-col items-center gap-4">
+        {/* Badge icon */}
+        <div
+          className={`text-7xl sm:text-8xl ${isVisible ? 'animate-badge-burst' : 'opacity-0'}`}
+          style={{ filter: `drop-shadow(0 0 30px ${color})` }}
+        >
+          {achievement.icon}
+        </div>
+
+        {/* "ACHIEVEMENT UNLOCKED" */}
+        <div
+          className={`text-xs font-bold tracking-[0.3em] uppercase ${
+            isVisible ? 'animate-badge-text' : 'opacity-0'
+          }`}
+          style={{ color, animationDelay: '0.3s', animationFillMode: 'both' }}
+        >
+          Achievement Unlocked
+        </div>
+
+        {/* Name */}
+        <div
+          className={`text-2xl sm:text-3xl font-black text-white text-center ${
+            isVisible ? 'animate-badge-text' : 'opacity-0'
+          }`}
+          style={{ animationDelay: '0.45s', animationFillMode: 'both' }}
+        >
+          {achievement.name}
+        </div>
+
+        {/* Description */}
+        <div
+          className={`text-sm text-[#a6adc8] text-center max-w-xs ${
+            isVisible ? 'animate-badge-text' : 'opacity-0'
+          }`}
+          style={{ animationDelay: '0.55s', animationFillMode: 'both' }}
+        >
+          {achievement.description}
+        </div>
+
+        {/* Rarity badge */}
+        <div
+          className={`px-4 py-1.5 rounded-full text-xs font-black tracking-widest ${
+            isVisible ? 'animate-badge-text' : 'opacity-0'
+          }`}
+          style={{
+            animationDelay: '0.65s',
+            animationFillMode: 'both',
+            color,
+            border: `2px solid ${color}`,
+            boxShadow: `0 0 20px ${color}40, inset 0 0 20px ${color}10`,
+          }}
+        >
+          {RARITY_LABEL[achievement.rarity]}
+        </div>
+
+        {/* Click to dismiss hint */}
+        <div
+          className={`text-[10px] text-[#585b70] mt-4 ${
+            isVisible ? 'animate-badge-text' : 'opacity-0'
+          }`}
+          style={{ animationDelay: '1s', animationFillMode: 'both' }}
+        >
+          click anywhere to dismiss
         </div>
       </div>
     </div>

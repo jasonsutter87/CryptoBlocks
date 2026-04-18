@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Achievement } from '../achievements'
-import { checkAchievements } from '../achievements'
+import { checkAchievements, syncFromServer } from '../achievements'
 import { recordAchievement } from '../stats'
 
 export function useAchievements() {
@@ -28,6 +28,9 @@ export function useAchievements() {
     }
     if (!currentAchievement) showNext()
   }, [currentAchievement, showNext])
+
+  // Sync server-side achievements on mount (fire-and-forget)
+  useEffect(() => { syncFromServer() }, [])
 
   // Hacker-mode activation (7 rapid logo clicks) is its own achievement trigger.
   useEffect(() => {

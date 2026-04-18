@@ -71,6 +71,16 @@
   status = 200
 
 [[redirects]]
+  from = "/api/achievements"
+  to = "/.netlify/functions/achievements"
+  status = 200
+
+[[redirects]]
+  from = "/api/achievements/*"
+  to = "/.netlify/functions/achievements/:splat"
+  status = 200
+
+[[redirects]]
   from = "/api/sprites"
   to = "/.netlify/functions/sprites"
   status = 200

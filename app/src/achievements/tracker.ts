@@ -176,7 +176,57 @@ export function checkAchievements(context: AchievementContext): Achievement[] {
   // Save updated unlocked list
   if (newlyUnlocked.length > 0) {
     saveUnlocked(unlocked)
+    // Sync to server in background (fire-and-forget)
+    syncToServer(newlyUnlocked.map((a) => a.id))
   }
 
   return newlyUnlocked
+}
+
+/** Fire-and-forget sync of newly unlocked achievements to the server. */
+async function syncToServer(achievementIds: string[]): Promise<void> {
+  try {
+    const token = await (window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }).Clerk?.session?.getToken()
+    if (!token) return
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
+    await Promise.all(achievementIds.map((id) =>
+      fetch('/api/achievements/unlock', {
+        method: 'POST', headers,
+        body: JSON.stringify({ achievementId: id }),
+      }).catch(() => { /* offline — localStorage is the fallback */ }),
+    ))
+  } catch { /* silent */ }
+}
+
+/** Pull server-side unlocks into localStorage (call on sign-in). */
+export async function syncFromServer(): Promise<void> {
+  try {
+    const token = await (window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }).Clerk?.session?.getToken()
+    if (!token) return
+    const res = await fetch('/api/achievements/my', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    })
+    if (!res.ok) return
+    const data = await res.json()
+    const serverUnlocks: { achievementId: string; unlockedAt: number }[] = data.unlocked ?? []
+    if (serverUnlocks.length === 0) return
+
+    const local = loadUnlocked()
+    const localIds = new Set(local.map((u) => u.achievementId))
+
+    // Merge server → local (server wins on conflicts)
+    let changed = false
+    for (const s of serverUnlocks) {
+      if (!localIds.has(s.achievementId)) {
+        local.push({ achievementId: s.achievementId, unlockedAt: s.unlockedAt })
+        changed = true
+      }
+    }
+    if (changed) saveUnlocked(local)
+
+    // Push any local-only unlocks to server
+    const serverIds = new Set(serverUnlocks.map((u) => u.achievementId))
+    const localOnly = local.filter((u) => !serverIds.has(u.achievementId)).map((u) => u.achievementId)
+    if (localOnly.length > 0) syncToServer(localOnly)
+  } catch { /* offline */ }
 }

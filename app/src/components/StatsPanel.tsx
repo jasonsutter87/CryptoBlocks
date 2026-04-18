@@ -1,11 +1,15 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { loadStats } from '../stats'
+import BadgeShowcase from './BadgeShowcase'
 
 interface StatsPanelProps {
   onClose: () => void
 }
 
+type Tab = 'stats' | 'badges'
+
 export default function StatsPanel({ onClose }: StatsPanelProps) {
+  const [tab, setTab] = useState<Tab>('stats')
   const stats = loadStats()
 
   // Generate heatmap data for last 52 weeks (364 days)
@@ -122,11 +126,27 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
       <div className="w-full max-w-4xl max-h-[90vh] overflow-auto bg-base rounded-xl border border-surface-1 shadow-2xl">
         {/* Header */}
         <div className="sticky top-0 bg-base border-b border-surface-1 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <h2 className="text-2xl font-bold text-text">Developer Stats</h2>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setTab('stats')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                tab === 'stats' ? 'bg-accent text-base' : 'text-overlay hover:text-text'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Stats
+            </button>
+            <button
+              onClick={() => setTab('badges')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${
+                tab === 'badges' ? 'bg-accent text-base' : 'text-overlay hover:text-text'
+              }`}
+            >
+              <span className="text-base leading-none">🏅</span>
+              Badges
+            </button>
           </div>
           <button
             onClick={onClose}
@@ -140,6 +160,11 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
         </div>
 
         {/* Content */}
+        {tab === 'badges' ? (
+          <div className="p-6">
+            <BadgeShowcase />
+          </div>
+        ) : (
         <div className="p-6 space-y-8">
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -334,6 +359,7 @@ export default function StatsPanel({ onClose }: StatsPanelProps) {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   )
