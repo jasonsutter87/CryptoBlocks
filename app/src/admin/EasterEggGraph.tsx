@@ -20,9 +20,15 @@ interface Edge {
 
 const NODES: Node[] = [
   // Roots
+  { id: 'activation', label: 'Activation Methods', type: 'root', depth: 0 },
   { id: 'terminal', label: 'Hacker Terminal', type: 'root', depth: 0 },
   { id: 'badges', label: 'Badge System', type: 'root', depth: 0 },
   { id: 'ctf', label: 'CTF Treasure Hunt', type: 'root', depth: 0 },
+
+  // Activation
+  { id: 'logo-click', label: 'Logo × 7 rapid clicks', type: 'command', depth: 1 },
+  { id: 'konami', label: '↑↑↓↓←→←→BA', type: 'command', depth: 1 },
+  { id: 'backtick', label: 'Backtick (`) key', type: 'command', depth: 1 },
 
   // Terminal commands
   { id: 'eggvault', label: 'eggVault', type: 'command', depth: 1 },
@@ -105,9 +111,24 @@ const NODES: Node[] = [
   { id: 'ref-matrix-char', label: 'The Architect (Matrix Revolutions)', type: 'reference', depth: 3 },
   { id: 'ref-juiceshop', label: 'OWASP Juice Shop', type: 'reference', depth: 3 },
   { id: 'ref-idor', label: 'IDOR vulnerability pattern', type: 'reference', depth: 4 },
+  { id: 'ref-samsung', label: 'Samsung Developer Mode (tap Build Number × 7)', type: 'reference', depth: 3 },
+  { id: 'ref-konami-game', label: 'Konami Code — Gradius (1986)', type: 'reference', depth: 3 },
+  { id: 'ref-konami-contra', label: 'Contra — 30 lives', type: 'reference', depth: 4 },
+  { id: 'ref-kazuhisa', label: 'Kazuhisa Hashimoto', type: 'reference', depth: 4 },
 ]
 
 const EDGES: Edge[] = [
+  // Activation methods
+  { from: 'activation', to: 'logo-click', label: 'enables Hacker Mode' },
+  { from: 'activation', to: 'konami', label: 'enables Hacker Mode' },
+  { from: 'activation', to: 'backtick', label: 'opens Terminal' },
+  { from: 'logo-click', to: 'ref-samsung', label: 'same pattern as' },
+  { from: 'konami', to: 'ref-konami-game', label: 'origin' },
+  { from: 'ref-konami-game', to: 'ref-kazuhisa', label: 'created by' },
+  { from: 'ref-konami-game', to: 'ref-konami-contra', label: 'made famous by' },
+  { from: 'logo-click', to: 'badge-hacker' },
+  { from: 'konami', to: 'badge-hacker' },
+
   // Terminal → commands
   { from: 'terminal', to: 'eggvault', label: 'hidden command' },
   { from: 'terminal', to: 'cmd-cake', label: 'hidden command' },
