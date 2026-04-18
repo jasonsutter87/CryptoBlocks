@@ -369,6 +369,16 @@ export const achievements: Achievement[] = [
   },
 
   // === v0.4 — Terminal easter egg achievements ===
+  // === Crypto ===
+  {
+    id: 'satoshi',
+    name: 'Satoshi',
+    description: 'Use 8 Crypto blocks in one program',
+    icon: '₿',
+    rarity: 'epic',
+    secret: true,
+  },
+
   // === Version Control ===
   {
     id: 'first-commit',

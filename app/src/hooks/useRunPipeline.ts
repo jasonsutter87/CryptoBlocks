@@ -46,6 +46,7 @@ interface Deps {
   slowMo: boolean
   processAchievements: (a: Achievement[]) => void
   getUsedCategories: () => string[]
+  getCryptoBlockTypes?: () => number
   setLastExecCode: (code: string) => void
   setShowOutput: (v: boolean) => void
   collabDoc: unknown | null
@@ -118,6 +119,7 @@ export function useRunPipeline(deps: Deps) {
       hasError: !!execResult.error,
       blockCount: blocks,
       categoriesUsed: deps.getUsedCategories(),
+      cryptoBlockTypes: deps.getCryptoBlockTypes?.() ?? 0,
       language: deps.language,
     }))
 

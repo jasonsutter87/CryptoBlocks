@@ -218,6 +218,18 @@ export default function App() {
     return Array.from(cats)
   }, [])
 
+  const getCryptoBlockTypes = useCallback((): number => {
+    if (!workspaceRef.current) return 0
+    const types = new Set<string>()
+    const blocks = workspaceRef.current.getAllBlocks(false)
+    for (const block of blocks) {
+      const blockType = block.type.replace(/^cb_/, '')
+      const def = registry.get(blockType)
+      if (def && def.category === 'Crypto') types.add(blockType)
+    }
+    return types.size
+  }, [])
+
 
   const handleWorkspaceChange = useCallback(
     (workspace: Blockly.WorkspaceSvg) => {
@@ -256,7 +268,7 @@ export default function App() {
 
   const runPipeline = useRunPipeline({
     workspaceRef, exec, code, language, slowMo,
-    processAchievements, getUsedCategories,
+    processAchievements, getUsedCategories, getCryptoBlockTypes,
     setLastExecCode, setShowOutput,
     collabDoc, isDailyChallenge, dailyInfo,
   })

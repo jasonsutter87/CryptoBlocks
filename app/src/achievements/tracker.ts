@@ -32,6 +32,7 @@ export interface AchievementContext {
   command?: string
   doomLevel?: number
   checkpointCount?: number
+  cryptoBlockTypes?: number
 }
 
 export function loadUnlocked(): UnlockedAchievement[] {
@@ -158,6 +159,9 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
     case 'the-answer':
       if (!context.output) return false
       return context.output.some((line) => line.trim() === '42')
+
+    case 'satoshi':
+      return (context.cryptoBlockTypes ?? 0) >= 8
 
     case 'first-commit':
       return context.event === 'checkpoint'
