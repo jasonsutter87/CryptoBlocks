@@ -14,6 +14,7 @@ import { generateStandaloneHtml, generateEmbedSnippet, downloadHtml, copyToClipb
 import { saveToDashboard, updateProject } from '../shareplace/api'
 import { countBlocks } from '../challenges/validator'
 import { showToast } from '../components/Toast'
+import { checkAchievements } from '../achievements/tracker'
 
 interface Deps {
   workspaceRef: React.RefObject<Blockly.WorkspaceSvg | null>
@@ -91,6 +92,10 @@ export function useFileOps(deps: Deps) {
 
       if (result && 'id' in result) {
         showToast('Saved to your dashboard!', 'success')
+        // Fire remix achievement check (awards "Hello Indeed" if parent is the seed)
+        if (parentId) {
+          checkAchievements({ event: 'remix', parentProjectId: parentId })
+        }
         localStorage.removeItem('cryptoblocks_remix_parent')
         // Future saves on this session update in place rather than create copies.
         deps.setCurrentProject({ id: result.id, name })

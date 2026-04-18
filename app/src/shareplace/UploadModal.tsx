@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import TagSelector from '../components/TagSelector'
 import { useUser, useAuth } from '../auth'
 import { publishProject, updateProject } from './api'
+import { checkAchievements } from '../achievements/tracker'
 
 interface UploadModalProps {
   onClose: () => void
@@ -95,6 +96,10 @@ export default function UploadModal({ onClose, onPublished, existingProject }: U
     } else if ('error' in result) {
       setError(result.error + ((result as { detail?: string }).detail ? ': ' + (result as { detail?: string }).detail : ''))
     } else {
+      // Fire remix achievement (awards "Hello Indeed" if parent is the Hello World seed)
+      if (remixParent?.id) {
+        checkAchievements({ event: 'remix', parentProjectId: remixParent.id })
+      }
       localStorage.removeItem('cryptoblocks_remix_parent')
       onPublished?.()
       onClose()

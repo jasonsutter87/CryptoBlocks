@@ -5,14 +5,28 @@ const STORAGE_KEY = 'cb-achievements'
 const LANGUAGES_KEY = 'cb-languages-used'
 const RUNS_KEY = 'cb-total-runs'
 
+/** Well-known IDs for seeded example projects. Hackable by design —
+ *  nerds who recognize the numbers earn secret badges. */
+export const HELLO_WORLD_SEED_ID = 'cb-seed-hello-world'
+
+const SEED_BADGES: Record<string, string> = {
+  'cb-seed-hello-world': 'hello-indeed',
+  'cb-seed-42': 'deep-thought',
+  'cb-seed-1729': 'taxicab',
+  'cb-seed-1337': 'elite',
+  'cb-seed-2600': 'phreaker',
+  'cb-seed-404': 'not-found',
+}
+
 export interface AchievementContext {
-  event: 'run' | 'challenge-complete' | 'golf-complete' | 'lab-complete' | 'hacker-mode' | 'custom-block'
+  event: 'run' | 'challenge-complete' | 'golf-complete' | 'lab-complete' | 'hacker-mode' | 'custom-block' | 'remix'
   output?: string[]
   hasError?: boolean
   blockCount?: number
   categoriesUsed?: string[]
   language?: string
   challengeStars?: number
+  parentProjectId?: string
 }
 
 export function loadUnlocked(): UnlockedAchievement[] {
@@ -125,8 +139,11 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
       if (!context.output) return false
       return context.output.some((line) => line.trim() === '42')
 
-    default:
-      return false
+    default: {
+      // Seed badges — remix a hidden seed project to earn its secret badge
+      if (context.event !== 'remix' || !context.parentProjectId) return false
+      return SEED_BADGES[context.parentProjectId] === achievement.id
+    }
   }
 }
 

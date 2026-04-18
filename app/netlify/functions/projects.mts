@@ -81,6 +81,20 @@ async function ensureSchema(): Promise<void> {
       // Fix projects saved with hardcoded 'User' before the Clerk name fix.
       // Looks up the real name from the most recent project by the same author_id
       // that has a non-'User' name, or falls back to enrichment on next edit.
+      // Seed example projects — hackable IDs by design.
+      // INSERT OR IGNORE so each only runs once per database.
+      ...seedProjects().map(({ id, name, desc, text, tags }) =>
+        migrate(`seed-${id}`, `
+          INSERT OR IGNORE INTO projects (id, name, author_id, author_name, description, category, workspace_json, tags, block_count, parent_id, visibility, created_at, downloads, likes)
+          VALUES (
+            '${id}', '${name.replace(/'/g, "''")}', 'system', 'CryptoBlocks',
+            '${desc.replace(/'/g, "''")}', 'General',
+            '${JSON.stringify({ blocks: { languageVersion: 0, blocks: [{ type: 'text_print', id: 's1', x: 50, y: 50, inputs: { TEXT: { block: { type: 'text', id: 's2', fields: { TEXT: text } } } } }] } }).replace(/'/g, "''")}',
+            '${JSON.stringify(tags).replace(/'/g, "''")}',
+            2, NULL, 'public', ${Date.now()}, 0, 0
+          )
+        `),
+      ),
       migrate('fix-user-authorname', `
         UPDATE projects SET author_name = (
           SELECT p2.author_name FROM projects p2
@@ -100,6 +114,17 @@ async function ensureSchema(): Promise<void> {
     migrated = true
   })()
   await migrating
+}
+
+function seedProjects() {
+  return [
+    { id: 'cb-seed-hello-world', name: 'Hello World', desc: 'Your first program! Remix this to earn the Hello Indeed badge.', text: 'Hello World!', tags: ['beginner', 'tutorial'] },
+    { id: 'cb-seed-42', name: 'The Answer', desc: 'What is the answer to life, the universe, and everything?', text: '42', tags: ['math', 'science'] },
+    { id: 'cb-seed-1729', name: 'Hardy-Ramanujan', desc: 'The smallest number expressible as the sum of two cubes in two different ways.', text: '1729', tags: ['math'] },
+    { id: 'cb-seed-1337', name: 'Elite', desc: 'A very interesting number.', text: '1337', tags: ['beginner'] },
+    { id: 'cb-seed-2600', name: '2600', desc: 'A frequency worth remembering.', text: '2600', tags: ['science'] },
+    { id: 'cb-seed-404', name: 'Not Found', desc: 'Nothing to see here. Or is there?', text: '404', tags: ['web'] },
+  ]
 }
 
 async function handler(req: Request) {
@@ -372,7 +397,11 @@ async function handler(req: Request) {
 
       let sql = 'SELECT * FROM projects'
       const args: (string | number)[] = []
-      const conditions: string[] = ["visibility = 'public'"]
+      const conditions: string[] = [
+        "visibility = 'public'",
+        // Hide seed-project remixes from the main feed — they have their own badge flow
+        "COALESCE(parent_id, '') NOT LIKE 'cb-seed-%'",
+      ]
 
       if (category) {
         conditions.push('category = ?')

@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 import DropdownMenu from './DropdownMenu'
 import type { MenuItem } from './DropdownMenu'
 import FileMenu from './toolbar-menus/FileMenu'
+import ShareMenu from './toolbar-menus/ShareMenu'
 import MainMenu from './toolbar-menus/MainMenu'
 import MobileMenu from './toolbar-menus/MobileMenu'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
@@ -109,7 +110,7 @@ export default function Toolbar({
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
-  const [openMenu, setOpenMenu] = useState<'file' | 'build' | 'menu' | 'mobile' | null>(null)
+  const [openMenu, setOpenMenu] = useState<'file' | 'share' | 'build' | 'menu' | 'mobile' | null>(null)
   const dailyStreak = useMemo(() => getEffectiveStreak(loadDailyState(), getDayNumber()), [])
   const { isPro } = useIsPro()
   const { getToken, isSignedIn } = useAuth()
@@ -222,7 +223,6 @@ export default function Toolbar({
                   currentBranchName={currentBranchName}
                   fileInputRef={fileInputRef}
                   importAsBlockInputRef={importAsBlockInputRef}
-                  getToken={getToken}
                   requireAuth={requireAuth}
                   requirePro={requirePro}
                   close={() => setOpenMenu(null)}
@@ -233,11 +233,33 @@ export default function Toolbar({
                   onOpenHistory={onOpenHistory}
                   onOpenSettings={onOpenSettings}
                   onOpenTutorial={onOpenTutorial}
+                  onClear={onClear}
+                />
+              )}
+            </div>
+
+            {/* Share dropdown */}
+            <div className="relative hidden md:block">
+              <button
+                onClick={() => toggleMenu('share')}
+                className={`${btn} text-text hover:bg-surface-0`}
+              >
+                <Icon name="link" className="w-4 h-4" />
+                Share
+                {chevron}
+              </button>
+              {openMenu === 'share' && (
+                <ShareMenu
+                  isSignedIn={!!isSignedIn}
+                  isPro={isPro}
+                  getToken={getToken}
+                  requireAuth={requireAuth}
+                  requirePro={requirePro}
+                  close={() => setOpenMenu(null)}
                   onExportHtml={onExportHtml}
                   onExportPwa={onExportPwa}
                   onCopyEmbed={onCopyEmbed}
                   onPublish={onPublish}
-                  onClear={onClear}
                 />
               )}
             </div>

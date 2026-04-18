@@ -165,6 +165,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
           { text: '  theme <name>  green | amber | blue', color: tc.dim },
           { text: '  history       command history', color: tc.dim },
           { text: '  clear         clear terminal', color: tc.dim },
+          { text: '  eggVault      🥚', color: tc.dim },
           { text: '  exit          close terminal', color: tc.dim },
           { text: '' },
           { text: '  TIP: Press ` (backtick) to toggle this terminal', color: '#6c7086' },
@@ -365,6 +366,36 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
 
       case 'rm':
         addLines({ text: '  Whoa there! This is a safe space. 🛡️', color: '#f38ba8' })
+        break
+
+      case 'eggvault':
+      case 'eggVault':
+        addLines(
+          { text: '' },
+          { text: '  ╔═══════════════════════════════════════╗', color: '#f9e2af' },
+          { text: '  ║           🥚  EGG VAULT  🥚           ║', color: '#f9e2af' },
+          { text: '  ╠═══════════════════════════════════════╣', color: '#f9e2af' },
+          { text: '  ║                                       ║', color: '#f9e2af' },
+          { text: '  ║  We left more eggs hanging around.    ║', color: '#cdd6f4' },
+          { text: '  ║  These you must know your numbers     ║', color: '#cdd6f4' },
+          { text: '  ║  and where to plant your seeds.       ║', color: '#cdd6f4' },
+          { text: '  ║                                       ║', color: '#f9e2af' },
+          { text: '  ║  This is a CTF (Capture the Flag) —    ║', color: '#f38ba8' },
+          { text: '  ║  a hacker treasure hunt buried in      ║', color: '#f38ba8' },
+          { text: '  ║  the app. Real hackers find hidden     ║', color: '#f38ba8' },
+          { text: '  ║  pages, crack codes, and earn secret   ║', color: '#f38ba8' },
+          { text: '  ║  badges nobody else has.               ║', color: '#f38ba8' },
+          { text: '  ║                                       ║', color: '#f9e2af' },
+          { text: '  ║  Hints:                               ║', color: '#a6e3a1' },
+          { text: '  ║  · Life, the universe, everything     ║', color: '#6c7086' },
+          { text: '  ║  · A remarkably interesting taxi ride  ║', color: '#6c7086' },
+          { text: '  ║  · Only the elite would know          ║', color: '#6c7086' },
+          { text: '  ║  · Captain Crunch whistled this one   ║', color: '#6c7086' },
+          { text: '  ║  · This page does not exist           ║', color: '#6c7086' },
+          { text: '  ║                                       ║', color: '#f9e2af' },
+          { text: '  ╚═══════════════════════════════════════╝', color: '#f9e2af' },
+          { text: '' },
+        )
         break
 
       default:
