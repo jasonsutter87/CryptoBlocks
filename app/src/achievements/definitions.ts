@@ -332,6 +332,29 @@ export const achievements: Achievement[] = [
   },
 
   // === v0.4 — Terminal easter egg achievements ===
+  // === Green Cube Collectors ===
+  {
+    id: 'green-cube-01',
+    name: 'Green Cube Collector 01',
+    description: '7 active days on the heatmap',
+    icon: '🟩',
+    rarity: 'rare',
+  },
+  {
+    id: 'green-cube-02',
+    name: 'Green Cube Collector 02',
+    description: '50 active days in a 90-day window',
+    icon: '🟩',
+    rarity: 'epic',
+  },
+  {
+    id: 'green-cube-03',
+    name: 'Green Cube Collector 03',
+    description: '180 active days in one year',
+    icon: '🟩',
+    rarity: 'legendary',
+  },
+
   {
     id: 'the-cake',
     name: 'The Cake Is A Lie',

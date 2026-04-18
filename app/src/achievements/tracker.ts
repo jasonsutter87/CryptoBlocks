@@ -1,6 +1,7 @@
 import type { Achievement, UnlockedAchievement } from './types'
 import { achievements } from './definitions'
 import { getClerkToken } from '../auth'
+import { loadStats } from '../stats'
 
 const STORAGE_KEY = 'cb-achievements'
 const LANGUAGES_KEY = 'cb-languages-used'
@@ -141,6 +142,38 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
     case 'the-answer':
       if (!context.output) return false
       return context.output.some((line) => line.trim() === '42')
+
+    case 'green-cube-01': {
+      const stats = loadStats()
+      const activeDays = Object.values(stats.runsByDate).filter((n) => n > 0).length
+      return activeDays >= 7
+    }
+
+    case 'green-cube-02': {
+      const stats = loadStats()
+      const today = new Date()
+      let count = 0
+      for (let i = 0; i < 90; i++) {
+        const d = new Date(today)
+        d.setDate(d.getDate() - i)
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        if (stats.runsByDate[key] && stats.runsByDate[key] > 0) count++
+      }
+      return count >= 50
+    }
+
+    case 'green-cube-03': {
+      const stats = loadStats()
+      const today = new Date()
+      let count = 0
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today)
+        d.setDate(d.getDate() - i)
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        if (stats.runsByDate[key] && stats.runsByDate[key] > 0) count++
+      }
+      return count >= 180
+    }
 
     case 'the-cake':
       return context.event === 'terminal-command' && context.command === 'cake'
