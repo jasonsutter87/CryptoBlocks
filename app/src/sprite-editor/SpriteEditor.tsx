@@ -14,6 +14,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { DEFAULT_PALETTE, hexToRgba, TRANSPARENT } from './palette'
 import type { SpriteFrame, SpriteProject, Tool } from './types'
 import type { RGBA } from './palette'
+import { getClerkToken } from '../auth'
 
 interface SpriteEditorProps {
   onClose: () => void
@@ -252,7 +253,7 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
     const dataUrl = exportSpriteSheet()
     try {
       const { showToast } = await import('../components/Toast')
-      const token = await (window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }).Clerk?.session?.getToken()
+      const token = await getClerkToken()
       const res = await fetch('/api/sprites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },

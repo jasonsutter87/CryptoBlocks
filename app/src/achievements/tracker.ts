@@ -1,5 +1,6 @@
 import type { Achievement, UnlockedAchievement } from './types'
 import { achievements } from './definitions'
+import { getClerkToken } from '../auth'
 
 const STORAGE_KEY = 'cb-achievements'
 const LANGUAGES_KEY = 'cb-languages-used'
@@ -186,7 +187,7 @@ export function checkAchievements(context: AchievementContext): Achievement[] {
 /** Fire-and-forget sync of newly unlocked achievements to the server. */
 async function syncToServer(achievementIds: string[]): Promise<void> {
   try {
-    const token = await (window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }).Clerk?.session?.getToken()
+    const token = await getClerkToken()
     if (!token) return
     const headers: Record<string, string> = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
     await Promise.all(achievementIds.map((id) =>
@@ -201,7 +202,7 @@ async function syncToServer(achievementIds: string[]): Promise<void> {
 /** Pull server-side unlocks into localStorage (call on sign-in). */
 export async function syncFromServer(): Promise<void> {
   try {
-    const token = await (window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }).Clerk?.session?.getToken()
+    const token = await getClerkToken()
     if (!token) return
     const res = await fetch('/api/achievements/my', {
       headers: { 'Authorization': `Bearer ${token}` },

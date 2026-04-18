@@ -20,3 +20,24 @@ export {
   UserButton,
   ClerkProvider,
 } from '@clerk/clerk-react'
+
+type ClerkWindow = {
+  Clerk?: {
+    session?: { getToken: () => Promise<string> }
+    user?: { fullName?: string; username?: string }
+  }
+}
+
+/** Read a Clerk JWT from the global Clerk object without a React context.
+ *  Use this only in non-hook code (trackers, file-ops, sprite editor).
+ *  Hook-based code should prefer `useAuth().getToken()` instead. */
+export async function getClerkToken(): Promise<string | null> {
+  return (window as unknown as ClerkWindow).Clerk?.session?.getToken() ?? null
+}
+
+/** Read the current user's display name from the global Clerk object.
+ *  Returns 'Anonymous' if no user is signed in. */
+export function getClerkUserName(): string {
+  const u = (window as unknown as ClerkWindow).Clerk?.user
+  return u?.fullName || u?.username || 'Anonymous'
+}

@@ -15,6 +15,7 @@ import { saveToDashboard, updateProject } from '../shareplace/api'
 import { countBlocks } from '../challenges/validator'
 import { showToast } from '../components/Toast'
 import { checkAchievements } from '../achievements/tracker'
+import { getClerkToken, getClerkUserName } from '../auth'
 
 interface Deps {
   workspaceRef: React.RefObject<Blockly.WorkspaceSvg | null>
@@ -59,14 +60,14 @@ export function useFileOps(deps: Deps) {
     try {
       const state = Blockly.serialization.workspaces.save(deps.workspaceRef.current)
       const workspaceJson = JSON.stringify(state)
-      const token = await (window as unknown as { Clerk?: { session?: { getToken: () => Promise<string> } } }).Clerk?.session?.getToken()
+      const token = await getClerkToken()
       const blockCount = countBlocks(deps.workspaceRef.current)
 
       // If we opened this project from the dashboard, update in place.
       if (deps.currentProject) {
         const result = await updateProject(deps.currentProject.id, {
           name: deps.currentProject.name,
-          authorName: (window as unknown as { Clerk?: { user?: { fullName?: string; username?: string } } }).Clerk?.user?.fullName || (window as unknown as { Clerk?: { user?: { fullName?: string; username?: string } } }).Clerk?.user?.username || 'Anonymous',
+          authorName: getClerkUserName(),
           workspaceJson,
           blockCount,
           category: 'General',
