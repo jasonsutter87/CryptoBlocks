@@ -163,7 +163,12 @@ function startGame(): void {
   let enemyAttackTimers = enemies.map(() => 0)
   let levelTransition = 0 // countdown frames for level transition screen
 
+  function onLevelCleared(clearedLevel: number) {
+    document.dispatchEvent(new CustomEvent('cb:doom-clear', { detail: { level: clearedLevel } }))
+  }
+
   function loadLevel(lvl: number) {
+    onLevelCleared(lvl - 1) // fire for the level just completed
     level = lvl
     generated = generateMap(level)
     map = generated.map

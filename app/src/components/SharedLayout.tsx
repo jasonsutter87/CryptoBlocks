@@ -60,7 +60,7 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
           </div>
           <span className="font-bold text-text tracking-tight">CryptoBlocks</span>
           <span className="text-[10px] text-overlay bg-surface-0 px-1.5 py-0.5 rounded font-mono hidden sm:inline">
-            v0.3
+            v0.4
           </span>
         </div>
 

@@ -463,7 +463,7 @@ export default function ProfilePage() {
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-subtext">Version</span>
-            <span className="text-sm font-mono text-overlay">v0.2</span>
+            <span className="text-sm font-mono text-overlay">v0.4</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-subtext">Source</span>

@@ -5,6 +5,81 @@ description: 'What is new in CryptoBlocks. Version history, features, fixes, and
 priority: 0.6
 ---
 
+## v0.4 — April 2026
+
+The badge system, CTF, and security hardening update. COD-style achievements with server-side tracking, a hidden treasure hunt (CTF) baked into the app, CryptDOOM raycaster, procedural levels, and a full security audit.
+
+### COD-Style Badge System
+- **Server-side achievement tracking** — Turso `user_achievements` table, syncs with localStorage
+- **Achievements API** — catalog, my badges, unlock, showcase, rarity-weighted leaderboard
+- **Badge Showcase** — new tab in Stats panel, grid of all badges with rarity glow effects
+- **Locked badges** — greyed/silhouetted with "???" for secret ones
+- **Legendary shimmer** — animated gold gradient on legendary badges
+- **COD unlock animation** — full-screen dark overlay, rarity-colored glow burst, badge bounce, staggered text, click to dismiss
+- **Bidirectional sync** — localStorage ↔ server on boot and unlock
+- **42 total achievements** (up from 36)
+
+### CTF — Capture the Flag
+- **6 hackable seed projects** — predictable IDs (`cb-seed-42`, `cb-seed-1729`, `cb-seed-1337`, `cb-seed-2600`, `cb-seed-404`) discoverable by URL pattern
+- **Secret legendary badges** — Deep Thought, Taxicab, 1337, Phreaker, 404
+- **Egg Vault** — hidden terminal command with cryptic hints pointing to the seeds
+- **Seed remixes hidden** from Shareplace main feed (badge-only flow)
+- **Hello World seed** — remix to earn the "Hello Indeed" badge
+
+### CryptDOOM
+- **Wolfenstein-style raycaster** — type `doom` in the Hacker Terminal
+- **DDA raycasting** with fisheye correction, z-buffer sprite clipping
+- **Green phosphor CRT aesthetic** — scanlines, vignette, glow
+- **Enemy AI** — skull enemies chase, attack (8 damage/hit), can kill you
+- **Procedural levels** — random map generator, enemy count scales (3 + level×2)
+- **Infinite progression** — clear a level → SPACE for next, partial HP heal
+- **Procedural audio** — dark ambient soundtrack (sawtooth drone, sub pulse, eerie pad)
+- **SFX** — shoot, kill, hurt, death sounds via Web Audio API
+- **HUD** — level counter, kill tracker, HP bar, minimap, crosshair
+
+### Terminal Easter Egg Achievements
+- **The Cake Is A Lie** — type `cake`
+- **Egg Hunter** — open the Egg Vault
+- **Snek** — play Snake
+- **Space Cadet** — play Space Invaders
+- **Doom Slayer** — clear Level 1 of CryptDOOM
+- **Doom Veteran** — reach Level 5 of CryptDOOM
+
+### Toolbar Split
+- **File menu** trimmed — save, load, import, checkpoint, history, settings
+- **Share menu** (new) — export HTML/PWA, embed snippet, publish to GitHub, share link
+
+### i18n
+- **Spanish translations** — ~200 strings covering blocks, categories, input labels, tooltips, UI
+- **Language toggle** in Settings (English ↔ Español)
+- **Block labels** wrapped with `t()` for runtime translation
+
+### Security Hardening (Red Team + Black Team Audit)
+- **Sprite likes dedup** — `sprite_likes` junction table prevents infinite like inflation
+- **Cross-classroom IDOR fix** — discussion replies validated against classroom membership
+- **Share Link author fix** — uses real Clerk username instead of hardcoded 'Anonymous'
+- **Parameterized seed SQL** — eliminated string interpolation in migrations
+- **Security headers** — X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+- **Leaderboard bounded** — LIMIT 100 on GROUP BY to prevent full table scan
+- **CORS fix** — classroom export/submission download endpoints
+
+### DRY Refactors
+- **`getClerkToken()` / `getClerkUserName()`** — extracted to auth module (killed 4 duplicated casts)
+- **Rarity data module** — single source of truth for colors, labels, styles
+- **ShareplaceModal** — shared modal shell cut UploadModal and EditListingModal in half
+- **CATEGORIES constant** — extracted from duplicate arrays
+
+### Bug Fixes
+- `blockCount` string→number type mismatch on save
+- `MAX_JSON_DEPTH` bumped to 50 for deeply nested workspaces
+- `authorName: 'User'` hardcoded in all save paths → reads Clerk name
+- EditListingModal and RemoveListingModal were `console.log` stubs → wired to API
+- `isOwner` was always false on Shareplace → checks Clerk user ID
+- TagSelector: clickable pill selector replaces comma text input
+- Shareplace pagination: 12/25/50/100 per page
+
+---
+
 ## v0.3.1 — April 2026
 
 Polish, monetization, and power tools. Assignments, notifications, level editor, global leaderboards, Stripe billing, light theme, and 22 new achievements.

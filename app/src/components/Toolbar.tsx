@@ -194,7 +194,7 @@ export default function Toolbar({
           CryptoBlocks
         </h1>
         <span className="hidden md:inline text-[10px] text-overlay bg-surface-0 px-1.5 py-0.5 rounded font-mono">
-          v0.3
+          v0.4
         </span>
       </div>
 

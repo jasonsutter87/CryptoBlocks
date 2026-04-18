@@ -32,6 +32,22 @@ export function useAchievements() {
   // Sync server-side achievements on mount (fire-and-forget)
   useEffect(() => { syncFromServer() }, [])
 
+  // CryptDOOM level clear — awards doom-slayer and doom-veteran badges
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const level = (e as CustomEvent).detail?.level ?? 0
+      const unlocked = checkAchievements({ event: 'doom-clear', doomLevel: level })
+      if (unlocked.length === 0) return
+      for (const a of unlocked) {
+        recordAchievement()
+        queue.current.push(a)
+      }
+      setCurrentAchievement((prev) => prev ?? queue.current.shift() ?? null)
+    }
+    document.addEventListener('cb:doom-clear', handler)
+    return () => document.removeEventListener('cb:doom-clear', handler)
+  }, [])
+
   // Hacker-mode activation (7 rapid logo clicks) is its own achievement trigger.
   useEffect(() => {
     const handler = () => {

@@ -20,7 +20,7 @@ const SEED_BADGES: Record<string, string> = {
 }
 
 export interface AchievementContext {
-  event: 'run' | 'challenge-complete' | 'golf-complete' | 'lab-complete' | 'hacker-mode' | 'custom-block' | 'remix'
+  event: 'run' | 'challenge-complete' | 'golf-complete' | 'lab-complete' | 'hacker-mode' | 'custom-block' | 'remix' | 'terminal-command' | 'doom-clear'
   output?: string[]
   hasError?: boolean
   blockCount?: number
@@ -28,6 +28,8 @@ export interface AchievementContext {
   language?: string
   challengeStars?: number
   parentProjectId?: string
+  command?: string
+  doomLevel?: number
 }
 
 export function loadUnlocked(): UnlockedAchievement[] {
@@ -139,6 +141,24 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
     case 'the-answer':
       if (!context.output) return false
       return context.output.some((line) => line.trim() === '42')
+
+    case 'the-cake':
+      return context.event === 'terminal-command' && context.command === 'cake'
+
+    case 'egg-hunter':
+      return context.event === 'terminal-command' && (context.command === 'eggvault' || context.command === 'eggVault')
+
+    case 'snek':
+      return context.event === 'terminal-command' && context.command === 'snake'
+
+    case 'space-cadet':
+      return context.event === 'terminal-command' && context.command === 'invaders'
+
+    case 'doom-slayer':
+      return context.event === 'doom-clear' && (context.doomLevel ?? 0) >= 1
+
+    case 'doom-veteran':
+      return context.event === 'doom-clear' && (context.doomLevel ?? 0) >= 5
 
     default: {
       // Seed badges — remix a hidden seed project to earn its secret badge

@@ -91,12 +91,17 @@ The gap between "visual coding toy" and "real programming" is where most kids qu
 - **Copy Embed Snippet** — embeddable script tag
 - **Publish to GitHub** — deploy to GitHub Pages
 
-### Easter Eggs
+### Easter Eggs & CTF
 - **Hacker Mode** — click the logo 7 times, or enter the Konami code
-- **Hacker Terminal** — press backtick (`) for a hidden CLI with commands: `help`, `hack`, `matrix`, `neofetch`, `cowsay`, `fortune`, `rickroll`, theme switching
-- **Matrix Rain** — terminal command `matrix` launches fullscreen animated digital rain with "Wake up, Neo..." intro
-- **Snake** — terminal command `snake` launches a game that eats actual page elements
-- **Space Invaders** — terminal command `invaders` launches aliens that abduct your code
+- **Hacker Terminal** — press backtick for a hidden CLI with 20+ commands
+- **CryptDOOM** — Wolfenstein-style raycaster with procedural levels, enemy AI, procedural audio
+- **Matrix Rain** — fullscreen animated digital rain
+- **Snake** — eats actual page elements
+- **Space Invaders** — aliens abduct your code
+- **CTF Treasure Hunt** — 6 hidden seed projects with hackable IDs, each awards a secret legendary badge
+- **Egg Vault** — hidden terminal command with cryptic clues
+- **The Cake Is A Lie** — Portal reference, hidden command
+- **42 achievements** with COD-style unlock animations and server-side tracking
 - **Secret Blocks** — 13 hidden blocks in the ??? category (hacker mode only)
 
 ### Version Control
@@ -158,25 +163,27 @@ The gap between "visual coding toy" and "real programming" is where most kids qu
 - [x] Scratch .sb3 import with conversion stats
 - [x] PWA export (installable web app)
 - [x] Shareplace marketplace, Dashboard, Profile pages
-- [x] Hacker Terminal with Snake & Space Invaders
+- [x] Hacker Terminal with Snake, Space Invaders, and CryptDOOM
+- [x] CTF treasure hunt with hackable seed projects
+- [x] COD-style badge system with 42 achievements and server-side tracking
+- [x] Spanish i18n (~200 translations)
+- [x] Security audit (Red Team + Black Team)
 - [x] Version control (checkpoints, history, auto-save)
 - [x] Tauri desktop app
 - [x] Hugo marketing site with blog
 
 ### Next Up
-- [ ] **Clerk + Turso** — auth and database wiring
-- [ ] **Teacher Dashboard** — assignments, progress tracking, grading (unlocks school sales)
 - [ ] **Bi-directional editing** — edit code AND blocks, changes sync both ways (the moat)
-- [ ] **Shareplace backend** — real uploads, browsing, remixing with Turso
-- [ ] **Ranks & Badges** — CoD-style prestige system for challenge completion
+- [ ] **Classroom licenses** — school onboarding, bulk pricing
+- [ ] **More CTF challenges** — expand the treasure hunt with harder puzzles
+- [ ] **Leaderboard profiles** — public badge showcase pages
 
 ### Future
 - [ ] Scratch project import improvements (more opcode coverage)
-- [ ] Classroom licenses and school onboarding
 - [ ] Voice chat in collab rooms
 - [ ] Room history / replay
 - [ ] Mobile-native app
-- [ ] Localization (multi-language blocks + tutorials)
+- [ ] More languages (French, Portuguese, Mandarin)
 - [ ] API for embedding the block editor in external platforms
 
 ---

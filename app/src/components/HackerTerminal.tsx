@@ -10,6 +10,7 @@ import { launchSnakeGame } from '../easter-eggs/snake-game'
 import { launchInvadersGame } from '../easter-eggs/invaders-game'
 import { launchMatrixRain } from '../easter-eggs/matrix-rain'
 import { launchDoomGame } from '../easter-eggs/doom-game'
+import { checkAchievements } from '../achievements/tracker'
 
 const ASCII_LOGO = `
  ██████╗██████╗ ██╗   ██╗██████╗ ████████╗ ██████╗
@@ -191,7 +192,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
         const upMin = Math.floor(upSec / 60)
         addLines(
           { text: '' },
-          { text: '  ┌──┐┌──┐┌──┐     CryptoBlocks v0.3', color: tc.prompt },
+          { text: '  ┌──┐┌──┐┌──┐     CryptoBlocks v0.4', color: tc.prompt },
           { text: '  │██││██││██│     ─────────────────────', color: tc.prompt },
           { text: '  └──┘└──┘└──┘     OS: Browser', color: tc.prompt },
           { text: `                    Blocks: ${blockCount}`, color: tc.dim },
@@ -321,6 +322,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
         setTimeout(() => {
           setOpen(false)
           launchSnakeGame()
+          checkAchievements({ event: 'terminal-command', command: 'snake' })
         }, 500)
         break
 
@@ -332,6 +334,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
         setTimeout(() => {
           setOpen(false)
           launchInvadersGame()
+          checkAchievements({ event: 'terminal-command', command: 'invaders' })
         }, 500)
         break
 
@@ -388,6 +391,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
           { text: '  We lied, there is none here.', color: '#6c7086' },
           { text: '' },
         )
+        checkAchievements({ event: 'terminal-command', command: 'cake' })
         break
 
       case 'eggvault':
@@ -417,6 +421,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
           { text: '  ╚═══════════════════════════════════════╝', color: '#f9e2af' },
           { text: '' },
         )
+        checkAchievements({ event: 'terminal-command', command: 'eggvault' })
         break
 
       default:
