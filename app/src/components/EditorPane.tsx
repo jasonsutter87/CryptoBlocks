@@ -123,7 +123,7 @@ export default function EditorPane(props: EditorPaneProps) {
             In flex-col (mobile) the percentage width is irrelevant; flex-1 fills the column.
             In flex-row (desktop) the explicit width controls the split. */}
         <div
-          className="relative flex-1 md:flex-none h-full border-b md:border-b-0 md:border-r border-surface-0"
+          className="relative flex-1 md:flex-none h-full border-b md:border-b-0 md:border-r border-surface-0 overflow-hidden"
           style={{ width: editorWidth }}
         >
           <BlockEditor
