@@ -226,7 +226,8 @@ export const achievements: Achievement[] = [
     name: 'Hello Indeed',
     description: 'Remix the Hello World example — your journey begins!',
     icon: '🌟',
-    rarity: 'common',
+    rarity: 'legendary',
+    secret: true,
   },
 
   // === Hidden Seeds — hackable easter eggs ===
