@@ -15,22 +15,43 @@ import {
 } from './_lib/index.js'
 import { Name } from '../../src/schema/index.js'
 
+let spriteMigrated = false
+let spriteMigrating: Promise<void> | null = null
+
 async function ensureSpriteTable(): Promise<void> {
-  await tursoExecute(`CREATE TABLE IF NOT EXISTS sprites (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    author_id TEXT NOT NULL,
-    author_name TEXT NOT NULL,
-    data_url TEXT NOT NULL,
-    frames INTEGER DEFAULT 1,
-    size INTEGER DEFAULT 16,
-    tags TEXT DEFAULT '[]',
-    likes INTEGER DEFAULT 0,
-    created_at INTEGER NOT NULL
-  )`).catch((err) => {
-    const msg = err instanceof Error ? err.message : String(err)
-    if (!/already exists/i.test(msg)) logError('sprites:migrate', err)
-  })
+  if (spriteMigrated) return
+  if (spriteMigrating) { await spriteMigrating; return }
+  spriteMigrating = (async () => {
+    const expected = (msg: string) => /already exists|duplicate column/i.test(msg)
+    const migrate = (label: string, sql: string) =>
+      tursoExecute(sql).catch((err) => {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (!expected(msg)) logError(`sprites:migrate:${label}`, err)
+      })
+
+    await Promise.all([
+      migrate('create-sprites', `CREATE TABLE IF NOT EXISTS sprites (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        author_id TEXT NOT NULL,
+        author_name TEXT NOT NULL,
+        data_url TEXT NOT NULL,
+        frames INTEGER DEFAULT 1,
+        size INTEGER DEFAULT 16,
+        tags TEXT DEFAULT '[]',
+        likes INTEGER DEFAULT 0,
+        created_at INTEGER NOT NULL
+      )`),
+      migrate('create-sprite-likes', `CREATE TABLE IF NOT EXISTS sprite_likes (
+        sprite_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (sprite_id, user_id)
+      )`),
+    ])
+    spriteMigrated = true
+  })()
+  await spriteMigrating
 }
 
 async function handler(req: Request) {
@@ -77,11 +98,23 @@ async function handler(req: Request) {
       return json({ id, name, createdAt: now }, 201)
     }
 
-    // POST /api/sprites/:id/like — like a sprite
+    // POST /api/sprites/:id/like — like a sprite (one per user, PK enforced)
     if (req.method === 'POST' && segments.length === 2 && segments[1] === 'like') {
       const authErr = requireAuth(user)
       if (authErr) return authErr
-      await tursoExecute('UPDATE sprites SET likes = likes + 1 WHERE id = ?', [segments[0]])
+
+      const spriteId = segments[0]
+      const existing = await tursoExecute(
+        'SELECT 1 FROM sprite_likes WHERE sprite_id = ? AND user_id = ?',
+        [spriteId, user!.sub],
+      )
+      if (existing.rows.length > 0) return json({ ok: true, alreadyLiked: true })
+
+      await tursoExecute(
+        'INSERT INTO sprite_likes (sprite_id, user_id, created_at) VALUES (?, ?, ?)',
+        [spriteId, user!.sub, Date.now()],
+      )
+      await tursoExecute('UPDATE sprites SET likes = likes + 1 WHERE id = ?', [spriteId])
       return json({ ok: true })
     }
 
