@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../auth'
 import { useIsPro } from '../billing/useIsPro'
 import { showToast } from '../components/Toast'
+import EasterEggGraph from './EasterEggGraph'
 
 interface Stats {
   totals: Record<string, number>
@@ -40,7 +41,7 @@ interface UserResult {
   ban: { expiresAt: number; reason: string } | null
 }
 
-type Tab = 'dashboard' | 'analytics' | 'overrides' | 'tables' | 'projects' | 'users'
+type Tab = 'dashboard' | 'analytics' | 'overrides' | 'tables' | 'projects' | 'users' | 'eggs'
 
 export default function AdminPage() {
   const { getToken } = useAuth()
@@ -150,6 +151,7 @@ export default function AdminPage() {
           {tabBtn('tables', '🗄️ Tables')}
           {tabBtn('projects', '📦 Recent Projects')}
           {tabBtn('users', '👤 Users')}
+          {tabBtn('eggs', '🥚 Easter Eggs')}
         </div>
 
         {loading && !stats ? (
@@ -463,6 +465,9 @@ export default function AdminPage() {
             )}
             {/* === Users === */}
             {tab === 'users' && <UserManagement headers={headers} />}
+
+            {/* === Easter Eggs === */}
+            {tab === 'eggs' && <EasterEggGraph />}
 
             {/* === Post as CryptoBlocks (on Projects tab) === */}
             {tab === 'projects' && <PostAsCryptoBlocks headers={headers} />}
