@@ -32,6 +32,7 @@ const SharedProjectLoader = lazy(() => import('./shareplace/SharedProjectLoader'
 const AdminPage = lazy(() => import('./admin/AdminPage'))
 const UserShowcasePage = lazy(() => import('./leaderboard/UserShowcasePage'))
 const ExampleLoader = lazy(() => import('./examples/ExampleLoader'))
+const FeaturedHistoryPage = lazy(() => import('./shareplace/FeaturedHistoryPage'))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -51,6 +52,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/project/:id" element={<SharedProjectLoader />} />
           <Route path="/example/:id" element={<ExampleLoader />} />
           <Route path="/user/:id" element={<SharedLayout><UserShowcasePage /></SharedLayout>} />
+          <Route path="/featured" element={<SharedLayout><FeaturedHistoryPage /></SharedLayout>} />
           <Route path="/admin" element={<SharedLayout><AdminPage /></SharedLayout>} />
           </Routes>
         </Suspense>

@@ -72,6 +72,7 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
           {navLink('/daily', 'Daily 🎯')}
           {navLink('/learn', 'Learn')}
           {navLink('/shareplace', 'Shareplace')}
+          {navLink('/featured', '⭐')}
           {navLink('/leaderboard', '🏆')}
           <a
             href={isPro ? '/teacher' : '#'}
