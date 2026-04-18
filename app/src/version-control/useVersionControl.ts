@@ -130,6 +130,10 @@ export function useVersionControl(
     setHistory(updated)
     await saveHistory(DEFAULT_PROJECT_ID, updated)
 
+    // Fire checkpoint achievement
+    const { checkAchievements } = await import('../achievements/tracker')
+    checkAchievements({ event: 'checkpoint', checkpointCount: updated.checkpoints.length })
+
     // Reset auto-save interval so it doesn't fire too soon after a manual save
     resetAutoSave()
   }, [workspaceRef, history, currentBranch, blockCount, resetAutoSave])

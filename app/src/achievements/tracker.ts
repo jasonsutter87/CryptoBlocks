@@ -21,7 +21,7 @@ const SEED_BADGES: Record<string, string> = {
 }
 
 export interface AchievementContext {
-  event: 'run' | 'challenge-complete' | 'golf-complete' | 'lab-complete' | 'hacker-mode' | 'custom-block' | 'remix' | 'terminal-command' | 'doom-clear'
+  event: 'run' | 'challenge-complete' | 'golf-complete' | 'lab-complete' | 'hacker-mode' | 'custom-block' | 'remix' | 'terminal-command' | 'doom-clear' | 'checkpoint' | 'branch' | 'merge'
   output?: string[]
   hasError?: boolean
   blockCount?: number
@@ -31,6 +31,7 @@ export interface AchievementContext {
   parentProjectId?: string
   command?: string
   doomLevel?: number
+  checkpointCount?: number
 }
 
 export function loadUnlocked(): UnlockedAchievement[] {
@@ -142,6 +143,21 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
     case 'the-answer':
       if (!context.output) return false
       return context.output.some((line) => line.trim() === '42')
+
+    case 'first-commit':
+      return context.event === 'checkpoint'
+
+    case 'historian':
+      return context.event === 'checkpoint' && (context.checkpointCount ?? 0) >= 10
+
+    case 'brancher':
+      return context.event === 'branch'
+
+    case 'merger':
+      return context.event === 'merge'
+
+    case 'time-lord':
+      return context.event === 'checkpoint' && (context.checkpointCount ?? 0) >= 50
 
     case 'mile-placer':
       return loadStats().totalBlocks >= 1_600

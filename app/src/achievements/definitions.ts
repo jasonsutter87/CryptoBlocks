@@ -333,6 +333,43 @@ export const achievements: Achievement[] = [
   },
 
   // === v0.4 — Terminal easter egg achievements ===
+  // === Version Control ===
+  {
+    id: 'first-commit',
+    name: 'First Commit',
+    description: 'Save your first checkpoint',
+    icon: '💾',
+    rarity: 'common',
+  },
+  {
+    id: 'historian',
+    name: 'Historian',
+    description: 'Save 10 checkpoints',
+    icon: '📜',
+    rarity: 'rare',
+  },
+  {
+    id: 'brancher',
+    name: 'Brancher',
+    description: 'Create a branch from history',
+    icon: '🌿',
+    rarity: 'rare',
+  },
+  {
+    id: 'merger',
+    name: 'Merger',
+    description: 'Merge a branch',
+    icon: '🔀',
+    rarity: 'epic',
+  },
+  {
+    id: 'time-lord',
+    name: 'Time Lord',
+    description: 'Save 50 checkpoints',
+    icon: '⏳',
+    rarity: 'epic',
+  },
+
   // === Block Placement Milestones ===
   {
     id: 'mile-placer',
