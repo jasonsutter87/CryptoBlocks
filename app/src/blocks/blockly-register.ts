@@ -516,6 +516,7 @@ function registerFunctionBlocks() {
     init: function (this: Blockly.Block & { paramCount_: number; addParam_: () => void; removeParam_: () => void }) {
       this.paramCount_ = 3
       this.setColour(FUNCTION_COLOR)
+      this.setInputsInline(false)
       this.appendDummyInput('HEADER')
         .appendField('function')
         .appendField(new Blockly.FieldTextInput('myFunction'), 'NAME')
