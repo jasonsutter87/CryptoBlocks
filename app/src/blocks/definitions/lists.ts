@@ -80,6 +80,28 @@ export const listsBlocks: BlockDefinition[] = [
     color: '#D97706',
   },
   {
+    name: 'set_in_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Set an item in a list at a position (starts at 0)',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'index', type: 'number', description: 'Position (0 = first)', default: 0 },
+      { name: 'value', type: 'any', description: 'Value to set' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function setInList(name, index, value) {\n  window.__vars = window.__vars || {};\n  const list = window.__vars[name] || [];\n  list[index] = value;\n  window.__vars[name] = list;\n}`,
+      python: `def set_in_list(name, index, value):\n    lst = globals().get(name, [])\n    while len(lst) <= index:\n        lst.append(None)\n    lst[int(index)] = value\n    globals()[name] = lst`,
+    },
+    tests: [
+      { input: { name: 'myList', index: 0, value: 42 }, expected: {} },
+    ],
+    color: '#D97706',
+    shape: 'statement',
+  },
+  {
     name: 'list_length',
     author: 'CryptoBlocks',
     version: '1.0.0',
