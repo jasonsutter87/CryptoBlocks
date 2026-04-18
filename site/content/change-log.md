@@ -20,8 +20,7 @@ The badge system, CTF, and security hardening update. COD-style achievements wit
 - **42 total achievements** (up from 36)
 
 ### CTF — Capture the Flag
-- **6 hackable seed projects** — predictable IDs (`cb-seed-42`, `cb-seed-1729`, `cb-seed-1337`, `cb-seed-2600`, `cb-seed-404`) discoverable by URL pattern
-- **Secret legendary badges** — Deep Thought, Taxicab, 1337, Phreaker, 404
+- **Hidden seed projects** — discoverable by the curious, each awards a secret legendary badge
 - **Egg Vault** — hidden terminal command with cryptic hints pointing to the seeds
 - **Seed remixes hidden** from Shareplace main feed (badge-only flow)
 - **Hello World seed** — remix to earn the "Hello Indeed" badge
