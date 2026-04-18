@@ -36,7 +36,7 @@ export function withRequest<T>(
   return (req) => requestContext.run({ req }, () => handler(req))
 }
 
-function corsHeaders(): Record<string, string> {
+export function corsHeaders(): Record<string, string> {
   const origin = requestContext.getStore()?.req.headers.get('Origin') ?? ''
   const allow = ALLOWED_ORIGINS.has(origin) ? origin : ''
   return {

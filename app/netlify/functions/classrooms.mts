@@ -9,7 +9,7 @@
  */
 
 import {
-  json, cors, logError, withRequest, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
+  json, cors, corsHeaders, logError, withRequest, parsePath, verifyFromRequest, tursoExecute, isTursoConfigured,
   moderateContent, secureRandomCode,
   requireAuth, requireClassroomMember, requireClassroomTeacher,
 } from './_lib/index.js'
@@ -424,7 +424,7 @@ async function handler(req: Request) {
         headers: {
           'Content-Type': 'application/json',
           'Content-Disposition': `attachment; filename="classroom-${String(c.name).replace(/[^a-zA-Z0-9]/g, '_')}-export.json"`,
-          'Vary': 'Origin',
+          ...corsHeaders(),
         },
       })
     }
@@ -648,7 +648,7 @@ async function handler(req: Request) {
         headers: {
           'Content-Type': 'application/json',
           'Content-Disposition': `attachment; filename="${safeFilename}-submission.blocks"`,
-          'Vary': 'Origin',
+          ...corsHeaders(),
         },
       })
     }
