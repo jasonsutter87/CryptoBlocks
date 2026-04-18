@@ -52,8 +52,8 @@ async function ensureSchema(): Promise<void> {
     // every run after the first are filtered to a debug line.
     const expected = (msg: string) =>
       /already exists|duplicate column/i.test(msg)
-    const migrate = (label: string, sql: string) =>
-      tursoExecute(sql).catch((err) => {
+    const migrate = (label: string, sql: string, args: (string | number | null)[] = []) =>
+      tursoExecute(sql, args).catch((err) => {
         const msg = err instanceof Error ? err.message : String(err)
         if (!expected(msg)) logError(`projects:migrate:${label}`, err)
       })
@@ -84,16 +84,16 @@ async function ensureSchema(): Promise<void> {
       // Seed example projects — hackable IDs by design.
       // INSERT OR IGNORE so each only runs once per database.
       ...seedProjects().map(({ id, name, desc, text, tags }) =>
-        migrate(`seed-${id}`, `
-          INSERT OR IGNORE INTO projects (id, name, author_id, author_name, description, category, workspace_json, tags, block_count, parent_id, visibility, created_at, downloads, likes)
-          VALUES (
-            '${id}', '${name.replace(/'/g, "''")}', 'system', 'CryptoBlocks',
-            '${desc.replace(/'/g, "''")}', 'General',
-            '${JSON.stringify({ blocks: { languageVersion: 0, blocks: [{ type: 'text_print', id: 's1', x: 50, y: 50, inputs: { TEXT: { block: { type: 'text', id: 's2', fields: { TEXT: text } } } } }] } }).replace(/'/g, "''")}',
-            '${JSON.stringify(tags).replace(/'/g, "''")}',
-            2, NULL, 'public', ${Date.now()}, 0, 0
-          )
-        `),
+        migrate(`seed-${id}`,
+          `INSERT OR IGNORE INTO projects (id, name, author_id, author_name, description, category, workspace_json, tags, block_count, parent_id, visibility, created_at, downloads, likes)
+           VALUES (?, ?, 'system', 'CryptoBlocks', ?, 'General', ?, ?, 2, NULL, 'public', ?, 0, 0)`,
+          [
+            id, name, desc,
+            JSON.stringify({ blocks: { languageVersion: 0, blocks: [{ type: 'text_print', id: 's1', x: 50, y: 50, inputs: { TEXT: { block: { type: 'text', id: 's2', fields: { TEXT: text } } } } }] } }),
+            JSON.stringify(tags),
+            Date.now(),
+          ],
+        ),
       ),
       migrate('fix-user-authorname', `
         UPDATE projects SET author_name = (
