@@ -381,6 +381,15 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
         addLines({ text: '  Whoa there! This is a safe space. 🛡️', color: '#f38ba8' })
         break
 
+      case 'cake':
+        addLines(
+          { text: '' },
+          { text: '  The cake is a lie.', color: '#f38ba8' },
+          { text: '  We lied, there is none here.', color: '#6c7086' },
+          { text: '' },
+        )
+        break
+
       case 'eggvault':
       case 'eggVault':
         addLines(
