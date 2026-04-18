@@ -140,8 +140,17 @@ async function handler(req: Request) {
 
     // GET /api/achievements/leaderboard — top 20 by rarity-weighted score
     if (req.method === 'GET' && segments[0] === 'leaderboard') {
+      // Limit to top 100 users by badge count to bound query cost. The
+      // client-side sort by rarity-weighted score may reorder within this
+      // set, but 100 is generous enough that the real top-20 is always
+      // included. Without this LIMIT, a large user_achievements table
+      // would GROUP BY every user on every request.
       const result = await tursoExecute(
-        'SELECT user_id, GROUP_CONCAT(achievement_id) as badges FROM user_achievements GROUP BY user_id',
+        `SELECT user_id, GROUP_CONCAT(achievement_id) as badges
+         FROM user_achievements
+         GROUP BY user_id
+         ORDER BY COUNT(*) DESC
+         LIMIT 100`,
         [],
       )
 
