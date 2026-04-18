@@ -79,6 +79,7 @@ function startGame(): void {
   let score = 0
   const eatenElements: HTMLElement[] = []
   let gameOver = false
+  let paused = false
   let timer: ReturnType<typeof setTimeout> | null = null
 
   function getEdibleElements(): HTMLElement[] {
@@ -176,12 +177,15 @@ function startGame(): void {
   }
 
   function handleKey(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      gameOver = true
-      cleanup()
-      return
+    if (e.key === 'Escape' || e.key === '`') {
+      if (paused) { paused = false; gameLoop(); return }
+      else if (!gameOver) { paused = true; draw(); return }
+      else { cleanup(); return }
     }
-    if (gameOver) return
+    if (e.key === 'q' || e.key === 'Q') {
+      if (paused) { gameOver = true; cleanup(); return }
+    }
+    if (gameOver || paused) return
     switch (e.key) {
       case 'ArrowUp':
         if (direction.y !== 1) nextDirection = { x: 0, y: -1 }
@@ -204,7 +208,7 @@ function startGame(): void {
   document.addEventListener('keydown', handleKey)
 
   function gameLoop() {
-    if (gameOver) return
+    if (gameOver || paused) return
 
     direction = nextDirection
 
@@ -302,6 +306,21 @@ function startGame(): void {
     if (food) {
       ctx.font = `${GRID_SIZE}px Arial`
       ctx.fillText('🍎', food.x * GRID_SIZE, food.y * GRID_SIZE + GRID_SIZE - 2)
+    }
+
+    // Pause overlay
+    if (paused) {
+      ctx.fillStyle = 'rgba(0,0,0,0.75)'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.fillStyle = '#a6e3a1'
+      ctx.font = 'bold 24px monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 - 15)
+      ctx.font = '12px monospace'
+      ctx.fillStyle = '#cdd6f4'
+      ctx.fillText('ESC / ` to resume', canvas.width / 2, canvas.height / 2 + 15)
+      ctx.fillText('Q to quit', canvas.width / 2, canvas.height / 2 + 35)
+      ctx.textAlign = 'left'
     }
   }
 

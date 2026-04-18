@@ -192,14 +192,26 @@ function startGame(): void {
   let hp = 100
   let hurtFlash = 0
   let dead = false
+  let paused = false
   const enemySpeed = 0.012
   const enemyAttackRange = 0.8
   const enemyAttackCooldown = 60
   const enemyAttackDamage = 8
 
   const onKey = (e: KeyboardEvent, down: boolean) => {
+    if ((e.key === 'Escape' || e.key === '`') && down) {
+      if (paused) { paused = false } // resume
+      else { paused = true } // pause
+      e.preventDefault()
+      return
+    }
+    if (paused) {
+      // While paused, only handle menu keys
+      if (down && (e.key === 'q' || e.key === 'Q')) cleanup()
+      e.preventDefault()
+      return
+    }
     keys[e.key.toLowerCase()] = down
-    if (e.key === 'Escape' && down) cleanup()
     if (e.key === ' ' && down && !shooting) { shooting = true; shootFrame = 8 }
     e.preventDefault()
   }
@@ -687,6 +699,21 @@ function startGame(): void {
       }
     }
 
+    // Pause menu
+    if (paused) {
+      ctx.fillStyle = 'rgba(0,0,0,0.75)'
+      ctx.fillRect(0, 0, W, H)
+      ctx.fillStyle = '#a6e3a1'
+      ctx.font = 'bold 16px monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText('PAUSED', W / 2, H / 2 - 20)
+      ctx.font = '8px monospace'
+      ctx.fillStyle = '#cdd6f4'
+      ctx.fillText('Press ESC or ` to resume', W / 2, H / 2 + 5)
+      ctx.fillText('Press Q to quit', W / 2, H / 2 + 20)
+      ctx.textAlign = 'left'
+    }
+
     // CRT scanline overlay
     ctx.fillStyle = 'rgba(0,0,0,0.04)'
     for (let y = 0; y < H; y += 2) {
@@ -702,7 +729,7 @@ function startGame(): void {
   }
 
   function update() {
-    if (!alive) return
+    if (!alive || paused) return
 
     // Movement
     if (keys['w'] || keys['arrowup']) {

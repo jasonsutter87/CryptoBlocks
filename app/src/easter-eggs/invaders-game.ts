@@ -83,6 +83,7 @@ function startGame(): void {
   let score = 0
   const abductedElements: HTMLElement[] = []
   let gameOver = false
+  let paused = false
   let animFrame: number | null = null
 
   const alienEmojis = ['👾', '👽', '🛸']
@@ -195,11 +196,15 @@ function startGame(): void {
   }
 
   function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      gameOver = true
-      cleanup()
-      return
+    if (e.key === 'Escape' || e.key === '`') {
+      if (paused) { paused = false; return }
+      else if (!gameOver) { paused = true; return }
+      else { cleanup(); return }
     }
+    if (e.key === 'q' || e.key === 'Q') {
+      if (paused) { gameOver = true; cleanup(); return }
+    }
+    if (paused) return
     keys[e.key] = true
     if (e.key === ' ' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault()
@@ -339,6 +344,23 @@ function startGame(): void {
 
   function gameLoop() {
     if (gameOver) return
+    if (paused) {
+      draw()
+      // Pause overlay
+      ctx.fillStyle = 'rgba(0,0,0,0.75)'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.fillStyle = '#89b4fa'
+      ctx.font = 'bold 24px monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 - 15)
+      ctx.font = '12px monospace'
+      ctx.fillStyle = '#cdd6f4'
+      ctx.fillText('ESC / ` to resume', canvas.width / 2, canvas.height / 2 + 15)
+      ctx.fillText('Q to quit', canvas.width / 2, canvas.height / 2 + 35)
+      ctx.textAlign = 'left'
+      animFrame = requestAnimationFrame(gameLoop)
+      return
+    }
     update()
     draw()
     animFrame = requestAnimationFrame(gameLoop)
