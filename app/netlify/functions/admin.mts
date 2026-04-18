@@ -191,6 +191,97 @@ async function handler(req: Request) {
       return json({ tables: counts })
     }
 
+    // GET /api/admin/users/search?q=name — search users by name
+    if (segments[0] === 'users' && segments[1] === 'search' && req.method === 'GET') {
+      const q = new URL(req.url).searchParams.get('q')?.slice(0, 100)
+      if (!q) return json({ users: [] })
+      const result = await tursoExecute(
+        `SELECT DISTINCT author_id, author_name, COUNT(*) as projects, SUM(likes) as likes
+         FROM projects WHERE author_name LIKE ? AND author_id != 'system'
+         GROUP BY author_id ORDER BY projects DESC LIMIT 20`,
+        [`%${q}%`],
+      )
+      // Check ban status for each user
+      const users = []
+      for (const r of result.rows) {
+        const ban = await tursoExecute(
+          'SELECT expires_at, reason FROM user_bans WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
+          [String(r.author_id)],
+        ).catch(() => ({ rows: [] }))
+        const activeBan = ban.rows.length > 0 && Number(ban.rows[0].expires_at) > Date.now()
+          ? { expiresAt: Number(ban.rows[0].expires_at), reason: String(ban.rows[0].reason) }
+          : null
+        users.push({
+          userId: r.author_id,
+          name: r.author_name,
+          projects: Number(r.projects),
+          likes: Number(r.likes),
+          ban: activeBan,
+        })
+      }
+      return json({ users })
+    }
+
+    // POST /api/admin/users/ban — ban a user for N days
+    if (segments[0] === 'users' && segments[1] === 'ban' && req.method === 'POST') {
+      const raw = await req.json().catch(() => null)
+      const userId = (raw as { userId?: string })?.userId
+      const days = (raw as { days?: number })?.days
+      const reason = (raw as { reason?: string })?.reason || 'Admin action'
+      if (!userId || !days || days < 1 || days > 365) {
+        return json({ error: 'Invalid input — userId and days (1-365) required' }, 400)
+      }
+      // Create bans table if needed
+      await tursoExecute(`CREATE TABLE IF NOT EXISTS user_bans (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        expires_at INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        admin_id TEXT NOT NULL
+      )`).catch(() => {})
+
+      const expiresAt = Date.now() + days * 86400000
+      await tursoExecute(
+        'INSERT INTO user_bans (id, user_id, reason, expires_at, created_at, admin_id) VALUES (?, ?, ?, ?, ?, ?)',
+        [crypto.randomUUID(), userId, reason, expiresAt, Date.now(), user!.sub],
+      )
+      return json({ ok: true, expiresAt })
+    }
+
+    // POST /api/admin/users/unban — remove active bans
+    if (segments[0] === 'users' && segments[1] === 'unban' && req.method === 'POST') {
+      const raw = await req.json().catch(() => null)
+      const userId = (raw as { userId?: string })?.userId
+      if (!userId) return json({ error: 'userId required' }, 400)
+      await tursoExecute('DELETE FROM user_bans WHERE user_id = ?', [userId])
+      return json({ ok: true })
+    }
+
+    // DELETE /api/admin/users/:userId — delete all user data (orphan remixes)
+    if (segments[0] === 'users' && segments.length === 2 && req.method === 'DELETE') {
+      const userId = segments[1]
+
+      // Anonymize their projects (orphan remixes)
+      await tursoExecute(
+        "UPDATE projects SET author_name = '[deleted]', author_id = 'deleted' WHERE author_id = ?",
+        [userId],
+      )
+      // Delete their achievements, likes, notifications, classroom memberships
+      await Promise.all([
+        tursoExecute('DELETE FROM user_achievements WHERE user_id = ?', [userId]).catch(() => {}),
+        tursoExecute('DELETE FROM project_likes WHERE user_id = ?', [userId]).catch(() => {}),
+        tursoExecute('DELETE FROM sprite_likes WHERE user_id = ?', [userId]).catch(() => {}),
+        tursoExecute('DELETE FROM notifications WHERE user_id = ?', [userId]).catch(() => {}),
+        tursoExecute('DELETE FROM class_members WHERE user_id = ?', [userId]).catch(() => {}),
+        tursoExecute('DELETE FROM daily_scores WHERE user_id = ?', [userId]).catch(() => {}),
+        tursoExecute('DELETE FROM project_reports WHERE reporter_id = ?', [userId]).catch(() => {}),
+        tursoExecute('DELETE FROM user_bans WHERE user_id = ?', [userId]).catch(() => {}),
+      ])
+
+      return json({ ok: true })
+    }
+
     return json({ error: 'Not found' }, 404)
   } catch (err) {
     logError('admin', err)

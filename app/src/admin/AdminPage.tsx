@@ -32,7 +32,15 @@ interface Analytics {
   likesDistribution: { zero: number; low: number; high: number }
 }
 
-type Tab = 'dashboard' | 'analytics' | 'overrides' | 'tables' | 'projects'
+interface UserResult {
+  userId: string
+  name: string
+  projects: number
+  likes: number
+  ban: { expiresAt: number; reason: string } | null
+}
+
+type Tab = 'dashboard' | 'analytics' | 'overrides' | 'tables' | 'projects' | 'users'
 
 export default function AdminPage() {
   const { getToken } = useAuth()
@@ -141,6 +149,7 @@ export default function AdminPage() {
           {tabBtn('overrides', '🔐 Free Overrides')}
           {tabBtn('tables', '🗄️ Tables')}
           {tabBtn('projects', '📦 Recent Projects')}
+          {tabBtn('users', '👤 Users')}
         </div>
 
         {loading && !stats ? (
@@ -452,9 +461,186 @@ export default function AdminPage() {
                 </table>
               </div>
             )}
+            {/* === Users === */}
+            {tab === 'users' && <UserManagement headers={headers} />}
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+function UserManagement({ headers }: { headers: () => Promise<Record<string, string>> }) {
+  const [search, setSearch] = useState('')
+  const [users, setUsers] = useState<UserResult[]>([])
+  const [searching, setSearching] = useState(false)
+  const [banDays, setBanDays] = useState(7)
+  const [banReason, setBanReason] = useState('')
+  const [actionTarget, setActionTarget] = useState<string | null>(null)
+  const [actionType, setActionType] = useState<'ban' | 'delete' | null>(null)
+
+  const doSearch = async () => {
+    if (!search.trim()) return
+    setSearching(true)
+    const h = await headers()
+    const res = await fetch(`/api/admin/users/search?q=${encodeURIComponent(search.trim())}`, { headers: h })
+    if (res.ok) { const d = await res.json(); setUsers(d.users ?? []) }
+    setSearching(false)
+  }
+
+  const doBan = async (userId: string) => {
+    const h = await headers()
+    const res = await fetch('/api/admin/users/ban', {
+      method: 'POST', headers: h,
+      body: JSON.stringify({ userId, days: banDays, reason: banReason || 'Violation of terms' }),
+    })
+    if (res.ok) {
+      showToast(`Banned for ${banDays} days`, 'success')
+      setActionTarget(null); setActionType(null)
+      doSearch() // refresh
+    } else { showToast('Ban failed', 'error') }
+  }
+
+  const doUnban = async (userId: string) => {
+    const h = await headers()
+    const res = await fetch('/api/admin/users/unban', {
+      method: 'POST', headers: h,
+      body: JSON.stringify({ userId }),
+    })
+    if (res.ok) { showToast('Unbanned', 'success'); doSearch() }
+    else { showToast('Unban failed', 'error') }
+  }
+
+  const doDelete = async (userId: string) => {
+    const h = await headers()
+    const res = await fetch(`/api/admin/users/${encodeURIComponent(userId)}`, {
+      method: 'DELETE', headers: h,
+    })
+    if (res.ok) {
+      showToast('User data deleted', 'success')
+      setActionTarget(null); setActionType(null)
+      doSearch()
+    } else { showToast('Delete failed', 'error') }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Search */}
+      <div className="flex gap-2">
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && doSearch()}
+          placeholder="Search by username..."
+          className="flex-1 bg-surface-0 border border-surface-1 text-text text-sm rounded-lg px-3 py-2 placeholder-overlay focus:outline-none focus:border-accent"
+        />
+        <button onClick={doSearch} disabled={searching} className="px-4 py-2 bg-accent text-base text-sm font-semibold rounded-lg">
+          {searching ? '...' : 'Search'}
+        </button>
+      </div>
+
+      {/* Results */}
+      {users.length > 0 && (
+        <div className="bg-mantle border border-surface-0 rounded-xl overflow-hidden">
+          {users.map((u, i) => (
+            <div key={u.userId} className={`px-5 py-4 flex items-center gap-4 ${i > 0 ? 'border-t border-surface-0' : ''}`}>
+              <div className="w-10 h-10 rounded-full bg-surface-0 flex items-center justify-center text-sm font-bold text-accent">
+                {u.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-text truncate">{u.name}</div>
+                <div className="text-xs text-overlay">
+                  {u.projects} projects · {u.likes} likes
+                  {u.ban && (
+                    <span className="ml-2 text-danger font-semibold">
+                      BANNED — {Math.ceil((u.ban.expiresAt - Date.now()) / 86400000)}d left
+                    </span>
+                  )}
+                </div>
+                <div className="text-[10px] text-overlay/50 font-mono truncate">{u.userId}</div>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                {u.ban ? (
+                  <button onClick={() => doUnban(u.userId)} className="px-3 py-1.5 text-xs font-semibold bg-success/20 text-success rounded-lg">
+                    Unban
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { setActionTarget(u.userId); setActionType('ban') }}
+                    className="px-3 py-1.5 text-xs font-semibold bg-yellow-500/20 text-yellow-400 rounded-lg"
+                  >
+                    Ban
+                  </button>
+                )}
+                <button
+                  onClick={() => { setActionTarget(u.userId); setActionType('delete') }}
+                  className="px-3 py-1.5 text-xs font-semibold bg-red/20 text-red rounded-lg"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Ban modal */}
+      {actionType === 'ban' && actionTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) { setActionTarget(null); setActionType(null) } }}>
+          <div className="bg-base border border-surface-0 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+            <h2 className="text-text font-semibold mb-4">Ban User</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-subtext">Duration</label>
+                <div className="flex gap-2 mt-1">
+                  {[7, 30, 90, 365].map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => setBanDays(d)}
+                      className={`px-3 py-1.5 text-xs rounded-lg font-semibold ${banDays === d ? 'bg-yellow-500 text-black' : 'bg-surface-0 text-subtext'}`}
+                    >
+                      {d}d
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-subtext">Reason</label>
+                <input
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  placeholder="Violation of terms"
+                  className="w-full mt-1 bg-surface-0 border border-surface-1 text-text text-sm rounded-lg px-3 py-2 placeholder-overlay focus:outline-none focus:border-accent"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end mt-6">
+              <button onClick={() => { setActionTarget(null); setActionType(null) }} className="px-4 py-2 text-sm text-text bg-surface-0 rounded-lg">Cancel</button>
+              <button onClick={() => doBan(actionTarget)} className="px-4 py-2 text-sm font-semibold bg-yellow-500 text-black rounded-lg">Ban for {banDays} days</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm modal */}
+      {actionType === 'delete' && actionTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) { setActionTarget(null); setActionType(null) } }}>
+          <div className="bg-base border border-surface-0 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+            <h2 className="text-text font-semibold mb-2">Delete User Data</h2>
+            <p className="text-subtext text-sm mb-1">This will:</p>
+            <ul className="text-sm text-overlay list-disc list-inside mb-4 space-y-1">
+              <li>Anonymize all their projects to "[deleted]"</li>
+              <li>Remixes of their projects will survive (orphaned)</li>
+              <li>Delete achievements, likes, notifications, memberships</li>
+              <li>This cannot be undone</li>
+            </ul>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => { setActionTarget(null); setActionType(null) }} className="px-4 py-2 text-sm text-text bg-surface-0 rounded-lg">Cancel</button>
+              <button onClick={() => doDelete(actionTarget)} className="px-4 py-2 text-sm font-semibold bg-red text-white rounded-lg">Delete All Data</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

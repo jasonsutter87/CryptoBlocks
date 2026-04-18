@@ -18,6 +18,27 @@ export function requireAuth(user: ClerkUser | null, message = 'Sign in required'
   return null
 }
 
+/** Check if user is banned. Returns a Response if banned, null if clear. */
+export async function checkBan(user: ClerkUser | null): Promise<Response | null> {
+  if (!user) return null // not authed = not banned (requireAuth handles this separately)
+  try {
+    const result = await tursoExecute(
+      'SELECT expires_at, reason FROM user_bans WHERE user_id = ? AND expires_at > ? ORDER BY expires_at DESC LIMIT 1',
+      [user.sub, Date.now()],
+    )
+    if (result.rows.length > 0) {
+      const expiresAt = Number(result.rows[0].expires_at)
+      const daysLeft = Math.ceil((expiresAt - Date.now()) / 86400000)
+      return json({
+        error: 'Account suspended',
+        reason: String(result.rows[0].reason),
+        daysLeft,
+      }, 403)
+    }
+  } catch { /* table may not exist yet — not banned */ }
+  return null
+}
+
 /** Require user is a member of the classroom */
 export async function requireClassroomMember(
   classroomId: string,

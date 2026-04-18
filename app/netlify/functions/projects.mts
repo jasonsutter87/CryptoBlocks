@@ -16,7 +16,7 @@
 import {
   json, cors, logError, withRequest, parsePath, parsePagination, getQueryParam,
   verifyFromRequest, tursoExecute, isTursoConfigured,
-  moderateContent, requireAuth, isAdmin,
+  moderateContent, requireAuth, checkBan, isAdmin,
 } from './_lib/index.js'
 import type { ClerkUser, TursoRow } from './_lib/index.js'
 import {
@@ -144,6 +144,8 @@ async function handler(req: Request) {
     if (req.method === 'POST' && segments.length === 0) {
       const authErr = requireAuth(user, 'Sign in to upload projects')
       if (authErr) return authErr
+      const banErr = await checkBan(user)
+      if (banErr) return banErr
 
       const raw = await req.json().catch(() => null)
       const parsed = PublishProjectInput.safeParse(raw)

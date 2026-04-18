@@ -16,6 +16,7 @@ export { moderateContent } from './moderation.js'
 export { createNotification } from './notifications.js'
 export {
   requireAuth,
+  checkBan,
   requireClassroomMember,
   requireClassroomTeacher,
   requireTeacherViaAssignment,
