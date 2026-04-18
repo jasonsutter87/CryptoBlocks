@@ -165,13 +165,17 @@ async function handler(req: Request) {
 
       const id = crypto.randomUUID()
       const now = Date.now()
-      const finalAuthorName = (authorName || user!.name || 'Anonymous').slice(0, 50)
+
+      // Admins can post as "CryptoBlocks" (system account) for official examples
+      const postAsSystem = parsed.data.visibility === 'public' && isAdmin(user) && authorName === 'CryptoBlocks'
+      const finalAuthorId = postAsSystem ? 'system' : user!.sub
+      const finalAuthorName = (postAsSystem ? 'CryptoBlocks' : authorName || user!.name || 'Anonymous').slice(0, 50)
 
       await tursoExecute(
         `INSERT INTO projects (id, name, author_id, author_name, description, category, workspace_json, tags, block_count, parent_id, visibility, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
-          id, name, user!.sub, finalAuthorName,
+          id, name, finalAuthorId, finalAuthorName,
           description ?? '', category ?? 'General',
           workspaceJson, JSON.stringify(tags ?? []),
           blockCount ?? 0, parentId ?? null,

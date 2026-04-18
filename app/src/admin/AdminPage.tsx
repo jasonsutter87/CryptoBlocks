@@ -463,6 +463,9 @@ export default function AdminPage() {
             )}
             {/* === Users === */}
             {tab === 'users' && <UserManagement headers={headers} />}
+
+            {/* === Post as CryptoBlocks (on Projects tab) === */}
+            {tab === 'projects' && <PostAsCryptoBlocks headers={headers} />}
           </>
         )}
       </div>
@@ -641,6 +644,79 @@ function UserManagement({ headers }: { headers: () => Promise<Record<string, str
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function PostAsCryptoBlocks({ headers }: { headers: () => Promise<Record<string, string>> }) {
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const [category, setCategory] = useState('Games')
+  const [posting, setPosting] = useState(false)
+
+  const handlePost = async () => {
+    const ws = localStorage.getItem('cryptoblocks_workspace')
+    if (!ws || ws === '{}') { showToast('Load a workspace in the editor first', 'error'); return }
+    setPosting(true)
+    const h = await headers()
+    const blockCount = (() => { try { return JSON.parse(ws)?.blocks?.blocks?.length ?? 0 } catch { return 0 } })()
+    const res = await fetch('/api/projects', {
+      method: 'POST', headers: h,
+      body: JSON.stringify({
+        name: name.trim() || 'CryptoBlocks Example',
+        authorName: 'CryptoBlocks',
+        description: description.trim(),
+        category,
+        workspaceJson: ws,
+        blockCount,
+        tags: ['example'],
+        visibility: 'public',
+      }),
+    })
+    if (res.ok) {
+      showToast('Posted as CryptoBlocks!', 'success')
+      setName(''); setDescription('')
+    } else {
+      const d = await res.json().catch(() => ({}))
+      showToast(d.error || 'Post failed', 'error')
+    }
+    setPosting(false)
+  }
+
+  return (
+    <div className="bg-mantle border border-surface-0 rounded-xl p-6 mt-6">
+      <h3 className="text-text font-semibold mb-4">Post as CryptoBlocks</h3>
+      <p className="text-xs text-overlay mb-4">Publishes the current editor workspace as a CryptoBlocks official example. Load the project in the editor first.</p>
+      <div className="space-y-3">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Project name"
+          className="w-full bg-surface-0 border border-surface-1 text-text text-sm rounded-lg px-3 py-2 placeholder-overlay focus:outline-none focus:border-accent"
+        />
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description"
+          className="w-full bg-surface-0 border border-surface-1 text-text text-sm rounded-lg px-3 py-2 placeholder-overlay focus:outline-none focus:border-accent"
+        />
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="w-full bg-surface-0 border border-surface-1 text-text text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-accent cursor-pointer"
+        >
+          {['Games', 'Art', 'Web', 'Sound', 'Data', 'AI', 'General'].map((c) => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        <button
+          onClick={handlePost}
+          disabled={posting || !name.trim()}
+          className="px-4 py-2 text-sm font-semibold bg-accent text-base rounded-lg disabled:opacity-40"
+        >
+          {posting ? 'Posting...' : 'Publish as CryptoBlocks'}
+        </button>
+      </div>
     </div>
   )
 }
