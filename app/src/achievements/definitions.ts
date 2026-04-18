@@ -371,6 +371,20 @@ export const achievements: Achievement[] = [
   // === v0.4 — Terminal easter egg achievements ===
   // === Crypto ===
   {
+    id: 'trendsetter',
+    name: 'Trendsetter',
+    description: 'Have your projects remixed 5 times',
+    icon: '🌊',
+    rarity: 'rare',
+  },
+  {
+    id: 'influencer',
+    name: 'The Influencer',
+    description: 'Have your projects remixed 30 times',
+    icon: '📣',
+    rarity: 'legendary',
+  },
+  {
     id: 'pi',
     name: 'Irrational',
     description: 'Place 31,415 blocks — the first 5 digits of Pi',
