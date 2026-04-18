@@ -511,6 +511,16 @@ async function handler(req: Request) {
       if (modErr) return json({ error: modErr }, 400)
       const id = crypto.randomUUID()
       const discussionId = segments[2]
+
+      // Verify the discussion belongs to this classroom — without this check
+      // a member of classroom A could post replies to classroom B's discussions
+      // by submitting B's discussion ID with A's classroom ID.
+      const disc = await tursoExecute(
+        'SELECT 1 FROM discussions WHERE id = ? AND classroom_id = ?',
+        [discussionId, classroomId],
+      )
+      if (disc.rows.length === 0) return json({ error: 'Not found' }, 404)
+
       await tursoExecute(
         'INSERT INTO replies (id, discussion_id, author_id, author_name, author_avatar, body, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [id, discussionId, user.sub, (user.name || 'Student').slice(0, 50), user.avatar || '', body, Date.now()],
@@ -524,6 +534,13 @@ async function handler(req: Request) {
       const classroomId = segments[0]
       const guardErr = await requireClassroomMember(classroomId, user)
       if (guardErr) return guardErr
+
+      // Verify discussion belongs to this classroom before returning replies
+      const disc = await tursoExecute(
+        'SELECT 1 FROM discussions WHERE id = ? AND classroom_id = ?',
+        [segments[2], classroomId],
+      )
+      if (disc.rows.length === 0) return json({ error: 'Not found' }, 404)
 
       const result = await tursoExecute(
         'SELECT * FROM replies WHERE discussion_id = ? ORDER BY created_at ASC',
