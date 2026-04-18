@@ -56,36 +56,79 @@ export function launchDoomGame(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Map
+// Map generation
 // ---------------------------------------------------------------------------
 
-// 1 = wall, 0 = empty, 2 = enemy spawn
-const MAP = [
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1],
-  [1,0,1,0,0,1,0,0,0,0,1,0,0,1,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1],
-  [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
-  [1,0,1,0,0,2,0,0,0,0,2,0,0,1,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1],
-  [1,0,1,0,0,0,0,0,0,0,0,0,0,1,0,1],
-  [1,0,1,1,0,2,0,0,0,0,2,0,1,1,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-  [1,0,0,0,0,0,0,2,0,0,0,0,0,0,0,1],
-  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-]
-
-const MAP_W = MAP[0].length
-const MAP_H = MAP.length
+const MAP_W = 16
+const MAP_H = 16
 
 interface Enemy {
   x: number
   y: number
   alive: boolean
+}
+
+/** Generate a random level. More walls and enemies as level increases. */
+function generateMap(level: number): { map: number[][]; enemies: Enemy[] } {
+  const map: number[][] = []
+
+  // Fill with walls on border, empty inside
+  for (let y = 0; y < MAP_H; y++) {
+    const row: number[] = []
+    for (let x = 0; x < MAP_W; x++) {
+      if (y === 0 || y === MAP_H - 1 || x === 0 || x === MAP_W - 1) {
+        row.push(1)
+      } else {
+        row.push(0)
+      }
+    }
+    map.push(row)
+  }
+
+  // Place random wall clusters — more with higher levels
+  const wallCount = 6 + level * 2
+  for (let i = 0; i < wallCount; i++) {
+    const wx = 2 + Math.floor(Math.random() * (MAP_W - 4))
+    const wy = 2 + Math.floor(Math.random() * (MAP_H - 4))
+    // Don't block spawn area (1,1)
+    if (wx <= 2 && wy <= 2) continue
+    map[wy][wx] = 1
+    // Extend cluster randomly
+    if (Math.random() > 0.4 && wx + 1 < MAP_W - 1) map[wy][wx + 1] = 1
+    if (Math.random() > 0.5 && wy + 1 < MAP_H - 1) map[wy + 1][wx] = 1
+  }
+
+  // Pillar rooms for cover
+  const pillars = 2 + Math.floor(level / 2)
+  for (let i = 0; i < pillars; i++) {
+    const px = 3 + Math.floor(Math.random() * (MAP_W - 6))
+    const py = 3 + Math.floor(Math.random() * (MAP_H - 6))
+    if (px <= 2 && py <= 2) continue
+    map[py][px] = 1
+  }
+
+  // Ensure spawn area is clear
+  map[1][1] = 0; map[1][2] = 0; map[2][1] = 0; map[2][2] = 0
+
+  // Place enemies — count scales with level
+  const enemyCount = 3 + level * 2
+  const enemies: Enemy[] = []
+  let placed = 0
+  let attempts = 0
+  while (placed < enemyCount && attempts < 200) {
+    attempts++
+    const ex = 2 + Math.floor(Math.random() * (MAP_W - 4))
+    const ey = 2 + Math.floor(Math.random() * (MAP_H - 4))
+    // Not on walls, not near spawn
+    if (map[ey][ex] !== 0) continue
+    if (ex <= 3 && ey <= 3) continue
+    // Not on top of another enemy
+    if (enemies.some((e) => Math.floor(e.x) === ex && Math.floor(e.y) === ey)) continue
+    enemies.push({ x: ex + 0.5, y: ey + 0.5, alive: true })
+    placed++
+  }
+
+  return { map, enemies }
 }
 
 // ---------------------------------------------------------------------------
@@ -105,21 +148,34 @@ function startGame(): void {
   canvas.height = H
 
   // Player state
-  let px = 1.5, py = 1.5 // position
-  let pa = 0 // angle (radians)
+  let px = 1.5, py = 1.5
+  let pa = 0
   const moveSpeed = 0.04
   const rotSpeed = 0.03
-  const fov = Math.PI / 3 // 60 degree FOV
+  const fov = Math.PI / 3
 
-  // Enemies
-  const enemies: Enemy[] = []
-  for (let y = 0; y < MAP_H; y++) {
-    for (let x = 0; x < MAP_W; x++) {
-      if (MAP[y][x] === 2) {
-        enemies.push({ x: x + 0.5, y: y + 0.5, alive: true })
-        MAP[y][x] = 0
-      }
-    }
+  // Level state
+  let level = 1
+  let generated = generateMap(level)
+  let map = generated.map
+  let enemies = generated.enemies
+  let totalEnemies = enemies.length
+  let enemyAttackTimers = enemies.map(() => 0)
+  let levelTransition = 0 // countdown frames for level transition screen
+
+  function loadLevel(lvl: number) {
+    level = lvl
+    generated = generateMap(level)
+    map = generated.map
+    enemies = generated.enemies
+    totalEnemies = enemies.length
+    enemyAttackTimers = enemies.map(() => 0)
+    px = 1.5; py = 1.5; pa = 0
+    kills = 0
+    dead = false
+    // Heal partially — reward for clearing, but don't make it too easy
+    hp = Math.min(100, hp + 25)
+    levelTransition = 90 // ~1.5 seconds at 60fps
   }
 
   // Input
@@ -131,12 +187,10 @@ function startGame(): void {
   let hp = 100
   let hurtFlash = 0
   let dead = false
-  const totalEnemies = enemies.length
   const enemySpeed = 0.012
   const enemyAttackRange = 0.8
-  const enemyAttackCooldown = 60 // frames between attacks
+  const enemyAttackCooldown = 60
   const enemyAttackDamage = 8
-  let enemyAttackTimers: number[] = enemies.map(() => 0)
 
   const onKey = (e: KeyboardEvent, down: boolean) => {
     keys[e.key.toLowerCase()] = down
@@ -307,10 +361,10 @@ function startGame(): void {
   function canWalk(x: number, y: number): boolean {
     const margin = 0.2
     return (
-      MAP[Math.floor(y - margin)]?.[Math.floor(x - margin)] === 0 &&
-      MAP[Math.floor(y + margin)]?.[Math.floor(x - margin)] === 0 &&
-      MAP[Math.floor(y - margin)]?.[Math.floor(x + margin)] === 0 &&
-      MAP[Math.floor(y + margin)]?.[Math.floor(x + margin)] === 0
+      map[Math.floor(y - margin)]?.[Math.floor(x - margin)] === 0 &&
+      map[Math.floor(y + margin)]?.[Math.floor(x - margin)] === 0 &&
+      map[Math.floor(y - margin)]?.[Math.floor(x + margin)] === 0 &&
+      map[Math.floor(y + margin)]?.[Math.floor(x + margin)] === 0
     )
   }
 
@@ -348,7 +402,7 @@ function startGame(): void {
         side = 1
       }
       if (mapX < 0 || mapX >= MAP_W || mapY < 0 || mapY >= MAP_H) break
-      if (MAP[mapY][mapX] === 1) {
+      if (map[mapY]?.[mapX] === 1) {
         const dist = side === 0
           ? (mapX - px + (1 - stepX) / 2) / (dx || 1e-10)
           : (mapY - py + (1 - stepY) / 2) / (dy || 1e-10)
@@ -540,7 +594,7 @@ function startGame(): void {
     // HUD
     ctx.fillStyle = '#a6e3a1'
     ctx.font = '8px monospace'
-    ctx.fillText(`KILLS: ${kills}/${totalEnemies}`, 4, 10)
+    ctx.fillText(`LVL ${level}  KILLS: ${kills}/${totalEnemies}`, 4, 10)
     ctx.fillText('ESC to quit', W - 62, 10)
 
     // Health bar
@@ -564,7 +618,7 @@ function startGame(): void {
     ctx.globalAlpha = 0.5
     for (let y = 0; y < MAP_H; y++) {
       for (let x = 0; x < MAP_W; x++) {
-        ctx.fillStyle = MAP[y][x] === 1 ? '#a6e3a1' : '#111'
+        ctx.fillStyle = map[y][x] === 1 ? '#a6e3a1' : '#111'
         ctx.fillRect(mmX + x * mmSize, mmY + y * mmSize, mmSize - 1, mmSize - 1)
       }
     }
@@ -594,18 +648,38 @@ function startGame(): void {
       ctx.textAlign = 'left'
     }
 
-    // Win screen
-    if (!dead && kills === totalEnemies) {
+    // Level transition screen
+    if (levelTransition > 0) {
+      const alpha = Math.min(1, levelTransition / 30)
+      ctx.fillStyle = `rgba(0,0,0,${alpha * 0.8})`
+      ctx.fillRect(0, 0, W, H)
+      ctx.fillStyle = '#a6e3a1'
+      ctx.font = 'bold 16px monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText(`LEVEL ${level}`, W / 2, H / 2 - 10)
+      ctx.font = '8px monospace'
+      ctx.fillText(`${totalEnemies} enemies incoming`, W / 2, H / 2 + 10)
+      ctx.textAlign = 'left'
+      levelTransition--
+    }
+
+    // Win — advance to next level
+    if (!dead && kills === totalEnemies && levelTransition === 0) {
       ctx.fillStyle = 'rgba(0,0,0,0.7)'
       ctx.fillRect(0, 0, W, H)
       ctx.fillStyle = '#a6e3a1'
       ctx.font = 'bold 16px monospace'
       ctx.textAlign = 'center'
-      ctx.fillText('AREA CLEARED', W / 2, H / 2 - 10)
+      ctx.fillText('AREA CLEARED', W / 2, H / 2 - 15)
       ctx.font = '8px monospace'
-      ctx.fillText('All enemies eliminated.', W / 2, H / 2 + 10)
-      ctx.fillText('Press ESC to exit.', W / 2, H / 2 + 25)
+      ctx.fillText(`Level ${level} complete!`, W / 2, H / 2 + 5)
+      ctx.fillText('Press SPACE for next level', W / 2, H / 2 + 20)
+      ctx.fillText('Press ESC to exit', W / 2, H / 2 + 35)
       ctx.textAlign = 'left'
+
+      if (keys[' ']) {
+        loadLevel(level + 1)
+      }
     }
 
     // CRT scanline overlay
@@ -668,7 +742,7 @@ function startGame(): void {
           const nx = e.x + (dx / dist) * enemySpeed
           const ny = e.y + (dy / dist) * enemySpeed
           // Only move if walkable
-          if (MAP[Math.floor(ny)]?.[Math.floor(nx)] === 0) {
+          if (map[Math.floor(ny)]?.[Math.floor(nx)] === 0) {
             e.x = nx
             e.y = ny
           }
