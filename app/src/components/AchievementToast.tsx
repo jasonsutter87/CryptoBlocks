@@ -5,24 +5,11 @@
 
 import { useEffect, useState } from 'react'
 import type { Achievement } from '../achievements/types'
+import { RARITY_COLOR, RARITY_LABEL } from '../achievements/rarity'
 
 interface AchievementToastProps {
   achievement: Achievement | null
   onDismiss: () => void
-}
-
-const RARITY_COLOR: Record<string, string> = {
-  common: '#6c7086',
-  rare: '#3b82f6',
-  epic: '#a855f7',
-  legendary: '#eab308',
-}
-
-const RARITY_LABEL: Record<string, string> = {
-  common: 'COMMON',
-  rare: 'RARE',
-  epic: 'EPIC',
-  legendary: 'LEGENDARY',
 }
 
 export function AchievementToast({ achievement, onDismiss }: AchievementToastProps) {
@@ -121,7 +108,7 @@ export function AchievementToast({ achievement, onDismiss }: AchievementToastPro
             boxShadow: `0 0 20px ${color}40, inset 0 0 20px ${color}10`,
           }}
         >
-          {RARITY_LABEL[achievement.rarity]}
+          {RARITY_LABEL[achievement.rarity as keyof typeof RARITY_LABEL].toUpperCase()}
         </div>
 
         {/* Click to dismiss hint */}

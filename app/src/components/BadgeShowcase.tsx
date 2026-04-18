@@ -7,39 +7,7 @@ import { useMemo } from 'react'
 import { achievements } from '../achievements/definitions'
 import { loadUnlocked } from '../achievements/tracker'
 import type { Achievement } from '../achievements/types'
-
-const RARITY_ORDER: Record<string, number> = { legendary: 0, epic: 1, rare: 2, common: 3 }
-
-const RARITY_STYLES: Record<string, { ring: string; glow: string; bg: string; text: string; label: string }> = {
-  legendary: {
-    ring: 'ring-2 ring-yellow-500/60',
-    glow: 'shadow-[0_0_20px_rgba(234,179,8,0.4)]',
-    bg: 'bg-yellow-500/10',
-    text: 'text-yellow-400',
-    label: 'Legendary',
-  },
-  epic: {
-    ring: 'ring-2 ring-purple-500/60',
-    glow: 'shadow-[0_0_16px_rgba(168,85,247,0.35)]',
-    bg: 'bg-purple-500/10',
-    text: 'text-purple-400',
-    label: 'Epic',
-  },
-  rare: {
-    ring: 'ring-2 ring-blue-500/50',
-    glow: 'shadow-[0_0_12px_rgba(59,130,246,0.3)]',
-    bg: 'bg-blue-500/10',
-    text: 'text-blue-400',
-    label: 'Rare',
-  },
-  common: {
-    ring: 'ring-1 ring-surface-1',
-    glow: '',
-    bg: 'bg-surface-0',
-    text: 'text-overlay',
-    label: 'Common',
-  },
-}
+import { RARITY_ORDER, RARITY_STYLES, RARITY_LABEL } from '../achievements/rarity'
 
 function BadgeCard({ achievement, unlocked, unlockedAt }: {
   achievement: Achievement
@@ -74,7 +42,7 @@ function BadgeCard({ achievement, unlocked, unlockedAt }: {
 
       {/* Rarity tag */}
       <span className={`text-[10px] font-bold uppercase tracking-wider ${unlocked ? style.text : 'text-overlay/40'}`}>
-        {style.label}
+        {RARITY_LABEL[achievement.rarity as keyof typeof RARITY_LABEL]}
       </span>
 
       {/* Unlock date */}
@@ -147,7 +115,7 @@ export default function BadgeShowcase() {
           return (
             <div key={r} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${style.bg}`}>
               <span className={`text-xs font-bold ${style.text}`}>{byRarity[r]}/{total}</span>
-              <span className={`text-[10px] uppercase tracking-wider ${style.text}`}>{style.label}</span>
+              <span className={`text-[10px] uppercase tracking-wider ${style.text}`}>{RARITY_LABEL[r]}</span>
             </div>
           )
         })}
