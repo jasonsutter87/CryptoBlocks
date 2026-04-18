@@ -371,6 +371,13 @@ export const achievements: Achievement[] = [
   // === v0.4 — Terminal easter egg achievements ===
   // === Crypto ===
   {
+    id: 'multi-platformer',
+    name: 'The Multi-Platformer',
+    description: 'Import a project from Scratch',
+    icon: '🐱',
+    rarity: 'epic',
+  },
+  {
     id: 'going-global',
     name: 'Going Global',
     description: 'Publish a project to GitHub',
