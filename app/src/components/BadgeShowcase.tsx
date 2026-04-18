@@ -3,25 +3,28 @@
  * Unlocked badges glow with rarity color, locked ones are silhouetted.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { achievements } from '../achievements/definitions'
 import { loadUnlocked } from '../achievements/tracker'
 import type { Achievement } from '../achievements/types'
 import { RARITY_ORDER, RARITY_STYLES, RARITY_LABEL } from '../achievements/rarity'
+import { AchievementToast } from './AchievementToast'
 
-function BadgeCard({ achievement, unlocked, unlockedAt }: {
+function BadgeCard({ achievement, unlocked, unlockedAt, onReplay }: {
   achievement: Achievement
   unlocked: boolean
   unlockedAt?: number
+  onReplay?: (a: Achievement) => void
 }) {
   const style = RARITY_STYLES[achievement.rarity]
   const isSecret = achievement.secret && !unlocked
 
   return (
     <div
+      onClick={() => unlocked && onReplay?.(achievement)}
       className={`relative rounded-xl p-4 flex flex-col items-center gap-2 transition-all duration-300 ${
         unlocked
-          ? `${style.bg} ${style.ring} ${style.glow}`
+          ? `${style.bg} ${style.ring} ${style.glow} cursor-pointer hover:scale-105`
           : 'bg-surface-0/50 ring-1 ring-surface-1 opacity-50'
       }`}
     >
@@ -63,6 +66,7 @@ function BadgeCard({ achievement, unlocked, unlockedAt }: {
 }
 
 export default function BadgeShowcase() {
+  const [replayBadge, setReplayBadge] = useState<Achievement | null>(null)
   const unlocked = useMemo(() => loadUnlocked(), [])
   const unlockedMap = useMemo(() => {
     const m = new Map<string, number>()
@@ -129,9 +133,15 @@ export default function BadgeShowcase() {
             achievement={a}
             unlocked={unlockedMap.has(a.id)}
             unlockedAt={unlockedMap.get(a.id)}
+            onReplay={setReplayBadge}
           />
         ))}
       </div>
+
+      {/* Replay animation */}
+      {replayBadge && (
+        <AchievementToast achievement={replayBadge} onDismiss={() => setReplayBadge(null)} />
+      )}
     </div>
   )
 }
