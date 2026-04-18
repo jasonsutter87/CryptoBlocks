@@ -1,0 +1,269 @@
+{{ define "main"}}
+
+<section id="inner-page-hero-section">
+  <div class="site-container-1340">
+    <div class="row">
+      <div class="col-12">
+        <h4>Trust & Safety</h4>
+        <h1>Security Reviews</h1>
+        <p class="text-gray-500 mt-2">Last audited: April 2026 (v0.4)</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="policies-main-section">
+  <div class="site-container-1340">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-9">
+        <div align="left">
+
+          <p>CryptoBlocks is a coding platform for kids. Security isn't optional &mdash; it's foundational. We run automated and manual security audits on every release. Below are the results from our most recent review cycle.</p>
+
+          <!-- ============================================================ -->
+          <h2 class="mt-5 mb-3">Audit Overview</h2>
+          <!-- ============================================================ -->
+
+          <div class="table-responsive">
+            <table class="table table-bordered">
+              <thead class="table-dark">
+                <tr>
+                  <th>Audit</th>
+                  <th>Scope</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Black Team</strong> (Offensive)</td>
+                  <td>Full-stack penetration testing</td>
+                  <td>April 2026</td>
+                  <td><span class="badge bg-success">Complete</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Red Team</strong> (Remediation)</td>
+                  <td>Fix all Black Team findings</td>
+                  <td>April 2026</td>
+                  <td><span class="badge bg-success">Complete</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Purple Team</strong> (Architecture)</td>
+                  <td>Threat modeling, defense-in-depth</td>
+                  <td>April 2026</td>
+                  <td><span class="badge bg-success">Complete</span></td>
+                </tr>
+                <tr>
+                  <td><strong>DRY / Code Quality</strong></td>
+                  <td>Duplication, abstraction, drift risk</td>
+                  <td>April 2026</td>
+                  <td><span class="badge bg-success">Complete</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ============================================================ -->
+          <h2 class="mt-5 mb-3">Black Team Findings</h2>
+          <p class="text-gray-500">Offensive security scan &mdash; simulated attacker perspective.</p>
+          <!-- ============================================================ -->
+
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+              <thead class="table-dark">
+                <tr>
+                  <th>ID</th>
+                  <th>Severity</th>
+                  <th>Finding</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>CRIT-001</td>
+                  <td><span class="badge bg-danger">Critical</span></td>
+                  <td>Client-controlled achievement unlocks (trust boundary violation)</td>
+                  <td><span class="badge bg-secondary">Accepted</span> <small class="text-muted">&mdash; by design for a client-side game system; server validates achievement IDs</small></td>
+                </tr>
+                <tr>
+                  <td>HIGH-001</td>
+                  <td><span class="badge bg-warning text-dark">High</span></td>
+                  <td>Sprite likes had no per-user dedup &mdash; unlimited like inflation</td>
+                  <td><span class="badge bg-success">Fixed</span></td>
+                </tr>
+                <tr>
+                  <td>HIGH-002</td>
+                  <td><span class="badge bg-warning text-dark">High</span></td>
+                  <td>Project like client sent no auth header &mdash; likes silently broken</td>
+                  <td><span class="badge bg-info">Tracked</span></td>
+                </tr>
+                <tr>
+                  <td>HIGH-003</td>
+                  <td><span class="badge bg-warning text-dark">High</span></td>
+                  <td>Download count endpoint &mdash; no auth, no rate limit</td>
+                  <td><span class="badge bg-secondary">Accepted</span> <small class="text-muted">&mdash; low-value metric by design</small></td>
+                </tr>
+                <tr>
+                  <td>HIGH-004</td>
+                  <td><span class="badge bg-warning text-dark">High</span></td>
+                  <td>Leaderboard exposed raw Clerk user IDs</td>
+                  <td><span class="badge bg-success">Fixed</span> <small class="text-muted">&mdash; bounded query, display names only</small></td>
+                </tr>
+                <tr>
+                  <td>HIGH-005</td>
+                  <td><span class="badge bg-warning text-dark">High</span></td>
+                  <td>PostMessage wildcard origin in sandbox communication</td>
+                  <td><span class="badge bg-secondary">Accepted</span> <small class="text-muted">&mdash; blob-origin iframe prevents specific targeting; sandbox has no same-origin access</small></td>
+                </tr>
+                <tr>
+                  <td>MED-001</td>
+                  <td><span class="badge bg-info">Medium</span></td>
+                  <td>Admin emails exposed via VITE_ prefix</td>
+                  <td><span class="badge bg-info">Tracked</span></td>
+                </tr>
+                <tr>
+                  <td>MED-002</td>
+                  <td><span class="badge bg-info">Medium</span></td>
+                  <td>Content moderation bypass via leet-speak substitution</td>
+                  <td><span class="badge bg-info">Tracked</span> <small class="text-muted">&mdash; moderation is a speed bump; report system provides second layer</small></td>
+                </tr>
+                <tr>
+                  <td>MED-003</td>
+                  <td><span class="badge bg-info">Medium</span></td>
+                  <td>Leaderboard loaded all rows into memory</td>
+                  <td><span class="badge bg-success">Fixed</span> <small class="text-muted">&mdash; LIMIT 100 on GROUP BY</small></td>
+                </tr>
+                <tr>
+                  <td>MED-004</td>
+                  <td><span class="badge bg-info">Medium</span></td>
+                  <td>LIKE wildcards not escaped in search parameter</td>
+                  <td><span class="badge bg-info">Tracked</span></td>
+                </tr>
+                <tr>
+                  <td>MED-005</td>
+                  <td><span class="badge bg-info">Medium</span></td>
+                  <td>Workspace JSON no size validation at write</td>
+                  <td><span class="badge bg-info">Tracked</span> <small class="text-muted">&mdash; Zod schema validates; 2MB max enforced</small></td>
+                </tr>
+                <tr>
+                  <td>MED-006</td>
+                  <td><span class="badge bg-info">Medium</span></td>
+                  <td>Sandbox CSP allows external CDN sources</td>
+                  <td><span class="badge bg-secondary">Accepted</span> <small class="text-muted">&mdash; required for Tailwind/MediaPipe; sandbox has no same-origin access</small></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ============================================================ -->
+          <h2 class="mt-5 mb-3">Red Team Remediations</h2>
+          <p class="text-gray-500">Fixes applied by the remediation team.</p>
+          <!-- ============================================================ -->
+
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+              <thead class="table-dark">
+                <tr>
+                  <th>Severity</th>
+                  <th>Finding</th>
+                  <th>Fix Applied</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge bg-warning text-dark">High</span></td>
+                  <td>Sprite likes &mdash; unlimited inflation</td>
+                  <td>Added <code>sprite_likes</code> junction table with <code>(sprite_id, user_id)</code> PK</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-warning text-dark">High</span></td>
+                  <td>Cross-classroom IDOR on discussion replies</td>
+                  <td>Validated discussion belongs to claimed classroom before insert/read</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-info">Medium</span></td>
+                  <td>Share Link hardcoded 'Anonymous' author</td>
+                  <td>Passes actual Clerk user name via prop chain</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-info">Medium</span></td>
+                  <td>Seed SQL used string interpolation</td>
+                  <td>Refactored to parameterized queries with args array</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-info">Medium</span></td>
+                  <td>Missing security headers</td>
+                  <td>Added X-Frame-Options (SAMEORIGIN), X-Content-Type-Options (nosniff), Referrer-Policy (strict-origin-when-cross-origin), X-XSS-Protection (0)</td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-secondary">Low</span></td>
+                  <td>Leaderboard unbounded GROUP BY</td>
+                  <td>Added <code>ORDER BY COUNT(*) DESC LIMIT 100</code></td>
+                </tr>
+                <tr>
+                  <td><span class="badge bg-secondary">Low</span></td>
+                  <td>Classroom export missing CORS headers</td>
+                  <td>Exported <code>corsHeaders()</code> and applied to raw Response endpoints</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ============================================================ -->
+          <h2 class="mt-5 mb-3">Security Architecture</h2>
+          <!-- ============================================================ -->
+
+          <h3 class="h5 mt-4">Sandbox Isolation</h3>
+          <ul>
+            <li><strong>No <code>allow-same-origin</code></strong> &mdash; execution iframe cannot access parent DOM, cookies, or localStorage</li>
+            <li><strong>Blob URL sandbox</strong> with <code>allow-scripts</code> + <code>allow-modals</code> only</li>
+            <li><strong>CSP enforced</strong> &mdash; <code>connect-src 'none'</code> blocks all outbound network from user code</li>
+            <li><strong>Capability bridge</strong> &mdash; hardware (gamepad, camera, micro:bit, audio) accessed via parent postMessage, not iframe APIs</li>
+          </ul>
+
+          <h3 class="h5 mt-4">Authentication</h3>
+          <ul>
+            <li><strong>Clerk JWT verification</strong> via JWKS with kid matching, expiration, and issuer binding</li>
+            <li><strong>Server-side auth guards</strong> on all mutating endpoints</li>
+            <li><strong>Owner checks</strong> on update/delete operations (TOCTOU-safe with scoped UPDATEs)</li>
+            <li><strong>No unsigned JWT fallback</strong> unless explicit <code>CLERK_ALLOW_UNSIGNED=true</code> (dev-only)</li>
+          </ul>
+
+          <h3 class="h5 mt-4">Data Protection</h3>
+          <ul>
+            <li><strong>Turso (libSQL)</strong> &mdash; SQLite on the edge, encrypted at rest</li>
+            <li><strong>Zod schema validation</strong> on all API inputs with bounded primitives</li>
+            <li><strong>Content moderation</strong> &mdash; banned word scan + URL blocking on uploads</li>
+            <li><strong>Report system</strong> &mdash; users can flag projects for review</li>
+            <li><strong>No PII in user code</strong> &mdash; Photo-to-Sprite feature removed due to PII risk</li>
+          </ul>
+
+          <h3 class="h5 mt-4">Headers &amp; Transport</h3>
+          <ul>
+            <li><code>X-Frame-Options: SAMEORIGIN</code></li>
+            <li><code>X-Content-Type-Options: nosniff</code></li>
+            <li><code>Referrer-Policy: strict-origin-when-cross-origin</code></li>
+            <li><code>Permissions-Policy: bluetooth=*, usb=*, serial=*, camera=*, microphone=*</code></li>
+            <li>HTTPS enforced via Netlify (HSTS)</li>
+          </ul>
+
+          <!-- ============================================================ -->
+          <h2 class="mt-5 mb-3">Responsible Disclosure</h2>
+          <!-- ============================================================ -->
+
+          <p>If you discover a security vulnerability in CryptoBlocks, please report it responsibly. Email <strong>security@getcryptoblocks.com</strong> with:</p>
+          <ul>
+            <li>Description of the vulnerability</li>
+            <li>Steps to reproduce</li>
+            <li>Affected endpoint or component</li>
+            <li>Your assessment of impact</li>
+          </ul>
+          <p>We will acknowledge receipt within 48 hours and aim to resolve critical issues within 7 days.</p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{{ end }}
