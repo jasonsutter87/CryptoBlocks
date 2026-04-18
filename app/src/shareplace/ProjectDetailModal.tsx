@@ -375,18 +375,7 @@ export default function ProjectDetailModal({
             {/* Admin delete */}
             {isAdmin && (
               <button
-                onClick={async () => {
-                  if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
-                  try {
-                    const token = await getToken()
-                    await fetch(`/api/projects/${project.id}`, {
-                      method: 'DELETE',
-                      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-                    })
-                    onClose()
-                    window.location.reload()
-                  } catch {}
-                }}
+                onClick={() => setSubModal('remove')}
                 className="flex items-center gap-1 px-3 py-2 text-xs text-danger bg-danger/10 hover:bg-danger/20 rounded-lg transition-colors"
                 title="Admin: delete this project"
               >
