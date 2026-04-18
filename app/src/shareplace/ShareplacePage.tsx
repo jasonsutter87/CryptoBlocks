@@ -19,17 +19,29 @@ export default function ShareplacePage() {
   const [showUpload, setShowUpload] = useState(false)
   const [projects, setProjects] = useState<SharedProject[]>([])
   const [loading, setLoading] = useState(true)
+  const [pageSize, setPageSize] = useState(25)
+  const [page, setPage] = useState(0)
 
   const loadProjects = useCallback(async () => {
     setLoading(true)
-    const result = await fetchProjects({ category: activeCategory, search: search.trim() || undefined })
+    const result = await fetchProjects({
+      category: activeCategory,
+      search: search.trim() || undefined,
+      limit: pageSize,
+      offset: page * pageSize,
+    })
     setProjects(result)
     setLoading(false)
-  }, [activeCategory, search])
+  }, [activeCategory, search, pageSize, page])
 
   useEffect(() => {
     loadProjects()
   }, [loadProjects])
+
+  // Reset to page 0 when filters change
+  useEffect(() => {
+    setPage(0)
+  }, [activeCategory, search, pageSize])
 
   const filtered = useMemo(() => {
     const sorted = [...projects]
@@ -176,6 +188,47 @@ export default function ShareplacePage() {
               </div>
             )}
           </>
+        )}
+
+        {/* Pagination */}
+        {!loading && filtered.length > 0 && (
+          <div className="flex items-center justify-between mt-8 pt-4 border-t border-surface-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-overlay">Show</span>
+              {[12, 25, 50, 100].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setPageSize(n)}
+                  className={`px-2.5 py-1 text-xs rounded-lg transition-colors ${
+                    pageSize === n
+                      ? 'bg-accent text-base font-semibold'
+                      : 'bg-surface-0 text-subtext hover:bg-surface-1'
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="px-3 py-1 text-xs font-semibold text-text bg-surface-0 hover:bg-surface-1 rounded-lg disabled:opacity-30 transition-colors"
+              >
+                ← Prev
+              </button>
+              <span className="text-xs text-overlay">
+                Page {page + 1}
+              </span>
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={filtered.length < pageSize}
+                className="px-3 py-1 text-xs font-semibold text-text bg-surface-0 hover:bg-surface-1 rounded-lg disabled:opacity-30 transition-colors"
+              >
+                Next →
+              </button>
+            </div>
+          </div>
         )}
       </div>
 
