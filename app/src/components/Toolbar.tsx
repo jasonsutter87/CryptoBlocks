@@ -63,7 +63,7 @@ interface ToolbarProps {
   onImportScratch?: () => void
 }
 
-const btn = 'flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors'
+const btn = 'flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-sm font-medium rounded-lg transition-colors'
 
 export default function Toolbar({
   language: _language,
@@ -182,7 +182,7 @@ export default function Toolbar({
   )
 
   return (
-    <header className="flex items-center justify-between px-3 md:px-4 py-2 bg-mantle border-b border-surface-0 select-none">
+    <header className="flex items-center justify-between px-2 md:px-4 py-1.5 md:py-2 bg-mantle border-b border-surface-0 select-none">
       {/* Logo — click 7 times rapidly to toggle hacker mode */}
       <div className="flex items-center gap-2 md:gap-3 shrink-0 cursor-pointer select-none" onClick={handleLogoClick}>
         <div className="flex items-center gap-1.5">
@@ -191,7 +191,8 @@ export default function Toolbar({
           <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-success -ml-1.5" />
         </div>
         <h1 className="text-base md:text-lg font-bold text-text tracking-tight">
-          CryptoBlocks
+          <span className="hidden sm:inline">CryptoBlocks</span>
+          <span className="sm:hidden">CB</span>
         </h1>
         <span className="hidden md:inline text-[10px] text-overlay bg-surface-0 px-1.5 py-0.5 rounded font-mono">
           v0.4
@@ -199,7 +200,7 @@ export default function Toolbar({
       </div>
 
       {/* Controls */}
-      <div className="flex items-center gap-1.5 md:gap-2" ref={menuContainerRef}>
+      <div className="flex items-center gap-1 md:gap-2" ref={menuContainerRef}>
         {/* Hidden file inputs */}
         <input ref={fileInputRef} type="file" accept=".blocks" onChange={handleFileChange} className="hidden" />
         <input ref={importAsBlockInputRef} type="file" accept=".blocks" onChange={handleImportAsBlockChange} className="hidden" />
