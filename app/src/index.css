@@ -108,6 +108,30 @@ body {
   display: none !important;
 }
 
+/* === MOBILE — Brick Bin (Blockly toolbox) tweaks === */
+/* Compress the category list on narrow screens so the workspace gets more room */
+@media (max-width: 767px) {
+  .blocklyToolboxDiv {
+    /* Prevent toolbox from growing too wide */
+    max-width: 100px !important;
+  }
+
+  .blocklyTreeRow {
+    padding: 3px 6px !important;
+  }
+
+  .blocklyToolboxCategoryLabel {
+    font-size: 11px !important;
+  }
+
+  /* Zoom controls are hard to tap — make them a touch bigger */
+  .blocklyZoom > image,
+  .blocklyZoom > svg {
+    width: 32px !important;
+    height: 32px !important;
+  }
+}
+
 /* === SLOW-MO TRACE HIGHLIGHT === */
 .blocklyHighlighted > .blocklyPath {
   stroke: #f9e2af !important;
