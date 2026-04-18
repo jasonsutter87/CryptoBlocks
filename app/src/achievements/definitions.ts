@@ -371,6 +371,13 @@ export const achievements: Achievement[] = [
   // === v0.4 — Terminal easter egg achievements ===
   // === Crypto ===
   {
+    id: 'contributor',
+    name: 'The Contributor',
+    description: 'Share 30 projects to Shareplace',
+    icon: '🫡',
+    rarity: 'legendary',
+  },
+  {
     id: 'trendsetter',
     name: 'Trendsetter',
     description: 'Have your projects remixed 5 times',
