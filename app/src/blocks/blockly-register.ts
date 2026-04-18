@@ -1584,8 +1584,8 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   if (block.type === 'cb_callout' || block.type === 'cb_inline_comment') {
     const text = block.getFieldValue('TEXT') || ''
     const comment = language === 'javascript'
-      ? `/* ${text} */`
-      : `# ${text}`
+      ? `/* ${text.replace(/\*\//g, '* /')} */`
+      : text.split('\n').map((line: string) => `# ${line}`).join('\n')
     const nextBlock = block.getNextBlock()
     if (nextBlock) return comment + '\n' + generateBlockCode(nextBlock, language)
     return comment
