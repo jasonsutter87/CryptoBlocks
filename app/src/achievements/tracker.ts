@@ -160,6 +160,9 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
       if (!context.output) return false
       return context.output.some((line) => line.trim() === '42')
 
+    case 'finney':
+      return (context.cryptoBlockTypes ?? 0) >= 6
+
     case 'satoshi':
       return (context.cryptoBlockTypes ?? 0) >= 8
 
