@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { SharedProject } from '../types/shareplace'
+import { checkAchievements } from '../achievements/tracker'
 
 interface RemixModalProps {
   project: SharedProject
@@ -33,6 +34,9 @@ export default function RemixModal({ project, onClose, onConfirm }: RemixModalPr
         name: project.name,
         author: project.author,
       }))
+
+      // Fire seed badge achievement immediately on remix
+      checkAchievements({ event: 'remix', parentProjectId: project.id })
 
       onConfirm?.()
       onClose()

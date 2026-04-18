@@ -39,5 +39,5 @@ export async function getClerkToken(): Promise<string | null> {
  *  Returns 'Anonymous' if no user is signed in. */
 export function getClerkUserName(): string {
   const u = (window as unknown as ClerkWindow).Clerk?.user
-  return u?.fullName || u?.username || 'Anonymous'
+  return u?.username || u?.fullName || 'Anonymous'
 }
