@@ -288,7 +288,7 @@ export default function ProfilePage() {
           />
         </Field>
 
-        <Field label="Username" hint="Your @handle for Shareplace (future).">
+        <Field label="Username" hint="Your @handle on Shareplace.">
           <input
             type="text"
             className={inputClass}
