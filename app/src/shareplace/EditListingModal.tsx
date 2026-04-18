@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { SharedProject } from '../types/shareplace'
 import { updateProject, fetchProject } from './api'
-import { useAuth } from '../auth'
+import { useAuth, useUser } from '../auth'
 import { showToast } from '../components/Toast'
 
 interface EditListingModalProps {
@@ -14,6 +14,7 @@ const CATEGORIES = ['Games', 'Art', 'Web', 'Sound', 'Data', 'AI'] as const
 
 export default function EditListingModal({ project, onClose, onSaved }: EditListingModalProps) {
   const { getToken } = useAuth()
+  const { user } = useUser()
   const [name, setName] = useState(project.name)
   const [description, setDescription] = useState(project.description)
   const [category, setCategory] = useState(project.category)
@@ -37,7 +38,7 @@ export default function EditListingModal({ project, onClose, onSaved }: EditList
       if (!full) { showToast('Could not load project', 'error'); setSaving(false); return }
       const result = await updateProject(project.id, {
         name: name.trim(),
-        authorName: project.author,
+        authorName: user?.fullName || user?.username || project.author,
         description: description.trim(),
         category,
         workspaceJson: full.workspaceJson,
