@@ -77,13 +77,21 @@ export function useFileOps(deps: Deps) {
       }
 
       // First-time save — ask for a name and POST a new project.
+      // Check if this is a remix (remix parent stashed by RemixModal)
+      let parentId: string | undefined
+      try {
+        const raw = localStorage.getItem('cryptoblocks_remix_parent')
+        if (raw) parentId = JSON.parse(raw)?.id
+      } catch { /* no parent */ }
+
       const name = prompt('Project name:') || 'Untitled Project'
       const result = await saveToDashboard({
-        name, authorName: 'User', workspaceJson, blockCount, category: 'General',
+        name, parentId, authorName: 'User', workspaceJson, blockCount, category: 'General',
       }, token)
 
       if (result && 'id' in result) {
         showToast('Saved to your dashboard!', 'success')
+        localStorage.removeItem('cryptoblocks_remix_parent')
         // Future saves on this session update in place rather than create copies.
         deps.setCurrentProject({ id: result.id, name })
       } else if (result && 'error' in result) {
