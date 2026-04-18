@@ -118,9 +118,12 @@ export default function EditorPane(props: EditorPaneProps) {
         />
       )}
 
-      <div className="flex-1 flex flex-col md:flex-row min-h-0">
+      <div className="flex-1 flex flex-col md:flex-row min-h-0 relative">
+        {/* Blockly workspace — full width/height on mobile; split width on desktop.
+            In flex-col (mobile) the percentage width is irrelevant; flex-1 fills the column.
+            In flex-row (desktop) the explicit width controls the split. */}
         <div
-          className="relative h-1/2 md:h-full border-b md:border-b-0 md:border-r border-surface-0"
+          className="relative flex-1 md:flex-none h-full border-b md:border-b-0 md:border-r border-surface-0"
           style={{ width: editorWidth }}
         >
           <BlockEditor
@@ -141,6 +144,7 @@ export default function EditorPane(props: EditorPaneProps) {
           )}
         </div>
 
+        {/* Desktop split drag handle */}
         {sideOpen && (
           <div
             className="hidden md:flex items-center justify-center w-1.5 cursor-col-resize bg-surface-0 hover:bg-warn active:bg-warn transition-colors flex-shrink-0"
@@ -150,8 +154,9 @@ export default function EditorPane(props: EditorPaneProps) {
           </div>
         )}
 
+        {/* Desktop: inline code + output panel */}
         {showCode && (
-          <div className="h-1/2 md:h-full flex flex-col" style={{ width: sideWidth }}>
+          <div className="hidden md:flex h-full flex-col" style={{ width: sideWidth }}>
             <div className={showOutput ? 'h-1/2' : 'h-full'}>
               <CodeView code={code} language={language} onLanguageChange={onLanguageChange} />
             </div>
@@ -163,12 +168,49 @@ export default function EditorPane(props: EditorPaneProps) {
           </div>
         )}
 
+        {/* Desktop: output-only panel (no code) */}
         {!showCode && showOutput && (
           <div
-            className="h-1/2 md:h-full border-t md:border-t-0 md:border-l border-surface-0"
+            className="hidden md:block h-full border-t md:border-t-0 md:border-l border-surface-0"
             style={{ width: sideWidth }}
           >
             <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
+          </div>
+        )}
+
+        {/* Mobile: code drawer — slides up from bottom as an overlay */}
+        {showCode && (
+          <div className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col bg-base border-t-2 border-surface-1 shadow-2xl" style={{ height: '55vh' }}>
+            <div className="flex items-center justify-between px-3 py-1.5 bg-mantle border-b border-surface-0 shrink-0">
+              <span className="text-xs font-semibold text-overlay uppercase tracking-wide">Code</span>
+              <div className="flex items-center gap-2">
+                {showOutput && (
+                  <span className="text-xs text-success font-medium">Output ready</span>
+                )}
+              </div>
+            </div>
+            <div className={showOutput ? 'flex-1 min-h-0 flex flex-col' : 'flex-1 min-h-0'}>
+              <div className={showOutput ? 'h-1/2 min-h-0' : 'h-full'}>
+                <CodeView code={code} language={language} onLanguageChange={onLanguageChange} />
+              </div>
+              {showOutput && (
+                <div className="h-1/2 border-t border-surface-0 min-h-0">
+                  <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Mobile: output-only drawer (no code panel) */}
+        {!showCode && showOutput && (
+          <div className="md:hidden fixed inset-x-0 bottom-0 z-40 flex flex-col bg-base border-t-2 border-surface-1 shadow-2xl" style={{ height: '40vh' }}>
+            <div className="flex items-center px-3 py-1.5 bg-mantle border-b border-surface-0 shrink-0">
+              <span className="text-xs font-semibold text-overlay uppercase tracking-wide">Output</span>
+            </div>
+            <div className="flex-1 min-h-0">
+              <OutputPanel result={result} isRunning={isRunning} liveOutput={liveOutput} previewCode={lastExecCode} />
+            </div>
           </div>
         )}
       </div>
