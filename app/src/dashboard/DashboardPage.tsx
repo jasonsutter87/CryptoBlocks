@@ -9,6 +9,24 @@ import { showToast } from '../components/Toast'
 import { loadDailyState, getEffectiveStreak } from '../daily/state'
 import { getDayNumber } from '../daily/getTodaysPuzzle'
 
+function ConfirmModal({ title, message, confirmLabel, danger, onConfirm, onClose }: {
+  title: string; message: string; confirmLabel?: string; danger?: boolean
+  onConfirm: () => void; onClose: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="bg-base border border-surface-0 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-6">
+        <h2 className="text-text font-semibold text-base mb-2">{title}</h2>
+        <p className="text-subtext text-sm mb-6">{message}</p>
+        <div className="flex gap-2 justify-end">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-text bg-surface-0 hover:bg-surface-1 rounded-lg transition-colors">Cancel</button>
+          <button onClick={onConfirm} className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${danger ? 'bg-red text-base hover:bg-red/80' : 'bg-accent text-base hover:bg-accent/80'}`}>{confirmLabel ?? 'Confirm'}</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface StatCardProps {
   label: string
   value: string | number
@@ -192,6 +210,7 @@ function MyProjectCard({
   const [opening, setOpening] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showPublish, setShowPublish] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; label: string; danger?: boolean; action: () => void } | null>(null)
   const [publishData, setPublishData] = useState<{ id: string; name: string; description?: string; category?: string; workspaceJson: string; blockCount: number } | null>(null)
   const isPublic = project.visibility === 'public'
 
@@ -218,23 +237,15 @@ function MyProjectCard({
   const handlePublish = async () => {
     if (isPublic) {
       // Unpublish — simple PATCH via import
-      if (!confirm('Remove from Shareplace? It will become private.')) return
-      const token = await getToken().catch(() => null)
-      const full = await fetchProject(project.id, token ?? undefined)
-      if (!full) { showToast('Could not load project', 'error'); return }
-      const { updateProject: patch } = await import('../shareplace/api')
-      const result = await patch(project.id, {
-        name: project.name,
-        authorName: project.author || 'User',
-        workspaceJson: full.workspaceJson,
-        blockCount: project.blockCount,
-        category: project.category,
-        visibility: 'private',
-      }, token ?? undefined)
-      if (result && 'id' in result) {
-        showToast('Made private', 'success')
-        onUpdated(project.id, { visibility: 'private' })
-      } else { showToast('Failed', 'error') }
+      setConfirmAction({
+        title: 'Remove from Shareplace?',
+        message: 'This project will become private and disappear from the feed.',
+        label: 'Make Private',
+        action: async () => {
+          setConfirmAction(null)
+          await doUnpublish()
+        },
+      })
       return
     }
     // Publish — fetch workspace, open the modal
@@ -252,9 +263,37 @@ function MyProjectCard({
     setShowPublish(true)
   }
 
+  const doUnpublish = async () => {
+      const token = await getToken().catch(() => null)
+      const full = await fetchProject(project.id, token ?? undefined)
+      if (!full) { showToast('Could not load project', 'error'); return }
+      const { updateProject: patch } = await import('../shareplace/api')
+      const result = await patch(project.id, {
+        name: project.name,
+        authorName: project.author || 'User',
+        workspaceJson: full.workspaceJson,
+        blockCount: project.blockCount,
+        category: project.category,
+        visibility: 'private',
+      }, token ?? undefined)
+      if (result && 'id' in result) {
+        showToast('Made private', 'success')
+        onUpdated(project.id, { visibility: 'private' })
+      } else { showToast('Failed', 'error') }
+  }
+
   const handleDelete = async () => {
     if (deleting) return
-    if (!confirm(`Delete "${project.name}"? This cannot be undone.`)) return
+    setConfirmAction({
+      title: `Delete "${project.name}"?`,
+      message: 'This cannot be undone. The project will be permanently removed.',
+      label: 'Delete',
+      danger: true,
+      action: async () => { setConfirmAction(null); await doDelete() },
+    })
+  }
+
+  const doDelete = async () => {
     setDeleting(true)
     const token = await getToken().catch(() => null)
     const result = await deleteProject(project.id, token ?? undefined)
@@ -292,6 +331,16 @@ function MyProjectCard({
             onPublished={() => onUpdated(project.id, { visibility: 'public' })}
           />
         </Suspense>
+      )}
+      {confirmAction && (
+        <ConfirmModal
+          title={confirmAction.title}
+          message={confirmAction.message}
+          confirmLabel={confirmAction.label}
+          danger={confirmAction.danger}
+          onConfirm={confirmAction.action}
+          onClose={() => setConfirmAction(null)}
+        />
       )}
       <div className="mt-auto flex gap-2">
         <button
