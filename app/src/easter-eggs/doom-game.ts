@@ -128,7 +128,15 @@ function startGame(): void {
   let shootFrame = 0
   let alive = true
   let kills = 0
+  let hp = 100
+  let hurtFlash = 0
+  let dead = false
   const totalEnemies = enemies.length
+  const enemySpeed = 0.012
+  const enemyAttackRange = 0.8
+  const enemyAttackCooldown = 60 // frames between attacks
+  const enemyAttackDamage = 8
+  let enemyAttackTimers: number[] = enemies.map(() => 0)
 
   const onKey = (e: KeyboardEvent, down: boolean) => {
     keys[e.key.toLowerCase()] = down
@@ -229,6 +237,38 @@ function startGame(): void {
     g.connect(masterGain)
     osc.start()
     osc.stop(audio.currentTime + 0.2)
+  }
+
+  // Hurt SFX
+  function playHurtSound() {
+    const osc = audio.createOscillator()
+    osc.type = 'square'
+    osc.frequency.value = 80
+    osc.frequency.exponentialRampToValueAtTime(30, audio.currentTime + 0.3)
+    const g = audio.createGain()
+    g.gain.value = 0.2
+    g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.35)
+    osc.connect(g)
+    g.connect(masterGain)
+    osc.start()
+    osc.stop(audio.currentTime + 0.35)
+  }
+
+  // Death SFX
+  function playDeathSound() {
+    for (let i = 0; i < 3; i++) {
+      const osc = audio.createOscillator()
+      osc.type = 'sawtooth'
+      osc.frequency.value = 120 - i * 30
+      osc.frequency.exponentialRampToValueAtTime(20, audio.currentTime + 1.5)
+      const g = audio.createGain()
+      g.gain.value = 0.15
+      g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 1.5)
+      osc.connect(g)
+      g.connect(masterGain)
+      osc.start(audio.currentTime + i * 0.15)
+      osc.stop(audio.currentTime + 1.5)
+    }
   }
 
   // Kill SFX
@@ -490,11 +530,32 @@ function startGame(): void {
     ctx.fillStyle = shooting && shootFrame > 4 ? '#a6e3a1' : '#666'
     ctx.fillRect(W / 2 - 1, H - 60, 2, 8)
 
+    // Hurt flash (red overlay)
+    if (hurtFlash > 0) {
+      ctx.fillStyle = `rgba(255, 0, 0, ${hurtFlash * 0.04})`
+      ctx.fillRect(0, 0, W, H)
+      hurtFlash--
+    }
+
     // HUD
     ctx.fillStyle = '#a6e3a1'
     ctx.font = '8px monospace'
     ctx.fillText(`KILLS: ${kills}/${totalEnemies}`, 4, 10)
     ctx.fillText('ESC to quit', W - 62, 10)
+
+    // Health bar
+    const hpBarW = 60
+    const hpBarH = 6
+    const hpBarX = 4
+    const hpBarY = H - 12
+    ctx.fillStyle = '#333'
+    ctx.fillRect(hpBarX, hpBarY, hpBarW, hpBarH)
+    const hpColor = hp > 60 ? '#a6e3a1' : hp > 30 ? '#f9e2af' : '#f38ba8'
+    ctx.fillStyle = hpColor
+    ctx.fillRect(hpBarX, hpBarY, (hp / 100) * hpBarW, hpBarH)
+    ctx.fillStyle = hpColor
+    ctx.font = '7px monospace'
+    ctx.fillText(`HP: ${hp}`, hpBarX + hpBarW + 4, hpBarY + 5)
 
     // Minimap (top right)
     const mmSize = 3
@@ -518,8 +579,23 @@ function startGame(): void {
     }
     ctx.globalAlpha = 1
 
+    // Death screen
+    if (dead) {
+      ctx.fillStyle = 'rgba(80,0,0,0.7)'
+      ctx.fillRect(0, 0, W, H)
+      ctx.fillStyle = '#f38ba8'
+      ctx.font = 'bold 16px monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText('YOU DIED', W / 2, H / 2 - 10)
+      ctx.font = '8px monospace'
+      ctx.fillStyle = '#6c7086'
+      ctx.fillText(`Kills: ${kills}/${totalEnemies}`, W / 2, H / 2 + 10)
+      ctx.fillText('Press ESC to exit.', W / 2, H / 2 + 25)
+      ctx.textAlign = 'left'
+    }
+
     // Win screen
-    if (kills === totalEnemies) {
+    if (!dead && kills === totalEnemies) {
       ctx.fillStyle = 'rgba(0,0,0,0.7)'
       ctx.fillRect(0, 0, W, H)
       ctx.fillStyle = '#a6e3a1'
@@ -576,6 +652,44 @@ function startGame(): void {
     }
     if (keys['arrowleft']) pa -= rotSpeed
     if (keys['arrowright']) pa += rotSpeed
+
+    // Enemy AI — chase player and attack
+    if (!dead) {
+      for (let i = 0; i < enemies.length; i++) {
+        const e = enemies[i]
+        if (!e.alive) continue
+
+        const dx = px - e.x
+        const dy = py - e.y
+        const dist = Math.hypot(dx, dy)
+
+        // Chase player
+        if (dist > enemyAttackRange && dist < 8) {
+          const nx = e.x + (dx / dist) * enemySpeed
+          const ny = e.y + (dy / dist) * enemySpeed
+          // Only move if walkable
+          if (MAP[Math.floor(ny)]?.[Math.floor(nx)] === 0) {
+            e.x = nx
+            e.y = ny
+          }
+        }
+
+        // Attack if close enough
+        if (enemyAttackTimers[i] > 0) {
+          enemyAttackTimers[i]--
+        } else if (dist < enemyAttackRange) {
+          hp -= enemyAttackDamage
+          hurtFlash = 10
+          playHurtSound()
+          enemyAttackTimers[i] = enemyAttackCooldown
+          if (hp <= 0) {
+            hp = 0
+            dead = true
+            playDeathSound()
+          }
+        }
+      }
+    }
   }
 
   function loop() {
