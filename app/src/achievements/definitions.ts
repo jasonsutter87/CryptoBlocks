@@ -378,6 +378,14 @@ export const achievements: Achievement[] = [
     rarity: 'epic',
   },
   {
+    id: 'napster',
+    name: 'Napster',
+    description: 'Import 10 projects from Scratch',
+    icon: '🎵',
+    rarity: 'legendary',
+    secret: true,
+  },
+  {
     id: 'going-global',
     name: 'Going Global',
     description: 'Publish a project to GitHub',
