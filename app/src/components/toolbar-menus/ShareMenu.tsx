@@ -12,6 +12,7 @@ import { menuItem, menuDropdown, SignInBadge } from './FileMenu'
 export interface ShareMenuProps {
   isSignedIn: boolean
   isPro: boolean
+  userName?: string | null
   getToken: () => Promise<string | null>
   requireAuth: (action: () => void) => void
   requirePro: (action: () => void) => void
@@ -49,7 +50,7 @@ export default function ShareMenu(p: ShareMenuProps) {
         method: 'POST', headers,
         body: JSON.stringify({
           name: 'Shared Project — ' + new Date().toLocaleDateString(),
-          authorName: 'Anonymous',
+          authorName: p.userName || 'Anonymous',
           description: 'Shared via link',
           category: 'General',
           workspaceJson: ws,

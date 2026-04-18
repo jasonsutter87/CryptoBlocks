@@ -9,7 +9,7 @@ import MainMenu from './toolbar-menus/MainMenu'
 import MobileMenu from './toolbar-menus/MobileMenu'
 import { toggleHackerMode } from '../easter-eggs/hacker-mode'
 import MicrobitStatus from './MicrobitStatus'
-import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '../auth'
+import { SignedIn, SignedOut, SignInButton, UserButton, useAuth, useUser } from '../auth'
 import NotificationBell from './NotificationBell'
 import { showToast } from './Toast'
 import { ProBadge } from '../billing/UpgradeGate'
@@ -114,6 +114,8 @@ export default function Toolbar({
   const dailyStreak = useMemo(() => getEffectiveStreak(loadDailyState(), getDayNumber()), [])
   const { isPro } = useIsPro()
   const { getToken, isSignedIn } = useAuth()
+  const { user } = useUser()
+  const userName = user?.fullName || user?.username || null
 
   const requireAuth = (action: () => void) => {
     if (isSignedIn) { action(); return }
@@ -252,6 +254,7 @@ export default function Toolbar({
                 <ShareMenu
                   isSignedIn={!!isSignedIn}
                   isPro={isPro}
+                  userName={userName}
                   getToken={getToken}
                   requireAuth={requireAuth}
                   requirePro={requirePro}
