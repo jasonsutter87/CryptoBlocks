@@ -7,7 +7,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { achievements } from '../achievements/definitions'
 import { RARITY_ORDER, RARITY_STYLES, RARITY_LABEL } from '../achievements/rarity'
-import type { Achievement } from '../achievements/types'
 
 interface UnlockedRecord {
   achievementId: string
