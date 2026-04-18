@@ -232,6 +232,8 @@ export function checkAchievements(context: AchievementContext): Achievement[] {
     saveUnlocked(unlocked)
     // Sync to server in background (fire-and-forget)
     syncToServer(newlyUnlocked.map((a) => a.id))
+    // Notify the UI so the COD animation fires from any callsite
+    document.dispatchEvent(new CustomEvent('cb:achievement-unlocked', { detail: { achievements: newlyUnlocked } }))
   }
 
   return newlyUnlocked
