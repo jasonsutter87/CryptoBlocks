@@ -2145,6 +2145,7 @@ export function getToolboxXml(): string {
     xml += visionToolboxXml(cat)
 
     for (const block of blocks) {
+      if (block.hidden) continue
       xml += `<block type="cb_${block.name}">`
       for (const input of block.inputs) {
         xml += inputShadowXml(input)
@@ -2202,6 +2203,7 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
     xml += visionToolboxXml(cat)
 
     for (const block of blocks) {
+      if (block.hidden) continue
       xml += `<block type="cb_${block.name}">`
       for (const input of block.inputs) {
         xml += inputShadowXml(input)

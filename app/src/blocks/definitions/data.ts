@@ -1,6 +1,68 @@
 import type { BlockDefinition } from '../../types/block'
 
 export const dataBlocks: BlockDefinition[] = [
+  // === Unified toggleable blocks (global/local dropdown) ===
+  {
+    name: 'obj_create',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Create an empty object (toggle global or local scope)',
+    category: 'Data',
+    inputs: [
+      { name: 'scope', type: 'string', description: 'Scope', default: 'global', choices: ['global', 'local'] },
+      { name: 'name', type: 'string', description: 'Name for the object' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function objCreate(scope, name) {\n  if (scope === 'local') {\n    var s = (window.__localStack || [{}]); s[s.length - 1][name] = {};\n  } else {\n    window.__vars = window.__vars || {}; window.__vars[name] = {};\n  }\n}`,
+      python: `def obj_create(scope, name):\n    if scope == 'local':\n        if not hasattr(obj_create, '_stack'): obj_create._stack = [{}]\n        obj_create._stack[-1][name] = {}\n    else:\n        globals()[name] = {}`,
+    },
+    tests: [{ input: { scope: 'global', name: 'player' }, expected: {} }],
+    color: '#0891B2',
+    shape: 'statement',
+  },
+  {
+    name: 'obj_set',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Set a property on an object (toggle global or local scope)',
+    category: 'Data',
+    inputs: [
+      { name: 'scope', type: 'string', description: 'Scope', default: 'global', choices: ['global', 'local'] },
+      { name: 'object_name', type: 'string', description: 'Name of the object' },
+      { name: 'key', type: 'string', description: 'Property name' },
+      { name: 'value', type: 'any', description: 'Value to set' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function objSet(scope, objectName, key, value) {\n  if (key === '__proto__' || key === 'constructor' || key === 'prototype') throw new Error('Invalid property name: ' + key);\n  if (scope === 'local') {\n    var s = (window.__localStack || [{}]); var o = s[s.length - 1][objectName];\n    if (!o || typeof o !== 'object') { s[s.length - 1][objectName] = {}; o = s[s.length - 1][objectName]; }\n    o[key] = value;\n  } else {\n    window.__vars = window.__vars || {};\n    if (!window.__vars[objectName]) window.__vars[objectName] = {};\n    window.__vars[objectName][key] = value;\n  }\n}`,
+      python: `def obj_set(scope, object_name, key, value):\n    if key in ('__proto__', 'constructor', 'prototype', '__class__'):\n        raise ValueError('Invalid property name: ' + key)\n    if scope == 'local':\n        s = obj_create._stack[-1] if hasattr(obj_create, '_stack') else {}\n        if object_name not in s: s[object_name] = {}\n        s[object_name][key] = value\n    else:\n        if object_name not in globals(): globals()[object_name] = {}\n        globals()[object_name][key] = value`,
+    },
+    tests: [{ input: { scope: 'global', object_name: 'player', key: 'x', value: 1 }, expected: {} }],
+    color: '#0891B2',
+    shape: 'statement',
+  },
+  {
+    name: 'obj_get',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get a property from an object (toggle global or local scope)',
+    category: 'Data',
+    inputs: [
+      { name: 'scope', type: 'string', description: 'Scope', default: 'global', choices: ['global', 'local'] },
+      { name: 'object_name', type: 'string', description: 'Name of the object' },
+      { name: 'key', type: 'string', description: 'Property name' },
+    ],
+    outputs: [{ name: 'value', type: 'any' }],
+    implementations: {
+      javascript: `function objGet(scope, objectName, key) {\n  if (key === '__proto__' || key === 'constructor' || key === 'prototype') return undefined;\n  if (scope === 'local') {\n    var s = (window.__localStack || [{}]); var o = s[s.length - 1][objectName] || {};\n    return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;\n  } else {\n    window.__vars = window.__vars || {};\n    var o = window.__vars[objectName] || {};\n    return Object.prototype.hasOwnProperty.call(o, key) ? o[key] : undefined;\n  }\n}`,
+      python: `def obj_get(scope, object_name, key):\n    if key in ('__proto__', 'constructor', 'prototype', '__class__'):\n        return None\n    if scope == 'local':\n        s = obj_create._stack[-1] if hasattr(obj_create, '_stack') else {}\n        return s.get(object_name, {}).get(key)\n    else:\n        return globals().get(object_name, {}).get(key)`,
+    },
+    tests: [{ input: { scope: 'global', object_name: 'player', key: 'x' }, expected: { value: 'any' } }],
+    color: '#0891B2',
+  },
+
+  // === Legacy blocks (kept for backwards compat) ===
   {
     name: 'create_object',
     author: 'CryptoBlocks',
@@ -19,6 +81,7 @@ export const dataBlocks: BlockDefinition[] = [
       { input: { name: 'player' }, expected: {} },
     ],
     color: '#0891B2',
+    hidden: true,
   },
   {
     name: 'create_local_object',
@@ -38,6 +101,7 @@ export const dataBlocks: BlockDefinition[] = [
       { input: { name: 'temp' }, expected: {} },
     ],
     color: '#0891B2',
+    hidden: true,
     shape: 'statement',
   },
   {
@@ -60,6 +124,7 @@ export const dataBlocks: BlockDefinition[] = [
       { input: { object_name: 'temp', key: 'x', value: 1 }, expected: {} },
     ],
     color: '#0891B2',
+    hidden: true,
     shape: 'statement',
   },
   {
@@ -81,6 +146,7 @@ export const dataBlocks: BlockDefinition[] = [
       { input: { object_name: 'temp', key: 'x' }, expected: { value: 'any' } },
     ],
     color: '#0891B2',
+    hidden: true,
   },
   {
     name: 'object_value',
@@ -100,6 +166,7 @@ export const dataBlocks: BlockDefinition[] = [
       { input: { name: 'player' }, expected: { object: 'any' } },
     ],
     color: '#0891B2',
+    hidden: true,
   },
   {
     name: 'set_property',
@@ -121,6 +188,7 @@ export const dataBlocks: BlockDefinition[] = [
       { input: { object_name: 'player', key: 'name', value: 'Jason' }, expected: {} },
     ],
     color: '#0891B2',
+    hidden: true,
   },
   {
     name: 'get_property',
@@ -141,6 +209,7 @@ export const dataBlocks: BlockDefinition[] = [
       { input: { object_name: 'player', key: 'name' }, expected: { value: 'any' } },
     ],
     color: '#0891B2',
+    hidden: true,
   },
   {
     name: 'print_object',

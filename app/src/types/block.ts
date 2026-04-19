@@ -32,6 +32,7 @@ export interface BlockDefinition {
   color: string
   icon?: string
   shape?: 'value' | 'statement'
+  hidden?: boolean // keep registered for backwards compat but hide from Brick Bin
 }
 
 export type BlockCategory =

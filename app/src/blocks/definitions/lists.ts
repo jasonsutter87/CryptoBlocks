@@ -1,6 +1,106 @@
 import type { BlockDefinition } from '../../types/block'
 
 export const listsBlocks: BlockDefinition[] = [
+  // === Unified toggleable blocks (global/local dropdown) ===
+  {
+    name: 'list_create',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Create an empty list (toggle global or local scope)',
+    category: 'Lists',
+    inputs: [
+      { name: 'scope', type: 'string', description: 'Scope', default: 'global', choices: ['global', 'local'] },
+      { name: 'name', type: 'string', description: 'Name for the list' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function listCreate(scope, name) {\n  if (scope === 'local') {\n    var s = (window.__localStack || [{}]); s[s.length - 1][name] = [];\n  } else {\n    window.__vars = window.__vars || {}; window.__vars[name] = [];\n  }\n}`,
+      python: `def list_create(scope, name):\n    if scope == 'local':\n        if not hasattr(list_create, '_stack'): list_create._stack = [{}]\n        list_create._stack[-1][name] = []\n    else:\n        globals()[name] = []`,
+    },
+    tests: [{ input: { scope: 'global', name: 'myList' }, expected: {} }],
+    color: '#D97706',
+    shape: 'statement',
+  },
+  {
+    name: 'list_add',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Add an item to a list (toggle global or local scope)',
+    category: 'Lists',
+    inputs: [
+      { name: 'scope', type: 'string', description: 'Scope', default: 'global', choices: ['global', 'local'] },
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'item', type: 'any', description: 'Item to add' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function listAdd(scope, name, item) {\n  if (scope === 'local') {\n    var s = (window.__localStack || [{}]); var l = s[s.length - 1][name];\n    if (!Array.isArray(l)) { s[s.length - 1][name] = []; l = s[s.length - 1][name]; }\n    l.push(item);\n  } else {\n    window.__vars = window.__vars || {};\n    if (!window.__vars[name]) window.__vars[name] = [];\n    window.__vars[name].push(item);\n  }\n}`,
+      python: `def list_add(scope, name, item):\n    if scope == 'local':\n        s = list_create._stack[-1] if hasattr(list_create, '_stack') else {}\n        if name not in s: s[name] = []\n        s[name].append(item)\n    else:\n        if name not in globals(): globals()[name] = []\n        globals()[name].append(item)`,
+    },
+    tests: [{ input: { scope: 'global', name: 'myList', item: 1 }, expected: {} }],
+    color: '#D97706',
+    shape: 'statement',
+  },
+  {
+    name: 'list_get',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get an item from a list by index (toggle global or local scope)',
+    category: 'Lists',
+    inputs: [
+      { name: 'scope', type: 'string', description: 'Scope', default: 'global', choices: ['global', 'local'] },
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'index', type: 'number', description: 'Position (0 = first)', default: 0 },
+    ],
+    outputs: [{ name: 'item', type: 'any' }],
+    implementations: {
+      javascript: `function listGet(scope, name, index) {\n  if (scope === 'local') {\n    var s = (window.__localStack || [{}]); var l = s[s.length - 1][name] || [];\n    return l[index];\n  } else {\n    window.__vars = window.__vars || {};\n    return (window.__vars[name] || [])[index];\n  }\n}`,
+      python: `def list_get(scope, name, index):\n    if scope == 'local':\n        s = list_create._stack[-1] if hasattr(list_create, '_stack') else {}\n        return s.get(name, [])[index]\n    else:\n        return globals().get(name, [])[index]`,
+    },
+    tests: [{ input: { scope: 'global', name: 'myList', index: 0 }, expected: { item: 'any' } }],
+    color: '#D97706',
+  },
+  {
+    name: 'list_set',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Set an item in a list at an index (toggle global or local scope)',
+    category: 'Lists',
+    inputs: [
+      { name: 'scope', type: 'string', description: 'Scope', default: 'global', choices: ['global', 'local'] },
+      { name: 'name', type: 'string', description: 'Name of the list' },
+      { name: 'index', type: 'number', description: 'Position (0 = first)', default: 0 },
+      { name: 'value', type: 'any', description: 'Value to set' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function listSet(scope, name, index, value) {\n  if (scope === 'local') {\n    var s = (window.__localStack || [{}]); var l = s[s.length - 1][name];\n    if (!Array.isArray(l)) { s[s.length - 1][name] = []; l = s[s.length - 1][name]; }\n    l[index] = value;\n  } else {\n    window.__vars = window.__vars || {};\n    var l = window.__vars[name] || []; l[index] = value; window.__vars[name] = l;\n  }\n}`,
+      python: `def list_set(scope, name, index, value):\n    if scope == 'local':\n        s = list_create._stack[-1] if hasattr(list_create, '_stack') else {}\n        if name not in s: s[name] = []\n        s[name][int(index)] = value\n    else:\n        if name not in globals(): globals()[name] = []\n        globals()[name][int(index)] = value`,
+    },
+    tests: [{ input: { scope: 'global', name: 'myList', index: 0, value: 42 }, expected: {} }],
+    color: '#D97706',
+    shape: 'statement',
+  },
+  {
+    name: 'list_len',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get the length of a list (toggle global or local scope)',
+    category: 'Lists',
+    inputs: [
+      { name: 'scope', type: 'string', description: 'Scope', default: 'global', choices: ['global', 'local'] },
+      { name: 'name', type: 'string', description: 'Name of the list' },
+    ],
+    outputs: [{ name: 'length', type: 'number' }],
+    implementations: {
+      javascript: `function listLen(scope, name) {\n  if (scope === 'local') {\n    var s = (window.__localStack || [{}]); return (s[s.length - 1][name] || []).length;\n  } else {\n    window.__vars = window.__vars || {}; return (window.__vars[name] || []).length;\n  }\n}`,
+      python: `def list_len(scope, name):\n    if scope == 'local':\n        s = list_create._stack[-1] if hasattr(list_create, '_stack') else {}\n        return len(s.get(name, []))\n    else:\n        return len(globals().get(name, []))`,
+    },
+    tests: [{ input: { scope: 'global', name: 'myList' }, expected: { length: 0 } }],
+    color: '#D97706',
+  },
+
+  // === Legacy blocks (kept for backwards compat, hidden from Brick Bin) ===
   {
     name: 'create_list',
     author: 'CryptoBlocks',
@@ -19,6 +119,7 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'myList' }, expected: {} },
     ],
     color: '#D97706',
+    hidden: true,
     shape: 'statement',
   },
   {
@@ -39,6 +140,7 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'temp' }, expected: {} },
     ],
     color: '#D97706',
+    hidden: true,
   },
   {
     name: 'list_value',
@@ -58,6 +160,7 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'myList' }, expected: { list: 'any' } },
     ],
     color: '#D97706',
+    hidden: true,
   },
   {
     name: 'set_in_local_list',
@@ -79,6 +182,7 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'temp', index: 0, value: 42 }, expected: {} },
     ],
     color: '#D97706',
+    hidden: true,
     shape: 'statement',
   },
   {
@@ -100,6 +204,7 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'temp', item: 1 }, expected: {} },
     ],
     color: '#D97706',
+    hidden: true,
     shape: 'statement',
   },
   {
@@ -121,6 +226,7 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'temp', index: 0 }, expected: { item: 'any' } },
     ],
     color: '#D97706',
+    hidden: true,
   },
   {
     name: 'add_to_list',
@@ -141,6 +247,7 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'myList', item: 'hello' }, expected: {} },
     ],
     color: '#D97706',
+    hidden: true,
   },
   {
     name: 'get_from_list',
@@ -161,6 +268,7 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'myList', index: 0 }, expected: { item: 'any' } },
     ],
     color: '#D97706',
+    hidden: true,
   },
   {
     name: 'set_in_list',
@@ -182,6 +290,7 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'myList', index: 0, value: 42 }, expected: {} },
     ],
     color: '#D97706',
+    hidden: true,
     shape: 'statement',
   },
   {
@@ -202,6 +311,7 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'myList' }, expected: { length: 0 } },
     ],
     color: '#D97706',
+    hidden: true,
   },
   {
     name: 'remove_from_list',
