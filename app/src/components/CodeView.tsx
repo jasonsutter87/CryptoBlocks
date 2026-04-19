@@ -13,7 +13,7 @@ interface CodeViewProps {
 }
 
 /** Simple <pre> fallback when Monaco can't load (Brave Shields, etc.) */
-function PlainCodeView({ code, language, editable, onCodeChange }: { code: string; language: string; editable?: boolean; onCodeChange?: (code: string) => void }) {
+function PlainCodeView({ code, language: _language, editable, onCodeChange, onLineClick }: { code: string; language: string; editable?: boolean; onCodeChange?: (code: string) => void; onLineClick?: (line: number) => void }) {
   if (editable) {
     return (
       <div className="h-full bg-base p-3">
@@ -28,11 +28,27 @@ function PlainCodeView({ code, language, editable, onCodeChange }: { code: strin
       </div>
     )
   }
+  const lines = (code || '// No code generated yet').split('\n')
   return (
     <div className="h-full overflow-auto bg-base p-3">
-      <pre className="text-[13px] leading-relaxed text-text font-mono whitespace-pre-wrap break-words">
-        <code data-language={language}>{code || '// No code generated yet'}</code>
-      </pre>
+      <table className="text-[13px] leading-relaxed font-mono border-collapse w-full">
+        <tbody>
+          {lines.map((line, i) => (
+            <tr
+              key={i}
+              className="hover:bg-surface-0 cursor-pointer"
+              onClick={() => onLineClick?.(i + 1)}
+            >
+              <td className="text-right pr-3 select-none text-overlay/60 font-semibold w-10 align-top" style={{ minWidth: '2.5em' }}>
+                {i + 1}
+              </td>
+              <td className="text-text whitespace-pre-wrap break-words">
+                {line || '\u00A0'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -90,9 +106,9 @@ export default function CodeView({ code, language, onLanguageChange, editable, o
       {/* Code editor */}
       <div className="flex-1 min-h-0">
         {monacoFailed ? (
-          <PlainCodeView code={code} language={monacoLang} editable={editable} onCodeChange={onCodeChange} />
+          <PlainCodeView code={code} language={monacoLang} editable={editable} onCodeChange={onCodeChange} onLineClick={onLineClick} />
         ) : (
-          <Suspense fallback={<PlainCodeView code={code} language={monacoLang} editable={editable} onCodeChange={onCodeChange} />}>
+          <Suspense fallback={<PlainCodeView code={code} language={monacoLang} editable={editable} onCodeChange={onCodeChange} onLineClick={onLineClick} />}>
             <MonacoEditorWrapper
               code={code}
               language={monacoLang}
@@ -139,7 +155,7 @@ function MonacoEditorWrapper({
   }, [onError])
 
   if (timedOut) {
-    return <PlainCodeView code={code} language={language} editable={editable} onCodeChange={onCodeChange} />
+    return <PlainCodeView code={code} language={language} editable={editable} onCodeChange={onCodeChange} onLineClick={onLineClick} />
   }
 
   return (
@@ -147,7 +163,7 @@ function MonacoEditorWrapper({
       language={language}
       value={code}
       theme="vs-dark"
-      loading={<PlainCodeView code={code} language={language} editable={editable} onCodeChange={onCodeChange} />}
+      loading={<PlainCodeView code={code} language={language} editable={editable} onCodeChange={onCodeChange} onLineClick={onLineClick} />}
       beforeMount={(monaco) => {
         if (editable) {
           monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
