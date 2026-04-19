@@ -9,6 +9,7 @@ interface CodeViewProps {
   onLanguageChange: (lang: Language) => void
   editable?: boolean
   onCodeChange?: (code: string) => void
+  onLineClick?: (line: number) => void
 }
 
 /** Simple <pre> fallback when Monaco can't load (Brave Shields, etc.) */
@@ -36,7 +37,7 @@ function PlainCodeView({ code, language, editable, onCodeChange }: { code: strin
   )
 }
 
-export default function CodeView({ code, language, onLanguageChange, editable, onCodeChange }: CodeViewProps) {
+export default function CodeView({ code, language, onLanguageChange, editable, onCodeChange, onLineClick }: CodeViewProps) {
   const [monacoFailed, setMonacoFailed] = useState(false)
 
   const monacoLang = language === 'python' ? 'python' : language === 'html' ? 'html' : 'javascript'
@@ -98,6 +99,7 @@ export default function CodeView({ code, language, onLanguageChange, editable, o
               onError={handleMonacoError}
               editable={editable}
               onCodeChange={onCodeChange}
+              onLineClick={onLineClick}
             />
           </Suspense>
         )}
@@ -113,12 +115,14 @@ function MonacoEditorWrapper({
   onError,
   editable,
   onCodeChange,
+  onLineClick,
 }: {
   code: string
   language: string
   onError: () => void
   editable?: boolean
   onCodeChange?: (code: string) => void
+  onLineClick?: (line: number) => void
 }) {
   const [timedOut, setTimedOut] = useState(false)
   const mountedRef = useRef(false)
@@ -157,7 +161,17 @@ function MonacoEditorWrapper({
           })
         }
       }}
-      onMount={() => { mountedRef.current = true }}
+      onMount={(editor) => {
+        mountedRef.current = true
+        if (onLineClick) {
+          editor.onMouseDown((e) => {
+            // Click on line number gutter or the line itself
+            if (e.target.position) {
+              onLineClick(e.target.position.lineNumber)
+            }
+          })
+        }
+      }}
       onChange={editable ? (value) => onCodeChange?.(value || '') : undefined}
       options={{
         readOnly: !editable,

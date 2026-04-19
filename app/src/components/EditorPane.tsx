@@ -17,6 +17,7 @@ import type { GolfProblem } from '../code-golf'
 import type { ExecutionResult } from '../execution/runner'
 import BlockEditor from './BlockEditor'
 import CodeView from './CodeView'
+import { getBlockSourceMap } from '../blocks/blockly-register'
 import OutputPanel from './OutputPanel'
 import ChallengePanel from './ChallengePanel'
 import BlocksetPanel from './BlocksetPanel'
@@ -88,6 +89,30 @@ export default function EditorPane(props: EditorPaneProps) {
   const editorWidth = sideOpen ? `${splitPercent}%` : '100%'
   const sideWidth = `${100 - splitPercent}%`
 
+  // Click a line in the code view → highlight the block that generated it
+  const handleLineClick = (line: number) => {
+    const sourceMap = getBlockSourceMap()
+    let foundBlockId: string | null = null
+    for (const [blockId, range] of sourceMap) {
+      if (line >= range.startLine && line <= range.endLine) {
+        foundBlockId = blockId
+        break
+      }
+    }
+    if (foundBlockId) {
+      const ws = Blockly.getMainWorkspace() as Blockly.WorkspaceSvg | null
+      if (ws) {
+        // Clear previous highlight
+        ws.highlightBlock('')
+        // Highlight the block
+        ws.highlightBlock(foundBlockId)
+        // Scroll to the block
+        const block = ws.getBlockById(foundBlockId)
+        if (block) ws.centerOnBlock(foundBlockId)
+      }
+    }
+  }
+
   return (
     <>
       {mode === 'active-challenge' && activeChallenge && (
@@ -158,7 +183,7 @@ export default function EditorPane(props: EditorPaneProps) {
         {showCode && (
           <div className="hidden md:flex h-full flex-col" style={{ width: sideWidth }}>
             <div className={showOutput ? 'h-1/2' : 'h-full'}>
-              <CodeView code={code} language={language} onLanguageChange={onLanguageChange} />
+              <CodeView code={code} language={language} onLanguageChange={onLanguageChange} onLineClick={handleLineClick} />
             </div>
             {showOutput && (
               <div className="h-1/2 border-t border-surface-0">
@@ -191,7 +216,7 @@ export default function EditorPane(props: EditorPaneProps) {
             </div>
             <div className={showOutput ? 'flex-1 min-h-0 flex flex-col' : 'flex-1 min-h-0'}>
               <div className={showOutput ? 'h-1/2 min-h-0' : 'h-full'}>
-                <CodeView code={code} language={language} onLanguageChange={onLanguageChange} />
+                <CodeView code={code} language={language} onLanguageChange={onLanguageChange} onLineClick={handleLineClick} />
               </div>
               {showOutput && (
                 <div className="h-1/2 border-t border-surface-0 min-h-0">
