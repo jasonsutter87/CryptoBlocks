@@ -3,6 +3,17 @@ import { achievements } from './definitions'
 import { getClerkToken } from '../auth'
 import { loadStats } from '../stats'
 
+/**
+ * Proof of Work filter — prevents gaming block-count badges by spamming
+ * duplicate blocks. Checks minimum unique block types and maximum single-
+ * type dominance. Thresholds scale with badge tier.
+ */
+function passesPoW(context: AchievementContext, minUnique: number, maxSinglePercent: number): boolean {
+  const unique = context.uniqueBlockTypes ?? 0
+  const maxPercent = context.maxBlockTypePercent ?? 100
+  return unique >= minUnique && maxPercent <= maxSinglePercent
+}
+
 const STORAGE_KEY = 'cb-achievements'
 const LANGUAGES_KEY = 'cb-languages-used'
 const RUNS_KEY = 'cb-total-runs'
@@ -33,6 +44,10 @@ export interface AchievementContext {
   doomLevel?: number
   checkpointCount?: number
   cryptoBlockTypes?: number
+  /** Total unique block types on the workspace */
+  uniqueBlockTypes?: number
+  /** Percentage of workspace occupied by the most-used single block type (0-100) */
+  maxBlockTypePercent?: number
 }
 
 export function loadUnlocked(): UnlockedAchievement[] {
@@ -105,7 +120,7 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
     }
 
     case 'block-party':
-      return (context.blockCount ?? 0) >= 50
+      return (context.blockCount ?? 0) >= 50 && passesPoW(context, 5, 60)
 
     case 'night-owl': {
       const hour = new Date().getHours()
@@ -141,20 +156,23 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
     case 'mad-scientist':
       return (context.categoriesUsed?.length ?? 0) >= 5
 
+    case 'block-master':
+      return (context.blockCount ?? 0) >= 100 && passesPoW(context, 8, 50)
+
     case 'block-1000':
-      return (context.blockCount ?? 0) >= 1000
+      return (context.blockCount ?? 0) >= 1000 && passesPoW(context, 15, 40)
 
     case 'block-2500':
-      return (context.blockCount ?? 0) >= 2500
+      return (context.blockCount ?? 0) >= 2500 && passesPoW(context, 20, 35)
 
     case 'block-5000':
-      return (context.blockCount ?? 0) >= 5000
+      return (context.blockCount ?? 0) >= 5000 && passesPoW(context, 25, 30)
 
     case 'block-god':
-      return (context.blockCount ?? 0) >= 7500
+      return (context.blockCount ?? 0) >= 7500 && passesPoW(context, 25, 30)
 
     case 'block-10000':
-      return (context.blockCount ?? 0) >= 10000
+      return (context.blockCount ?? 0) >= 10000 && passesPoW(context, 25, 30)
 
     case 'the-answer':
       if (!context.output) return false

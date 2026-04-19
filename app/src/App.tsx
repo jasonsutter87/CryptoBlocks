@@ -230,6 +230,21 @@ export default function App() {
     return types.size
   }, [])
 
+  const getBlockDistribution = useCallback((): { uniqueBlockTypes: number; maxBlockTypePercent: number } => {
+    if (!workspaceRef.current) return { uniqueBlockTypes: 0, maxBlockTypePercent: 100 }
+    const counts: Record<string, number> = {}
+    const blocks = workspaceRef.current.getAllBlocks(false)
+    const total = blocks.length
+    if (total === 0) return { uniqueBlockTypes: 0, maxBlockTypePercent: 100 }
+    for (const block of blocks) {
+      counts[block.type] = (counts[block.type] || 0) + 1
+    }
+    const uniqueBlockTypes = Object.keys(counts).length
+    const maxCount = Math.max(...Object.values(counts))
+    const maxBlockTypePercent = Math.round((maxCount / total) * 100)
+    return { uniqueBlockTypes, maxBlockTypePercent }
+  }, [])
+
 
   const handleWorkspaceChange = useCallback(
     (workspace: Blockly.WorkspaceSvg) => {
@@ -268,7 +283,7 @@ export default function App() {
 
   const runPipeline = useRunPipeline({
     workspaceRef, exec, code, language, slowMo,
-    processAchievements, getUsedCategories, getCryptoBlockTypes,
+    processAchievements, getUsedCategories, getCryptoBlockTypes, getBlockDistribution,
     setLastExecCode, setShowOutput,
     collabDoc, isDailyChallenge, dailyInfo,
   })
