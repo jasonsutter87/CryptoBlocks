@@ -108,6 +108,20 @@ body {
   display: none !important;
 }
 
+/* Monaco line numbers — brighter, clickable feel */
+.monaco-editor .line-numbers {
+  color: #a6adc8 !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+}
+.monaco-editor .line-numbers:hover {
+  color: #cdd6f4 !important;
+}
+/* Wider gutter so numbers don't clip */
+.monaco-editor .margin-view-overlays .line-numbers {
+  min-width: 2.5em !important;
+}
+
 /* === MOBILE — Brick Bin (Blockly toolbox) tweaks === */
 /* Compress the category list on narrow screens so the workspace gets more room */
 @media (max-width: 767px) {
