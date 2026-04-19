@@ -1689,6 +1689,11 @@ function traceCall(block: Blockly.Block): string {
 }
 
 function generateBlockCode(block: Blockly.Block, language: Language): string {
+  // Inject source map marker for statement blocks (blocks with connections)
+  // so click-to-highlight works for blocks inside functions, not just top-level
+  const needsMarker = block.previousConnection || block.nextConnection
+  const marker = needsMarker ? `/*__cb:${block.id}*/\n` : ''
+
   // Skip blocks already consumed as a button onclick handler
   if (_consumedByButton.has(block)) {
     const nextBlock = block.getNextBlock()
@@ -1702,7 +1707,7 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   // Handle control flow blocks (if, if-else, repeat)
   const controlFlow = generateControlFlowCode(block, language)
   if (controlFlow !== null) {
-    let code = traceCall(block) + controlFlow
+    let code = marker + traceCall(block) + controlFlow
     const nextBlock = block.getNextBlock()
     if (nextBlock) {
       code += '\n' + generateBlockCode(nextBlock, language)
@@ -1713,7 +1718,7 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   // Handle vision blocks (animation_loop)
   const visionCode = generateVisionCode(block, language)
   if (visionCode !== null) {
-    let code = traceCall(block) + visionCode
+    let code = marker + traceCall(block) + visionCode
     const nextBlock = block.getNextBlock()
     if (nextBlock) {
       code += '\n' + generateBlockCode(nextBlock, language)
@@ -1724,7 +1729,7 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   // Handle function blocks (create_function, call_function)
   const functionCode = generateFunctionCode(block, language)
   if (functionCode !== null) {
-    let code = traceCall(block) + functionCode
+    let code = marker + traceCall(block) + functionCode
     const nextBlock = block.getNextBlock()
     if (nextBlock) {
       code += '\n' + generateBlockCode(nextBlock, language)
@@ -1739,14 +1744,14 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
       ? `/* ${text.replace(/\*\//g, '* /')} */`
       : text.split('\n').map((line: string) => `# ${line}`).join('\n')
     const nextBlock = block.getNextBlock()
-    if (nextBlock) return comment + '\n' + generateBlockCode(nextBlock, language)
-    return comment
+    if (nextBlock) return marker + comment + '\n' + generateBlockCode(nextBlock, language)
+    return marker + comment
   }
 
   // Handle event blocks (when_key_pressed, when_clicked)
   const eventCode = generateEventCode(block, language)
   if (eventCode !== null) {
-    let code = traceCall(block) + eventCode
+    let code = marker + traceCall(block) + eventCode
     // Make outer IIFEs async when they contain await calls
     if (code.includes('await ') && code.includes('(function()')) {
       code = code.replace(/\(function\(\)/g, '(async function()')
@@ -1861,7 +1866,7 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   // Handle library import blocks
   const libraryCode = generateLibraryCode(block, language)
   if (libraryCode !== null) {
-    let code = traceCall(block) + libraryCode
+    let code = marker + traceCall(block) + libraryCode
     const nextBlock = block.getNextBlock()
     if (nextBlock) {
       code += '\n' + generateBlockCode(nextBlock, language)
@@ -1923,7 +1928,7 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   // If this is a statement block, make it a standalone call
   const isStatement = def.shape === 'statement' || (!def.shape && def.outputs.length === 0)
   if (isStatement) {
-    code = traceCall(block) + code
+    code = marker + traceCall(block) + code
     code += language === 'javascript' ? ';' : ''
   }
 
