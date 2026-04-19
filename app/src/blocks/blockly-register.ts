@@ -550,6 +550,16 @@ function registerFunctionBlocks() {
           .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#22c55e"/><path d="M8 4v8M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '+', () => this.addParam_()))
           .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#ef4444"/><path d="M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '-', () => this.removeParam_()))
         this.appendStatementInput('BODY').appendField('do')
+      };
+
+      // Serialization — preserve paramCount across save/load/duplicate
+      (this as unknown as Record<string, unknown>).saveExtraState = () => {
+        return { paramCount: this.paramCount_ }
+      };
+      (this as unknown as Record<string, unknown>).loadExtraState = (state: { paramCount?: number }) => {
+        const target = state?.paramCount ?? 3
+        while (this.paramCount_ < target) this.addParam_()
+        while (this.paramCount_ > target) this.removeParam_()
       }
     },
   }
@@ -570,7 +580,16 @@ function registerFunctionBlocks() {
         .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
-      this.setTooltip('Call a function by name. Click + / - to add or remove arguments.')
+      this.setTooltip('Call a function by name. Click + / - to add or remove arguments.');
+
+      (this as unknown as Record<string, unknown>).saveExtraState = () => {
+        return { argCount: this.argCount_ }
+      };
+      (this as unknown as Record<string, unknown>).loadExtraState = (state: { argCount?: number }) => {
+        const target = state?.argCount ?? 3
+        while (this.argCount_ < target) this.addArg_()
+        while (this.argCount_ > target) this.removeArg_()
+      }
 
       this.addArg_ = function () {
         this.argCount_++
@@ -608,7 +627,16 @@ function registerFunctionBlocks() {
         .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
         .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
       this.setOutput(true, null)
-      this.setTooltip('Call a function and use its return value. Click + / - to add or remove arguments.')
+      this.setTooltip('Call a function and use its return value. Click + / - to add or remove arguments.');
+
+      (this as unknown as Record<string, unknown>).saveExtraState = () => {
+        return { argCount: this.argCount_ }
+      };
+      (this as unknown as Record<string, unknown>).loadExtraState = (state: { argCount?: number }) => {
+        const target = state?.argCount ?? 3
+        while (this.argCount_ < target) this.addArg_()
+        while (this.argCount_ > target) this.removeArg_()
+      }
 
       this.addArg_ = function () {
         this.argCount_++
