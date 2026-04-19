@@ -9,8 +9,24 @@ interface SettingsModalProps {
 
 const INTERVAL_OPTIONS = [1, 2, 5, 10] as const
 
+const isMac = typeof navigator !== 'undefined' && navigator.platform.includes('Mac')
+const mod = isMac ? '⌘' : 'Ctrl'
+
+const HOTKEYS = [
+  { keys: `${mod}+G`, desc: 'Snap all blocks to grid' },
+  { keys: `${mod}+A`, desc: 'Select all blocks' },
+  { keys: `${mod}+Shift+A`, desc: 'Deselect all' },
+  { keys: `${mod}+L`, desc: 'Tidy / auto-layout blocks' },
+  { keys: `${mod}+Click`, desc: 'Multi-select blocks' },
+  { keys: `${mod}+Z`, desc: 'Undo' },
+  { keys: `${mod}+Shift+Z`, desc: 'Redo' },
+  { keys: '` (backtick)', desc: 'Toggle Hacker Terminal' },
+  { keys: 'ESC', desc: 'Pause game / close modal' },
+] as const
+
 export default function SettingsModal({ onClose, onSettingsChanged }: SettingsModalProps) {
   const [settings, setSettings] = useState(() => loadSettings())
+  const [showHotkeys, setShowHotkeys] = useState(false)
 
   const handleSave = () => {
     saveSettings(settings)
@@ -25,7 +41,46 @@ export default function SettingsModal({ onClose, onSettingsChanged }: SettingsMo
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="bg-base border border-surface-0 rounded-xl shadow-2xl w-full max-w-sm mx-4 p-5">
-        <h2 className="text-text font-semibold text-base mb-1">{t('Settings')}</h2>
+        {showHotkeys ? (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-text font-semibold text-base">⌨️ Keyboard Shortcuts</h2>
+              <button
+                onClick={() => setShowHotkeys(false)}
+                className="text-xs text-accent hover:underline"
+              >
+                ← Back
+              </button>
+            </div>
+            <div className="space-y-2 mb-4">
+              {HOTKEYS.map((h) => (
+                <div key={h.keys} className="flex items-center justify-between">
+                  <span className="text-sm text-subtext">{h.desc}</span>
+                  <kbd className="text-xs font-mono bg-surface-0 text-text px-2 py-1 rounded border border-surface-1">{h.keys}</kbd>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowHotkeys(false)}
+                className="px-4 py-2 text-sm text-text bg-surface-0 hover:bg-surface-1 rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </>
+        ) : (
+        <>
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-text font-semibold text-base">{t('Settings')}</h2>
+          <button
+            onClick={() => setShowHotkeys(true)}
+            className="text-xs text-overlay hover:text-accent transition-colors flex items-center gap-1"
+            title="Keyboard shortcuts"
+          >
+            ⌨️ Hotkeys
+          </button>
+        </div>
         <p className="text-overlay text-sm mb-5">{t('Configure how CryptoBlocks behaves.')}</p>
 
         {/* Auto-save toggle */}
@@ -138,6 +193,8 @@ export default function SettingsModal({ onClose, onSettingsChanged }: SettingsMo
             {t('Save')}
           </button>
         </div>
+        </>
+        )}
       </div>
     </div>
   )
