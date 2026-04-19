@@ -370,40 +370,33 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
         }
       }
 
-      // Ctrl/Cmd+L — tidy/auto-layout in two columns (functions left, chains right)
+      // Ctrl/Cmd+L — align selected blocks horizontally (or all if none selected)
       if (isMod && (e.key === 'l' || e.key === 'L') && !e.shiftKey) {
         e.preventDefault()
-        const blocks = ws.getTopBlocks(true)
 
-        // Split into functions (standalone) and chains (connected blocks like globals)
-        const functions: Blockly.BlockSvg[] = []
-        const chains: Blockly.BlockSvg[] = []
+        // Use multi-selected blocks if any, otherwise all top blocks
+        const targets = selectedBlocks.size > 0
+          ? Array.from(selectedBlocks).map(id => ws.getBlockById(id) as Blockly.BlockSvg).filter(Boolean)
+          : ws.getTopBlocks(true) as Blockly.BlockSvg[]
 
-        for (const block of blocks) {
-          const b = block as Blockly.BlockSvg
-          // Function blocks or standalone blocks without next connections go left
-          if (b.type === 'cb_create_function' || b.type === 'cb_callout') {
-            functions.push(b)
-          } else {
-            chains.push(b)
-          }
-        }
+        if (targets.length === 0) return
 
-        // Left column — functions
-        let leftY = 50
-        for (const block of functions) {
+        // Calculate average Y center of all targets — align to that
+        let totalY = 0
+        for (const block of targets) {
           const pos = block.getRelativeToSurfaceXY()
-          block.moveBy(50 - pos.x, leftY - pos.y)
-          leftY += block.getHeightWidth().height + 30
+          totalY += pos.y + block.getHeightWidth().height / 2
         }
+        const avgCenterY = totalY / targets.length
 
-        // Right column — chains (globals, comments, etc.)
-        let rightY = 50
-        const rightX = 500
-        for (const block of chains) {
+        // Sort by current X position (left to right order)
+        targets.sort((a, b) => a.getRelativeToSurfaceXY().x - b.getRelativeToSurfaceXY().x)
+
+        // Align each block's vertical center to the average
+        for (const block of targets) {
           const pos = block.getRelativeToSurfaceXY()
-          block.moveBy(rightX - pos.x, rightY - pos.y)
-          rightY += block.getHeightWidth().height + 30
+          const centerY = pos.y + block.getHeightWidth().height / 2
+          block.moveBy(0, avgCenterY - centerY)
         }
       }
     }
