@@ -277,7 +277,68 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       }
     }
 
+    // Keyboard shortcuts
+    const handleKeyboard = (e: KeyboardEvent) => {
+      const ws = workspaceRef.current
+      if (!ws) return
+      const isMod = e.metaKey || e.ctrlKey
+
+      // Ctrl/Cmd+G — snap all blocks to grid
+      if (isMod && (e.key === 'g' || e.key === 'G') && !e.shiftKey) {
+        e.preventDefault()
+        const blocks = ws.getTopBlocks(false)
+        const gridSpacing = 25
+        for (const block of blocks) {
+          const pos = block.getRelativeToSurfaceXY()
+          const snappedX = Math.round(pos.x / gridSpacing) * gridSpacing
+          const snappedY = Math.round(pos.y / gridSpacing) * gridSpacing
+          block.moveBy(snappedX - pos.x, snappedY - pos.y)
+        }
+      }
+
+      // Ctrl/Cmd+A — select all blocks (highlight)
+      if (isMod && (e.key === 'a' || e.key === 'A') && !e.shiftKey) {
+        // Only intercept when workspace is focused (not in a text input)
+        const active = document.activeElement
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return
+        e.preventDefault()
+        const blocks = ws.getTopBlocks(false)
+        // Blockly doesn't have native multi-select, so we highlight all
+        // by selecting each and fitting the view
+        ws.highlightBlock('')
+        for (const block of blocks) {
+          block.select()
+          block.addSelect()
+        }
+        ws.zoomToFit()
+      }
+
+      // Ctrl/Cmd+Shift+A — deselect all
+      if (isMod && (e.key === 'a' || e.key === 'A') && e.shiftKey) {
+        e.preventDefault()
+        const blocks = ws.getAllBlocks(false)
+        for (const block of blocks) {
+          block.unselect()
+        }
+      }
+
+      // Ctrl/Cmd+L — tidy/auto-layout top blocks vertically
+      if (isMod && (e.key === 'l' || e.key === 'L') && !e.shiftKey) {
+        e.preventDefault()
+        const blocks = ws.getTopBlocks(true)
+        let y = 50
+        for (const block of blocks) {
+          const pos = block.getRelativeToSurfaceXY()
+          block.moveBy(50 - pos.x, y - pos.y)
+          y += block.getHeightWidth().height + 30
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyboard)
+
     return () => {
+      document.removeEventListener('keydown', handleKeyboard)
       collabBinding?.destroy()
       presenceBinding?.destroy()
       workspace.removeChangeListener(listener)
