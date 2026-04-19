@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 import * as Blockly from 'blockly'
-import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode } from '../blocks/blockly-register'
+import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode, getBlockSourceMap } from '../blocks/blockly-register'
 import { registry } from '../blocks/registry'
 import { recordBlockCreated } from '../stats/tracker'
 import type { BlockDefinition } from '../types/block'
@@ -80,6 +80,27 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     })
 
     workspaceRef.current = workspace
+
+    // Register "Show Line Number" context menu option
+    if (!Blockly.ContextMenuRegistry.registry.getItem('showLineNumber')) {
+      Blockly.ContextMenuRegistry.registry.register({
+        id: 'showLineNumber',
+        weight: 200,
+        displayText: () => '📍 Show Line Number',
+        preconditionFn: (scope) => scope.block ? 'enabled' : 'hidden',
+        scopeType: Blockly.ContextMenuRegistry.ScopeType.BLOCK,
+        callback: (scope) => {
+          if (!scope.block) return
+          const sourceMap = getBlockSourceMap()
+          const range = sourceMap.get(scope.block.id)
+          if (range) {
+            alert(`Lines ${range.startLine}–${range.endLine}`)
+          } else {
+            alert('No line mapping found — run the program first')
+          }
+        },
+      })
+    }
 
     // Restore saved workspace state
     if (initialWorkspaceState) {
