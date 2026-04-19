@@ -277,6 +277,54 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       }
     }
 
+    // Multi-select: Cmd/Ctrl+Click to toggle block selection
+    const selectedBlocks = new Set<string>()
+    const handleMultiSelect = (e: PointerEvent) => {
+      if (!e.metaKey && !e.ctrlKey) {
+        // Regular click — clear multi-selection
+        if (selectedBlocks.size > 0) {
+          for (const id of selectedBlocks) {
+            const b = workspace.getBlockById(id)
+            if (b) (b as Blockly.BlockSvg).removeSelect()
+          }
+          selectedBlocks.clear()
+        }
+        return
+      }
+
+      // Find the block that was clicked
+      const target = e.target as SVGElement
+      let el: SVGElement | null = target
+      let blockId: string | null = null
+      while (el) {
+        if (el.getAttribute?.('data-id')) {
+          blockId = el.getAttribute('data-id')
+          break
+        }
+        el = el.parentElement as SVGElement | null
+      }
+      if (!blockId) return
+
+      e.stopPropagation()
+      e.preventDefault()
+
+      const block = workspace.getBlockById(blockId) as Blockly.BlockSvg | null
+      if (!block) return
+
+      if (selectedBlocks.has(blockId)) {
+        selectedBlocks.delete(blockId)
+        block.removeSelect()
+      } else {
+        selectedBlocks.add(blockId)
+        block.addSelect()
+      }
+    }
+
+    const svgEl = workspace.getParentSvg()
+    if (svgEl) {
+      svgEl.addEventListener('pointerdown', handleMultiSelect, true)
+    }
+
     // Keyboard shortcuts
     const handleKeyboard = (e: KeyboardEvent) => {
       const ws = workspaceRef.current
@@ -338,6 +386,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     document.addEventListener('keydown', handleKeyboard)
 
     return () => {
+      if (svgEl) svgEl.removeEventListener('pointerdown', handleMultiSelect, true)
       document.removeEventListener('keydown', handleKeyboard)
       collabBinding?.destroy()
       presenceBinding?.destroy()
