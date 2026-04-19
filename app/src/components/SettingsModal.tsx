@@ -18,6 +18,9 @@ const HOTKEYS = [
   { keys: `${mod}+Shift+A`, desc: 'Deselect all' },
   { keys: `${mod}+L`, desc: 'Tidy / auto-layout blocks' },
   { keys: `${mod}+Click`, desc: 'Multi-select blocks' },
+  { keys: `${mod}+Shift+S`, desc: 'Create Text block' },
+  { keys: `${mod}+I`, desc: 'Create Number block' },
+  { keys: `${mod}+B`, desc: 'Create Boolean block' },
   { keys: `${mod}+Z`, desc: 'Undo' },
   { keys: `${mod}+Shift+Z`, desc: 'Redo' },
 ] as const
