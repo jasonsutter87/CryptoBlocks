@@ -60,6 +60,28 @@ export const listsBlocks: BlockDefinition[] = [
     color: '#D97706',
   },
   {
+    name: 'set_in_local_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Set an item in a local list at a position',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the local list' },
+      { name: 'index', type: 'number', description: 'Position (0 = first)', default: 0 },
+      { name: 'value', type: 'any', description: 'Value to set' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function setInLocalList(name, index, value) {\n  var scope = (window.__localStack || [{}]);\n  var list = scope[scope.length - 1][name];\n  if (!Array.isArray(list)) { scope[scope.length - 1][name] = []; list = scope[scope.length - 1][name]; }\n  list[index] = value;\n}`,
+      python: `def set_in_local_list(name, index, value):\n    scope = create_local_list._stack[-1] if hasattr(create_local_list, '_stack') else {}\n    if name not in scope: scope[name] = []\n    scope[name][int(index)] = value`,
+    },
+    tests: [
+      { input: { name: 'temp', index: 0, value: 42 }, expected: {} },
+    ],
+    color: '#D97706',
+    shape: 'statement',
+  },
+  {
     name: 'add_to_local_list',
     author: 'CryptoBlocks',
     version: '1.0.0',
