@@ -20,8 +20,6 @@ const HOTKEYS = [
   { keys: `${mod}+Click`, desc: 'Multi-select blocks' },
   { keys: `${mod}+Z`, desc: 'Undo' },
   { keys: `${mod}+Shift+Z`, desc: 'Redo' },
-  { keys: '` (backtick)', desc: 'Toggle Hacker Terminal' },
-  { keys: 'ESC', desc: 'Pause game / close modal' },
 ] as const
 
 export default function SettingsModal({ onClose, onSettingsChanged }: SettingsModalProps) {
