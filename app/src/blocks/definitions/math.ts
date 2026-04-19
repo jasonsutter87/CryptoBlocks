@@ -86,6 +86,28 @@ export const mathBlocks: BlockDefinition[] = [
     color: '#5B80A5',
   },
   {
+    name: 'min_max',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Return the smaller (min) or larger (max) of two numbers',
+    category: 'Math',
+    inputs: [
+      { name: 'mode', type: 'string', description: 'min or max', default: 'min', choices: ['min', 'max'] },
+      { name: 'a', type: 'number', description: 'First number' },
+      { name: 'b', type: 'number', description: 'Second number' },
+    ],
+    outputs: [{ name: 'result', type: 'number' }],
+    implementations: {
+      javascript: `function minMax(mode, a, b) {\n  return mode === 'min' ? Math.min(a, b) : Math.max(a, b);\n}`,
+      python: `def min_max(mode, a, b):\n    return min(a, b) if mode == 'min' else max(a, b)`,
+    },
+    tests: [
+      { input: { mode: 'min', a: 3, b: 7 }, expected: { result: 3 } },
+      { input: { mode: 'max', a: 3, b: 7 }, expected: { result: 7 } },
+    ],
+    color: '#5B80A5',
+  },
+  {
     name: 'random_number',
     author: 'CryptoBlocks',
     version: '1.0.0',
