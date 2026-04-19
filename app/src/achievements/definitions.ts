@@ -395,6 +395,29 @@ export const achievements: Achievement[] = [
     rarity: 'legendary',
   },
 
+  // === Fun ===
+  {
+    id: 'prankster',
+    name: 'Prankster',
+    description: 'Use a Prank block',
+    icon: '😈',
+    rarity: 'rare',
+  },
+  {
+    id: 'playful-menace',
+    name: 'Playful Menace',
+    description: 'Use 5 unique Prank blocks across all your sessions',
+    icon: '🃏',
+    rarity: 'epic',
+  },
+  {
+    id: 'celebrate',
+    name: 'Celebrate Good Times!',
+    description: 'Use the Confetti block',
+    icon: '🎊',
+    rarity: 'common',
+  },
+
   // === Import & Publish ===
   {
     id: 'multi-platformer',
