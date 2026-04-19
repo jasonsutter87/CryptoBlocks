@@ -370,6 +370,32 @@ export const achievements: Achievement[] = [
 
   // === v0.4 — Terminal easter egg achievements ===
   // === Crypto ===
+  // === Daily Challenge Streaks (extended) ===
+  {
+    id: 'streak-14',
+    name: 'Two Weeks Strong',
+    description: 'Get a 14-day Daily Challenge streak',
+    icon: '🔥🔥🔥',
+    rarity: 'epic',
+  },
+
+  // === Featured ===
+  {
+    id: 'youre-a-star',
+    name: "You're a Star!",
+    description: 'Have a project featured by CryptoBlocks',
+    icon: '⭐',
+    rarity: 'epic',
+  },
+  {
+    id: 'site-builder',
+    name: 'You Make Our Site Better',
+    description: 'Have 5+ projects featured by CryptoBlocks',
+    icon: '🌟',
+    rarity: 'legendary',
+  },
+
+  // === Import & Publish ===
   {
     id: 'multi-platformer',
     name: 'The Multi-Platformer',
