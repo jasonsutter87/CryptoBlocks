@@ -21,6 +21,68 @@ export const dataBlocks: BlockDefinition[] = [
     color: '#0891B2',
   },
   {
+    name: 'create_local_object',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Create an empty object scoped to the current function (dies when function ends)',
+    category: 'Data',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name for the local object' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function createLocalObject(name) {\n  var scope = (window.__localStack || [{}]);\n  scope[scope.length - 1][name] = {};\n}`,
+      python: `def create_local_object(name):\n    if not hasattr(create_local_object, '_stack'):\n        create_local_object._stack = [{}]\n    create_local_object._stack[-1][name] = {}`,
+    },
+    tests: [
+      { input: { name: 'temp' }, expected: {} },
+    ],
+    color: '#0891B2',
+    shape: 'statement',
+  },
+  {
+    name: 'set_local_property',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Set a property on a local object',
+    category: 'Data',
+    inputs: [
+      { name: 'object_name', type: 'string', description: 'Name of the local object' },
+      { name: 'key', type: 'string', description: 'Property name' },
+      { name: 'value', type: 'any', description: 'Value to set' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function setLocalProperty(objectName, key, value) {\n  if (key === '__proto__' || key === 'constructor' || key === 'prototype') throw new Error('Invalid property name: ' + key);\n  var scope = (window.__localStack || [{}]);\n  var obj = scope[scope.length - 1][objectName];\n  if (!obj || typeof obj !== 'object') { scope[scope.length - 1][objectName] = {}; obj = scope[scope.length - 1][objectName]; }\n  obj[key] = value;\n}`,
+      python: `def set_local_property(object_name, key, value):\n    if key in ('__proto__', 'constructor', 'prototype', '__class__'):\n        raise ValueError('Invalid property name: ' + key)\n    scope = create_local_object._stack[-1] if hasattr(create_local_object, '_stack') else {}\n    if object_name not in scope: scope[object_name] = {}\n    scope[object_name][key] = value`,
+    },
+    tests: [
+      { input: { object_name: 'temp', key: 'x', value: 1 }, expected: {} },
+    ],
+    color: '#0891B2',
+    shape: 'statement',
+  },
+  {
+    name: 'get_local_property',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get a property from a local object',
+    category: 'Data',
+    inputs: [
+      { name: 'object_name', type: 'string', description: 'Name of the local object' },
+      { name: 'key', type: 'string', description: 'Property name' },
+    ],
+    outputs: [{ name: 'value', type: 'any' }],
+    implementations: {
+      javascript: `function getLocalProperty(objectName, key) {\n  if (key === '__proto__' || key === 'constructor' || key === 'prototype') return undefined;\n  var scope = (window.__localStack || [{}]);\n  var obj = scope[scope.length - 1][objectName] || {};\n  return Object.prototype.hasOwnProperty.call(obj, key) ? obj[key] : undefined;\n}`,
+      python: `def get_local_property(object_name, key):\n    if key in ('__proto__', 'constructor', 'prototype', '__class__'):\n        return None\n    scope = create_local_object._stack[-1] if hasattr(create_local_object, '_stack') else {}\n    obj = scope.get(object_name, {})\n    return obj.get(key)`,
+    },
+    tests: [
+      { input: { object_name: 'temp', key: 'x' }, expected: { value: 'any' } },
+    ],
+    color: '#0891B2',
+  },
+  {
     name: 'object_value',
     author: 'CryptoBlocks',
     version: '1.0.0',
