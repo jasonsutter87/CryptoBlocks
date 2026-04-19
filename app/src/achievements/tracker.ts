@@ -127,6 +127,11 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
       return hour >= 23 || hour < 5
     }
 
+    case 'early-bird': {
+      const h = new Date().getHours()
+      return h >= 4 && h < 6
+    }
+
     case 'speed-demon':
       return context.event === 'challenge-complete'
 

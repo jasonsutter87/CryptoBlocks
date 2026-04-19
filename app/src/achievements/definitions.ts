@@ -37,6 +37,13 @@ export const achievements: Achievement[] = [
     rarity: 'rare',
   },
   {
+    id: 'early-bird',
+    name: 'Early Bird',
+    description: 'Code between 4am and 6am',
+    icon: '🐦',
+    rarity: 'rare',
+  },
+  {
     id: 'speed-demon',
     name: 'Speed Demon',
     description: 'Complete a challenge in under 30 seconds',
