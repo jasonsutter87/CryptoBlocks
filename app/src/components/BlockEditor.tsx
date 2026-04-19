@@ -370,15 +370,40 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
         }
       }
 
-      // Ctrl/Cmd+L — tidy/auto-layout top blocks vertically
+      // Ctrl/Cmd+L — tidy/auto-layout in two columns (functions left, chains right)
       if (isMod && (e.key === 'l' || e.key === 'L') && !e.shiftKey) {
         e.preventDefault()
         const blocks = ws.getTopBlocks(true)
-        let y = 50
+
+        // Split into functions (standalone) and chains (connected blocks like globals)
+        const functions: Blockly.BlockSvg[] = []
+        const chains: Blockly.BlockSvg[] = []
+
         for (const block of blocks) {
+          const b = block as Blockly.BlockSvg
+          // Function blocks or standalone blocks without next connections go left
+          if (b.type === 'cb_create_function' || b.type === 'cb_callout') {
+            functions.push(b)
+          } else {
+            chains.push(b)
+          }
+        }
+
+        // Left column — functions
+        let leftY = 50
+        for (const block of functions) {
           const pos = block.getRelativeToSurfaceXY()
-          block.moveBy(50 - pos.x, y - pos.y)
-          y += block.getHeightWidth().height + 30
+          block.moveBy(50 - pos.x, leftY - pos.y)
+          leftY += block.getHeightWidth().height + 30
+        }
+
+        // Right column — chains (globals, comments, etc.)
+        let rightY = 50
+        const rightX = 500
+        for (const block of chains) {
+          const pos = block.getRelativeToSurfaceXY()
+          block.moveBy(rightX - pos.x, rightY - pos.y)
+          rightY += block.getHeightWidth().height + 30
         }
       }
     }
