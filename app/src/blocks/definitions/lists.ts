@@ -19,6 +19,26 @@ export const listsBlocks: BlockDefinition[] = [
       { input: { name: 'myList' }, expected: {} },
     ],
     color: '#D97706',
+    shape: 'statement',
+  },
+  {
+    name: 'create_local_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Create an empty list scoped to the current function (dies when function ends)',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name for the local list' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function createLocalList(name) {\n  var scope = (window.__localStack || [{}]);\n  scope[scope.length - 1][name] = [];\n}`,
+      python: `def create_local_list(name):\n    if not hasattr(create_local_list, '_stack'):\n        create_local_list._stack = [{}]\n    create_local_list._stack[-1][name] = []`,
+    },
+    tests: [
+      { input: { name: 'temp' }, expected: {} },
+    ],
+    color: '#D97706',
   },
   {
     name: 'list_value',
@@ -36,6 +56,47 @@ export const listsBlocks: BlockDefinition[] = [
     },
     tests: [
       { input: { name: 'myList' }, expected: { list: 'any' } },
+    ],
+    color: '#D97706',
+  },
+  {
+    name: 'add_to_local_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Add an item to a local list (created with Create Local List)',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the local list' },
+      { name: 'item', type: 'any', description: 'Item to add' },
+    ],
+    outputs: [],
+    implementations: {
+      javascript: `function addToLocalList(name, item) {\n  var scope = (window.__localStack || [{}]);\n  var list = scope[scope.length - 1][name];\n  if (!Array.isArray(list)) { scope[scope.length - 1][name] = []; list = scope[scope.length - 1][name]; }\n  list.push(item);\n}`,
+      python: `def add_to_local_list(name, item):\n    scope = create_local_list._stack[-1] if hasattr(create_local_list, '_stack') else {}\n    if name not in scope: scope[name] = []\n    scope[name].append(item)`,
+    },
+    tests: [
+      { input: { name: 'temp', item: 1 }, expected: {} },
+    ],
+    color: '#D97706',
+    shape: 'statement',
+  },
+  {
+    name: 'get_from_local_list',
+    author: 'CryptoBlocks',
+    version: '1.0.0',
+    description: 'Get an item from a local list by position',
+    category: 'Lists',
+    inputs: [
+      { name: 'name', type: 'string', description: 'Name of the local list' },
+      { name: 'index', type: 'number', description: 'Position (0 = first)', default: 0 },
+    ],
+    outputs: [{ name: 'item', type: 'any' }],
+    implementations: {
+      javascript: `function getFromLocalList(name, index) {\n  var scope = (window.__localStack || [{}]);\n  var list = scope[scope.length - 1][name] || [];\n  return list[index];\n}`,
+      python: `def get_from_local_list(name, index):\n    scope = create_local_list._stack[-1] if hasattr(create_local_list, '_stack') else {}\n    lst = scope.get(name, [])\n    return lst[index] if index < len(lst) else None`,
+    },
+    tests: [
+      { input: { name: 'temp', index: 0 }, expected: { item: 'any' } },
     ],
     color: '#D97706',
   },
