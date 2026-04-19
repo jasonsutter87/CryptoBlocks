@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react'
 import * as Blockly from 'blockly'
 import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode, getBlockSourceMap } from '../blocks/blockly-register'
+import { showToast } from './Toast'
 import { registry } from '../blocks/registry'
 import { recordBlockCreated } from '../stats/tracker'
 import type { BlockDefinition } from '../types/block'
@@ -94,9 +95,9 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
           const sourceMap = getBlockSourceMap()
           const range = sourceMap.get(scope.block.id)
           if (range) {
-            alert(`Lines ${range.startLine}–${range.endLine}`)
+            showToast(`📍 Lines ${range.startLine}–${range.endLine}`, 'info')
           } else {
-            alert('No line mapping found — run the program first')
+            showToast('No line mapping — run the program first', 'info')
           }
         },
       })
