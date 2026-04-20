@@ -44,6 +44,7 @@ export interface AchievementContext {
   doomLevel?: number
   checkpointCount?: number
   cryptoBlockTypes?: number
+  usesHiddenBlock?: boolean
   /** Total unique block types on the workspace */
   uniqueBlockTypes?: number
   /** Percentage of workspace occupied by the most-used single block type (0-100) */
@@ -185,6 +186,9 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
 
     case 'pi':
       return loadStats().totalBlocks >= 31_415
+
+    case 'necromancer':
+      return context.usesHiddenBlock === true
 
     case 'finney':
       return (context.cryptoBlockTypes ?? 0) >= 6

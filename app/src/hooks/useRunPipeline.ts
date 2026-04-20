@@ -48,6 +48,7 @@ interface Deps {
   getUsedCategories: () => string[]
   getCryptoBlockTypes?: () => number
   getBlockDistribution?: () => { uniqueBlockTypes: number; maxBlockTypePercent: number }
+  getUsesHiddenBlock?: () => boolean
   setLastExecCode: (code: string) => void
   setShowOutput: (v: boolean) => void
   collabDoc: unknown | null
@@ -122,6 +123,7 @@ export function useRunPipeline(deps: Deps) {
       categoriesUsed: deps.getUsedCategories(),
       cryptoBlockTypes: deps.getCryptoBlockTypes?.() ?? 0,
       ...(deps.getBlockDistribution?.() ?? { uniqueBlockTypes: 0, maxBlockTypePercent: 100 }),
+      usesHiddenBlock: deps.getUsesHiddenBlock?.() ?? false,
       language: deps.language,
     }))
 

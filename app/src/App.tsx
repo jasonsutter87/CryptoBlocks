@@ -230,6 +230,17 @@ export default function App() {
     return types.size
   }, [])
 
+  const getUsesHiddenBlock = useCallback((): boolean => {
+    if (!workspaceRef.current) return false
+    const blocks = workspaceRef.current.getAllBlocks(false)
+    for (const block of blocks) {
+      const blockType = block.type.replace(/^cb_/, '')
+      const def = registry.get(blockType)
+      if (def && def.hidden) return true
+    }
+    return false
+  }, [])
+
   const getBlockDistribution = useCallback((): { uniqueBlockTypes: number; maxBlockTypePercent: number } => {
     if (!workspaceRef.current) return { uniqueBlockTypes: 0, maxBlockTypePercent: 100 }
     const counts: Record<string, number> = {}
@@ -283,7 +294,7 @@ export default function App() {
 
   const runPipeline = useRunPipeline({
     workspaceRef, exec, code, language, slowMo,
-    processAchievements, getUsedCategories, getCryptoBlockTypes, getBlockDistribution,
+    processAchievements, getUsedCategories, getCryptoBlockTypes, getBlockDistribution, getUsesHiddenBlock,
     setLastExecCode, setShowOutput,
     collabDoc, isDailyChallenge, dailyInfo,
   })

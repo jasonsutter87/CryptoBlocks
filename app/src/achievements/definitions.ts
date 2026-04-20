@@ -402,6 +402,16 @@ export const achievements: Achievement[] = [
     rarity: 'legendary',
   },
 
+  // === Dead Blocks ===
+  {
+    id: 'necromancer',
+    name: 'Necromancer',
+    description: 'Use a dead block — they still live, if you know where to look',
+    icon: '💀',
+    rarity: 'epic',
+    secret: true,
+  },
+
   // === Fun ===
   {
     id: 'prankster',
