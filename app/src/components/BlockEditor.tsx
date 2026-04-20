@@ -371,26 +371,35 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
         }
       }
 
-      // Quick-create value blocks
-      // Ctrl/Cmd+S (with shift) — create string block at center
+      // Quick-create value blocks — drop at center of current viewport
+      const getViewCenter = () => {
+        const metrics = ws.getMetrics()
+        const scale = ws.getScale()
+        return {
+          x: Math.round((metrics.scrollLeft + metrics.viewWidth / 2) / scale),
+          y: Math.round((metrics.scrollTop + metrics.viewHeight / 2) / scale),
+        }
+      }
+
+      // Ctrl/Cmd+S (with shift) — create string block
       if (isMod && e.shiftKey && (e.key === 's' || e.key === 'S')) {
         e.preventDefault()
-        const state = { type: 'text', fields: { TEXT: '' }, x: Math.round(ws.getMetrics().viewLeft + ws.getMetrics().viewWidth / 2), y: Math.round(ws.getMetrics().viewTop + ws.getMetrics().viewHeight / 2) }
-        Blockly.serialization.blocks.append(state as unknown as Blockly.serialization.blocks.State, ws)
+        const c = getViewCenter()
+        Blockly.serialization.blocks.append({ type: 'text', fields: { TEXT: '' }, x: c.x, y: c.y } as unknown as Blockly.serialization.blocks.State, ws)
       }
 
-      // Ctrl/Cmd+I — create number block at center
+      // Ctrl/Cmd+I — create number block
       if (isMod && (e.key === 'i' || e.key === 'I') && !e.shiftKey) {
         e.preventDefault()
-        const state = { type: 'math_number', fields: { NUM: 0 }, x: Math.round(ws.getMetrics().viewLeft + ws.getMetrics().viewWidth / 2), y: Math.round(ws.getMetrics().viewTop + ws.getMetrics().viewHeight / 2) }
-        Blockly.serialization.blocks.append(state as unknown as Blockly.serialization.blocks.State, ws)
+        const c = getViewCenter()
+        Blockly.serialization.blocks.append({ type: 'math_number', fields: { NUM: 0 }, x: c.x, y: c.y } as unknown as Blockly.serialization.blocks.State, ws)
       }
 
-      // Ctrl/Cmd+B — create boolean block at center
+      // Ctrl/Cmd+B — create boolean block
       if (isMod && (e.key === 'b' || e.key === 'B') && !e.shiftKey) {
         e.preventDefault()
-        const state = { type: 'cb_true', x: Math.round(ws.getMetrics().viewLeft + ws.getMetrics().viewWidth / 2), y: Math.round(ws.getMetrics().viewTop + ws.getMetrics().viewHeight / 2) }
-        Blockly.serialization.blocks.append(state as unknown as Blockly.serialization.blocks.State, ws)
+        const c = getViewCenter()
+        Blockly.serialization.blocks.append({ type: 'cb_true', x: c.x, y: c.y } as unknown as Blockly.serialization.blocks.State, ws)
       }
 
       // Ctrl/Cmd+L — align selected blocks horizontally (or all if none selected)
