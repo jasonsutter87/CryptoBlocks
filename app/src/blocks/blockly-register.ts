@@ -50,7 +50,7 @@ const FUNCTION_BLOCKS = new Set(['cb_create_function', 'cb_call_function', 'cb_c
 const EVENT_BLOCKS = new Set(['cb_when_key_pressed', 'cb_when_clicked', 'cb_game_loop'])
 
 // --- Annotation block types ---
-const ANNOTATION_BLOCKS = new Set(['cb_callout', 'cb_inline_comment'])
+const ANNOTATION_BLOCKS = new Set(['cb_callout', 'cb_inline_comment', 'cb_frame'])
 
 // --- Library block types ---
 const LIBRARY_BLOCKS = new Set(['cb_import_library', 'cb_import_prank'])
@@ -724,6 +724,42 @@ function registerAnnotationBlocks() {
         .appendField(new FieldMultilineInput('Note:\n'), 'TEXT')
       this.setTooltip('A visual callout — add notes to your workspace')
       // No connections — standalone floating block
+    },
+  }
+
+  // Frame block — visual grouping like Figma sections
+  Blockly.Blocks['cb_frame'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#313244')
+      this.appendDummyInput()
+        .appendField('📁')
+        .appendField(new Blockly.FieldTextInput('Section'), 'NAME')
+      this.setTooltip('Visual frame — group related blocks. Drag to reposition. Does not generate code.')
+      // No connections — standalone floating block
+      this.setMovable(true)
+      this.setDeletable(true)
+      this.setEditable(true)
+
+      // After render, inject a large dashed rect behind the block
+      const block = this as unknown as Blockly.BlockSvg
+      setTimeout(() => {
+        const svgRoot = block.getSvgRoot()
+        if (!svgRoot) return
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+        rect.setAttribute('x', '-10')
+        rect.setAttribute('y', '30')
+        rect.setAttribute('width', '400')
+        rect.setAttribute('height', '300')
+        rect.setAttribute('rx', '12')
+        rect.setAttribute('ry', '12')
+        rect.setAttribute('fill', 'rgba(49, 50, 68, 0.15)')
+        rect.setAttribute('stroke', '#585b70')
+        rect.setAttribute('stroke-width', '2')
+        rect.setAttribute('stroke-dasharray', '8 4')
+        rect.style.pointerEvents = 'none'
+        svgRoot.insertBefore(rect, svgRoot.firstChild)
+      }, 100)
     },
   }
 
@@ -1738,6 +1774,12 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   }
 
   // Handle annotation blocks (callout — generates comment only)
+  // Frame blocks — no code output
+  if (block.type === 'cb_frame') {
+    const nextBlock = block.getNextBlock()
+    return nextBlock ? generateBlockCode(nextBlock, language) : ''
+  }
+
   if (block.type === 'cb_callout' || block.type === 'cb_inline_comment') {
     const text = block.getFieldValue('TEXT') || ''
     const comment = language === 'javascript'
@@ -2178,6 +2220,7 @@ export function getToolboxXml(): string {
   xml += '<sep gap="12"></sep>'
   xml += '<block type="cb_callout"><field name="TEXT">Note: </field></block>'
   xml += '<block type="cb_inline_comment"><field name="TEXT">comment</field></block>'
+  xml += '<block type="cb_frame"><field name="NAME">Section</field></block>'
   xml += '</category>'
 
   xml += '</xml>'
@@ -2244,6 +2287,7 @@ export function getFilteredToolboxXml(allowedCategories: string[]): string {
   xml += '<sep gap="12"></sep>'
   xml += '<block type="cb_callout"><field name="TEXT">Note: </field></block>'
   xml += '<block type="cb_inline_comment"><field name="TEXT">comment</field></block>'
+  xml += '<block type="cb_frame"><field name="NAME">Section</field></block>'
   xml += '</category>'
 
   xml += '</xml>'
