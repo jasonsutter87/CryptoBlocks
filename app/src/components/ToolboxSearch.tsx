@@ -76,7 +76,7 @@ export default function ToolboxSearch({ workspaceRef }: ToolboxSearchProps) {
 
   return (
     <div
-      className="absolute top-1 left-[72px] z-30 flex items-center gap-1"
+      className="absolute top-1 left-[147px] z-30 flex items-center gap-1"
       style={{ width: 180 }}
     >
       <div
