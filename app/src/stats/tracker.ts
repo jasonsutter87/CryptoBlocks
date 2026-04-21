@@ -47,7 +47,7 @@ export function saveStats(stats: DevStats): void {
   }
 }
 
-function formatDateKey(timestamp: number): string {
+export function formatDateKey(timestamp: number): string {
   const d = new Date(timestamp)
   const year = d.getFullYear()
   const month = String(d.getMonth() + 1).padStart(2, '0')

@@ -11,6 +11,8 @@ import * as Blockly from 'blockly'
 
 const STORAGE_KEY = 'cb-backpack'
 const MAX_SLOTS = 9
+/** Max serialized size per slot (50 KB) — prevents huge nested blocks from bloating storage */
+const MAX_SLOT_BYTES = 50_000
 
 export interface BackpackSlot {
   id: string
@@ -40,7 +42,14 @@ function loadBackpack(): BackpackSlot[] {
 }
 
 function saveBackpack(slots: BackpackSlot[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(slots))
+  const serialized = JSON.stringify(slots)
+  // Guard total size — drop oldest slots until under 500 KB
+  if (serialized.length > 500_000) {
+    const trimmed = slots.slice(-Math.max(1, MAX_SLOTS - 2))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed))
+  } else {
+    localStorage.setItem(STORAGE_KEY, serialized)
+  }
 }
 
 function blockLabel(type: string): string {
@@ -60,6 +69,8 @@ export default function Backpack({ workspaceRef }: BackpackProps) {
     (window as unknown as Record<string, unknown>).__cbBackpackAdd = (block: Blockly.BlockSvg) => {
       const state = Blockly.serialization.blocks.save(block)
       if (!state) return
+      // Reject oversized block trees to prevent localStorage abuse
+      if (JSON.stringify(state).length > MAX_SLOT_BYTES) return
 
       setSlots((prev) => {
         if (prev.length >= MAX_SLOTS) {
