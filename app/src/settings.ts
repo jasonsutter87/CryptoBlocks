@@ -4,11 +4,11 @@ const SETTINGS_KEY = 'cryptoblocks-settings'
 
 const DEFAULT_WORKSPACE_BG = '#1e1e2e'
 
-/** Derive a slightly lighter grid color from the background hex. */
+/** Derive a visible grid color from the background hex. */
 function deriveGridColor(bg: string): string {
-  const r = Math.min(255, parseInt(bg.slice(1, 3), 16) + 18)
-  const g = Math.min(255, parseInt(bg.slice(3, 5), 16) + 18)
-  const b = Math.min(255, parseInt(bg.slice(5, 7), 16) + 18)
+  const r = Math.min(255, parseInt(bg.slice(1, 3), 16) + 35)
+  const g = Math.min(255, parseInt(bg.slice(3, 5), 16) + 35)
+  const b = Math.min(255, parseInt(bg.slice(5, 7), 16) + 35)
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
