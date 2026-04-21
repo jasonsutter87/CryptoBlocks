@@ -43,7 +43,7 @@ export function checkBlockWarnings(workspace: Blockly.WorkspaceSvg): void {
 
     // 1. Check for empty value inputs (required but not connected)
     for (const input of block.inputList) {
-      if (input.type === Blockly.inputTypes.VALUE && !input.connection?.targetBlock()) {
+      if (input.connection && input.connection.type === Blockly.ConnectionType.INPUT_VALUE && !input.connection.targetBlock()) {
         // Only warn if the input has a name (i.e. it's a real required slot, not decorative)
         if (input.name) {
           warnings.push(`Input "${input.name}" is not connected`)

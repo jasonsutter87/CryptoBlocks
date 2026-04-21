@@ -37,24 +37,6 @@ function blockLabel(type: string): string {
   return type.replace(/^cb_/, '').replace(/_/g, ' ')
 }
 
-function blockColor(type: string): string {
-  // Use Blockly's registered block colour if available
-  try {
-    const blockDef = Blockly.Blocks[type]
-    if (blockDef) {
-      // Try to get colour from the block's init function result
-      const tempWs = new Blockly.Workspace()
-      const tempBlock = tempWs.newBlock(type)
-      const colour = tempBlock.getColour()
-      tempBlock.dispose()
-      tempWs.dispose()
-      return colour || '#7c3aed'
-    }
-  } catch {
-    // ignore
-  }
-  return '#7c3aed'
-}
 
 interface BackpackProps {
   workspaceRef: React.RefObject<Blockly.WorkspaceSvg | null>

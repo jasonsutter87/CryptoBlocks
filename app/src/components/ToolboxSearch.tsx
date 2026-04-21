@@ -19,7 +19,7 @@ function buildSearchToolboxXml(query: string): string {
 
   const matching = allDefs.filter((def) => {
     const nameLower = def.name.toLowerCase().replace(/_/g, ' ')
-    const labelLower = (def.label || def.name).toLowerCase()
+    const labelLower = (def.description || def.name).toLowerCase()
     return nameLower.includes(q) || labelLower.includes(q)
   })
 
