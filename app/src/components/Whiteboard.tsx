@@ -60,8 +60,12 @@ export default function Whiteboard() {
       const canvas = canvasRef.current
       if (!canvas) return
       try {
-        localStorage.setItem(STORAGE_KEY, canvas.toDataURL())
-      } catch { /* storage full */ }
+        const dataUrl = canvas.toDataURL('image/png')
+        // Cap at 2 MB to avoid filling localStorage (5 MB shared budget)
+        if (dataUrl.length <= 2_097_152) {
+          localStorage.setItem(STORAGE_KEY, dataUrl)
+        }
+      } catch { /* storage full or canvas tainted */ }
     }, 500)
   }, [])
 
