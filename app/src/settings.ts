@@ -2,21 +2,14 @@ import * as Blockly from 'blockly'
 
 const SETTINGS_KEY = 'cryptoblocks-settings'
 
-export type WorkspaceTheme = 'dark' | 'midnight' | 'ocean' | 'forest' | 'slate'
+const DEFAULT_WORKSPACE_BG = '#1e1e2e'
 
-export interface WorkspaceThemeConfig {
-  label: string
-  bg: string
-  grid: string
-  swatch: string
-}
-
-export const WORKSPACE_THEMES: Record<WorkspaceTheme, WorkspaceThemeConfig> = {
-  dark:     { label: 'Dark',     bg: '#1e1e2e', grid: '#2a2a3d', swatch: '#1e1e2e' },
-  midnight: { label: 'Midnight', bg: '#0d1117', grid: '#161b22', swatch: '#0d1117' },
-  ocean:    { label: 'Ocean',    bg: '#0a192f', grid: '#112240', swatch: '#0a192f' },
-  forest:   { label: 'Forest',   bg: '#1a1f16', grid: '#2d3a1f', swatch: '#1a1f16' },
-  slate:    { label: 'Slate',    bg: '#1e293b', grid: '#334155', swatch: '#1e293b' },
+/** Derive a slightly lighter grid color from the background hex. */
+function deriveGridColor(bg: string): string {
+  const r = Math.min(255, parseInt(bg.slice(1, 3), 16) + 18)
+  const g = Math.min(255, parseInt(bg.slice(3, 5), 16) + 18)
+  const b = Math.min(255, parseInt(bg.slice(5, 7), 16) + 18)
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
 export interface UserSettings {
@@ -24,7 +17,7 @@ export interface UserSettings {
   autoSaveIntervalMinutes: number
   theme: 'dark' | 'light'
   locale: 'en' | 'es'
-  workspaceTheme: WorkspaceTheme
+  workspaceBg: string
 }
 
 const DEFAULTS: UserSettings = {
@@ -32,44 +25,29 @@ const DEFAULTS: UserSettings = {
   autoSaveIntervalMinutes: 5,
   theme: 'dark',
   locale: 'en',
-  workspaceTheme: 'dark',
+  workspaceBg: DEFAULT_WORKSPACE_BG,
 }
 
-/** Build a Blockly Theme with the given workspace background color. */
-function buildBlocklyTheme(config: WorkspaceThemeConfig): Blockly.Theme {
-  const name = 'cb-workspace-' + config.bg.replace('#', '')
-  return Blockly.Theme.defineTheme(name, {
-    name,
-    base: Blockly.Themes.Classic,
-    componentStyles: {
-      workspaceBackgroundColour: config.bg,
-    },
-  })
-}
-
-/** Apply workspace theme colors to an injected workspace. */
-export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, themeKey: WorkspaceTheme): void {
-  const config = WORKSPACE_THEMES[themeKey] ?? WORKSPACE_THEMES.dark
-
-  // Set Blockly theme with the correct background color
-  workspace.setTheme(buildBlocklyTheme(config))
+/** Apply workspace background color to an injected workspace. */
+export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, bg: string): void {
+  const safeBg = /^#[0-9a-fA-F]{6}$/.test(bg) ? bg : DEFAULT_WORKSPACE_BG
+  const grid = deriveGridColor(safeBg)
 
   const svg = workspace.getParentSvg()
   if (!svg) return
 
-  // Force the background rect color via inline style (Blockly's theme may not apply it)
+  // Force the background rect color via inline style
   const bgRect = svg.querySelector('.blocklyMainBackground') as SVGRectElement | null
   if (bgRect) {
-    bgRect.style.fill = config.bg
+    bgRect.style.fill = safeBg
   }
 
-  // Also set on the SVG container itself as a fallback
-  ;(svg as SVGElement).style.backgroundColor = config.bg
+  ;(svg as SVGElement).style.backgroundColor = safeBg
 
   // Update grid line colors
   const lines = svg.querySelectorAll('pattern line')
   lines.forEach((line) => {
-    ;(line as SVGLineElement).setAttribute('stroke', config.grid)
+    ;(line as SVGLineElement).setAttribute('stroke', grid)
   })
 }
 

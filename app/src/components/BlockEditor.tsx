@@ -89,7 +89,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
 
     // Apply saved workspace theme
     const savedSettings = loadSettings()
-    applyWorkspaceTheme(workspace, savedSettings.workspaceTheme)
+    applyWorkspaceTheme(workspace, savedSettings.workspaceBg)
 
     // Register "Show Line Number" context menu option
     if (!Blockly.ContextMenuRegistry.registry.getItem('showLineNumber')) {
@@ -546,7 +546,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     const handleThemeChange = () => {
       if (workspaceRef.current) {
         const settings = loadSettings()
-        applyWorkspaceTheme(workspaceRef.current, settings.workspaceTheme)
+        applyWorkspaceTheme(workspaceRef.current, settings.workspaceBg)
       }
     }
     window.addEventListener('cb:workspace-theme-changed', handleThemeChange)

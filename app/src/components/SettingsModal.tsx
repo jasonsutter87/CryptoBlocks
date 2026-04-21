@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { loadSettings, saveSettings, WORKSPACE_THEMES } from '../settings'
-import type { WorkspaceTheme } from '../settings'
+import { loadSettings, saveSettings } from '../settings'
 import { t } from '../i18n'
 
 interface SettingsModalProps {
@@ -162,25 +161,20 @@ export default function SettingsModal({ onClose, onSettingsChanged }: SettingsMo
           </div>
         </div>
 
-        {/* Workspace theme */}
+        {/* Workspace background color */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-sm text-text font-medium">Workspace Theme</p>
+            <p className="text-sm text-text font-medium">Workspace Color</p>
             <p className="text-xs text-overlay mt-0.5">Background color of the block canvas</p>
           </div>
-          <div className="flex gap-1.5 flex-wrap justify-end max-w-[140px]">
-            {(Object.entries(WORKSPACE_THEMES) as [WorkspaceTheme, typeof WORKSPACE_THEMES[WorkspaceTheme]][]).map(([key, cfg]) => (
-              <button
-                key={key}
-                title={cfg.label}
-                onClick={() => setSettings((s) => ({ ...s, workspaceTheme: key }))}
-                className={`w-6 h-6 rounded-full border-2 transition-all hover:scale-110 ${
-                  settings.workspaceTheme === key ? 'border-accent scale-110' : 'border-surface-1'
-                }`}
-                style={{ backgroundColor: cfg.swatch }}
-              />
-            ))}
-          </div>
+          <label className="relative w-8 h-8 rounded-full border-2 border-surface-1 hover:border-accent cursor-pointer transition-all hover:scale-110 overflow-hidden" style={{ backgroundColor: settings.workspaceBg }}>
+            <input
+              type="color"
+              value={settings.workspaceBg}
+              onChange={(e) => setSettings((s) => ({ ...s, workspaceBg: e.target.value }))}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            />
+          </label>
         </div>
 
         {/* Interval selector */}
