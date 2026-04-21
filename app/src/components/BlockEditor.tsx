@@ -4,6 +4,7 @@ import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode, getBlockSou
 import { showToast } from './Toast'
 import { registry } from '../blocks/registry'
 import { recordBlockCreated } from '../stats/tracker'
+import { loadSettings, applyWorkspaceTheme } from '../settings'
 import type { BlockDefinition } from '../types/block'
 import { useCollabDoc, useCollabAwareness } from '../collab/CollabPage'
 import { bindWorkspaceToYDoc } from '../collab/yjs-blockly-binding'
@@ -86,6 +87,10 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     })
 
     workspaceRef.current = workspace
+
+    // Apply saved workspace theme
+    const savedSettings = loadSettings()
+    applyWorkspaceTheme(workspace, savedSettings.workspaceTheme)
 
     // Register "Show Line Number" context menu option
     if (!Blockly.ContextMenuRegistry.registry.getItem('showLineNumber')) {
@@ -535,6 +540,18 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     }
     window.addEventListener('cb:hacker-mode-changed', handleHackerMode)
     return () => window.removeEventListener('cb:hacker-mode-changed', handleHackerMode)
+  }, [])
+
+  // Re-apply workspace theme when settings change
+  useEffect(() => {
+    const handleThemeChange = () => {
+      if (workspaceRef.current) {
+        const settings = loadSettings()
+        applyWorkspaceTheme(workspaceRef.current, settings.workspaceTheme)
+      }
+    }
+    window.addEventListener('cb:workspace-theme-changed', handleThemeChange)
+    return () => window.removeEventListener('cb:workspace-theme-changed', handleThemeChange)
   }, [])
 
   // Handle resize

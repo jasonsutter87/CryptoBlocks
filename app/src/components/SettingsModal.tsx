@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { loadSettings, saveSettings } from '../settings'
+import { loadSettings, saveSettings, WORKSPACE_THEMES } from '../settings'
+import type { WorkspaceTheme } from '../settings'
 import { t } from '../i18n'
 
 interface SettingsModalProps {
@@ -34,6 +35,7 @@ export default function SettingsModal({ onClose, onSettingsChanged }: SettingsMo
   const handleSave = () => {
     saveSettings(settings)
     document.documentElement.setAttribute('data-theme', settings.theme)
+    window.dispatchEvent(new Event('cb:workspace-theme-changed'))
     onSettingsChanged()
     onClose()
   }
@@ -157,6 +159,27 @@ export default function SettingsModal({ onClose, onSettingsChanged }: SettingsMo
             >
               Español
             </button>
+          </div>
+        </div>
+
+        {/* Workspace theme */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm text-text font-medium">Workspace Theme</p>
+            <p className="text-xs text-overlay mt-0.5">Background color of the block canvas</p>
+          </div>
+          <div className="flex gap-1.5 flex-wrap justify-end max-w-[140px]">
+            {(Object.entries(WORKSPACE_THEMES) as [WorkspaceTheme, typeof WORKSPACE_THEMES[WorkspaceTheme]][]).map(([key, cfg]) => (
+              <button
+                key={key}
+                title={cfg.label}
+                onClick={() => setSettings((s) => ({ ...s, workspaceTheme: key }))}
+                className={`w-6 h-6 rounded-full border-2 transition-all hover:scale-110 ${
+                  settings.workspaceTheme === key ? 'border-accent scale-110' : 'border-surface-1'
+                }`}
+                style={{ backgroundColor: cfg.swatch }}
+              />
+            ))}
           </div>
         </div>
 
