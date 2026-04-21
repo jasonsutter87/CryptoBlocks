@@ -123,7 +123,7 @@ function seedProjects() {
     { id: 'cb-seed-42', name: 'The Answer', desc: 'What is the answer to life, the universe, and everything?', text: '42', tags: ['math', 'science'] },
     { id: 'cb-seed-1729', name: 'Hardy-Ramanujan', desc: 'The smallest number expressible as the sum of two cubes in two different ways.', text: '1729', tags: ['math'] },
     { id: 'cb-seed-1337', name: 'Elite', desc: 'A very interesting number.', text: '1337', tags: ['beginner'] },
-    { id: 'cb-seed-2600', name: '2600', desc: 'A frequency worth remembering.', text: '2600', tags: ['science'] },
+    { id: 'cb-seed-2600', name: '2600', desc: 'A frequency worth remembering.', text: '2600\\na password for you, a password for me', tags: ['science'] },
     { id: 'cb-seed-404', name: 'Not Found', desc: 'Nothing to see here. Or is there?', text: '404', tags: ['web'] },
   ]
 }
