@@ -54,14 +54,23 @@ export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, themeKey: W
   // Set Blockly theme with the correct background color
   workspace.setTheme(buildBlocklyTheme(config))
 
-  // Update grid line colors
   const svg = workspace.getParentSvg()
-  if (svg) {
-    const lines = svg.querySelectorAll('pattern line')
-    lines.forEach((line) => {
-      ;(line as SVGLineElement).setAttribute('stroke', config.grid)
-    })
+  if (!svg) return
+
+  // Force the background rect color via inline style (Blockly's theme may not apply it)
+  const bgRect = svg.querySelector('.blocklyMainBackground') as SVGRectElement | null
+  if (bgRect) {
+    bgRect.style.fill = config.bg
   }
+
+  // Also set on the SVG container itself as a fallback
+  ;(svg as SVGElement).style.backgroundColor = config.bg
+
+  // Update grid line colors
+  const lines = svg.querySelectorAll('pattern line')
+  lines.forEach((line) => {
+    ;(line as SVGLineElement).setAttribute('stroke', config.grid)
+  })
 }
 
 export function loadSettings(): UserSettings {
