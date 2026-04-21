@@ -19,11 +19,21 @@ export interface BackpackSlot {
   color: string
 }
 
+function isValidSlot(s: unknown): s is BackpackSlot {
+  if (!s || typeof s !== 'object') return false
+  const o = s as Record<string, unknown>
+  return typeof o.id === 'string' && typeof o.label === 'string' &&
+    typeof o.color === 'string' && o.color.length < 20 &&
+    o.state != null && typeof o.state === 'object'
+}
+
 function loadBackpack(): BackpackSlot[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
-    return JSON.parse(raw) as BackpackSlot[]
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter(isValidSlot).slice(0, MAX_SLOTS)
   } catch {
     return []
   }
