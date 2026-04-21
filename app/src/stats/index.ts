@@ -9,4 +9,5 @@ export {
   recordAchievement,
   scheduleSyncToServer,
   syncStatsFromServer,
+  formatDateKey,
 } from './tracker'

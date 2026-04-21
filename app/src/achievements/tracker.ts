@@ -1,7 +1,7 @@
 import type { Achievement, UnlockedAchievement } from './types'
 import { achievements } from './definitions'
 import { getClerkToken } from '../auth'
-import { loadStats } from '../stats'
+import { loadStats, formatDateKey } from '../stats'
 
 /**
  * Proof of Work filter — prevents gaming block-count badges by spamming
@@ -242,7 +242,7 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
       for (let i = 0; i < 90; i++) {
         const d = new Date(today)
         d.setDate(d.getDate() - i)
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        const key = formatDateKey(d.getTime())
         if (stats.runsByDate[key] && stats.runsByDate[key] > 0) count++
       }
       return count >= 50
@@ -255,7 +255,7 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
       for (let i = 0; i < 365; i++) {
         const d = new Date(today)
         d.setDate(d.getDate() - i)
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        const key = formatDateKey(d.getTime())
         if (stats.runsByDate[key] && stats.runsByDate[key] > 0) count++
       }
       return count >= 180
