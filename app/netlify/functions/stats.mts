@@ -114,30 +114,43 @@ async function handler(req: Request) {
             'longestProgram', 'currentStreak', 'bestStreak', 'achievementsUnlocked',
           ]
           for (const field of numericFields) {
-            merged[field] = Math.max(
-              Number(server[field] ?? 0),
-              Number(localStats[field] ?? 0),
-            )
+            const sv = Number(server[field] ?? 0)
+            const lv = Number(localStats[field] ?? 0)
+            // Clamp to finite non-negative; NaN/Infinity/negative → 0
+            const safeSv = Number.isFinite(sv) && sv >= 0 ? sv : 0
+            const safeLv = Number.isFinite(lv) && lv >= 0 ? lv : 0
+            merged[field] = Math.max(safeSv, safeLv)
           }
 
           // Timestamps — take earliest first, latest last
-          merged.firstRunDate = Math.min(
-            Number(server.firstRunDate ?? Infinity) || Infinity,
-            Number(localStats.firstRunDate ?? Infinity) || Infinity,
-          )
-          if (merged.firstRunDate === Infinity) merged.firstRunDate = 0
+          const sFirst = Number(server.firstRunDate ?? 0)
+          const lFirst = Number(localStats.firstRunDate ?? 0)
+          const safeSFirst = Number.isFinite(sFirst) && sFirst > 0 ? sFirst : 0
+          const safeLFirst = Number.isFinite(lFirst) && lFirst > 0 ? lFirst : 0
+          if (safeSFirst && safeLFirst) merged.firstRunDate = Math.min(safeSFirst, safeLFirst)
+          else merged.firstRunDate = safeSFirst || safeLFirst || 0
+
+          const sLast = Number(server.lastRunDate ?? 0)
+          const lLast = Number(localStats.lastRunDate ?? 0)
           merged.lastRunDate = Math.max(
-            Number(server.lastRunDate ?? 0),
-            Number(localStats.lastRunDate ?? 0),
+            Number.isFinite(sLast) && sLast >= 0 ? sLast : 0,
+            Number.isFinite(lLast) && lLast >= 0 ? lLast : 0,
           )
 
-          // runsPerLanguage — take max per language
+          // runsPerLanguage — take max per language (safe from NaN/Infinity)
           const serverLangs = (server.runsPerLanguage ?? {}) as Record<string, number>
           const localLangs = (localStats.runsPerLanguage ?? {}) as Record<string, number>
+          const safeLang = (a: number | undefined, b: number | undefined): number => {
+            const va = Number(a ?? 0); const vb = Number(b ?? 0)
+            return Math.max(
+              Number.isFinite(va) && va >= 0 ? va : 0,
+              Number.isFinite(vb) && vb >= 0 ? vb : 0,
+            )
+          }
           merged.runsPerLanguage = {
-            javascript: Math.max(serverLangs.javascript ?? 0, localLangs.javascript ?? 0),
-            python: Math.max(serverLangs.python ?? 0, localLangs.python ?? 0),
-            html: Math.max(serverLangs.html ?? 0, localLangs.html ?? 0),
+            javascript: safeLang(serverLangs.javascript, localLangs.javascript),
+            python: safeLang(serverLangs.python, localLangs.python),
+            html: safeLang(serverLangs.html, localLangs.html),
           }
 
           // runsByDate — merge, take max per date (cap at 400 entries ≈ ~13 months)
