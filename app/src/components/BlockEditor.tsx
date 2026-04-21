@@ -115,10 +115,12 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
           if (!scope.block) return
           const frame = scope.block as Blockly.BlockSvg
           const pos = frame.getRelativeToSurfaceXY()
+          const fw = Number(frame.getFieldValue('WIDTH') || 500)
+          const fh = Number(frame.getFieldValue('HEIGHT') || 350)
           const frameLeft = pos.x - 10
           const frameTop = pos.y + 40
-          const frameRight = frameLeft + 500
-          const frameBottom = frameTop + 350
+          const frameRight = frameLeft + fw
+          const frameBottom = frameTop + fh
           const ws = frame.workspace as Blockly.WorkspaceSvg
           const allBlocks = ws.getTopBlocks(false) as Blockly.BlockSvg[]
           for (const b of allBlocks) {

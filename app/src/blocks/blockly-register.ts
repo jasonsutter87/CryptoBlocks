@@ -743,10 +743,15 @@ function registerAnnotationBlocks() {
       this.appendDummyInput()
         .appendField('📁')
         .appendField(new Blockly.FieldTextInput('Section'), 'NAME')
-      this.appendDummyInput()
+        .appendField(' ')
         .appendField(new Blockly.FieldDropdown(
           Object.entries(FRAME_COLORS).map(([key, val]) => [val.label, key])
         ), 'COLOR')
+      this.appendDummyInput()
+        .appendField('w')
+        .appendField(new Blockly.FieldNumber(500, 100, 2000, 50), 'WIDTH')
+        .appendField('h')
+        .appendField(new Blockly.FieldNumber(350, 80, 2000, 50), 'HEIGHT')
       this.setTooltip('Visual frame — group related blocks. Drag to move all blocks inside. Does not generate code.')
       this.setMovable(true)
       this.setDeletable(true)
@@ -757,12 +762,14 @@ function registerAnnotationBlocks() {
       let lastX = 0
       let lastY = 0
 
-      const updateFrameColor = () => {
+      const updateFrame = () => {
         if (!frameRect) return
         const colorKey = block.getFieldValue('COLOR') || 'grey'
         const colors = FRAME_COLORS[colorKey] || FRAME_COLORS.grey
         frameRect.setAttribute('fill', colors.fill)
         frameRect.setAttribute('stroke', colors.stroke)
+        frameRect.setAttribute('width', String(block.getFieldValue('WIDTH') || 500))
+        frameRect.setAttribute('height', String(block.getFieldValue('HEIGHT') || 350))
       }
 
       // Render the frame rect
@@ -781,7 +788,7 @@ function registerAnnotationBlocks() {
         frameRect.setAttribute('stroke-dasharray', '8 4')
         frameRect.style.pointerEvents = 'none'
         svgRoot.insertBefore(frameRect, svgRoot.firstChild)
-        updateFrameColor()
+        updateFrame()
 
         const pos = block.getRelativeToSurfaceXY()
         lastX = pos.x
@@ -799,10 +806,12 @@ function registerAnnotationBlocks() {
         const ws = block.workspace as Blockly.WorkspaceSvg
         if (!ws) { lastX = pos.x; lastY = pos.y; return }
 
+        const fw = Number(block.getFieldValue('WIDTH') || 500)
+        const fh = Number(block.getFieldValue('HEIGHT') || 350)
         const frameLeft = lastX - 10
         const frameTop = lastY + 40
-        const frameRight = frameLeft + 500
-        const frameBottom = frameTop + 350
+        const frameRight = frameLeft + fw
+        const frameBottom = frameTop + fh
 
         const allBlocks = ws.getTopBlocks(false) as Blockly.BlockSvg[]
         for (const b of allBlocks) {
@@ -816,7 +825,7 @@ function registerAnnotationBlocks() {
 
         lastX = pos.x
         lastY = pos.y
-        updateFrameColor()
+        updateFrame()
       }
 
       // Register move listener after workspace is ready
@@ -828,7 +837,7 @@ function registerAnnotationBlocks() {
               onMove()
             }
             if (e.type === Blockly.Events.BLOCK_CHANGE && (e as Blockly.Events.BlockChange).blockId === block.id) {
-              updateFrameColor()
+              updateFrame()
             }
           })
         }
