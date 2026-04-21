@@ -70,8 +70,20 @@ async function handler(req: Request) {
       const authErr = requireAuth(user)
       if (authErr) return authErr
 
-      const raw = await req.json().catch(() => null)
-      if (!raw || typeof raw !== 'object') {
+      // Limit request body size to 64 KB to prevent storage abuse
+      const contentLength = Number(req.headers.get('Content-Length') ?? 0)
+      if (contentLength > 65_536) {
+        return json({ error: 'Payload too large' }, 413)
+      }
+
+      const rawText = await req.text().catch(() => '')
+      if (rawText.length > 65_536) {
+        return json({ error: 'Payload too large' }, 413)
+      }
+
+      let raw: unknown
+      try { raw = JSON.parse(rawText) } catch { raw = null }
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
         return json({ error: 'Invalid input' }, 400)
       }
 
@@ -128,12 +140,29 @@ async function handler(req: Request) {
             html: Math.max(serverLangs.html ?? 0, localLangs.html ?? 0),
           }
 
-          // runsByDate — merge, take max per date
+          // runsByDate — merge, take max per date (cap at 400 entries ≈ ~13 months)
+          const MAX_DATE_ENTRIES = 400
           const serverDates = (server.runsByDate ?? {}) as Record<string, number>
           const localDates = (localStats.runsByDate ?? {}) as Record<string, number>
-          const mergedDates: Record<string, number> = { ...serverDates }
+          const mergedDates: Record<string, number> = {}
+          // Validate date keys: must match YYYY-MM-DD format
+          const dateRe = /^\d{4}-\d{2}-\d{2}$/
+          for (const [date, count] of Object.entries(serverDates)) {
+            if (dateRe.test(date) && typeof count === 'number' && isFinite(count)) {
+              mergedDates[date] = Math.max(0, Math.min(count, 1_000_000))
+            }
+          }
           for (const [date, count] of Object.entries(localDates)) {
-            mergedDates[date] = Math.max(mergedDates[date] ?? 0, count)
+            if (!dateRe.test(date) || typeof count !== 'number' || !isFinite(count)) continue
+            const safeCount = Math.max(0, Math.min(count, 1_000_000))
+            mergedDates[date] = Math.max(mergedDates[date] ?? 0, safeCount)
+          }
+          // Keep only most recent entries if over limit
+          const dateKeys = Object.keys(mergedDates).sort()
+          if (dateKeys.length > MAX_DATE_ENTRIES) {
+            for (const key of dateKeys.slice(0, dateKeys.length - MAX_DATE_ENTRIES)) {
+              delete mergedDates[key]
+            }
           }
           merged.runsByDate = mergedDates
         } catch {
