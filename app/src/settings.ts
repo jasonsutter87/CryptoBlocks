@@ -37,16 +37,22 @@ const DEFAULTS: UserSettings = {
 export function applyWorkspaceTheme(workspace: import('blockly').WorkspaceSvg, themeKey: WorkspaceTheme): void {
   const config = WORKSPACE_THEMES[themeKey] ?? WORKSPACE_THEMES.dark
   const svg = workspace.getParentSvg()
-  if (svg) {
-    (svg as SVGElement & { style: CSSStyleDeclaration }).style.backgroundColor = config.bg
+  if (!svg) return
+
+  // Set SVG background
+  ;(svg as SVGElement & { style: CSSStyleDeclaration }).style.backgroundColor = config.bg
+
+  // Blockly paints the background via a <rect> inside the SVG — update that too
+  const bgRect = svg.querySelector('.blocklyMainBackground')
+  if (bgRect) {
+    bgRect.setAttribute('fill', config.bg)
   }
-  // Update grid line colors by targeting the SVG pattern lines directly
-  if (svg) {
-    const lines = svg.querySelectorAll('pattern line')
-    lines.forEach((line) => {
-      ;(line as SVGLineElement).setAttribute('stroke', config.grid)
-    })
-  }
+
+  // Update grid line colors
+  const lines = svg.querySelectorAll('pattern line')
+  lines.forEach((line) => {
+    ;(line as SVGLineElement).setAttribute('stroke', config.grid)
+  })
 }
 
 export function loadSettings(): UserSettings {
