@@ -166,6 +166,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
           { text: '  snake         play snake (eats the page!)', color: tc.dim },
           { text: '  invaders      space invaders (aliens abduct your code!)', color: tc.dim },
           { text: '  doom          can it run doom? yes.', color: tc.dim },
+          { text: '  wopr          shall we play a game?', color: tc.dim },
           { text: '  theme <name>  green | amber | blue', color: tc.dim },
           { text: '  history       command history', color: tc.dim },
           { text: '  clear         clear terminal', color: tc.dim },

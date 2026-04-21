@@ -10,6 +10,7 @@
  */
 
 import { launchDoomGame } from './doom-game'
+import QRCode from 'qrcode'
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -164,8 +165,11 @@ function playResolveChime(): void {
 
 // ─── Main Game Flow ──────────────────────────────────────────────────
 
+/** Pacing multiplier — 1.25 = 25% slower than original. */
+const PACE = 1.25
+
 function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise(resolve => setTimeout(resolve, ms * PACE))
 }
 
 /** Speak a line with a robotic voice — low pitch, slow rate. */
@@ -256,108 +260,17 @@ function createQrOverlay(sessionId: string, onClose: () => void): HTMLDivElement
 
   document.body.appendChild(overlay)
 
-  // Generate QR code on canvas
-  generateQrOnCanvas(url, 'wopr-qr-canvas')
+  // Generate real scannable QR code on canvas
+  const canvas = document.getElementById('wopr-qr-canvas') as HTMLCanvasElement
+  if (canvas) {
+    QRCode.toCanvas(canvas, url, { width: 200, margin: 1, color: { dark: '#000', light: '#fff' } })
+      .catch(() => { /* QR generation failed — URL is still shown as fallback */ })
+  }
 
   // Store close handler for later
   ;(overlay as HTMLDivElement & { _close?: () => void })._close = onClose
 
   return overlay
-}
-
-/** Simple QR code renderer using canvas. Encodes URL as a QR-like grid. */
-function generateQrOnCanvas(url: string, canvasId: string): void {
-  const canvas = document.getElementById(canvasId) as HTMLCanvasElement
-  if (!canvas) return
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return
-
-  // Use a proper QR encoding library would be ideal, but for a self-contained
-  // easter egg we'll generate a scannable QR using the minimal approach.
-  // We'll encode the URL using a basic QR matrix.
-
-  // For now: generate a QR-like pattern that encodes the URL.
-  // We'll use the fact that modern phones can scan QR codes from canvas.
-
-  const size = 200
-  canvas.width = size
-  canvas.height = size
-
-  // Encode data to binary
-  const data = new TextEncoder().encode(url)
-  const bits: boolean[] = []
-  for (const byte of data) {
-    for (let i = 7; i >= 0; i--) {
-      bits.push(Boolean(byte & (1 << i)))
-    }
-  }
-
-  // Create a grid pattern (not a real QR code, but we'll add
-  // finder patterns so phones recognize it)
-  const modules = 25  // Version 2 QR size
-  const cellSize = Math.floor(size / (modules + 2))
-  const offset = Math.floor((size - modules * cellSize) / 2)
-
-  const grid: boolean[][] = Array.from({ length: modules }, () => Array(modules).fill(false))
-
-  // Add finder patterns (the three big squares in corners)
-  const addFinder = (row: number, col: number) => {
-    for (let r = 0; r < 7; r++) {
-      for (let c = 0; c < 7; c++) {
-        const isOuter = r === 0 || r === 6 || c === 0 || c === 6
-        const isInner = r >= 2 && r <= 4 && c >= 2 && c <= 4
-        grid[row + r][col + c] = isOuter || isInner
-      }
-    }
-  }
-
-  addFinder(0, 0)
-  addFinder(0, modules - 7)
-  addFinder(modules - 7, 0)
-
-  // Add timing patterns
-  for (let i = 8; i < modules - 8; i++) {
-    grid[6][i] = i % 2 === 0
-    grid[i][6] = i % 2 === 0
-  }
-
-  // Fill data area with our bits
-  let bitIdx = 0
-  for (let col = modules - 1; col >= 0; col -= 2) {
-    if (col === 6) col = 5  // Skip timing column
-    for (let row = 0; row < modules; row++) {
-      for (let c = 0; c < 2 && col - c >= 0; c++) {
-        const r = row
-        const cc = col - c
-        // Skip finder/timing areas
-        if (r < 9 && cc < 9) continue
-        if (r < 9 && cc >= modules - 8) continue
-        if (r >= modules - 8 && cc < 9) continue
-        if (r === 6 || cc === 6) continue
-
-        if (bitIdx < bits.length) {
-          grid[r][cc] = bits[bitIdx]
-          bitIdx++
-        } else {
-          // Padding pattern
-          grid[r][cc] = (r + cc) % 2 === 0
-        }
-      }
-    }
-  }
-
-  // Render
-  ctx.fillStyle = 'white'
-  ctx.fillRect(0, 0, size, size)
-  ctx.fillStyle = 'black'
-
-  for (let r = 0; r < modules; r++) {
-    for (let c = 0; c < modules; c++) {
-      if (grid[r][c]) {
-        ctx.fillRect(offset + c * cellSize, offset + r * cellSize, cellSize, cellSize)
-      }
-    }
-  }
 }
 
 /** Poll the signaling server for phone connection status. */
