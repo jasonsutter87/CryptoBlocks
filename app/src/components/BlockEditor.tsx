@@ -43,6 +43,9 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
   // SCSS editor modal state
   const [scssModal, setScssModal] = useState<{ blockId: string; code: string } | null>(null)
 
+  // Track mouse position for placing blocks near cursor
+  const mouseRef = useRef({ x: 0, y: 0 })
+
   // Keep callback refs up to date without triggering workspace rebuild
   callbackRef.current = onWorkspaceChange
   editCallbackRef.current = onEditBlock
@@ -86,6 +89,14 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     })
 
     workspaceRef.current = workspace
+
+    // Track mouse for block placement
+    const svg = workspace.getParentSvg()
+    if (svg) {
+      svg.addEventListener('mousemove', (e: MouseEvent) => {
+        mouseRef.current = { x: e.clientX, y: e.clientY }
+      })
+    }
 
     // Apply saved workspace theme
     const savedSettings = loadSettings()
@@ -433,10 +444,18 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
         }
       }
 
-      // Quick-create value blocks — drop at center of current viewport
-      const getViewCenter = () => {
+      // Quick-create value blocks — drop near mouse cursor (6px offset)
+      const getDropPos = () => {
+        const svgEl = ws.getParentSvg()
+        const rect = svgEl?.getBoundingClientRect()
         const metrics = ws.getMetrics()
         const scale = ws.getScale()
+        if (rect && mouseRef.current.x) {
+          return {
+            x: Math.round((metrics.scrollLeft + (mouseRef.current.x - rect.left + 6)) / scale),
+            y: Math.round((metrics.scrollTop + (mouseRef.current.y - rect.top + 6)) / scale),
+          }
+        }
         return {
           x: Math.round((metrics.scrollLeft + metrics.viewWidth / 2) / scale),
           y: Math.round((metrics.scrollTop + metrics.viewHeight / 2) / scale),
@@ -446,21 +465,21 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       // Ctrl/Cmd+S (with shift) — create string block
       if (isMod && e.shiftKey && (e.key === 's' || e.key === 'S')) {
         e.preventDefault()
-        const c = getViewCenter()
+        const c = getDropPos()
         Blockly.serialization.blocks.append({ type: 'text', fields: { TEXT: '' }, x: c.x, y: c.y } as unknown as Blockly.serialization.blocks.State, ws)
       }
 
       // Ctrl/Cmd+I — create number block
       if (isMod && (e.key === 'i' || e.key === 'I') && !e.shiftKey) {
         e.preventDefault()
-        const c = getViewCenter()
+        const c = getDropPos()
         Blockly.serialization.blocks.append({ type: 'math_number', fields: { NUM: 0 }, x: c.x, y: c.y } as unknown as Blockly.serialization.blocks.State, ws)
       }
 
       // Ctrl/Cmd+B — create boolean block
       if (isMod && (e.key === 'b' || e.key === 'B') && !e.shiftKey) {
         e.preventDefault()
-        const c = getViewCenter()
+        const c = getDropPos()
         Blockly.serialization.blocks.append({ type: 'cb_true', x: c.x, y: c.y } as unknown as Blockly.serialization.blocks.State, ws)
       }
 

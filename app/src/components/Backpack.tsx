@@ -99,15 +99,24 @@ export default function Backpack({ workspaceRef }: BackpackProps) {
     }
   }, [])
 
-  const handleSlotClick = useCallback((slot: BackpackSlot) => {
+  const handleSlotClick = useCallback((slot: BackpackSlot, e: React.MouseEvent) => {
     const ws = workspaceRef.current
     if (!ws) return
 
-    // Place copy at center of viewport
-    const metrics = ws.getMetrics()
+    // Place near mouse cursor (offset 6px)
+    const svg = ws.getParentSvg()
+    const rect = svg?.getBoundingClientRect()
     const scale = ws.getScale()
-    const cx = Math.round((metrics.scrollLeft + metrics.viewWidth / 2) / scale)
-    const cy = Math.round((metrics.scrollTop + metrics.viewHeight / 2) / scale)
+    const metrics = ws.getMetrics()
+
+    let cx: number, cy: number
+    if (rect) {
+      cx = Math.round((metrics.scrollLeft + (e.clientX - rect.left + 6)) / scale)
+      cy = Math.round((metrics.scrollTop + (e.clientY - rect.top + 6)) / scale)
+    } else {
+      cx = Math.round((metrics.scrollLeft + metrics.viewWidth / 2) / scale)
+      cy = Math.round((metrics.scrollTop + metrics.viewHeight / 2) / scale)
+    }
 
     const stateCopy = JSON.parse(JSON.stringify(slot.state)) as Blockly.serialization.blocks.State
     stateCopy.x = cx
@@ -143,7 +152,7 @@ export default function Backpack({ workspaceRef }: BackpackProps) {
             <div
               key={i}
               title={slot ? `${slot.label}\nClick to place · Right-click to remove` : `Slot ${i + 1} empty`}
-              onClick={() => slot && handleSlotClick(slot)}
+              onClick={(e) => slot && handleSlotClick(slot, e)}
               onContextMenu={(e) => slot && handleSlotRemove(e, slot.id)}
               className={`
                 w-10 h-10 rounded-lg border flex items-center justify-center text-xs font-bold cursor-pointer transition-all
