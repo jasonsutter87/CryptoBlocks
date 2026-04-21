@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as Blockly from 'blockly'
 import { generateCode } from '../blocks/blockly-register'
+import { clearBlockWarnings, checkBlockWarnings } from '../blocks/blockWarnings'
 import { countBlocks } from '../challenges/validator'
 import { checkAchievements } from '../achievements'
 import type { Achievement } from '../achievements'
@@ -73,6 +74,11 @@ export function useRunPipeline(deps: Deps) {
 
     deps.setShowOutput(true)
 
+    // Clear any previous block warnings before this run
+    if (deps.workspaceRef.current) {
+      clearBlockWarnings(deps.workspaceRef.current)
+    }
+
     // HTML mode compiles to JS for execution — the HTML "peek" is display-only.
     const execLang = deps.language === 'html' ? 'javascript' : deps.language
     const traceEnabled = deps.slowMo && execLang === 'javascript'
@@ -106,6 +112,11 @@ export function useRunPipeline(deps: Deps) {
       deps.workspaceRef.current?.highlightBlock(null as unknown as string)
     } else {
       deps.exec.finish(execResult)
+    }
+
+    // Check block warnings after execution completes
+    if (deps.workspaceRef.current) {
+      checkBlockWarnings(deps.workspaceRef.current)
     }
 
     // Stats + achievements
