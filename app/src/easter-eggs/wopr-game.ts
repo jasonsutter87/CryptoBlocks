@@ -20,40 +20,6 @@ interface TerminalAPI {
   close: () => void
 }
 
-// ─── QR Code Generator (lightweight, no dependencies) ────────────────
-
-/** Generate a simple QR code as an HTML table with black/white cells. */
-function generateQrHtml(url: string): string {
-  // We'll use a minimal QR encoding. For simplicity, render as a
-  // canvas-based data URL that the terminal can display as an <img>.
-  // Since we can't add a full QR library inline, we'll use a different
-  // approach: show the URL as a styled link the user can also type.
-  // BUT — for the real experience, we generate it via the QR API pattern.
-  //
-  // Actually: we'll build a QR code using the terminal itself with block chars.
-  // Phone cameras CAN scan these if the contrast is right.
-  //
-  // For reliability, we'll inject an actual <img> element into the terminal
-  // overlay using a client-side QR generator.
-  return url
-}
-
-// ─── Minimal QR Code Matrix Generator ────────────────────────────────
-// Alphanumeric mode, version 2 (25x25), ECC level L
-// This is a simplified encoder — enough for short URLs
-
-function qrEncodeAlphanumeric(data: string): boolean[][] {
-  // For a robust QR, we'll use a canvas trick: render text to canvas
-  // and read pixels. But that's complex. Instead, let's use a pure
-  // block-character representation that phones can scan.
-  //
-  // SIMPLIFICATION: We'll generate the QR as a PNG data URL using
-  // a <canvas> element, which we inject as an <img> into the overlay.
-  // This is the most reliable approach for phone scanning.
-  void data
-  return []
-}
-
 // ─── WOPR ASCII Art ──────────────────────────────────────────────────
 
 const WOPR_BOOT = [
@@ -220,25 +186,6 @@ function speak(text: string): void {
     if (robot) utter.voice = robot
     window.speechSynthesis.speak(utter)
   } catch { /* speech not available */ }
-}
-
-async function typewriterLines(
-  addLine: AddLineFn,
-  lines: string[],
-  color: string,
-  charDelay = 30,
-  lineDelay = 100,
-): Promise<void> {
-  for (const line of lines) {
-    // For short lines, just add them. For longer ones, simulate typing.
-    if (line.length <= 3 || line.startsWith('  ═') || line.startsWith('  ─') || line.startsWith('  ██') || line.startsWith('  ╔') || line.startsWith('  ║') || line.startsWith('  ╚')) {
-      addLine(line, color)
-      await delay(lineDelay)
-    } else {
-      addLine(line, color)
-      await delay(Math.min(line.length * charDelay, 400))
-    }
-  }
 }
 
 /** Create the QR overlay with a scannable image. */
@@ -442,12 +389,11 @@ async function pollForConnection(sessionId: string, onPhreaking: () => void, onC
 
 /** Run the full WOPR experience inside the terminal. */
 export async function launchWoprGame(api: TerminalAPI): Promise<void> {
-  const { addLine, addLines } = api
+  const { addLine } = api
   const green = '#a6e3a1'
   const amber = '#f9e2af'
   const red = '#f38ba8'
   const dim = '#585b70'
-  const blue = '#89b4fa'
 
   // Phase 1: WOPR Boot Sequence
   for (const line of WOPR_BOOT) {
