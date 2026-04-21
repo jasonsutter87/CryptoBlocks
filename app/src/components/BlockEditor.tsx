@@ -8,6 +8,7 @@ import type { BlockDefinition } from '../types/block'
 import { useCollabDoc, useCollabAwareness } from '../collab/CollabPage'
 import { bindWorkspaceToYDoc } from '../collab/yjs-blockly-binding'
 import { bindPresence } from '../collab/presence'
+import Backpack from './Backpack'
 
 const ScssEditorModal = lazy(() => import('./ScssEditorModal'))
 
@@ -270,6 +271,23 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       weight: -2,
     }
     Blockly.ContextMenuRegistry.registry.register(editScssOption)
+
+    // Register "Add to Backpack" context menu for all blocks
+    if (!Blockly.ContextMenuRegistry.registry.getItem('addToBackpack')) {
+      Blockly.ContextMenuRegistry.registry.register({
+        id: 'addToBackpack',
+        weight: -3,
+        displayText: () => '🎒 Add to Backpack',
+        preconditionFn: (scope) => scope.block ? 'enabled' : 'hidden',
+        scopeType: Blockly.ContextMenuRegistry.ScopeType.BLOCK,
+        callback: (scope) => {
+          if (!scope.block) return
+          const addFn = (window as unknown as Record<string, unknown>).__cbBackpackAdd as ((b: Blockly.BlockSvg) => void) | undefined
+          if (addFn) addFn(scope.block as Blockly.BlockSvg)
+          else showToast('Backpack not ready', 'error')
+        },
+      })
+    }
 
     // Register "Lock Block" / "Unlock Block" context menu
     const lockBlockOption: Blockly.ContextMenuRegistry.RegistryItem = {
@@ -564,6 +582,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
   return (
     <>
       <div ref={containerRef} className="w-full h-full" />
+      <Backpack workspaceRef={workspaceRef} />
 
       {/* Block search overlay */}
       {showSearch && (
