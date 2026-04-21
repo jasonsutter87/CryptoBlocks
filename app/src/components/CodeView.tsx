@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react'
 import type { Language } from '../types/block'
+import Whiteboard from './Whiteboard'
 
 const MonacoEditor = lazy(() => import('@monaco-editor/react').then(m => ({ default: m.default })))
 
@@ -55,6 +56,7 @@ function PlainCodeView({ code, language: _language, editable, onCodeChange, onLi
 
 export default function CodeView({ code, language, onLanguageChange, editable, onCodeChange, onLineClick }: CodeViewProps) {
   const [monacoFailed, setMonacoFailed] = useState(false)
+  const [showWhiteboard, setShowWhiteboard] = useState(false)
 
   const monacoLang = language === 'python' ? 'python' : language === 'html' ? 'html' : 'javascript'
 
@@ -100,11 +102,31 @@ export default function CodeView({ code, language, onLanguageChange, editable, o
           >
             HTML
           </button>
+
+          <div className="w-px h-4 bg-surface-1 mx-1" />
+
+          <button
+            onClick={() => setShowWhiteboard(!showWhiteboard)}
+            className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+              showWhiteboard
+                ? 'bg-purple text-base'
+                : 'text-text hover:bg-surface-0'
+            }`}
+          >
+            ✏️ Draw
+          </button>
         </div>
       )}
 
-      {/* Code editor */}
-      <div className="flex-1 min-h-0">
+      {/* Whiteboard mode */}
+      {showWhiteboard && !editable && (
+        <div className="flex-1 min-h-0">
+          <Whiteboard />
+        </div>
+      )}
+
+      {/* Code editor — hidden when whiteboard is active */}
+      {!showWhiteboard && <div className="flex-1 min-h-0">
         {monacoFailed ? (
           <PlainCodeView code={code} language={monacoLang} editable={editable} onCodeChange={onCodeChange} onLineClick={onLineClick} />
         ) : (
@@ -119,7 +141,7 @@ export default function CodeView({ code, language, onLanguageChange, editable, o
             />
           </Suspense>
         )}
-      </div>
+      </div>}
     </div>
   )
 }
