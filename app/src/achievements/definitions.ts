@@ -633,6 +633,14 @@ export const achievements: Achievement[] = [
     secret: true,
   },
   {
+    id: 'wopr',
+    name: 'Global Thermonuclear War',
+    description: 'The only winning move is not to play.',
+    icon: '☢️',
+    rarity: 'legendary',
+    secret: true,
+  },
+  {
     id: 'egg-hunter',
     name: 'Egg Hunter',
     description: 'Open the Egg Vault',

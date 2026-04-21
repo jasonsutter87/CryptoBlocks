@@ -273,6 +273,9 @@ function checkAchievement(achievement: Achievement, context: AchievementContext)
     case 'space-cadet':
       return context.event === 'terminal-command' && context.command === 'invaders'
 
+    case 'wopr':
+      return context.event === 'terminal-command' && context.command === 'wopr'
+
     case 'doom-slayer':
       return context.event === 'doom-clear' && (context.doomLevel ?? 0) >= 1
 

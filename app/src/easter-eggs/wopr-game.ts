@@ -10,6 +10,7 @@
  */
 
 import { launchDoomGame } from './doom-game'
+import { checkAchievements } from '../achievements/tracker'
 import QRCode from 'qrcode'
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -584,6 +585,9 @@ async function runWarSimulation(api: TerminalAPI): Promise<void> {
   await delay(1000)
   addLine('  1...', red)
   await delay(1000)
+
+  // Badge unlock — survived the whole experience
+  checkAchievements({ event: 'terminal-command', command: 'wopr' })
 
   // Close terminal and launch DOOM
   close()
