@@ -103,6 +103,36 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       })
     }
 
+    // "Select All Inside" context menu for frame blocks
+    if (!Blockly.ContextMenuRegistry.registry.getItem('selectInsideFrame')) {
+      Blockly.ContextMenuRegistry.registry.register({
+        id: 'selectInsideFrame',
+        weight: 201,
+        displayText: () => '🔲 Select All Inside',
+        preconditionFn: (scope) => scope.block?.type === 'cb_frame' ? 'enabled' : 'hidden',
+        scopeType: Blockly.ContextMenuRegistry.ScopeType.BLOCK,
+        callback: (scope) => {
+          if (!scope.block) return
+          const frame = scope.block as Blockly.BlockSvg
+          const pos = frame.getRelativeToSurfaceXY()
+          const frameLeft = pos.x - 10
+          const frameTop = pos.y + 40
+          const frameRight = frameLeft + 500
+          const frameBottom = frameTop + 350
+          const ws = frame.workspace as Blockly.WorkspaceSvg
+          const allBlocks = ws.getTopBlocks(false) as Blockly.BlockSvg[]
+          for (const b of allBlocks) {
+            if (b.id === frame.id) continue
+            const bPos = b.getRelativeToSurfaceXY()
+            if (bPos.x >= frameLeft && bPos.x <= frameRight &&
+                bPos.y >= frameTop && bPos.y <= frameBottom) {
+              b.addSelect()
+            }
+          }
+        },
+      })
+    }
+
     // Restore saved workspace state
     if (initialWorkspaceState) {
       try {

@@ -727,39 +727,112 @@ function registerAnnotationBlocks() {
     },
   }
 
-  // Frame block — visual grouping like Figma sections
+  // Frame block — Figma-style visual grouping with sticky drag and color coding
+  const FRAME_COLORS: Record<string, { stroke: string; fill: string; label: string }> = {
+    grey:   { stroke: '#585b70', fill: 'rgba(49, 50, 68, 0.15)', label: 'Grey' },
+    blue:   { stroke: '#3b82f6', fill: 'rgba(59, 130, 246, 0.08)', label: 'Blue' },
+    green:  { stroke: '#22c55e', fill: 'rgba(34, 197, 94, 0.08)', label: 'Green' },
+    orange: { stroke: '#f97316', fill: 'rgba(249, 115, 22, 0.08)', label: 'Orange' },
+    purple: { stroke: '#a855f7', fill: 'rgba(168, 85, 247, 0.08)', label: 'Purple' },
+    red:    { stroke: '#ef4444', fill: 'rgba(239, 68, 68, 0.08)', label: 'Red' },
+  }
+
   Blockly.Blocks['cb_frame'] = {
     init: function (this: Blockly.Block) {
       this.setColour('#313244')
       this.appendDummyInput()
         .appendField('📁')
         .appendField(new Blockly.FieldTextInput('Section'), 'NAME')
-      this.setTooltip('Visual frame — group related blocks. Drag to reposition. Does not generate code.')
-      // No connections — standalone floating block
+      this.appendDummyInput()
+        .appendField(new Blockly.FieldDropdown(
+          Object.entries(FRAME_COLORS).map(([key, val]) => [val.label, key])
+        ), 'COLOR')
+      this.setTooltip('Visual frame — group related blocks. Drag to move all blocks inside. Does not generate code.')
       this.setMovable(true)
       this.setDeletable(true)
       this.setEditable(true)
 
-      // After render, inject a large dashed rect behind the block
       const block = this as unknown as Blockly.BlockSvg
+      let frameRect: SVGRectElement | null = null
+      let lastX = 0
+      let lastY = 0
+
+      const updateFrameColor = () => {
+        if (!frameRect) return
+        const colorKey = block.getFieldValue('COLOR') || 'grey'
+        const colors = FRAME_COLORS[colorKey] || FRAME_COLORS.grey
+        frameRect.setAttribute('fill', colors.fill)
+        frameRect.setAttribute('stroke', colors.stroke)
+      }
+
+      // Render the frame rect
       setTimeout(() => {
         const svgRoot = block.getSvgRoot()
         if (!svgRoot) return
 
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
-        rect.setAttribute('x', '-10')
-        rect.setAttribute('y', '30')
-        rect.setAttribute('width', '400')
-        rect.setAttribute('height', '300')
-        rect.setAttribute('rx', '12')
-        rect.setAttribute('ry', '12')
-        rect.setAttribute('fill', 'rgba(49, 50, 68, 0.15)')
-        rect.setAttribute('stroke', '#585b70')
-        rect.setAttribute('stroke-width', '2')
-        rect.setAttribute('stroke-dasharray', '8 4')
-        rect.style.pointerEvents = 'none'
-        svgRoot.insertBefore(rect, svgRoot.firstChild)
+        frameRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+        frameRect.setAttribute('x', '-10')
+        frameRect.setAttribute('y', '40')
+        frameRect.setAttribute('width', '500')
+        frameRect.setAttribute('height', '350')
+        frameRect.setAttribute('rx', '12')
+        frameRect.setAttribute('ry', '12')
+        frameRect.setAttribute('stroke-width', '2')
+        frameRect.setAttribute('stroke-dasharray', '8 4')
+        frameRect.style.pointerEvents = 'none'
+        svgRoot.insertBefore(frameRect, svgRoot.firstChild)
+        updateFrameColor()
+
+        const pos = block.getRelativeToSurfaceXY()
+        lastX = pos.x
+        lastY = pos.y
       }, 100)
+
+      // Listen for block moves to implement sticky grouping
+      const onMove = () => {
+        const pos = block.getRelativeToSurfaceXY()
+        const dx = pos.x - lastX
+        const dy = pos.y - lastY
+        if (dx === 0 && dy === 0) return
+
+        // Find all blocks inside the frame bounds and move them too
+        const ws = block.workspace as Blockly.WorkspaceSvg
+        if (!ws) { lastX = pos.x; lastY = pos.y; return }
+
+        const frameLeft = lastX - 10
+        const frameTop = lastY + 40
+        const frameRight = frameLeft + 500
+        const frameBottom = frameTop + 350
+
+        const allBlocks = ws.getTopBlocks(false) as Blockly.BlockSvg[]
+        for (const b of allBlocks) {
+          if (b.id === block.id) continue
+          const bPos = b.getRelativeToSurfaceXY()
+          if (bPos.x >= frameLeft && bPos.x <= frameRight &&
+              bPos.y >= frameTop && bPos.y <= frameBottom) {
+            b.moveBy(dx, dy)
+          }
+        }
+
+        lastX = pos.x
+        lastY = pos.y
+        updateFrameColor()
+      }
+
+      // Register move listener after workspace is ready
+      setTimeout(() => {
+        const ws = block.workspace
+        if (ws) {
+          ws.addChangeListener((e: Blockly.Events.Abstract) => {
+            if (e.type === Blockly.Events.BLOCK_MOVE && (e as Blockly.Events.BlockMove).blockId === block.id) {
+              onMove()
+            }
+            if (e.type === Blockly.Events.BLOCK_CHANGE && (e as Blockly.Events.BlockChange).blockId === block.id) {
+              updateFrameColor()
+            }
+          })
+        }
+      }, 200)
     },
   }
 
