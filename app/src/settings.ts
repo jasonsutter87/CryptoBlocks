@@ -1,3 +1,5 @@
+import * as Blockly from 'blockly'
+
 const SETTINGS_KEY = 'cryptoblocks-settings'
 
 export type WorkspaceTheme = 'dark' | 'midnight' | 'ocean' | 'forest' | 'slate'
@@ -33,26 +35,31 @@ const DEFAULTS: UserSettings = {
   workspaceTheme: 'dark',
 }
 
+/** Build a Blockly Theme with the given workspace background color. */
+function buildBlocklyTheme(config: WorkspaceThemeConfig): Blockly.Theme {
+  return Blockly.Theme.defineTheme('cb-workspace-' + config.bg.replace('#', ''), {
+    base: Blockly.Themes.Classic,
+    componentStyles: {
+      workspaceBackgroundColour: config.bg,
+    },
+  })
+}
+
 /** Apply workspace theme colors to an injected workspace. */
-export function applyWorkspaceTheme(workspace: import('blockly').WorkspaceSvg, themeKey: WorkspaceTheme): void {
+export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, themeKey: WorkspaceTheme): void {
   const config = WORKSPACE_THEMES[themeKey] ?? WORKSPACE_THEMES.dark
-  const svg = workspace.getParentSvg()
-  if (!svg) return
 
-  // Set SVG background
-  ;(svg as SVGElement & { style: CSSStyleDeclaration }).style.backgroundColor = config.bg
-
-  // Blockly paints the background via a <rect> inside the SVG — update that too
-  const bgRect = svg.querySelector('.blocklyMainBackground')
-  if (bgRect) {
-    bgRect.setAttribute('fill', config.bg)
-  }
+  // Set Blockly theme with the correct background color
+  workspace.setTheme(buildBlocklyTheme(config))
 
   // Update grid line colors
-  const lines = svg.querySelectorAll('pattern line')
-  lines.forEach((line) => {
-    ;(line as SVGLineElement).setAttribute('stroke', config.grid)
-  })
+  const svg = workspace.getParentSvg()
+  if (svg) {
+    const lines = svg.querySelectorAll('pattern line')
+    lines.forEach((line) => {
+      ;(line as SVGLineElement).setAttribute('stroke', config.grid)
+    })
+  }
 }
 
 export function loadSettings(): UserSettings {
