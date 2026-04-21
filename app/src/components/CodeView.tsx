@@ -119,14 +119,12 @@ export default function CodeView({ code, language, onLanguageChange, editable, o
       )}
 
       {/* Whiteboard mode */}
-      {showWhiteboard && !editable && (
-        <div className="flex-1 min-h-0">
-          <Whiteboard />
-        </div>
-      )}
+      <div className={`flex-1 min-h-0 ${showWhiteboard && !editable ? '' : 'hidden'}`}>
+        <Whiteboard />
+      </div>
 
       {/* Code editor — hidden when whiteboard is active */}
-      {!showWhiteboard && <div className="flex-1 min-h-0">
+      <div className={`flex-1 min-h-0 ${showWhiteboard && !editable ? 'hidden' : ''}`}>
         {monacoFailed ? (
           <PlainCodeView code={code} language={monacoLang} editable={editable} onCodeChange={onCodeChange} onLineClick={onLineClick} />
         ) : (
@@ -141,7 +139,7 @@ export default function CodeView({ code, language, onLanguageChange, editable, o
             />
           </Suspense>
         )}
-      </div>}
+      </div>
     </div>
   )
 }
