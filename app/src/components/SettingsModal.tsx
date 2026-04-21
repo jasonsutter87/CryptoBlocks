@@ -21,6 +21,8 @@ const HOTKEYS = [
   { keys: `${mod}+Shift+S`, desc: 'Create Text block' },
   { keys: `${mod}+I`, desc: 'Create Number block' },
   { keys: `${mod}+B`, desc: 'Create Boolean block' },
+  { keys: `${mod}+F`, desc: 'Find block on workspace' },
+  { keys: `${mod}+.`, desc: 'Collapse / expand all blocks' },
   { keys: `${mod}+Z`, desc: 'Undo' },
   { keys: `${mod}+Shift+Z`, desc: 'Redo' },
 ] as const

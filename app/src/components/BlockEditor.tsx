@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, lazy, Suspense } from 'react'
+import { useEffect, useRef, useState, useCallback, lazy, Suspense } from 'react'
 import * as Blockly from 'blockly'
 import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode, getBlockSourceMap } from '../blocks/blockly-register'
 import { showToast } from './Toast'
@@ -26,6 +26,8 @@ let blocksRegistered = false
 export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBlock, onSaveAsBlock, onBlockSelected: _onBlockSelected, initialWorkspaceState }: BlockEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const workspaceRef = useRef<Blockly.WorkspaceSvg | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
   const callbackRef = useRef(onWorkspaceChange)
   const editCallbackRef = useRef(onEditBlock)
   const deleteCallbackRef = useRef(onDeleteBlock)
@@ -467,6 +469,22 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
           block.moveBy(0, avgCenterY - centerY)
         }
       }
+
+      // Ctrl/Cmd+F — open block search
+      if (isMod && (e.key === 'f' || e.key === 'F') && !e.shiftKey) {
+        const active = document.activeElement
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return
+        e.preventDefault()
+        setShowSearch(true)
+      }
+
+      // Ctrl/Cmd+. — collapse all top blocks
+      if (isMod && e.key === '.') {
+        e.preventDefault()
+        const blocks = ws.getTopBlocks(false) as Blockly.BlockSvg[]
+        const allCollapsed = blocks.every(b => b.isCollapsed())
+        for (const b of blocks) b.setCollapsed(!allCollapsed)
+      }
     }
 
     document.addEventListener('keydown', handleKeyboard)
@@ -522,9 +540,63 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     setScssModal(null)
   }
 
+  // Block search handler
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query)
+    const ws = workspaceRef.current
+    if (!ws || !query.trim()) return
+
+    const q = query.toLowerCase()
+    const allBlocks = ws.getAllBlocks(false) as Blockly.BlockSvg[]
+    for (const b of allBlocks) {
+      const name = b.type.replace('cb_', '').replace(/_/g, ' ')
+      const fieldText = b.getFieldValue('NAME') || b.getFieldValue('TEXT') || ''
+      if (name.includes(q) || fieldText.toLowerCase().includes(q)) {
+        ws.centerOnBlock(b.id)
+        ws.highlightBlock(b.id)
+        setShowSearch(false)
+        setSearchQuery('')
+        return
+      }
+    }
+  }, [])
+
   return (
     <>
       <div ref={containerRef} className="w-full h-full" />
+
+      {/* Block search overlay */}
+      {showSearch && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50">
+          <div className="bg-mantle border border-surface-1 rounded-xl shadow-2xl p-2 flex items-center gap-2">
+            <span className="text-xs text-overlay">🔍</span>
+            <input
+              autoFocus
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSearch(searchQuery)
+                if (e.key === 'Escape') { setShowSearch(false); setSearchQuery('') }
+              }}
+              placeholder="Find block..."
+              className="bg-transparent text-text text-sm outline-none w-48 placeholder-overlay"
+            />
+            <button
+              onClick={() => handleSearch(searchQuery)}
+              className="text-xs text-accent hover:underline"
+            >
+              Find
+            </button>
+            <button
+              onClick={() => { setShowSearch(false); setSearchQuery('') }}
+              className="text-xs text-overlay hover:text-text"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {scssModal && (
         <Suspense fallback={null}>
           <ScssEditorModal
