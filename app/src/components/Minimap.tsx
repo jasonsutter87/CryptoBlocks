@@ -12,6 +12,37 @@ const MAP_W = 150
 const MAP_H = 100
 const PADDING = 40 // workspace padding to include in bounds
 
+interface MinimapBounds {
+  minX: number; minY: number
+  rangeX: number; rangeY: number
+  scale: number
+  offsetX: number; offsetY: number
+}
+
+function computeBounds(blocks: Blockly.BlockSvg[]): MinimapBounds | null {
+  if (blocks.length === 0) return null
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+  for (const b of blocks) {
+    const pos = b.getRelativeToSurfaceXY()
+    const { width, height } = b.getHeightWidth()
+    minX = Math.min(minX, pos.x)
+    minY = Math.min(minY, pos.y)
+    maxX = Math.max(maxX, pos.x + width)
+    maxY = Math.max(maxY, pos.y + height)
+  }
+
+  minX -= PADDING; minY -= PADDING
+  maxX += PADDING; maxY += PADDING
+  const rangeX = maxX - minX || 1
+  const rangeY = maxY - minY || 1
+  const scale = Math.min(MAP_W / rangeX, MAP_H / rangeY)
+  const offsetX = (MAP_W - rangeX * scale) / 2
+  const offsetY = (MAP_H - rangeY * scale) / 2
+
+  return { minX, minY, rangeX, rangeY, scale, offsetX, offsetY }
+}
+
 interface MinimapProps {
   workspaceRef: React.RefObject<Blockly.WorkspaceSvg | null>
 }
@@ -29,35 +60,13 @@ export default function Minimap({ workspaceRef }: MinimapProps) {
     if (!ctx) return
 
     const blocks = ws.getTopBlocks(false) as Blockly.BlockSvg[]
-    if (blocks.length === 0) {
+    const bounds = computeBounds(blocks)
+    if (!bounds) {
       ctx.clearRect(0, 0, MAP_W, MAP_H)
       return
     }
 
-    // Compute bounding box of all blocks in workspace coords
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    for (const b of blocks) {
-      const pos = b.getRelativeToSurfaceXY()
-      const { width, height } = b.getHeightWidth()
-      minX = Math.min(minX, pos.x)
-      minY = Math.min(minY, pos.y)
-      maxX = Math.max(maxX, pos.x + width)
-      maxY = Math.max(maxY, pos.y + height)
-    }
-
-    minX -= PADDING; minY -= PADDING
-    maxX += PADDING; maxY += PADDING
-    const rangeX = maxX - minX || 1
-    const rangeY = maxY - minY || 1
-
-    // Scale to fit MAP_W x MAP_H
-    const scaleX = MAP_W / rangeX
-    const scaleY = MAP_H / rangeY
-    const scale = Math.min(scaleX, scaleY)
-
-    // Center within the canvas
-    const offsetX = (MAP_W - rangeX * scale) / 2
-    const offsetY = (MAP_H - rangeY * scale) / 2
+    const { minX, minY, scale, offsetX, offsetY } = bounds
 
     ctx.clearRect(0, 0, MAP_W, MAP_H)
 
