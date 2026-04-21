@@ -33,7 +33,7 @@ const DEFAULTS: UserSettings = {
 /** Apply workspace background color and grid visibility. */
 export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, bg: string, showGrid = true): void {
   const safeBg = /^#[0-9a-fA-F]{6}$/.test(bg) ? bg : DEFAULT_WORKSPACE_BG
-  const grid = showGrid ? deriveGridColor(safeBg) : 'transparent'
+  const gridColor = deriveGridColor(safeBg)
 
   const svg = workspace.getParentSvg()
   if (!svg) return
@@ -46,11 +46,24 @@ export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, bg: string,
 
   ;(svg as SVGElement).style.backgroundColor = safeBg
 
-  // Update grid line colors (transparent = hidden)
-  const lines = svg.querySelectorAll('pattern line')
-  lines.forEach((line) => {
-    ;(line as SVGLineElement).setAttribute('stroke', grid)
-  })
+  // Toggle grid via Blockly's Grid API — length 0 hides, 3 shows dots
+  const grid = workspace.getGrid()
+  if (grid) {
+    grid.setLength(showGrid ? 3 : 0)
+    grid.update(workspace.getScale())
+  }
+
+  // Also update stroke color on the grid pattern lines
+  const patternId = grid?.getPatternId()
+  if (patternId) {
+    const pattern = svg.querySelector(`#${patternId}`)
+    if (pattern) {
+      const lines = pattern.querySelectorAll('line')
+      lines.forEach((line) => {
+        ;(line as SVGLineElement).setAttribute('stroke', showGrid ? gridColor : 'transparent')
+      })
+    }
+  }
 }
 
 export function loadSettings(): UserSettings {
