@@ -510,6 +510,13 @@ function registerColorBlock() {
 const FUNCTION_COLOR = '#3B82F6'
 const EVENT_COLOR = '#F59E0B'
 
+// SVG data URIs for + / - FieldImage buttons used in function/call blocks.
+// Two sizes: 16px (create_function) and 14px (call_function variants).
+const SVG_ADD_16 = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#22c55e"/><path d="M8 4v8M4 8h8" stroke="#fff" stroke-width="2"/></svg>')
+const SVG_REM_16 = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#ef4444"/><path d="M4 8h8" stroke="#fff" stroke-width="2"/></svg>')
+const SVG_ADD_14 = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>')
+const SVG_REM_14 = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>')
+
 /** Register function definition and call blocks. */
 function registerFunctionBlocks() {
   Blockly.Blocks['cb_create_function'] = {
@@ -524,8 +531,8 @@ function registerFunctionBlocks() {
         this.appendValueInput(`PARAM${i}`).setCheck('String').appendField(`param ${i}`)
       }
       this.appendDummyInput('BUTTONS')
-        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#22c55e"/><path d="M8 4v8M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '+', () => this.addParam_()))
-        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#ef4444"/><path d="M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '-', () => this.removeParam_()))
+        .appendField(new Blockly.FieldImage(SVG_ADD_16, 16, 16, '+', () => this.addParam_()))
+        .appendField(new Blockly.FieldImage(SVG_REM_16, 16, 16, '-', () => this.removeParam_()))
       this.appendStatementInput('BODY').appendField('do')
       this.setTooltip('Create a reusable function. Click + / - to add or remove parameters.')
 
@@ -535,8 +542,8 @@ function registerFunctionBlocks() {
         this.removeInput('BODY')
         this.appendValueInput(`PARAM${this.paramCount_}`).setCheck('String').appendField(`param ${this.paramCount_}`)
         this.appendDummyInput('BUTTONS')
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#22c55e"/><path d="M8 4v8M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '+', () => this.addParam_()))
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#ef4444"/><path d="M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '-', () => this.removeParam_()))
+          .appendField(new Blockly.FieldImage(SVG_ADD_16, 16, 16, '+', () => this.addParam_()))
+          .appendField(new Blockly.FieldImage(SVG_REM_16, 16, 16, '-', () => this.removeParam_()))
         this.appendStatementInput('BODY').appendField('do')
       }
 
@@ -547,8 +554,8 @@ function registerFunctionBlocks() {
         this.removeInput(`PARAM${this.paramCount_}`)
         this.paramCount_--
         this.appendDummyInput('BUTTONS')
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#22c55e"/><path d="M8 4v8M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '+', () => this.addParam_()))
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><circle cx="8" cy="8" r="7" fill="#ef4444"/><path d="M4 8h8" stroke="#fff" stroke-width="2"/></svg>'), 16, 16, '-', () => this.removeParam_()))
+          .appendField(new Blockly.FieldImage(SVG_ADD_16, 16, 16, '+', () => this.addParam_()))
+          .appendField(new Blockly.FieldImage(SVG_REM_16, 16, 16, '-', () => this.removeParam_()))
         this.appendStatementInput('BODY').appendField('do')
       };
 
@@ -576,8 +583,8 @@ function registerFunctionBlocks() {
         this.appendValueInput(`ARG${i}`).appendField('and')
       }
       this.appendDummyInput('ARGBUTTONS')
-        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
-        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
+        .appendField(new Blockly.FieldImage(SVG_ADD_14, 14, 14, '+', () => this.addArg_()))
+        .appendField(new Blockly.FieldImage(SVG_REM_14, 14, 14, '-', () => this.removeArg_()))
       this.setPreviousStatement(true, null)
       this.setNextStatement(true, null)
       this.setTooltip('Call a function by name. Click + / - to add or remove arguments.');
@@ -596,8 +603,8 @@ function registerFunctionBlocks() {
         this.removeInput('ARGBUTTONS')
         this.appendValueInput(`ARG${this.argCount_}`).appendField('and')
         this.appendDummyInput('ARGBUTTONS')
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
+          .appendField(new Blockly.FieldImage(SVG_ADD_14, 14, 14, '+', () => this.addArg_()))
+          .appendField(new Blockly.FieldImage(SVG_REM_14, 14, 14, '-', () => this.removeArg_()))
       }
       this.removeArg_ = function () {
         if (this.argCount_ <= 0) return
@@ -605,8 +612,8 @@ function registerFunctionBlocks() {
         this.removeInput(`ARG${this.argCount_}`)
         this.argCount_--
         this.appendDummyInput('ARGBUTTONS')
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
+          .appendField(new Blockly.FieldImage(SVG_ADD_14, 14, 14, '+', () => this.addArg_()))
+          .appendField(new Blockly.FieldImage(SVG_REM_14, 14, 14, '-', () => this.removeArg_()))
       }
     },
   }
@@ -624,8 +631,8 @@ function registerFunctionBlocks() {
         this.appendValueInput(`ARG${i}`).appendField('and')
       }
       this.appendDummyInput('ARGBUTTONS')
-        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
-        .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
+        .appendField(new Blockly.FieldImage(SVG_ADD_14, 14, 14, '+', () => this.addArg_()))
+        .appendField(new Blockly.FieldImage(SVG_REM_14, 14, 14, '-', () => this.removeArg_()))
       this.setOutput(true, null)
       this.setTooltip('Call a function and use its return value. Click + / - to add or remove arguments.');
 
@@ -643,8 +650,8 @@ function registerFunctionBlocks() {
         this.removeInput('ARGBUTTONS')
         this.appendValueInput(`ARG${this.argCount_}`).appendField('and')
         this.appendDummyInput('ARGBUTTONS')
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
+          .appendField(new Blockly.FieldImage(SVG_ADD_14, 14, 14, '+', () => this.addArg_()))
+          .appendField(new Blockly.FieldImage(SVG_REM_14, 14, 14, '-', () => this.removeArg_()))
       }
       this.removeArg_ = function () {
         if (this.argCount_ <= 0) return
@@ -652,8 +659,8 @@ function registerFunctionBlocks() {
         this.removeInput(`ARG${this.argCount_}`)
         this.argCount_--
         this.appendDummyInput('ARGBUTTONS')
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#22c55e"/><path d="M7 3v8M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '+', () => this.addArg_()))
-          .appendField(new Blockly.FieldImage('data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"><circle cx="7" cy="7" r="6" fill="#ef4444"/><path d="M3 7h8" stroke="#fff" stroke-width="2"/></svg>'), 14, 14, '-', () => this.removeArg_()))
+          .appendField(new Blockly.FieldImage(SVG_ADD_14, 14, 14, '+', () => this.addArg_()))
+          .appendField(new Blockly.FieldImage(SVG_REM_14, 14, 14, '-', () => this.removeArg_()))
       }
     },
   }
