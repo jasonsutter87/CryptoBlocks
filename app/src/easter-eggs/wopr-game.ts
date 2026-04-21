@@ -164,8 +164,6 @@ function playResolveChime(): void {
 
 // ─── Main Game Flow ──────────────────────────────────────────────────
 
-type AddLineFn = (text: string, color?: string) => void
-
 function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
