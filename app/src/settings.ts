@@ -18,6 +18,7 @@ export interface UserSettings {
   theme: 'dark' | 'light'
   locale: 'en' | 'es'
   workspaceBg: string
+  showGrid: boolean
 }
 
 const DEFAULTS: UserSettings = {
@@ -26,12 +27,13 @@ const DEFAULTS: UserSettings = {
   theme: 'dark',
   locale: 'en',
   workspaceBg: DEFAULT_WORKSPACE_BG,
+  showGrid: true,
 }
 
-/** Apply workspace background color to an injected workspace. */
-export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, bg: string): void {
+/** Apply workspace background color and grid visibility. */
+export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, bg: string, showGrid = true): void {
   const safeBg = /^#[0-9a-fA-F]{6}$/.test(bg) ? bg : DEFAULT_WORKSPACE_BG
-  const grid = deriveGridColor(safeBg)
+  const grid = showGrid ? deriveGridColor(safeBg) : 'transparent'
 
   const svg = workspace.getParentSvg()
   if (!svg) return
@@ -44,7 +46,7 @@ export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, bg: string)
 
   ;(svg as SVGElement).style.backgroundColor = safeBg
 
-  // Update grid line colors
+  // Update grid line colors (transparent = hidden)
   const lines = svg.querySelectorAll('pattern line')
   lines.forEach((line) => {
     ;(line as SVGLineElement).setAttribute('stroke', grid)

@@ -177,6 +177,23 @@ export default function SettingsModal({ onClose, onSettingsChanged }: SettingsMo
           </label>
         </div>
 
+        {/* Show grid */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm text-text font-medium">Show Grid</p>
+            <p className="text-xs text-overlay mt-0.5">Grid dots on the workspace</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={settings.showGrid}
+              onChange={(e) => setSettings((s) => ({ ...s, showGrid: e.target.checked }))}
+              className="sr-only peer"
+            />
+            <div className="w-9 h-5 bg-surface-1 rounded-full peer peer-checked:bg-accent transition-colors after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+          </label>
+        </div>
+
         {/* Interval selector */}
         <div className={`mb-6 transition-opacity ${settings.autoSaveEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
           <label className="block text-sm text-text font-medium mb-2">
