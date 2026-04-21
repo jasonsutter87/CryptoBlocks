@@ -123,25 +123,10 @@ export default function Minimap({ workspaceRef }: MinimapProps) {
     if (!ws || !canvas) return
 
     const blocks = ws.getTopBlocks(false) as Blockly.BlockSvg[]
-    if (blocks.length === 0) return
+    const bounds = computeBounds(blocks)
+    if (!bounds) return
 
-    // Re-compute bounds (same as draw)
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    for (const b of blocks) {
-      const pos = b.getRelativeToSurfaceXY()
-      const { width, height } = b.getHeightWidth()
-      minX = Math.min(minX, pos.x)
-      minY = Math.min(minY, pos.y)
-      maxX = Math.max(maxX, pos.x + width)
-      maxY = Math.max(maxY, pos.y + height)
-    }
-    minX -= PADDING; minY -= PADDING
-    maxX += PADDING; maxY += PADDING
-    const rangeX = maxX - minX || 1
-    const rangeY = maxY - minY || 1
-    const scale = Math.min(MAP_W / rangeX, MAP_H / rangeY)
-    const offsetX = (MAP_W - rangeX * scale) / 2
-    const offsetY = (MAP_H - rangeY * scale) / 2
+    const { minX, minY, scale, offsetX, offsetY } = bounds
 
     const rect = canvas.getBoundingClientRect()
     const cx = e.clientX - rect.left
