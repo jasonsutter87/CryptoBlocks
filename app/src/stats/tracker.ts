@@ -75,12 +75,16 @@ function calculateStreak(runsByDate: Record<string, number>, endDate: number): n
   return streak
 }
 
-export function recordBlockCreated(): DevStats {
+function mutateAndSync(fn: (s: DevStats) => void): DevStats {
   const stats = loadStats()
-  stats.totalBlocks++
+  fn(stats)
   saveStats(stats)
   scheduleSyncToServer()
   return stats
+}
+
+export function recordBlockCreated(): DevStats {
+  return mutateAndSync((s) => { s.totalBlocks++ })
 }
 
 export function recordRun(opts: {
@@ -88,70 +92,40 @@ export function recordRun(opts: {
   blockCount: number
   lineCount: number
 }): DevStats {
-  const stats = loadStats()
-  const now = Date.now()
+  return mutateAndSync((stats) => {
+    const now = Date.now()
 
-  // Increment counters
-  stats.totalRuns++
-  stats.totalLinesGenerated += opts.lineCount
-  stats.runsPerLanguage[opts.language]++
+    stats.totalRuns++
+    stats.totalLinesGenerated += opts.lineCount
+    stats.runsPerLanguage[opts.language]++
 
-  // Update dates
-  if (stats.firstRunDate === 0) {
-    stats.firstRunDate = now
-  }
-  stats.lastRunDate = now
+    if (stats.firstRunDate === 0) stats.firstRunDate = now
+    stats.lastRunDate = now
 
-  // Update longest program
-  if (opts.blockCount > stats.longestProgram) {
-    stats.longestProgram = opts.blockCount
-  }
+    if (opts.blockCount > stats.longestProgram) stats.longestProgram = opts.blockCount
 
-  // Update runs by date
-  const dateKey = formatDateKey(now)
-  stats.runsByDate[dateKey] = (stats.runsByDate[dateKey] || 0) + 1
+    const dateKey = formatDateKey(now)
+    stats.runsByDate[dateKey] = (stats.runsByDate[dateKey] || 0) + 1
 
-  // Recalculate streak
-  stats.currentStreak = calculateStreak(stats.runsByDate, now)
-  if (stats.currentStreak > stats.bestStreak) {
-    stats.bestStreak = stats.currentStreak
-  }
-
-  saveStats(stats)
-  scheduleSyncToServer()
-  return stats
+    stats.currentStreak = calculateStreak(stats.runsByDate, now)
+    if (stats.currentStreak > stats.bestStreak) stats.bestStreak = stats.currentStreak
+  })
 }
 
 export function recordChallengeComplete(): DevStats {
-  const stats = loadStats()
-  stats.challengesCompleted++
-  saveStats(stats)
-  scheduleSyncToServer()
-  return stats
+  return mutateAndSync((s) => { s.challengesCompleted++ })
 }
 
 export function recordGolfComplete(): DevStats {
-  const stats = loadStats()
-  stats.golfSolved++
-  saveStats(stats)
-  scheduleSyncToServer()
-  return stats
+  return mutateAndSync((s) => { s.golfSolved++ })
 }
 
 export function recordLabComplete(): DevStats {
-  const stats = loadStats()
-  stats.labExercises++
-  saveStats(stats)
-  scheduleSyncToServer()
-  return stats
+  return mutateAndSync((s) => { s.labExercises++ })
 }
 
 export function recordAchievement(): DevStats {
-  const stats = loadStats()
-  stats.achievementsUnlocked++
-  saveStats(stats)
-  scheduleSyncToServer()
-  return stats
+  return mutateAndSync((s) => { s.achievementsUnlocked++ })
 }
 
 // Debounce timer for server sync
