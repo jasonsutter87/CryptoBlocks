@@ -5,6 +5,99 @@ description: 'What is new in CryptoBlocks. Version history, features, fixes, and
 priority: 0.6
 ---
 
+<!--
+## v0.5 — April 2026
+
+The builder's update. Workspace tools, scope system overhaul, bidirectional debugging, keyboard shortcuts, and a full security sweep. Built for the kids who are serious about building.
+
+### Workspace Tools
+- **Frame Blocks** — Figma-style visual grouping for organizing your workspace. Color-coded (8 colors), resizable (100–2000px), blocks inside stick when you move the frame
+- **Whiteboard** — freeform drawing canvas in the Peek panel. 8 colors, 4 stroke widths, eraser, touch support. Saved to localStorage (2 MB cap)
+- **Backpack** — Minecraft-style 9-slot hotbar. Right-click a block → "Add to Backpack", click a slot to place it. Persists across sessions
+- **Toolbox Search** — search bar above the Brick Bin to filter blocks by name in real time
+- **Block Warnings** — yellow triangle indicators on blocks with common issues (empty inputs, undefined functions) after each run
+- **Workspace Color Picker** — single color wheel to set any background color for your workspace
+- **Show Grid Toggle** — optional grid dots on the workspace canvas
+- **Block Search** (Cmd+F) — overlay search to find blocks on the workspace
+- **Collapse All** (Cmd+.) — collapse every block on the workspace at once
+- **Yellow Comment Blocks** — comment blocks now render in canary yellow for visibility
+
+### Unified Scope System
+- **Toggleable global/local blocks** — lists and objects now have a single block with a dropdown to choose global or local scope. No more separate block types
+- **`list_create`** — create a list in global or local scope from one block
+- **`list_add`, `list_get`, `list_set`, `list_len`** — all scope-aware with dropdown toggle
+- **`obj_create`, `obj_set`, `obj_get`** — objects with the same global/local toggle
+- **Legacy blocks hidden** — old scope-specific blocks still work but are hidden from the Brick Bin
+
+### Bidirectional Code ↔ Block Debugging
+- **Click a code line → highlight the block** — source map markers (`/*__cb:BLOCKID*/`) injected into generated code, Monaco line clicks scroll to and select the block
+- **Right-click a block → "Show Line Number"** — context menu option shows which line of code that block generated
+- **Line numbers in PlainCodeView** — clickable gutter rows for the non-Monaco fallback
+
+### Keyboard Shortcuts
+- **Cmd+G** — snap all selected blocks to grid
+- **Cmd+A** — select all blocks on the workspace
+- **Cmd+L** — tidy layout (two-column: functions left, chains right)
+- **Cmd+Click** — toggle multi-block selection
+- **Cmd+Shift+S** — quick-create text block at cursor
+- **Cmd+I** — quick-create number block at cursor
+- **Cmd+B** — quick-create boolean block at cursor
+- **Hotkeys card** in Settings — flip to see all shortcuts
+
+### New Blocks
+- **`min_max`** — toggleable min/max dropdown, one block for both
+- **`count_from`** — custom for loop with start, end, and step
+- **`set_in_list`** — set item at index in a list by name
+- **Dynamic function params** — +/− buttons to add/remove arguments, serialized with `saveExtraState`
+
+### Per-Project Version History
+- **Checkpoints scoped to project ID** — each project maintains its own history timeline
+- **Version control badges** — First Commit, Historian (10 checkpoints), Time Lord (50 checkpoints)
+
+### Time Travel Fix
+- **Actually works now** — fixed race condition where the workspace ref wasn't available when the listener tried to attach. Polls until ready, then captures every edit
+
+### Stats Sync
+- **Server-side stats** — all user stats (runs, blocks, streaks, language breakdown) sync to Turso
+- **Cross-device persistence** — sign in on any machine and your stats merge (MAX-based strategy)
+- **Debounced sync** — pushes to server 5 seconds after last change, not on every event
+
+### Proof of Work
+- **Anti-gaming filter** on block-count badges — requires minimum unique block types and maximum single-type dominance percentage
+- **Thresholds scale with tier** — Block Party (5 unique, 60% max) up to Block God (25 unique, 30% max)
+- **Block count inflation fix** — `Blockly.Events.disable()` during workspace load prevents BLOCK_CREATE events from counting loaded blocks
+
+### 80+ Achievements (up from 42)
+- **Block milestones**: Block Party (50), Block Master (100), Megastructure (1K), Block 2500, Block 5000, Block God (7.5K), Block 10000
+- **Cumulative milestones**: Mile Placer (1,600), Block 5K, Block 10K, Block 25K, Block 50K, Moon Walker (238,900)
+- **Crypto badges**: Finney (6 crypto blocks), Satoshi (8 crypto blocks)
+- **Green Cube Collectors**: 7 active days, 50 in 90 days, 180 in a year
+- **Secret**: Necromancer (use a dead block), Early Bird (4–6am), Irrational (31,415 total blocks — digits of π)
+- **Streak**: 14-day streak badge
+- **Featured**: Star (featured project), Site Builder
+- **Import**: The Multi-Platformer (import from Scratch), Napster (import 10 Scratch projects)
+- **Publishing**: Going Global (GitHub publish), The Contributor (30 Shareplace shares), Trendsetter (5 remixes), The Influencer (30 remixes)
+
+### Security Sweep (Purple + Black + Red Team)
+- **Backpack storage guard** — validates localStorage data on load, caps size
+- **Whiteboard 2 MB cap** — prevents localStorage exhaustion
+- **ToolboxSearch XML escaping** — prevents injection via block names
+- **Stats endpoint hardened** — 64 KB payload cap, NaN/Infinity guards, date key validation, 400-entry runsByDate limit
+- **DRY refactors** — `mutateAndSync` helper, shared `formatDateKey`, `computeBounds` helper in Minimap
+
+### Bug Fixes
+- `MAX_JSON_DEPTH` bumped to 350 for large block projects (Pac-Man exceeded 50)
+- Comment block `*/` in text breaks JS output → escaped to `* /`
+- Function block duplicate loses params → `saveExtraState`/`loadExtraState` serialization
+- Console panel stays visible when toggling Peek Code off → now hides together
+- Code view destroyed after Whiteboard → switched to CSS `hidden` toggle instead of unmount
+- Delete button invisible (`text-base` is Tailwind font-size) → changed to `text-white`
+- Hotkey blocks spawning at (0,0) → fixed with scroll offset divided by scale
+
+-->
+
+---
+
 ## v0.4 — April 2026
 
 The badge system, CTF, and security hardening update. COD-style achievements with server-side tracking, a hidden treasure hunt (CTF) baked into the app, CryptDOOM raycaster, procedural levels, and a full security audit.

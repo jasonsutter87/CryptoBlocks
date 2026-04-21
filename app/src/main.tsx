@@ -33,6 +33,7 @@ const AdminPage = lazy(() => import('./admin/AdminPage'))
 const UserShowcasePage = lazy(() => import('./leaderboard/UserShowcasePage'))
 const ExampleLoader = lazy(() => import('./examples/ExampleLoader'))
 const FeaturedHistoryPage = lazy(() => import('./shareplace/FeaturedHistoryPage'))
+const WoprPhone = lazy(() => import('./easter-eggs/WoprPhone'))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -54,6 +55,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/user/:id" element={<SharedLayout><UserShowcasePage /></SharedLayout>} />
           <Route path="/featured" element={<SharedLayout><FeaturedHistoryPage /></SharedLayout>} />
           <Route path="/admin" element={<SharedLayout><AdminPage /></SharedLayout>} />
+          <Route path="/wopr" element={<WoprPhone />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

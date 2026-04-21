@@ -10,6 +10,7 @@ import { launchSnakeGame } from '../easter-eggs/snake-game'
 import { launchInvadersGame } from '../easter-eggs/invaders-game'
 import { launchMatrixRain } from '../easter-eggs/matrix-rain'
 import { launchDoomGame } from '../easter-eggs/doom-game'
+import { launchWoprGame } from '../easter-eggs/wopr-game'
 import { checkAchievements } from '../achievements/tracker'
 
 const ASCII_LOGO = `
@@ -346,6 +347,21 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
         setTimeout(() => {
           setOpen(false)
           launchDoomGame()
+        }, 500)
+        break
+
+      case 'wopr':
+        addLines(
+          { text: '  Initiating WOPR connection...', color: '#a6e3a1' },
+          { text: '  Stand by.', color: tc.dim },
+        )
+        setTimeout(() => {
+          launchWoprGame({
+            addLine: (text: string, color?: string) => addLines({ text: `  ${text}`, color }),
+            addLines: (...lines: { text: string; color?: string }[]) => addLines(...lines.map(l => ({ text: `  ${l.text}`, color: l.color }))),
+            clear: () => setLines([]),
+            close: () => setOpen(false),
+          })
         }, 500)
         break
 

@@ -106,6 +106,16 @@
   to = "/.netlify/functions/sprites/:splat"
   status = 200
 
+[[redirects]]
+  from = "/api/wopr"
+  to = "/.netlify/functions/wopr"
+  status = 200
+
+[[redirects]]
+  from = "/api/wopr/*"
+  to = "/.netlify/functions/wopr/:splat"
+  status = 200
+
 # SPA — all other routes serve index.html
 [[redirects]]
   from = "/*"
