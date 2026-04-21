@@ -37,7 +37,9 @@ const DEFAULTS: UserSettings = {
 
 /** Build a Blockly Theme with the given workspace background color. */
 function buildBlocklyTheme(config: WorkspaceThemeConfig): Blockly.Theme {
-  return Blockly.Theme.defineTheme('cb-workspace-' + config.bg.replace('#', ''), {
+  const name = 'cb-workspace-' + config.bg.replace('#', '')
+  return Blockly.Theme.defineTheme(name, {
+    name,
     base: Blockly.Themes.Classic,
     componentStyles: {
       workspaceBackgroundColour: config.bg,
