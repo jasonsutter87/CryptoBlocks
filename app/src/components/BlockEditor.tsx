@@ -133,11 +133,15 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       })
     }
 
-    // Restore saved workspace state
+    // Restore saved workspace state — disable events so block loads
+    // don't count as "blocks placed" in stats
     if (initialWorkspaceState) {
       try {
+        Blockly.Events.disable()
         Blockly.serialization.workspaces.load(initialWorkspaceState, workspace)
+        Blockly.Events.enable()
       } catch {
+        Blockly.Events.enable()
         // corrupted state, start fresh
       }
     }
