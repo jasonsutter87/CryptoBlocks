@@ -194,7 +194,7 @@ export default function HackerTerminal({ blockCount = 0 }: HackerTerminalProps) 
         const upMin = Math.floor(upSec / 60)
         addLines(
           { text: '' },
-          { text: '  ┌──┐┌──┐┌──┐     CryptoBlocks v0.4', color: tc.prompt },
+          { text: '  ┌──┐┌──┐┌──┐     CryptoBlocks v0.5', color: tc.prompt },
           { text: '  │██││██││██│     ─────────────────────', color: tc.prompt },
           { text: '  └──┘└──┘└──┘     OS: Browser', color: tc.prompt },
           { text: `                    Blocks: ${blockCount}`, color: tc.dim },

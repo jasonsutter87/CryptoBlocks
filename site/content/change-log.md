@@ -5,7 +5,6 @@ description: 'What is new in CryptoBlocks. Version history, features, fixes, and
 priority: 0.6
 ---
 
-<!--
 ## v0.5 — April 2026
 
 The builder's update. Workspace tools, scope system overhaul, bidirectional debugging, keyboard shortcuts, and a full security sweep. Built for the kids who are serious about building.
@@ -93,8 +92,6 @@ The builder's update. Workspace tools, scope system overhaul, bidirectional debu
 - Code view destroyed after Whiteboard → switched to CSS `hidden` toggle instead of unmount
 - Delete button invisible (`text-base` is Tailwind font-size) → changed to `text-white`
 - Hotkey blocks spawning at (0,0) → fixed with scroll offset divided by scale
-
--->
 
 ---
 
