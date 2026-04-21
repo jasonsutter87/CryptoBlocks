@@ -10,6 +10,7 @@ import { bindWorkspaceToYDoc } from '../collab/yjs-blockly-binding'
 import { bindPresence } from '../collab/presence'
 import Backpack from './Backpack'
 import Minimap from './Minimap'
+import ToolboxSearch from './ToolboxSearch'
 
 const ScssEditorModal = lazy(() => import('./ScssEditorModal'))
 
@@ -585,6 +586,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       <div ref={containerRef} className="w-full h-full" />
       <Backpack workspaceRef={workspaceRef} />
       <Minimap workspaceRef={workspaceRef} />
+      <ToolboxSearch workspaceRef={workspaceRef} />
 
       {/* Block search overlay */}
       {showSearch && (
