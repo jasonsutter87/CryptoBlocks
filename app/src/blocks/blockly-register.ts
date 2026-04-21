@@ -711,7 +711,7 @@ function registerEventBlocks() {
   }
 }
 
-const CALLOUT_COLOR = '#6c7086'
+const CALLOUT_COLOR = '#eab308'
 
 /** Register annotation/callout blocks for workspace documentation. */
 function registerAnnotationBlocks() {
