@@ -46,22 +46,25 @@ export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, bg: string,
 
   ;(svg as SVGElement).style.backgroundColor = safeBg
 
-  // Toggle grid via Blockly's Grid API — length 0 hides, 3 shows dots
+  // Toggle grid visibility via the pattern element
   const grid = workspace.getGrid()
   if (grid) {
-    grid.setLength(showGrid ? 3 : 0)
-    grid.update(workspace.getScale())
-  }
-
-  // Also update stroke color on the grid pattern lines
-  const patternId = grid?.getPatternId()
-  if (patternId) {
-    const pattern = svg.querySelector(`#${patternId}`)
+    const patternId = grid.getPatternId()
+    // The pattern lives in a <defs> inside the SVG
+    const defs = svg.querySelector('defs')
+    const pattern = defs?.querySelector(`#${CSS.escape(patternId)}`) ?? svg.querySelector(`#${CSS.escape(patternId)}`)
     if (pattern) {
-      const lines = pattern.querySelectorAll('line')
-      lines.forEach((line) => {
-        ;(line as SVGLineElement).setAttribute('stroke', showGrid ? gridColor : 'transparent')
-      })
+      if (showGrid) {
+        // Show grid — set stroke color on all lines
+        const lines = pattern.querySelectorAll('line')
+        lines.forEach((line) => {
+          ;(line as SVGLineElement).setAttribute('stroke', gridColor)
+        })
+        ;(pattern as SVGElement).style.display = ''
+      } else {
+        // Hide grid — hide the entire pattern
+        ;(pattern as SVGElement).style.display = 'none'
+      }
     }
   }
 }
