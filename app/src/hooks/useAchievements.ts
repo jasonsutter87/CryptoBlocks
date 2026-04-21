@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Achievement } from '../achievements'
 import { checkAchievements, syncFromServer } from '../achievements'
-import { recordAchievement } from '../stats'
+import { recordAchievement, syncStatsFromServer } from '../stats'
 
 export function useAchievements() {
   const [currentAchievement, setCurrentAchievement] = useState<Achievement | null>(null)
@@ -29,8 +29,8 @@ export function useAchievements() {
     if (!currentAchievement) showNext()
   }, [currentAchievement, showNext])
 
-  // Sync server-side achievements on mount (fire-and-forget)
-  useEffect(() => { syncFromServer() }, [])
+  // Sync server-side achievements + stats on mount (fire-and-forget)
+  useEffect(() => { syncFromServer(); syncStatsFromServer() }, [])
 
   // Universal listener — any callsite that triggers checkAchievements()
   // will dispatch cb:achievement-unlocked, and this picks it up for the

@@ -87,6 +87,16 @@
   status = 200
 
 [[redirects]]
+  from = "/api/stats"
+  to = "/.netlify/functions/stats"
+  status = 200
+
+[[redirects]]
+  from = "/api/stats/*"
+  to = "/.netlify/functions/stats/:splat"
+  status = 200
+
+[[redirects]]
   from = "/api/sprites"
   to = "/.netlify/functions/sprites"
   status = 200

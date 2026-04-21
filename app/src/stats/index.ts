@@ -7,4 +7,6 @@ export {
   recordGolfComplete,
   recordLabComplete,
   recordAchievement,
+  scheduleSyncToServer,
+  syncStatsFromServer,
 } from './tracker'
