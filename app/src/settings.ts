@@ -38,33 +38,36 @@ export function applyWorkspaceTheme(workspace: Blockly.WorkspaceSvg, bg: string,
   const svg = workspace.getParentSvg()
   if (!svg) return
 
-  // Force the background rect color via inline style
-  const bgRect = svg.querySelector('.blocklyMainBackground') as SVGRectElement | null
-  if (bgRect) {
-    bgRect.style.fill = safeBg
-  }
-
+  // Set background color on the SVG container
   ;(svg as SVGElement).style.backgroundColor = safeBg
 
-  // Toggle grid visibility via the pattern element
+  const bgRect = svg.querySelector('.blocklyMainBackground') as SVGRectElement | null
   const grid = workspace.getGrid()
-  if (grid) {
-    const patternId = grid.getPatternId()
-    // The pattern lives in a <defs> inside the SVG
-    const defs = svg.querySelector('defs')
-    const pattern = defs?.querySelector(`#${CSS.escape(patternId)}`) ?? svg.querySelector(`#${CSS.escape(patternId)}`)
+  const patternId = grid?.getPatternId()
+
+  if (showGrid && patternId) {
+    // Restore the pattern fill on the background rect so dots show through
+    if (bgRect) {
+      bgRect.style.fill = ''
+      bgRect.setAttribute('fill', `url(#${patternId})`)
+    }
+    // Update grid line stroke color to match the bg
+    const pattern = svg.querySelector(`#${CSS.escape(patternId)}`)
     if (pattern) {
-      if (showGrid) {
-        // Show grid — set stroke color on all lines
-        const lines = pattern.querySelectorAll('line')
-        lines.forEach((line) => {
-          ;(line as SVGLineElement).setAttribute('stroke', gridColor)
-        })
-        ;(pattern as SVGElement).style.display = ''
-      } else {
-        // Hide grid — hide the entire pattern
-        ;(pattern as SVGElement).style.display = 'none'
+      // Set the pattern background to our color
+      const patternRect = pattern.querySelector('rect')
+      if (patternRect) {
+        patternRect.setAttribute('fill', safeBg)
       }
+      const lines = pattern.querySelectorAll('line')
+      lines.forEach((line) => {
+        ;(line as SVGLineElement).setAttribute('stroke', gridColor)
+      })
+    }
+  } else {
+    // No grid — solid background, remove pattern reference
+    if (bgRect) {
+      bgRect.style.fill = safeBg
     }
   }
 }
