@@ -101,6 +101,16 @@ export function useTimeTravel({ workspaceRef, disabled }: UseTimeTravelOptions):
     }
   }, [workspaceRef, isActive])
 
+  // Re-run effect when workspace becomes available (ref is set after mount)
+  const [wsReady, setWsReady] = useState(false)
+  useEffect(() => {
+    if (wsReady || disabled) return
+    const id = setInterval(() => {
+      if (workspaceRef.current) { setWsReady(true); clearInterval(id) }
+    }, 100)
+    return () => clearInterval(id)
+  }, [workspaceRef, wsReady, disabled])
+
   /**
    * Blockly change listener. Fires on every workspace event. We ignore UI
    * events (clicks, viewport) and debounce the rest.
@@ -150,7 +160,7 @@ export function useTimeTravel({ workspaceRef, disabled }: UseTimeTravelOptions):
         debounceTimerRef.current = null
       }
     }
-  }, [workspaceRef, captureSnapshot, disabled, isActive, currentIndex])
+  }, [workspaceRef, captureSnapshot, disabled, isActive, currentIndex, wsReady])
 
   /**
    * Load a specific snapshot into the workspace. Events fired during the
