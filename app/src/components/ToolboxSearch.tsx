@@ -13,6 +13,11 @@ interface ToolboxSearchProps {
   workspaceRef: React.RefObject<Blockly.WorkspaceSvg | null>
 }
 
+/** Escape special XML characters to prevent injection via block names. */
+function escapeXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
+}
+
 function buildSearchToolboxXml(query: string): string {
   const q = query.toLowerCase()
   const allDefs = registry.getAll()
@@ -28,7 +33,7 @@ function buildSearchToolboxXml(query: string): string {
   }
 
   const blockXml = matching
-    .map((def) => `<block type="cb_${def.name}"></block>`)
+    .map((def) => `<block type="${escapeXml('cb_' + def.name)}"></block>`)
     .join('\n')
 
   return `<xml><category name="Search results" colour="#7c3aed">${blockXml}</category></xml>`
