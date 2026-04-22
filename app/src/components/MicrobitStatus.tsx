@@ -78,6 +78,9 @@ export default function MicrobitStatus() {
     }
   }
 
+  // Only show when connected or actively pairing — avoids confusing new users
+  if (!connected && !busy) return null
+
   const title = connected
     ? `Connected: ${deviceName ?? 'micro:bit'} — click to disconnect`
     : busy
