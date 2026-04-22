@@ -119,7 +119,7 @@ nav.top ul a:hover{background:var(--surface0);color:var(--text)}
   transition:background .15s, color .15s, border-color .15s;
 }
 .theme-toggle:hover{background:var(--surface0);color:var(--text);border-color:var(--surface1)}
-.theme-toggle svg{width:16px;height:16px;display:block}
+.theme-toggle svg{width:16px;height:16px;display:block;pointer-events:none}
 .theme-toggle .sun{display:none}
 .theme-toggle .moon{display:block}
 [data-theme="light"] .theme-toggle .sun{display:block}
