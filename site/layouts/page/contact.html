@@ -1,0 +1,407 @@
+{{ define "main" }}
+<style>
+  .contact-wrap{display:grid;grid-template-columns:1.1fr 1.3fr;gap:72px;max-width:1180px;margin:0 auto;padding:56px 28px 96px;align-items:start}
+  @media (max-width:960px){.contact-wrap{grid-template-columns:1fr;gap:40px}}
+
+  /* LEFT */
+  .c-left .eyebrow{
+    display:inline-flex;gap:10px;align-items:center;
+    font-family:var(--mono);font-size:12px;color:var(--subtext);
+    background:var(--mantle);border:1px solid var(--surface0);
+    padding:5px 12px;border-radius:999px;margin-bottom:22px;
+  }
+  .c-left .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+  .c-left h1{
+    font-size:clamp(38px,4.6vw,62px);line-height:1;letter-spacing:-.035em;
+    margin:0 0 18px;font-weight:800;
+  }
+  .c-left h1 .accent{color:var(--blue)}
+  .c-left .sub{color:var(--subtext);font-size:17px;line-height:1.55;max-width:460px;margin:0 0 36px}
+
+  .channels{display:grid;gap:10px;margin-bottom:36px}
+  .ch{
+    display:grid;grid-template-columns:36px 1fr auto;gap:14px;align-items:center;
+    padding:14px 16px;background:var(--mantle);border:1px solid var(--surface0);border-radius:10px;
+    transition:border-color .15s,transform .15s;
+  }
+  .ch:hover{border-color:var(--surface1);transform:translateY(-1px)}
+  .ch .icn{
+    width:36px;height:36px;border-radius:8px;display:grid;place-items:center;
+    font-family:var(--mono);font-weight:700;font-size:13px;color:#11111b;
+  }
+  .ch .meta .k{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.005em}
+  .ch .meta .v{font-family:var(--mono);font-size:12px;color:var(--subtext);margin-top:2px}
+  .ch .sla{font-family:var(--mono);font-size:10.5px;color:var(--overlay1);letter-spacing:.12em;text-transform:uppercase}
+  .ch .sla b{color:var(--green);font-weight:600}
+
+  .sidebar-card{
+    background:var(--mantle);border:1px solid var(--surface0);border-radius:12px;padding:20px 22px;
+  }
+  .sidebar-card h4{
+    margin:0 0 10px;font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--overlay1);font-weight:600;
+  }
+  .sidebar-card p{color:var(--subtext);font-size:13.5px;line-height:1.55;margin:0}
+  .sidebar-card a{color:var(--blue)}
+  .sidebar-card + .sidebar-card{margin-top:12px}
+
+  .faq{margin-top:12px;border-top:1px solid var(--surface0);padding-top:12px}
+  .faq-item{padding:10px 0;border-bottom:1px dashed var(--surface0)}
+  .faq-item:last-child{border-bottom:0}
+  .faq-q{font-size:13.5px;color:var(--text);font-weight:500;margin:0 0 4px;display:flex;gap:10px;align-items:baseline}
+  .faq-q .n{font-family:var(--mono);font-size:10px;color:var(--blue)}
+  .faq-a{color:var(--subtext);font-size:13px;line-height:1.5;margin:0}
+
+  /* RIGHT — form */
+  .form-card{
+    background:var(--mantle);border:1px solid var(--surface0);border-radius:16px;
+    box-shadow:var(--shadow-strong);overflow:hidden;
+  }
+  .form-head{
+    display:flex;align-items:center;gap:10px;padding:12px 18px;
+    background:var(--crust);border-bottom:1px solid var(--surface0);
+    font-family:var(--mono);font-size:11.5px;color:var(--overlay1);
+  }
+  .form-head .dots{display:flex;gap:5px}
+  .form-head .dots i{width:10px;height:10px;border-radius:50%;background:#f38ba8}
+  .form-head .dots i:nth-child(2){background:#f9e2af}
+  .form-head .dots i:nth-child(3){background:#a6e3a1}
+  .form-head .path{margin-left:8px}
+  .form-head .right{margin-left:auto;color:var(--subtext)}
+
+  .form-body{padding:28px 28px 24px}
+  @media (max-width:640px){.form-body{padding:22px}}
+
+  .step-row{
+    display:flex;gap:20px;font-family:var(--mono);font-size:11px;
+    color:var(--overlay1);letter-spacing:.16em;text-transform:uppercase;
+    padding-bottom:18px;border-bottom:1px dashed var(--surface0);margin-bottom:22px;
+  }
+  .step-row span{display:flex;gap:8px;align-items:center}
+  .step-row span b{color:var(--text);font-weight:600}
+  .step-row .act{color:var(--blue)}
+  .step-row .act b{color:var(--blue)}
+  .step-row .act:after{content:"_";color:var(--blue);animation:blink 1s steps(2) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  .legend{
+    font-size:12.5px;color:var(--overlay1);font-family:var(--mono);
+    letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px;font-weight:600;
+  }
+  .reasons{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:26px;
+  }
+  @media (max-width:640px){.reasons{grid-template-columns:repeat(2,1fr)}}
+  .reason{
+    position:relative;cursor:pointer;border:1px solid var(--surface0);
+    border-radius:9px;padding:12px 12px 10px;transition:all .15s;background:var(--base);
+  }
+  .reason:hover{border-color:var(--surface1)}
+  .reason input{position:absolute;opacity:0;pointer-events:none}
+  .reason .ic{
+    width:22px;height:22px;border-radius:6px;margin-bottom:8px;display:grid;place-items:center;
+    font-family:var(--mono);font-weight:700;font-size:11px;color:#11111b;
+  }
+  .reason .lbl{font-size:13px;font-weight:500;color:var(--text);letter-spacing:-.005em}
+  .reason .hint{font-family:var(--mono);font-size:10.5px;color:var(--overlay1);margin-top:3px}
+  .reason input:checked + .reason-inner{}
+  .reason:has(input:checked){
+    border-color:var(--blue);background:color-mix(in oklab, var(--blue) 10%, var(--base));
+  }
+  .reason:has(input:checked):before{
+    content:"✓";position:absolute;top:8px;right:10px;
+    color:var(--blue);font-family:var(--mono);font-size:13px;font-weight:700;
+  }
+
+  /* Row / field */
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media (max-width:560px){.row{grid-template-columns:1fr}}
+  .field{display:grid;gap:6px}
+  .field label{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--overlay1);font-weight:600;display:flex;justify-content:space-between;
+  }
+  .field label .req{color:var(--peach)}
+  .field label .opt{color:var(--overlay1);font-weight:400;text-transform:none;letter-spacing:.02em}
+  .field input[type="text"], .field input[type="email"], .field textarea, .field select{
+    appearance:none;background:var(--base);border:1px solid var(--surface0);color:var(--text);
+    border-radius:8px;padding:11px 13px;font:inherit;font-size:14px;width:100%;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus{
+    outline:none;border-color:var(--blue);box-shadow:0 0 0 3px color-mix(in oklab, var(--blue) 20%, transparent);
+  }
+  .field textarea{min-height:130px;resize:vertical;line-height:1.5;font-family:inherit}
+  .field select{background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3e%3cpath d='M1 1l5 5 5-5' stroke='%236c7086' stroke-width='1.5' fill='none' stroke-linecap='round'/%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right 14px center;padding-right:34px}
+  .field .help{font-family:var(--mono);font-size:11px;color:var(--overlay1);margin-top:2px}
+  .field .count{font-family:var(--mono);font-size:11px;color:var(--overlay1);text-align:right;margin-top:-2px}
+
+  /* File drop */
+  .drop{
+    border:1.5px dashed var(--surface1);border-radius:10px;padding:18px 16px;
+    display:flex;gap:14px;align-items:center;background:var(--base);
+    transition:border-color .15s, background .15s;cursor:pointer;
+  }
+  .drop:hover, .drop.drag{border-color:var(--blue);background:color-mix(in oklab, var(--blue) 7%, var(--base))}
+  .drop .ic{
+    width:34px;height:34px;border-radius:8px;background:var(--surface0);
+    display:grid;place-items:center;color:var(--blue);font-family:var(--mono);font-weight:700;flex-shrink:0;
+  }
+  .drop .info .k{font-size:13.5px;color:var(--text);font-weight:500}
+  .drop .info .v{font-family:var(--mono);font-size:11px;color:var(--overlay1);margin-top:2px}
+  .drop input[type="file"]{display:none}
+  .file-chip{
+    display:inline-flex;align-items:center;gap:8px;padding:5px 10px;
+    background:var(--surface0);border-radius:5px;font-family:var(--mono);font-size:11.5px;
+    color:var(--subtext);margin-top:8px;
+  }
+  .file-chip b{color:var(--text);font-weight:500}
+  .file-chip button{background:none;border:none;color:var(--overlay1);cursor:pointer;font-size:14px;line-height:1;padding:0}
+  .file-chip button:hover{color:var(--red)}
+
+  /* Checkbox */
+  .check{
+    display:flex;gap:10px;align-items:flex-start;
+    font-size:13px;color:var(--subtext);line-height:1.5;cursor:pointer;
+    padding:10px 0;
+  }
+  .check input{margin-top:3px;accent-color:var(--blue)}
+  .check a{color:var(--blue)}
+
+  .submit-row{
+    display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+    margin-top:18px;padding-top:18px;border-top:1px solid var(--surface0);
+  }
+  .submit-row .btn-primary{padding:11px 22px}
+  .submit-row .meta{
+    margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--overlay1);
+    display:flex;align-items:center;gap:8px;
+  }
+  .submit-row .meta .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+
+  /* Dynamic reason-specific blocks */
+  .dynamic{display:none;padding:14px 16px;border-radius:10px;background:var(--base);border:1px solid var(--surface0);margin-bottom:14px}
+  .dynamic.show{display:block}
+  .dynamic h6{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin:0 0 8px;font-weight:700}
+  .dynamic p{color:var(--subtext);font-size:13px;line-height:1.55;margin:0}
+
+  .form-foot{
+    padding:12px 22px;border-top:1px solid var(--surface0);background:var(--crust);
+    display:flex;justify-content:space-between;gap:14px;
+    font-family:var(--mono);font-size:11px;color:var(--overlay1);flex-wrap:wrap;
+  }
+</style>
+<main class="contact-wrap">
+  <!-- LEFT COLUMN -->
+  <aside class="c-left">
+    <div class="eyebrow"><span class="dot"></span> contact · we read everything</div>
+    <h1>Tell us<br/>what's <span class="accent">on your mind.</span></h1>
+    <p class="sub">
+      A real person answers. Usually within a day, always within three.
+      Pick the right inbox on the right — or just use the form and we'll route it.
+    </p>
+
+    <div class="channels">
+      <a class="ch" href="/cdn-cgi/l/email-protection#a0c8c9e0c3d2d9d0d4cfc2cccfc3cbd38ec3cfcd">
+        <span class="icn" style="background:var(--blue)">@</span>
+        <div class="meta"><div class="k">General &amp; press</div><div class="v"><span class="__cf_email__" data-cfemail="eb8382ab8899929b9f84898784888098c5888486">[email&#160;protected]</span></div></div>
+        <div class="sla"><b>24h</b> reply</div>
+      </a>
+      <a class="ch" href="/cdn-cgi/l/email-protection#a1d2c2c9cececdd2e1c2d3d8d1d5cec3cdcec2cad28fc2cecc">
+        <span class="icn" style="background:var(--green)">▱</span>
+        <div class="meta"><div class="k">Schools &amp; districts</div><div class="v"><span class="__cf_email__" data-cfemail="7704141f18181b043714050e070318151b18141c045914181a">[email&#160;protected]</span> · POs welcome</div></div>
+        <div class="sla"><b>same day</b></div>
+      </a>
+      <a class="ch" href="/cdn-cgi/l/email-protection#0c7f696f797e6578754c6f7e757c78636e60636f677f226f6361">
+        <span class="icn" style="background:var(--red)">!</span>
+        <div class="meta"><div class="k">Security disclosures</div><div class="v"><span class="__cf_email__" data-cfemail="5023353325223924291033222920243f323c3f333b237e333f3d">[email&#160;protected]</span> · PGP available</div></div>
+        <div class="sla"><b>&lt;4h</b></div>
+      </a>
+      <a class="ch" href="/cdn-cgi/l/email-protection#adcfc4c1c1c4c3caedcedfd4ddd9c2cfc1c2cec6de83cec2c0">
+        <span class="icn" style="background:var(--peach)">$</span>
+        <div class="meta"><div class="k">Pro billing &amp; refunds</div><div class="v"><span class="__cf_email__" data-cfemail="482a21242421262f082b3a31383c272a24272b233b662b2725">[email&#160;protected]</span></div></div>
+        <div class="sla"><b>48h</b></div>
+      </a>
+      <a class="ch" href="/cdn-cgi/l/email-protection#c4a8a1a3a5a884a7b6bdb4b0aba6a8aba7afb7eaa7aba9">
+        <span class="icn" style="background:var(--mauve)">§</span>
+        <div class="meta"><div class="k">Legal &amp; DMCA</div><div class="v"><span class="__cf_email__" data-cfemail="0569606264694566777c75716a67696a666e762b666a68">[email&#160;protected]</span></div></div>
+        <div class="sla"><b>5 days</b></div>
+      </a>
+    </div>
+
+    <div class="sidebar-card">
+      <h4>// before you send</h4>
+      <p>Most questions are answered in the <a href="/blog">help docs</a> or the <a href="/blog">blog</a>. The community <a href="/build#shareplace">Shareplace</a> is faster than email for "how do I…"</p>
+    </div>
+
+    <div class="sidebar-card">
+      <h4>// office</h4>
+      <p>2150 Broadway, Oakland, CA 94612<br/>Mon–Fri, 9–6 PT · visits by appointment</p>
+    </div>
+
+    <div class="sidebar-card">
+      <h4>// quick answers</h4>
+      <div class="faq">
+        <div class="faq-item">
+          <p class="faq-q"><span class="n">Q</span>My student forgot their password.</p>
+          <p class="faq-a">Teachers can reset it from Classroom → Roster. We can't reset student passwords directly.</p>
+        </div>
+        <div class="faq-item">
+          <p class="faq-q"><span class="n">Q</span>Do you offer free Pro for teachers?</p>
+          <p class="faq-a">Yes, with a school email. Use the form and pick "Schools &amp; districts."</p>
+        </div>
+        <div class="faq-item">
+          <p class="faq-q"><span class="n">Q</span>Found a bug?</p>
+          <p class="faq-a">Pick "Bug / feedback" — the form will auto-attach your browser info.</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- RIGHT COLUMN — FORM -->
+  <section class="form-card">
+    <div class="form-head">
+      
+      <span class="path">contact-form.cb · new message</span>
+      <span class="right">secured · tls 1.3</span>
+    </div>
+
+    <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/thank-you" class="form-body" id="contactForm">
+      <p class="hidden"><label>Don't fill this out: <input name="bot-field" /></label></p>
+      <input type="hidden" name="form-name" value="contact" />
+      <div class="step-row">
+        <span class="act"><b>01</b> REASON</span>
+        <span><b>02</b> DETAILS</span>
+        <span><b>03</b> SEND</span>
+      </div>
+
+      <p class="legend">// what brings you here?</p>
+      <div class="reasons">
+        <label class="reason"><input type="radio" name="reason" value="general" checked>
+          <div class="ic" style="background:var(--blue)">@</div>
+          <div class="lbl">General</div>
+          <div class="hint">press, partnerships</div>
+        </label>
+        <label class="reason"><input type="radio" name="reason" value="school">
+          <div class="ic" style="background:var(--green)">▱</div>
+          <div class="lbl">Schools</div>
+          <div class="hint">purchase orders, classrooms</div>
+        </label>
+        <label class="reason"><input type="radio" name="reason" value="billing">
+          <div class="ic" style="background:var(--peach)">$</div>
+          <div class="lbl">Billing</div>
+          <div class="hint">Pro, refunds, invoices</div>
+        </label>
+        <label class="reason"><input type="radio" name="reason" value="bug">
+          <div class="ic" style="background:var(--yellow)">※</div>
+          <div class="lbl">Bug / feedback</div>
+          <div class="hint">something's broken</div>
+        </label>
+        <label class="reason"><input type="radio" name="reason" value="security">
+          <div class="ic" style="background:var(--red)">!</div>
+          <div class="lbl">Security</div>
+          <div class="hint">vulnerability report</div>
+        </label>
+        <label class="reason"><input type="radio" name="reason" value="legal">
+          <div class="ic" style="background:var(--mauve)">§</div>
+          <div class="lbl">Legal / DMCA</div>
+          <div class="hint">takedowns, contracts</div>
+        </label>
+      </div>
+
+      <!-- Reason-specific helper blocks -->
+      <div class="dynamic" data-for="school">
+        <h6>// for schools</h6>
+        <p>We'll need the school name, district, estimated student count, and whether you need a purchase-order flow. Pro is free for public-school teachers.</p>
+      </div>
+      <div class="dynamic" data-for="security">
+        <h6>// responsible disclosure</h6>
+        <p>Please do not include exploit details in this form — we'll reply with our PGP key within 4 hours. Bounty scope and payouts at <a href="/security">/security</a>.</p>
+      </div>
+      <div class="dynamic" data-for="bug">
+        <h6>// bug report</h6>
+        <p>We'll auto-attach your browser, OS, viewport size, and current URL with your consent at the bottom. Screenshots help a lot.</p>
+      </div>
+      <div class="dynamic" data-for="billing">
+        <h6>// have an invoice ready?</h6>
+        <p>Include your Pro account email and the last 4 digits of the card on file. Refunds under 30 days are usually immediate.</p>
+      </div>
+
+      <p class="legend" style="margin-top:22px">// about you</p>
+      <div class="row">
+        <div class="field">
+          <label>Your name <span class="req">*</span></label>
+          <input type="text" name="name" required autocomplete="name" placeholder="Ada Lovelace">
+        </div>
+        <div class="field">
+          <label>Email <span class="req">*</span></label>
+          <input type="email" name="email" required autocomplete="email" placeholder="ada@school.edu">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Role <span class="opt">· optional</span></label>
+          <select name="role">
+            <option value="">Select one…</option>
+            <option>Student</option>
+            <option>Teacher</option>
+            <option>Parent / guardian</option>
+            <option>School administrator</option>
+            <option>Developer</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Organization <span class="opt">· optional</span></label>
+          <input type="text" name="org" placeholder="Oakland Unified · Grade 7">
+        </div>
+      </div>
+
+      <p class="legend" style="margin-top:22px">// your message</p>
+      <div class="field" style="margin-bottom:14px">
+        <label>Subject <span class="req">*</span></label>
+        <input type="text" name="subject" required placeholder="I need Pro for 6 classrooms" maxlength="120">
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label>Message <span class="req">*</span><span class="count" id="msgCount">0 / 2000</span></label>
+        <textarea name="message" required maxlength="2000" placeholder="Tell us the situation, the outcome you want, and any dates that matter. Be specific — it lets us answer faster."></textarea>
+      </div>
+
+      <p class="legend" style="margin-top:10px">// attachments <span style="text-transform:none;letter-spacing:0;color:var(--overlay1);font-family:var(--sans);font-weight:400">· optional · png, jpg, pdf · up to 10 MB</span></p>
+      <label class="drop" id="drop">
+        <span class="ic">＋</span>
+        <div class="info">
+          <div class="k">Drop files here or click to browse</div>
+          <div class="v">screenshots &amp; PDFs speed things up</div>
+        </div>
+        <input type="file" name="files" multiple accept="image/*,.pdf" id="fileInput">
+      </label>
+      <div id="fileList"></div>
+
+      <label class="check" style="margin-top:10px">
+        <input type="checkbox" name="diag" checked>
+        <span>Attach browser &amp; viewport info to help us debug. <span style="color:var(--overlay1)">(we'll strip anything sensitive)</span></span>
+      </label>
+      <label class="check" style="padding-top:0">
+        <input type="checkbox" name="newsletter">
+        <span>Also send me the monthly <b>CryptoBlocks Digest</b> — release notes, top remixes, teacher spotlights.</span>
+      </label>
+      <label class="check" style="padding-top:0">
+        <input type="checkbox" name="consent" required>
+        <span>I agree to the <a href="/privacy-policy">Privacy Policy</a> &amp; <a href="/terms-of-use">Terms</a>. <span class="req" style="color:var(--peach)">*</span></span>
+      </label>
+
+      <div class="submit-row">
+        <button class="btn btn-primary" type="submit">Send message →</button>
+        <button class="btn btn-ghost" type="reset">Clear</button>
+        <div class="meta"><span class="dot"></span> avg reply · <b style="color:var(--green)">11 hours</b></div>
+      </div>
+    </form>
+
+    <div class="form-foot">
+      <span>form-id: CB-CONTACT-004 · no tracking, no spam</span>
+      <span>encrypted end-to-end in transit</span>
+    </div>
+  </section>
+</main>
+{{ end }}
