@@ -1,76 +1,89 @@
-{{ define "main"}}
+{{ define "main" }}
+<style>
+  .legal-wrap{display:grid;grid-template-columns:260px 1fr;gap:60px;max-width:1080px;margin:0 auto;padding:56px 28px 96px;align-items:start}
+  @media (max-width:1000px){.legal-wrap{grid-template-columns:1fr;gap:32px}}
+  .legal-hero{grid-column:1/-1;padding-bottom:28px;border-bottom:1px solid var(--surface0);margin-bottom:8px}
+  .legal-hero .eyebrow{display:inline-flex;gap:10px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--subtext);background:var(--mantle);border:1px solid var(--surface0);padding:5px 12px;border-radius:999px;margin-bottom:22px}
+  .legal-hero .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+  .legal-hero h1{font-size:clamp(36px,4.2vw,56px);line-height:1.02;letter-spacing:-.035em;margin:0 0 18px;font-weight:800}
+  .legal-hero .meta{display:flex;gap:28px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--overlay1)}
+  .legal-hero .meta b{color:var(--text);font-weight:600}
+  .toc{position:sticky;top:84px;align-self:start;background:var(--mantle);border:1px solid var(--surface0);border-radius:12px;padding:18px 20px}
+  .toc h4{margin:0 0 10px;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--overlay1);font-weight:600}
+  .toc ol{list-style:none;padding:0;margin:0;counter-reset:sec}
+  .toc ol li{counter-increment:sec;margin:2px 0}
+  .toc ol li a{display:flex;gap:10px;padding:5px 0;font-size:13px;color:var(--subtext);border-left:2px solid transparent;padding-left:10px;margin-left:-12px;transition:all .15s}
+  .toc ol li a:before{content:counter(sec, decimal-leading-zero);font-family:var(--mono);color:var(--overlay1);font-size:11px;width:22px;flex-shrink:0}
+  .toc ol li a:hover{color:var(--text);border-left-color:var(--blue)}
+  .legal-body{max-width:720px}
+  .legal-body h2{font-size:22px;letter-spacing:-.02em;font-weight:700;margin:44px 0 14px;scroll-margin-top:80px;display:flex;align-items:baseline;gap:14px}
+  .legal-body h2:first-child{margin-top:0}
+  .legal-body h2 .num{font-family:var(--mono);font-size:11px;color:var(--blue);letter-spacing:.18em;font-weight:600}
+  .legal-body p{color:var(--subtext);font-size:15px;line-height:1.72;margin:0 0 16px;max-width:640px}
+  .legal-body p b, .legal-body li b{color:var(--text);font-weight:600}
+  .legal-body ul{margin:0 0 16px;padding-left:22px;color:var(--subtext);font-size:14.5px;line-height:1.65}
+  .legal-body ul li{margin-bottom:6px}
+  .legal-body ul li::marker{color:var(--overlay1)}
+  .legal-body a{color:var(--blue);border-bottom:1px solid color-mix(in oklab, var(--blue) 40%, transparent)}
+  .plain{margin:10px 0 24px;padding:14px 18px;border-radius:10px;background:color-mix(in oklab, var(--green) 12%, var(--mantle));border:1px solid color-mix(in oklab, var(--green) 30%, var(--surface0));display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start}
+  .plain .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--green);font-weight:700;margin-top:3px}
+  .plain p{margin:0;color:var(--text);font-size:14.5px;line-height:1.55}
+</style>
 
-<section id="inner-page-hero-section">
-  <div class="site-container-1340">
-    <div class="row">
-      <div class="col-12">
-        <h4>Policies</h4>
-        <h1>Accessibility Statement</h1>
-      </div>
+<main class="legal-wrap">
+  <header class="legal-hero">
+    <div class="eyebrow"><span class="dot"></span> legal &middot; accessibility</div>
+    <h1>Accessibility Statement</h1>
+    <div class="meta">
+      <span>Standard <b>WCAG 2.0 AA</b></span>
+      <span>Compliance <b>ADA Title I, II, III</b></span>
     </div>
-  </div>
-</section>
+  </header>
 
+  <aside class="toc" aria-label="On this page">
+    <h4>On this page</h4>
+    <ol>
+      <li><a href="#s1">Commitment</a></li>
+      <li><a href="#s2">Standards</a></li>
+      <li><a href="#s3">Actions taken</a></li>
+      <li><a href="#s4">Audit</a></li>
+      <li><a href="#s5">Legal requirements</a></li>
+      <li><a href="#s6">Feedback &amp; resources</a></li>
+    </ol>
+  </aside>
 
-<section id="policies-main-section">
-  <div class="site-container-1340">
-    <div class="row justify-content-center">
-      <div class="col-12 col-lg-9">
-           <div align="left" class="standard-body-links">
-                <p>Do you need assistance accessing something on our website? <a class="btn-text" href="/support/contact-us">Contact us</a> and we will reply as soon as possible. We are working towards 24-hour phone assistance but it is not available yet.</p>
-    
-                <p class="pt-3"><span class="heading-h4">Commitment to Accessibility</span></p>
-    
-                <p>{{ .Site.Params.CompanyName}} is committed to accessibility and ensuring that all users of this site, including those with disabilities and their companies, have an equal opportunity to participate in and benefit from all information and online offerings of {{ .Site.Params.CompanyName}}.</p>
-    
-                <p>Should you have any difficulty accessing this website in any manner, please do not hesitate to <a class="btn-text" href="/support/contact-us">contact us</a>.</p>
-    
-                <p class="pt-3"><span class="heading-h4">Accessibility Standards</span></p>
-    
-                <p>We have created our website to meet the Web Content Accessibility Guidelines (WCAG) 2.0 AA standards. We are currently researching and working to improve our website to be even sharper, clearer, and incorporate all of the best practices from HTML5, CSS, and JavaScript. We will never stop trying to improve access to our digital offerings.</p>
-    
-                <p class="pt-3"><span class="heading-h4">Actions Taken</span></p>
-    
-                <p>Some of the measures taken to make the {{ .Site.Params.CompanyName}} website accessible include:</p>
-    
-                <ul>
-                 <li>adding alt text to all images</li>
-                 <li>ensuring a minimum 4.5:1 color ratio for all text</li>
-                 <li>using descriptive text links and headers</li>
-                 <li>maintaining a consistent and predictable layout and organization</li>
-                 <li>eliminating all automatic content (e.g. pop-ups, auto-playing media)</li>
-                 <li>including a skip to navigation link</li>
-                 <li>using descriptive anchor text for links</li>
-                 <li>incorporating a focus indicator</li>
-                </ul>
-    
-                <p>As well as several other measures.</p>
-    
-                <p>Beyond our existing remediation measures, we continually review our website to ensure we adhere to best practices in web accessibility.</p>
-    
-                <p class="pt-3"><span class="heading-h4">Audit</span></p>
-    
-                <p>We have made repeated efforts to review and re-review the {{ .Site.Params.CompanyName}} website to ensure it complies with WCAG 2.0 AA and the general best practices of website accessibility. Further, we voraciously research web accessibility best practices and methods to improve our knowledge and stay up to date on the latest news and information.</p>
-    
-                <p class="pt-3"><span class="heading-h4">Legal Requirements</span></p>
-    
-                <p>Through our genuine and good faith commitment and devotion to accessibility, we believe we not only meet but exceed the digital accessibility requirements imposed by Title I, II, &amp; III of the Americans with Disabilities Act (ADA) and Section 504 &amp; 508 of the Rehabilitation Act.</p>
-    
-                <p class="pt-3"><span class="heading-h4">Feedback</span></p>
-    
-                <p>Do you have feedback on the {{ .Site.Params.CompanyName}} website’s accessibility? Where can we improve? What are our strong points? Your feedback is welcome and greatly appreciated as we strive to improve.</p>
-    
-                <p class="pt-3"><span class="heading-h4">Resources</span></p>
-    
-                <p>You can learn more about the right to equal access for all Americans at <a class="btn-text" href="https://ada.gov/" tabindex="9" target="_blank">ADA.gov</a>.</p>
-    
-                <p><a class="btn-text" href="https://section508.gov/" target="_blank">Section508.gov</a> provides numerous resources for making accessible websites and maintaining them.</p>
-    
-                <p><a class="btn-text" href="https://www.w3.org/TR/WCAG20/" target="_blank">WCAG&ZeroWidthSpace; 2.0 AA</a> provides technical guidelines and examples for what web accessibility should be.</p>
-                </div>
-      </div>
-    </div>
-  </div>
-</section>
+  <article class="legal-body">
+    <p style="font-size:16px;color:var(--text)">Need help accessing something on our website? Contact us and we will reply as soon as possible.</p>
 
+    <h2 id="s1"><span class="num">/ 01</span> Commitment to accessibility</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>Every kid should be able to use CryptoBlocks, regardless of ability. We build for that.</p></div>
+    <p>{{ .Site.Params.CompanyName }} is committed to accessibility and ensuring that all users of this site, including those with disabilities, have an equal opportunity to participate in and benefit from all information and online offerings.</p>
+
+    <h2 id="s2"><span class="num">/ 02</span> Accessibility standards</h2>
+    <p>We have created our website to meet the <b>Web Content Accessibility Guidelines (WCAG) 2.0 AA</b> standards. We are currently researching and working to improve our website to incorporate all of the best practices from HTML5, CSS, and JavaScript. We will never stop trying to improve access to our digital offerings.</p>
+
+    <h2 id="s3"><span class="num">/ 03</span> Actions taken</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>Alt text, color contrast, keyboard navigation, skip links, focus indicators, no auto-play.</p></div>
+    <p>Some of the measures taken to make the {{ .Site.Params.CompanyName }} website accessible include:</p>
+    <ul>
+      <li>Adding alt text to all images</li>
+      <li>Ensuring a minimum <b>4.5:1 color ratio</b> for all text</li>
+      <li>Using descriptive text links and headers</li>
+      <li>Maintaining a consistent and predictable layout and organization</li>
+      <li>Eliminating all automatic content (e.g. pop-ups, auto-playing media)</li>
+      <li>Including a <b>skip to navigation</b> link</li>
+      <li>Using descriptive anchor text for links</li>
+      <li>Incorporating a <b>focus indicator</b></li>
+    </ul>
+
+    <h2 id="s4"><span class="num">/ 04</span> Audit</h2>
+    <p>We have made repeated efforts to review and re-review the {{ .Site.Params.CompanyName }} website to ensure it complies with WCAG 2.0 AA and the general best practices of website accessibility. We research accessibility best practices and methods to stay up to date.</p>
+
+    <h2 id="s5"><span class="num">/ 05</span> Legal requirements</h2>
+    <p>Through our genuine and good faith commitment to accessibility, we believe we not only meet but exceed the digital accessibility requirements imposed by <b>Title I, II, &amp; III of the Americans with Disabilities Act (ADA)</b> and <b>Section 504 &amp; 508 of the Rehabilitation Act</b>.</p>
+
+    <h2 id="s6"><span class="num">/ 06</span> Feedback &amp; resources</h2>
+    <p>Your feedback is welcome and greatly appreciated as we strive to improve. Learn more about equal access at <a href="https://ada.gov/" target="_blank">ADA.gov</a>, <a href="https://section508.gov/" target="_blank">Section508.gov</a>, and the <a href="https://www.w3.org/TR/WCAG20/" target="_blank">WCAG 2.0 AA</a> technical guidelines.</p>
+  </article>
+</main>
 {{ end }}
