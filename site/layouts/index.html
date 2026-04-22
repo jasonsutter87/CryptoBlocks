@@ -1,223 +1,426 @@
 {{ define "main" }}
-  {{/* Hero */}}
-  <section class="bg-white py-8 lg:py-5">
-    <div class="container">
-      <div class="row align-items-center">
-        <div class="col-12 col-lg-6 mb-5 lg:mb-0">
-          <h1 class="text-4xl lg:text-5xl font-extrabold text-gray-800 mb-4" style="line-height: 1.15;">
-            Snap blocks.<br>
-            <span class="text-primary">See code.</span><br>
-            Build anything.
-          </h1>
-          <p class="text-lg text-gray-600 mb-6" style="max-width: 480px;">
-            A visual coding platform where kids and young coders build programs by snapping blocks together — then level up by writing their own.
-          </p>
-          <div class="d-flex gap-3 flex-wrap">
-            <a href="{{ .Site.Params.appURL | default "/app" }}" class="bg-primary text-white px-6 py-3 rounded-lg fw-bold text-decoration-none hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors text-lg">
-              Start Building
-            </a>
-            <a href="/about" class="bg-white text-primary border-2 border-primary px-6 py-3 rounded-lg fw-bold text-decoration-none hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors text-lg">
-              Learn More
-            </a>
+{{ $appURL := .Site.Params.appURL | default "https://app.getcryptoblocks.com" }}
+<style>
+  .hero{padding:72px 0 40px;position:relative}
+  .hero .eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:12px;color:var(--subtext);background:var(--mantle);border:1px solid var(--surface0);padding:6px 12px;border-radius:999px;margin-bottom:22px}
+  .hero .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+  .hero h1{font-size:clamp(40px,6.2vw,78px);line-height:.98;letter-spacing:-.035em;margin:0 0 22px;font-weight:800}
+  .hero h1 .accent{color:var(--blue)}
+  .hero .sub{color:var(--subtext);font-size:19px;line-height:1.55;max-width:640px;margin:0 0 32px}
+  .hero .sub code{font-family:var(--mono);font-size:16px;color:var(--peach);background:var(--mantle);padding:2px 7px;border-radius:6px;border:1px solid var(--surface0)}
+  .hero-ctas{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .hero-meta{margin-top:22px;display:flex;gap:24px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--overlay1)}
+  .hero-meta b{color:var(--text);font-weight:600}
+  .hero-visual{margin-top:56px;position:relative}
+  .editor{background:var(--mantle);border:1px solid var(--surface0);border-radius:14px;overflow:hidden;box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 40px 80px -40px rgba(0,0,0,.6),0 0 120px -30px rgba(137,180,250,.15)}
+  .editor-chrome{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--crust);border-bottom:1px solid var(--surface0)}
+  .chrome-dots{display:flex;gap:6px}
+  .chrome-dots i{width:11px;height:11px;border-radius:50%;background:var(--surface1)}
+  .chrome-dots i:nth-child(1){background:#f38ba8}
+  .chrome-dots i:nth-child(2){background:#f9e2af}
+  .chrome-dots i:nth-child(3){background:#a6e3a1}
+  .chrome-tabs{display:flex;gap:4px;margin-left:14px}
+  .chrome-tabs .tab{font-family:var(--mono);font-size:11.5px;color:var(--overlay1);padding:5px 10px;border-radius:6px}
+  .chrome-tabs .tab.active{background:var(--surface0);color:var(--text)}
+  .editor-body{display:grid;grid-template-columns:220px 1fr 1fr;min-height:480px}
+  .palette{background:var(--crust);border-right:1px solid var(--surface0);padding:14px 10px;font-family:var(--mono);font-size:12px}
+  .palette h4{margin:6px 6px 10px;font-size:10.5px;letter-spacing:.14em;color:var(--overlay0);font-weight:600;text-transform:uppercase}
+  .cat{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:6px;color:var(--subtext);margin-bottom:2px;cursor:default}
+  .cat:hover{background:var(--surface0);color:var(--text)}
+  .cat.active{background:var(--surface0);color:var(--text)}
+  .cat .sw{width:10px;height:10px;border-radius:3px}
+  .cat .ct{margin-left:auto;font-size:10.5px;color:var(--overlay0)}
+  .workspace{position:relative;padding:24px;background:radial-gradient(rgba(205,214,244,0.05) 1px,transparent 1px) 0 0/18px 18px,var(--mantle);border-right:1px solid var(--surface0);overflow:hidden}
+  .ws-label{position:absolute;top:10px;right:12px;font-family:var(--mono);font-size:10px;color:var(--overlay0);letter-spacing:.1em;text-transform:uppercase}
+  .block{font-family:var(--mono);font-size:12.5px;font-weight:600;color:#11111b;padding:8px 12px;border-radius:7px;display:inline-flex;align-items:center;gap:8px;position:relative;box-shadow:0 2px 0 rgba(0,0,0,.25),0 0 0 1px rgba(0,0,0,.25);user-select:none;margin-bottom:3px}
+  .block .slot{background:rgba(0,0,0,.25);color:#fff;padding:3px 8px;border-radius:4px;font-size:11.5px}
+  .block .slot.str{color:var(--green)}.block .slot.num{color:var(--peach)}
+  .b-event{background:var(--yellow)}.b-control{background:var(--peach)}.b-motion{background:var(--blue)}.b-looks{background:var(--mauve);color:#11111b}.b-var{background:var(--red);color:#11111b}.b-fn{background:var(--green)}
+  .stack{display:flex;flex-direction:column;align-items:flex-start;position:absolute;top:42px;left:28px}
+  .ghost-block{position:absolute;right:28px;bottom:40px;border:2px dashed var(--surface2);border-radius:7px;padding:7px 30px;font-family:var(--mono);font-size:11px;color:var(--overlay1);background:rgba(0,0,0,.2)}
+  .code-pane{background:var(--crust);font-family:var(--mono);font-size:12.5px;line-height:1.7;padding:18px 0;position:relative}
+  .code-pane .cp-label{position:absolute;top:10px;right:14px;font-family:var(--mono);font-size:10px;color:var(--overlay0);letter-spacing:.1em;text-transform:uppercase}
+  .code-pane .row{display:flex;gap:14px;padding:0 16px}
+  .code-pane .ln{width:38px;text-align:right;color:var(--overlay0);user-select:none;flex-shrink:0}
+  .kw{color:var(--mauve)}.fn{color:var(--blue)}.st{color:var(--green)}.nm{color:var(--peach)}.cm{color:var(--overlay1);font-style:italic}.op{color:var(--sky)}.vr{color:var(--red)}
+  .editor-status{display:flex;align-items:center;gap:18px;padding:8px 14px;background:var(--crust);border-top:1px solid var(--surface0);font-family:var(--mono);font-size:11px;color:var(--overlay1)}
+  .editor-status .pill{display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;background:var(--mantle);border:1px solid var(--surface0);color:var(--text)}
+  .editor-status .pill .ledg{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+  .chip{position:absolute;background:var(--mantle);border:1px solid var(--surface0);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--subtext);font-family:var(--mono);box-shadow:var(--shadow-med);display:flex;align-items:center;gap:10px}
+  .chip.c1{top:-20px;left:-28px}.chip.c2{bottom:-24px;right:-22px}
+  .chip b{color:var(--text);font-weight:600}
+  .chip .tag{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--surface0);color:var(--text)}
+  section{padding:110px 0;position:relative}
+  .eyebrow-sm{font-family:var(--mono);font-size:11.5px;letter-spacing:.22em;color:var(--blue);text-transform:uppercase;font-weight:600}
+  h2.section-title{font-size:clamp(32px,4.4vw,52px);line-height:1.05;letter-spacing:-.03em;margin:10px 0 0;font-weight:800}
+  .section-sub{color:var(--subtext);font-size:17px;line-height:1.55;max-width:580px;margin:14px 0 0}
+  .section-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:56px;gap:24px}
+  .section-head .right{font-family:var(--mono);font-size:12px;color:var(--overlay1);white-space:nowrap}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .step{background:var(--mantle);border:1px solid var(--surface0);border-radius:14px;padding:28px 24px 0;overflow:hidden;display:flex;flex-direction:column}
+  .step .num{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--blue);margin-bottom:14px;text-transform:uppercase}
+  .step h3{font-size:22px;margin:0 0 10px;font-weight:700;letter-spacing:-.02em}
+  .step p{color:var(--subtext);font-size:14.5px;line-height:1.55;margin:0 0 18px}
+  .step .demo{flex:1;background:var(--crust);border-top:1px solid var(--surface0);padding:22px;border-radius:0 0 14px 14px;font-family:var(--mono);font-size:12.5px;line-height:1.7;position:relative;min-height:160px}
+  .features{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .feat{background:var(--mantle);border:1px solid var(--surface0);border-radius:12px;padding:22px 20px;position:relative}
+  .feat .stat{font-family:var(--mono);font-size:11px;color:var(--overlay1);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+  .feat .ico{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:#11111b;font-weight:800;font-size:14px;margin-bottom:14px}
+  .feat h4{font-size:16px;margin:0 0 6px;font-weight:700;letter-spacing:-.01em}
+  .feat p{color:var(--subtext);font-size:13.5px;line-height:1.5;margin:0}
+  .feat code{font-family:var(--mono);font-size:12.5px;color:var(--peach)}
+  .badges-row{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+  .badge-card{background:var(--mantle);border:1px solid var(--surface0);border-radius:14px;padding:30px 22px 26px;text-align:center;position:relative;overflow:hidden}
+  .badge-card .medal{width:92px;height:92px;margin:0 auto 18px;border-radius:22px;display:grid;place-items:center;position:relative;font-family:var(--mono);font-weight:800;font-size:28px}
+  .badge-card .medal:after{content:"";position:absolute;inset:-30px;border-radius:50%;z-index:-1;filter:blur(24px);opacity:.55}
+  .badge-card h4{margin:0 0 4px;font-size:16px;letter-spacing:-.01em}
+  .badge-card .tier{font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px}
+  .badge-card p{color:var(--subtext);font-size:13px;line-height:1.5;margin:0}
+  .b-common .medal{background:#45475a;color:#cdd6f4;box-shadow:inset 0 0 0 2px #585b70}.b-common .medal:after{background:#585b70}.b-common .tier{color:var(--overlay1)}
+  .b-rare .medal{background:linear-gradient(145deg,#89b4fa,#74c7ec);color:#0a1a2a;box-shadow:inset 0 0 0 2px #b4befe}.b-rare .medal:after{background:#89b4fa}.b-rare .tier{color:var(--blue)}
+  .b-epic .medal{background:linear-gradient(145deg,#cba6f7,#b4befe);color:#2a1a3a;box-shadow:inset 0 0 0 2px #f5c2e7}.b-epic .medal:after{background:#cba6f7}.b-epic .tier{color:var(--mauve)}
+  .b-legend .medal{background:linear-gradient(145deg,#f9e2af,#fab387,#f9e2af);background-size:200% 200%;color:#3a2a10;box-shadow:inset 0 0 0 2px #f9e2af;animation:shimmer 3s ease-in-out infinite}.b-legend .medal:after{background:#f9e2af;opacity:.7;animation:pulse 3s ease-in-out infinite}.b-legend .tier{color:var(--yellow)}
+  @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+  @keyframes pulse{0%,100%{opacity:.4;transform:scale(.95)}50%{opacity:.7;transform:scale(1.05)}}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+  .teachers-visual{background:var(--mantle);border:1px solid var(--surface0);border-radius:14px;overflow:hidden}
+  .cls-head{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--surface0);background:var(--crust);font-family:var(--mono);font-size:12px;color:var(--subtext)}
+  .cls-head .chip-sm{background:var(--surface0);padding:3px 8px;border-radius:5px;font-size:11px;color:var(--text)}
+  .cls-row{display:grid;grid-template-columns:28px 1.4fr 1fr 80px 70px;gap:14px;padding:10px 18px;align-items:center;font-size:13.5px;border-bottom:1px solid var(--surface0)}
+  .cls-row:last-child{border-bottom:0}
+  .cls-row .av{width:26px;height:26px;border-radius:6px;font-family:var(--mono);font-weight:700;font-size:11px;display:grid;place-items:center;color:#11111b}
+  .cls-row .name{font-weight:500}
+  .cls-row .prog{background:var(--surface0);height:6px;border-radius:4px;overflow:hidden}
+  .cls-row .prog i{display:block;height:100%;background:var(--green)}
+  .cls-row .xp{font-family:var(--mono);font-size:12px;color:var(--subtext)}
+  .cls-row .badge{font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:4px;background:var(--surface0);color:var(--text);text-align:center}
+  .bullets{list-style:none;padding:0;margin:24px 0 0;display:grid;gap:10px}
+  .bullets li{display:flex;gap:12px;align-items:flex-start;font-size:15px;color:var(--subtext)}
+  .bullets li .k{width:20px;height:20px;border-radius:5px;background:var(--surface0);color:var(--green);display:grid;place-items:center;flex-shrink:0;font-family:var(--mono);font-size:12px;margin-top:2px}
+  .bullets li b{color:var(--text);font-weight:600}
+  .price-wrap{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .plan{background:var(--mantle);border:1px solid var(--surface0);border-radius:16px;padding:34px 32px;position:relative}
+  .plan.pro{border-color:var(--blue);background:linear-gradient(180deg,rgba(137,180,250,.06),var(--mantle))}
+  .plan .tag{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--overlay1)}
+  .plan.pro .tag{color:var(--blue)}
+  .plan h3{margin:10px 0 8px;font-size:26px;letter-spacing:-.02em}
+  .plan .price{font-family:var(--mono);font-size:40px;font-weight:700;letter-spacing:-.02em}
+  .plan .price small{font-size:14px;color:var(--overlay1);font-weight:500}
+  .plan p.lede{color:var(--subtext);margin:10px 0 22px;font-size:14.5px;line-height:1.5}
+  .plan ul{list-style:none;padding:0;margin:0 0 24px;display:grid;gap:9px}
+  .plan ul li{font-size:14px;color:var(--subtext);display:flex;gap:10px;align-items:center}
+  .plan ul li:before{content:"+";font-family:var(--mono);color:var(--green);width:14px}
+  .plan .btn{width:100%;justify-content:center}
+  .plan.pro .ribbon{position:absolute;top:16px;right:16px;font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;background:var(--blue);color:#11111b;padding:4px 10px;border-radius:5px;font-weight:700}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border:1px solid var(--surface0);border-radius:14px;overflow:hidden;background:var(--mantle)}
+  .stat{padding:40px 28px;border-right:1px solid var(--surface0)}
+  .stat:last-child{border-right:0}
+  .stat .n{font-family:var(--mono);font-size:44px;font-weight:700;letter-spacing:-.02em;color:var(--text);line-height:1}
+  .stat .n .sfx{color:var(--blue);font-weight:700}
+  .stat .l{margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--overlay1);letter-spacing:.1em;text-transform:uppercase}
+  .final{text-align:center;padding:120px 0;position:relative}
+  .final h2{font-size:clamp(40px,5.2vw,72px);line-height:1;letter-spacing:-.035em;margin:0 0 18px;font-weight:800}
+  .final p{color:var(--subtext);font-size:18px;margin:0 auto 32px;max-width:540px;line-height:1.55}
+  .final .meta{margin-top:26px;font-family:var(--mono);font-size:12px;color:var(--overlay1)}
+  #hero-rotate{transition:opacity .4s ease}
+  @media(max-width:960px){.editor-body{grid-template-columns:1fr;min-height:auto}.palette{display:none}.code-pane{border-top:1px solid var(--surface0)}.workspace{min-height:320px;border-right:0}.steps,.badges-row{grid-template-columns:1fr 1fr}.features{grid-template-columns:1fr 1fr}.two-col,.price-wrap{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.stat{border-right:0;border-bottom:1px solid var(--surface0)}.chip{display:none}}
+  @media(max-width:560px){.steps,.badges-row,.features,.stats{grid-template-columns:1fr}section{padding:72px 0}.hero{padding:48px 0 24px}}
+</style>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow"><span class="dot"></span> v0.5 shipped &mdash; WOPR, frames, time travel</div>
+    <h1>Build the <span class="accent" id="hero-rotate">weird stuff</span> you actually want to build.</h1>
+    <p class="sub">
+      Drag blocks, read the real <code>JavaScript</code> and <code>Python</code> they compile to,
+      and ship apps, games, and hardware projects that don't look like homework.
+    </p>
+    <div class="hero-ctas">
+      <a href="{{ $appURL }}" class="btn btn-primary">Start Building <span class="kbd">&#x23CE;</span></a>
+      <a href="#how" class="btn btn-ghost">See how it works</a>
+    </div>
+    <div class="hero-meta">
+      <span><b style="color:var(--green)">&#x25CF;</b> free forever, no card</span>
+      <span><b>8&ndash;16</b> ages / <b>all</b> welcome</span>
+      <span>works in any browser</span>
+    </div>
+
+    <div class="hero-visual">
+      <div class="chip c1"><span class="tag">LIVE</span> <b>kids building right now</b></div>
+      <div class="chip c2"><b style="color:var(--yellow)">+</b> <b>hint:</b> type <span style="color:var(--peach)">~</span> in the terminal</div>
+
+      <div class="editor">
+        <div class="editor-chrome">
+          <div class="chrome-dots"><i></i><i></i><i></i></div>
+          <div class="chrome-tabs">
+            <div class="tab active">my-game.cb</div>
+            <div class="tab">physics.cb</div>
           </div>
         </div>
-        <div class="col-12 col-lg-6">
-          {{/* Block visualization — shows the snap-together concept */}}
-          <div class="bg-gray-50 rounded-2xl p-6 shadow-lg">
-            <div class="text-sm text-gray-400 mb-4 font-mono">// Your first program</div>
-            {{/* Visual block chain */}}
-            <div class="d-flex flex-column gap-2">
-              <div class="d-flex align-items-center gap-2">
-                <div class="px-4 py-3 rounded-lg text-white fw-bold text-sm" style="background: #4C97AF;">Ask Name</div>
-                <svg class="text-gray-300" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                <div class="px-4 py-3 rounded-lg text-white fw-bold text-sm" style="background: #8B5CF6;">Join Text</div>
-                <svg class="text-gray-300" width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                <div class="px-4 py-3 rounded-lg text-white fw-bold text-sm" style="background: #4C97AF;">Print</div>
-              </div>
-              {{/* Code peek */}}
-              <div class="bg-white rounded-lg p-4 mt-3 border border-gray-200">
-                <div class="font-mono text-sm text-gray-600">
-                  <div><span class="text-secondary">const</span> name = <span class="text-block-basics">ask</span>(<span class="text-success">"What's your name?"</span>);</div>
-                  <div><span class="text-secondary">const</span> greeting = <span class="text-block-text">joinText</span>(<span class="text-success">"Hello, "</span>, name);</div>
-                  <div><span class="text-block-basics">print</span>(greeting);</div>
-                </div>
-              </div>
-              <div class="text-xs text-gray-400 text-center mt-1">Every block is real code. Peek inside anytime.</div>
+        <div class="editor-body">
+          <div class="palette">
+            <h4>Categories</h4>
+            <div class="cat"><span class="sw" style="background:var(--yellow)"></span> Events <span class="ct">24</span></div>
+            <div class="cat active"><span class="sw" style="background:var(--peach)"></span> Control <span class="ct">18</span></div>
+            <div class="cat"><span class="sw" style="background:var(--blue)"></span> Motion <span class="ct">32</span></div>
+            <div class="cat"><span class="sw" style="background:var(--mauve)"></span> Looks <span class="ct">27</span></div>
+            <div class="cat"><span class="sw" style="background:var(--red)"></span> Variables <span class="ct">12</span></div>
+            <div class="cat"><span class="sw" style="background:var(--green)"></span> Functions <span class="ct">19</span></div>
+          </div>
+          <div class="workspace">
+            <div class="ws-label">workspace</div>
+            <div class="stack">
+              <div class="block b-event">when <span class="slot">&#x25BC; space</span> pressed</div>
+              <div class="block b-control" style="margin-left:16px">repeat <span class="slot num">10</span> times</div>
+              <div class="block b-motion" style="margin-left:32px">move <span class="slot num">25</span> steps</div>
+              <div class="block b-looks" style="margin-left:32px">say <span class="slot str">"ouch"</span> for <span class="slot num">0.5</span>s</div>
+              <div class="block b-var" style="margin-left:32px">change <span class="slot">score</span> by <span class="slot num">1</span></div>
+              <div class="block b-fn">define <span class="slot">hit(enemy)</span></div>
             </div>
+            <div class="ghost-block">drop here</div>
           </div>
+          <div class="code-pane">
+            <div class="cp-label">main.js</div>
+            <div class="row"><div class="ln">1</div><div><span class="cm">// auto-compiled from blocks</span></div></div>
+            <div class="row"><div class="ln">2</div><div><span class="kw">on</span>(<span class="st">'keydown:space'</span>, () <span class="op">=&gt;</span> {</div></div>
+            <div class="row"><div class="ln">3</div><div>&nbsp;&nbsp;<span class="kw">for</span> (<span class="kw">let</span> <span class="vr">i</span> <span class="op">=</span> <span class="nm">0</span>; <span class="vr">i</span> <span class="op">&lt;</span> <span class="nm">10</span>; <span class="vr">i</span><span class="op">++</span>) {</div></div>
+            <div class="row"><div class="ln">4</div><div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">move</span>(<span class="nm">25</span>)</div></div>
+            <div class="row"><div class="ln">5</div><div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">say</span>(<span class="st">'ouch'</span>, <span class="nm">0.5</span>)</div></div>
+            <div class="row"><div class="ln">6</div><div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="vr">score</span> <span class="op">+=</span> <span class="nm">1</span></div></div>
+            <div class="row"><div class="ln">7</div><div>&nbsp;&nbsp;}</div></div>
+            <div class="row"><div class="ln">8</div><div>})</div></div>
+            <div class="row"><div class="ln">9</div><div></div></div>
+            <div class="row"><div class="ln">10</div><div><span class="kw">function</span> <span class="fn">hit</span>(<span class="vr">enemy</span>) {</div></div>
+            <div class="row"><div class="ln">11</div><div>&nbsp;&nbsp;<span class="vr">enemy</span>.<span class="fn">destroy</span>()</div></div>
+            <div class="row"><div class="ln">12</div><div>&nbsp;&nbsp;<span class="fn">play</span>(<span class="st">'boom.wav'</span>)</div></div>
+            <div class="row"><div class="ln">13</div><div>}</div></div>
+          </div>
+        </div>
+        <div class="editor-status">
+          <span class="pill"><span class="ledg"></span> running</span>
+          <span>42 blocks &middot; 68 lines</span>
+          <span>JS</span>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</header>
 
-  {{/* How it works */}}
-  <section class="bg-gray-50 py-8">
-    <div class="container">
-      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-2">How it works</h2>
-      <p class="text-center text-gray-500 mb-6">Three steps. Zero setup. Real code from minute one.</p>
-
-      <div class="row">
-        {{/* Step 1 */}}
-        <div class="col-12 col-md-4 mb-4 mb-md-0">
-          <div class="bg-white rounded-xl p-5 h-full shadow-sm">
-            <div class="bg-primary text-white w-10 h-10 rounded-lg d-flex align-items-center justify-content-center fw-bold text-lg mb-4" style="width: 40px; height: 40px;">1</div>
-            <h3 class="fw-bold text-lg text-gray-800 mb-2">Snap</h3>
-            <p class="text-gray-600 mb-0">Drag blocks from the Brick Bin and snap them together. Each block is a function — it takes inputs and produces outputs. Wire them up and hit play.</p>
-          </div>
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow-sm">/ 01 &middot; how it works</div>
+        <h2 class="section-title">Three steps. Then you're on your own.</h2>
+        <p class="section-sub">The hand-holding ends at step three. After that it's just you, a blank file, and 300+ blocks.</p>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="num">/ 01 &middot; DRAG</div>
+        <h3>Snap blocks together</h3>
+        <p>Every block is a real thing the computer can do. Sensors, math, sprites, HTTP requests. Drag, drop, connect.</p>
+        <div class="demo">
+          <div class="block b-event" style="margin-bottom:4px">when &#x25B6; clicked</div>
+          <div class="block b-control" style="margin-left:14px;margin-bottom:4px">if <span class="slot">x &lt; 0</span></div>
+          <div class="block b-motion" style="margin-left:28px">bounce</div>
         </div>
-        {{/* Step 2 */}}
-        <div class="col-12 col-md-4 mb-4 mb-md-0">
-          <div class="bg-white rounded-xl p-5 h-full shadow-sm">
-            <div class="bg-secondary text-white w-10 h-10 rounded-lg d-flex align-items-center justify-content-center fw-bold text-lg mb-4" style="width: 40px; height: 40px;">2</div>
-            <h3 class="fw-bold text-lg text-gray-800 mb-2">Peek</h3>
-            <p class="text-gray-600 mb-0">Every block shows its code. Toggle between JavaScript and Python with one click. The visual editor is just a different view of the same program.</p>
-          </div>
+      </div>
+      <div class="step">
+        <div class="num">/ 02 &middot; READ</div>
+        <h3>See what it actually is</h3>
+        <p>Every block is also real code. Toggle the pane &mdash; your blocks are already JavaScript or Python. The abstraction leaks on purpose.</p>
+        <div class="demo">
+          <span class="cm">// your blocks are this:</span><br>
+          <span class="kw">on</span>(<span class="st">'click'</span>, () <span class="op">=&gt;</span> {<br>
+          &nbsp;&nbsp;<span class="kw">if</span> (<span class="vr">x</span> <span class="op">&lt;</span> <span class="nm">0</span>) <span class="fn">bounce</span>()<br>
+          })
         </div>
-        {{/* Step 3 */}}
-        <div class="col-12 col-md-4">
-          <div class="bg-white rounded-xl p-5 h-full shadow-sm">
-            <div class="bg-accent text-white w-10 h-10 rounded-lg d-flex align-items-center justify-content-center fw-bold text-lg mb-4" style="width: 40px; height: 40px;">3</div>
-            <h3 class="fw-bold text-lg text-gray-800 mb-2">Create</h3>
-            <p class="text-gray-600 mb-0">When you're ready, write your own function. If it works, it becomes a block — your block, with your name on it. Share it with the world.</p>
-          </div>
+      </div>
+      <div class="step">
+        <div class="num">/ 03 &middot; SHIP</div>
+        <h3>Put it on the internet</h3>
+        <p>Hit run &mdash; it runs. Hit share &mdash; it's a URL. Hit deploy &mdash; it's on your phone.</p>
+        <div class="demo" style="display:flex;flex-direction:column;gap:10px;padding:20px">
+          <div style="font-size:11px;color:var(--overlay1)">cryptoblocks.app/my-game</div>
+          <div style="height:6px;background:var(--surface0);border-radius:3px;overflow:hidden"><div style="height:100%;width:78%;background:linear-gradient(90deg,var(--green),var(--teal))"></div></div>
+          <div style="font-size:11px;color:var(--green)">&#x2713; deployed &middot; 12 plays &middot; 3 forks</div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  {{/* Block categories */}}
-  <section class="bg-white py-8">
-    <div class="container">
-      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-2">250 blocks and counting</h2>
-      <p class="text-center text-gray-500 mb-6">23 categories. Two languages. Infinite combinations.</p>
-
-      <div class="row justify-content-center">
-        {{ $categories := slice
-          (dict "name" "Basics" "color" "#4C97AF" "count" "9" "desc" "print, ask, wait, variables")
-          (dict "name" "Math" "color" "#5B80A5" "count" "10" "desc" "add, multiply, random, power")
-          (dict "name" "Text" "color" "#8B5CF6" "count" "11" "desc" "join, reverse, replace, split")
-          (dict "name" "Logic" "color" "#059669" "count" "16" "desc" "if/else, loops, while, compare")
-          (dict "name" "Lists" "color" "#D97706" "count" "17" "desc" "create, sort, filter, map")
-          (dict "name" "Data" "color" "#0891B2" "count" "7" "desc" "objects, properties, JSON")
-          (dict "name" "Database" "color" "#6366F1" "count" "12" "desc" "tables, queries, CRUD")
-          (dict "name" "Web" "color" "#DC2626" "count" "8" "desc" "HTTP, WebSocket, API calls")
-          (dict "name" "Art" "color" "#EC4899" "count" "5" "desc" "canvas, draw, shapes, colors")
-          (dict "name" "Crypto" "color" "#4F46E5" "count" "25" "desc" "hash, encrypt, XOR, base64")
-          (dict "name" "AI" "color" "#8B5CF6" "count" "12" "desc" "classify, generate, sentiment")
-          (dict "name" "Sound" "color" "#F59E0B" "count" "18" "desc" "tones, drums, tracks, patterns")
-          (dict "name" "Games" "color" "#22C55E" "count" "10" "desc" "sprites, collision, score")
-          (dict "name" "Hardware" "color" "#EF4444" "count" "11" "desc" "screen, device, platform")
-          (dict "name" "Pen" "color" "#14B8A6" "count" "9" "desc" "move, turn, draw, color")
-          (dict "name" "Testing" "color" "#795548" "count" "8" "desc" "random, shuffle, assertions")
-          (dict "name" "Vision" "color" "#00BCD4" "count" "7" "desc" "camera, frames, pixels, loop")
-          (dict "name" "Functions" "color" "#FF6B6B" "count" "3" "desc" "create, call, return values")
-          (dict "name" "Events" "color" "#E91E63" "count" "2" "desc" "key press, click handlers")
-          (dict "name" "HTML" "color" "#FF9800" "count" "19" "desc" "layout, elements, styles, SCSS")
-          (dict "name" "Libraries" "color" "#9C27B0" "count" "2" "desc" "import libs, pranks")
-          (dict "name" "Values" "color" "#607D8B" "count" "6" "desc" "numbers, text, booleans, color")
-          (dict "name" "Secrets" "color" "#1e1e2e" "count" "13" "desc" "????? unlock in hacker mode")
-        }}
-        {{ range $categories }}
-          <div class="col-6 col-md-4 col-lg-3 mb-3">
-            <div class="rounded-xl p-4 text-white text-center" style="background: {{ .color }};">
-              <div class="fw-bold text-lg">{{ .name }}</div>
-              <div class="text-sm opacity-75">{{ .count }} blocks</div>
-              <div class="text-xs opacity-50 mt-1">{{ .desc }}</div>
-            </div>
-          </div>
-        {{ end }}
+<!-- FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow-sm">/ 02 &middot; features</div>
+        <h2 class="section-title">All of this, on day one.</h2>
+        <p class="section-sub">No paywalls on the thing you actually need right now.</p>
       </div>
     </div>
-  </section>
+    <div class="features">
+      <div class="feat"><div class="stat">300+</div><div class="ico" style="background:var(--blue)">&#x25A3;</div><h4>Blocks</h4><p>From <code>print</code> to <code>train classifier</code>. Every block is a real primitive.</p></div>
+      <div class="feat"><div class="stat">141</div><div class="ico" style="background:var(--yellow)">&#x25C6;</div><h4>Challenges</h4><p>Progressive puzzles that teach a concept and then ask you to break it.</p></div>
+      <div class="feat"><div class="stat">live</div><div class="ico" style="background:var(--green)">&#x25C9;</div><h4>Multiplayer</h4><p>Rooms, shared state, presence. Build with a friend in the same file.</p></div>
+      <div class="feat"><div class="stat">2D</div><div class="ico" style="background:var(--mauve)">&#x25C8;</div><h4>Game Engine</h4><p>Sprites, physics, tilemaps. The boring parts are written. Go make Celeste.</p></div>
+      <div class="feat"><div class="stat">local</div><div class="ico" style="background:var(--peach)">&#x25CE;</div><h4>AI &amp; Vision</h4><p>Webcam, pose, speech. Models run in the browser &mdash; your face never leaves the tab.</p></div>
+      <div class="feat"><div class="stat">BLE</div><div class="ico" style="background:var(--teal)">&#x25AD;</div><h4>Hardware</h4><p>micro:bit, Arduino. Flash firmware from the browser. Lights blink, motors spin.</p></div>
+      <div class="feat"><div class="stat">80+</div><div class="ico" style="background:var(--red)">&#x2726;</div><h4>Badges</h4><p>Earned, not given. Common &rarr; Legendary. Some require you to stumble into them.</p></div>
+      <div class="feat"><div class="stat">daily</div><div class="ico" style="background:var(--pink)">&#x263C;</div><h4>Daily Challenge</h4><p>One tiny prompt, 24 hours, global leaderboard.</p></div>
+    </div>
+  </div>
+</section>
 
-  {{/* What makes it different */}}
-  <section class="bg-gray-50 py-8">
-    <div class="container">
-      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-6">Not just another Scratch</h2>
+<!-- BADGES -->
+<section id="badges">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow-sm">/ 03 &middot; badges</div>
+        <h2 class="section-title">80+ badges. You earn them, you don't buy them.</h2>
+        <p class="section-sub">Common ones take minutes. Legendaries take weeks &mdash; sometimes a specific time, sometimes a block combo nobody's told you about.</p>
+      </div>
+    </div>
+    <div class="badges-row">
+      <div class="badge-card b-common"><div class="medal">01</div><div class="tier">&middot; common &middot;</div><h4>First Block</h4><p>You connected two blocks. That's it. We're proud of you.</p></div>
+      <div class="badge-card b-rare"><div class="medal">&sim;</div><div class="tier">&middot; rare &middot;</div><h4>Signal &amp; Noise</h4><p>Built something that listens to the microphone and reacts in under 15 blocks.</p></div>
+      <div class="badge-card b-epic"><div class="medal">&#x2318;</div><div class="tier">&middot; epic &middot;</div><h4>Local Maxima</h4><p>Shipped a project that 100 kids forked, then forked back.</p></div>
+      <div class="badge-card b-legend"><div class="medal">&#x2605;</div><div class="tier">&middot; legendary &middot;</div><h4>???</h4><p>Requirements hidden. Hint: check the terminal.</p></div>
+    </div>
+  </div>
+</section>
 
-      <div class="row">
-        <div class="col-12 col-md-6 mb-4">
-          <div class="bg-white rounded-xl p-5 h-full shadow-sm">
-            <h3 class="fw-bold text-gray-800 mb-2">Real languages</h3>
-            <p class="text-gray-600 mb-0">Every block generates real JavaScript and Python — not a toy language. The skills transfer directly to real-world programming.</p>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 mb-4">
-          <div class="bg-white rounded-xl p-5 h-full shadow-sm">
-            <h3 class="fw-bold text-gray-800 mb-2">No dead end</h3>
-            <p class="text-gray-600 mb-0">Scratch is a destination. CryptoBlocks is a bridge. Kids gradually shift from visual to code as they get comfortable. The tool grows with them.</p>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 mb-4">
-          <div class="bg-white rounded-xl p-5 h-full shadow-sm">
-            <h3 class="fw-bold text-gray-800 mb-2">Build your own blocks</h3>
-            <p class="text-gray-600 mb-0">Write a function, define its inputs and outputs, and it becomes a block. Your block. With your name on it. That's the moment kids become creators.</p>
-          </div>
-        </div>
-        <div class="col-12 col-md-6 mb-4">
-          <div class="bg-white rounded-xl p-5 h-full shadow-sm">
-            <h3 class="fw-bold text-gray-800 mb-2">Runs in the browser</h3>
-            <p class="text-gray-600 mb-0">Nothing to install. Nothing to configure. Open the page and start building. JavaScript runs in a sandbox, Python runs via Pyodide — all in the browser.</p>
-          </div>
+<!-- TEACHERS -->
+<section id="teachers">
+  <div class="wrap">
+    <div class="two-col">
+      <div class="teachers-copy">
+        <div class="eyebrow-sm">/ 04 &middot; for teachers</div>
+        <h2 class="section-title">A classroom that runs itself.</h2>
+        <p class="section-sub">Assignments auto-grade what can be auto-graded. The rest you read in ten minutes instead of an hour.</p>
+        <ul class="bullets">
+          <li><span class="k">&#x2713;</span> <span><b>Classrooms &amp; rosters</b> &mdash; join codes, student management.</span></li>
+          <li><span class="k">&#x2713;</span> <span><b>Assignments with rubrics</b> &mdash; grade by block count, concepts used, or output.</span></li>
+          <li><span class="k">&#x2713;</span> <span><b>Student replays</b> &mdash; scrub through how they built it, not just the result.</span></li>
+          <li><span class="k">&#x2713;</span> <span><b>Free for public schools</b> &mdash; always. No asterisk.</span></li>
+        </ul>
+      </div>
+      <div class="teachers-visual">
+        <div class="cls-head"><span>CLASS &middot; 5B Computer Science</span><span class="chip-sm">24 students</span></div>
+        <div>
+          <div class="cls-row"><div class="av" style="background:var(--peach)">AM</div><div class="name">Ada M.</div><div class="prog"><i style="width:94%"></i></div><div class="xp">23,840</div><div class="badge" style="color:var(--yellow)">&#x2605; 17</div></div>
+          <div class="cls-row"><div class="av" style="background:var(--blue)">JS</div><div class="name">Jordan S.</div><div class="prog"><i style="width:71%"></i></div><div class="xp">14,220</div><div class="badge" style="color:var(--mauve)">&#x2605; 11</div></div>
+          <div class="cls-row"><div class="av" style="background:var(--green)">MK</div><div class="name">Maya K.</div><div class="prog"><i style="width:63%"></i></div><div class="xp">11,900</div><div class="badge" style="color:var(--blue)">&#x2605; 9</div></div>
+          <div class="cls-row"><div class="av" style="background:var(--mauve)">RT</div><div class="name">Ren T.</div><div class="prog"><i style="width:58%;background:var(--yellow)"></i></div><div class="xp">10,410</div><div class="badge">&#x2605; 7</div></div>
+          <div class="cls-row" style="color:var(--overlay1)"><div class="av" style="background:var(--surface1);color:var(--subtext)">+20</div><div class="name" style="color:var(--overlay1)">20 more</div><div class="prog"><i style="width:55%;background:var(--surface2)"></i></div><div class="xp" style="color:var(--overlay1)">avg 9,120</div><div class="badge" style="color:var(--overlay1)">&mdash;</div></div>
         </div>
       </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  {{/* Challenges */}}
-  <section class="bg-white py-8">
-    <div class="container">
-      <h2 class="text-3xl font-extrabold text-center text-gray-800 mb-2">141 challenges across 27 theme packs</h2>
-      <p class="text-center text-gray-500 mb-6">Minecraft, Space, Crypto, Secret Agent — learn to code through stories you care about.</p>
-
-      <div class="row">
-        <div class="col-12 col-md-4 mb-4">
-          <div class="bg-gray-50 rounded-xl p-5 h-full">
-            <h3 class="fw-bold text-lg text-gray-800 mb-2">Themed Challenges</h3>
-            <p class="text-gray-600 mb-0">Solve puzzles with the fewest blocks. Earn stars. Progress through Minecraft crafting, space exploration, secret agent missions, and more.</p>
-          </div>
-        </div>
-        <div class="col-12 col-md-4 mb-4">
-          <div class="rounded-xl p-5 h-full text-white" style="background: linear-gradient(135deg, #89dceb 0%, #cba6f7 50%, #f38ba8 100%);">
-            <h3 class="fw-bold text-lg mb-2">Block Islands</h3>
-            <p class="mb-0 opacity-90">Puzzle-style challenges where code blocks float on the workspace like scattered jigsaw pieces. Drag, connect, and solve — no typing required.</p>
-          </div>
-        </div>
-        <div class="col-12 col-md-4 mb-4">
-          <div class="bg-gray-50 rounded-xl p-5 h-full">
-            <h3 class="fw-bold text-lg text-gray-800 mb-2">Code Golf & Labs</h3>
-            <p class="text-gray-600 mb-0">Competitive efficiency puzzles, step-by-step guided tutorials, and a code lab for writing JavaScript directly. Four ways to learn.</p>
-          </div>
-        </div>
+<!-- PRICING -->
+<section id="pricing">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow-sm">/ 05 &middot; open &amp; free</div>
+        <h2 class="section-title">Every block, free. Forever.</h2>
+        <p class="section-sub">We don't gate the learning part. Pro unlocks creative tools you only need once you're serious.</p>
       </div>
     </div>
-  </section>
-
-  {{/* Origin story teaser */}}
-  <section class="bg-white py-8">
-    <div class="container text-center" style="max-width: 640px;">
-      <h2 class="text-3xl font-extrabold text-gray-800 mb-4">Born from a hacker, built for kids</h2>
-      <p class="text-lg text-gray-600 mb-4">
-        CryptoBlocks started as an attack framework for a security competition. Small, reusable "lego" pieces in Python. One night, staring at the terminal, it clicked:
-      </p>
-      <blockquote class="bg-gray-50 rounded-xl p-5 text-lg text-gray-700 fw-medium italic mb-4" style="border-left: 4px solid #3B82F6;">
-        "This is just Scratch for hackers. Why doesn't this exist for everyone?"
-      </blockquote>
-      <p class="text-gray-600 mb-6">
-        The hacking part stays behind. What comes forward is the idea: small, composable, shareable blocks of real code that anyone can see, use, modify, and eventually write themselves.
-      </p>
-      <a href="/about" class="text-primary fw-bold text-decoration-none hover:underline">Read the full story &rarr;</a>
+    <div class="price-wrap">
+      <div class="plan">
+        <div class="tag">&middot; free &middot;</div>
+        <h3>Hacker</h3>
+        <div class="price">$0</div>
+        <p class="lede">Everything a kid needs to learn, build, and ship real things.</p>
+        <ul>
+          <li>All 300+ blocks, all 23 categories</li>
+          <li>All 141 challenges + daily challenge</li>
+          <li>Public projects, fork &amp; remix</li>
+          <li>Multiplayer rooms (up to 4)</li>
+          <li>Hardware support (micro:bit)</li>
+          <li>Badge system, no limits</li>
+        </ul>
+        <a href="{{ $appURL }}" class="btn btn-ghost">Start free</a>
+      </div>
+      <div class="plan pro">
+        <div class="ribbon">Pro</div>
+        <div class="tag">&middot; $10/mo &middot;</div>
+        <h3>Pro Creator</h3>
+        <div class="price">$10<small> /month</small></div>
+        <p class="lede">For kids making bigger things.</p>
+        <ul>
+          <li>Everything in Free</li>
+          <li>Private projects &amp; rooms</li>
+          <li>Custom block authoring</li>
+          <li>Code Golf &amp; Code Labs</li>
+          <li>Sprite Editor &amp; Level Editor</li>
+          <li>Scratch import, PWA export</li>
+        </ul>
+        <a href="{{ $appURL }}" class="btn btn-primary">Try Pro</a>
+      </div>
     </div>
-  </section>
+  </div>
+</section>
 
-  {{/* CTA */}}
-  <section class="py-8" style="background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);">
-    <div class="container text-center">
-      <h2 class="text-3xl font-extrabold text-white mb-3">Ready to start building?</h2>
-      <p class="text-lg text-white opacity-75 mb-5">No account needed. No setup. Just blocks.</p>
-      <a href="{{ .Site.Params.appURL | default "/app" }}" class="bg-white text-primary px-8 py-3 rounded-lg fw-bold text-lg text-decoration-none hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 transition-colors" style="focus:ring-offset-color: #3B82F6;">
-        Open CryptoBlocks
-      </a>
+<!-- STATS -->
+<section style="padding:0">
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><div class="n">300<span class="sfx">+</span></div><div class="l">Blocks</div></div>
+      <div class="stat"><div class="n">23</div><div class="l">Categories</div></div>
+      <div class="stat"><div class="n">141</div><div class="l">Challenges</div></div>
+      <div class="stat"><div class="n">80<span class="sfx">+</span></div><div class="l">Achievements</div></div>
     </div>
-  </section>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final">
+  <div class="wrap">
+    <h2>Go make something<br><span style="color:var(--blue)">no one asked you to.</span></h2>
+    <p>Takes ~45 seconds. No email needed to start. Pick a username. Drag a block. See what happens.</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="{{ $appURL }}" class="btn btn-primary">Start Building <span class="kbd">&#x23CE;</span></a>
+      <a href="/change-log" class="btn btn-ghost">Read the changelog</a>
+    </div>
+    <div class="meta">v0.5 &middot; <span style="color:var(--green)">&#x25CF; all systems go</span></div>
+  </div>
+</section>
+
+<script>
+// Rotating hero headlines
+(function(){
+  const phrases = [
+    'weird stuff',
+    'thing your teacher didn\'t assign',
+    'game nobody asked for',
+    'app that makes your friends laugh',
+    'robot that scares the cat',
+    'website your mom doesn\'t understand',
+    'thing that doesn\'t exist yet',
+    'hack you saw on YouTube',
+    'dumbest idea you\'ve ever had',
+    'next thing',
+  ];
+  const el = document.getElementById('hero-rotate');
+  if (!el) return;
+  let i = 0;
+  setInterval(function(){
+    el.style.opacity = '0';
+    setTimeout(function(){
+      i = (i + 1) % phrases.length;
+      el.textContent = phrases[i];
+      el.style.opacity = '1';
+    }, 400);
+  }, 4000);
+})();
+</script>
 {{ end }}

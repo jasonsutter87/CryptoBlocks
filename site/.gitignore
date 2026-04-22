@@ -3,9 +3,8 @@
 /resources/
 /.hugo_build.lock
 
-# Compiled CSS — source of truth is assets/scss/
+# Compiled CSS from SCSS pipeline (no longer used)
 /assets/css/
-/static/css/
 
 # Node or other tooling
 node_modules/

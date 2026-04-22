@@ -3,24 +3,24 @@
   <head>
     {{ partial "head.html" . }}
   </head>
-  <body class="min-h-screen flex flex-col bg-white text-gray-800 font-sans">
-    {{/* Skip link for keyboard users */}}
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-primary focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-accent">
+  <body>
+    <div class="dots"></div>
+    <div class="noise"></div>
+
+    {{/* Skip link */}}
+    <a href="#main-content" class="sr-only focus:not-sr-only" style="position:absolute;top:8px;left:8px;z-index:999;background:var(--green);color:#11111b;padding:8px 16px;border-radius:8px;">
       Skip to main content
     </a>
 
-    <header class="bg-white border-b border-gray-200">
-      {{ partial "header.html" . }}
-    </header>
+    {{ partial "header.html" . }}
 
-    <main id="main-content" class="flex-grow" tabindex="-1">
+    <main id="main-content" style="position:relative;z-index:1;">
       {{ block "main" . }}{{ end }}
     </main>
 
-    <footer class="bg-gray-50 border-t border-gray-200">
-      {{ partial "footer.html" . }}
-    </footer>
+    {{ partial "footer.html" . }}
 
+    <script src="{{ "js/theme.js" | relURL }}"></script>
     {{ partial "foot.html" . }}
   </body>
 </html>
