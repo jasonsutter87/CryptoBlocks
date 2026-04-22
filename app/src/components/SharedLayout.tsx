@@ -55,10 +55,10 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
       <nav className="shrink-0 h-14 bg-mantle border-b border-surface-0 flex items-center px-4 sm:px-6">
         <div className="flex items-center gap-3 mr-8">
           {/* Logo blocks */}
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-accent" />
-            <div className="w-4 h-4 rounded bg-warn -ml-1.5" />
-            <div className="w-4 h-4 rounded bg-success -ml-1.5" />
+          <div className="relative shrink-0" style={{ width: 24, height: 24 }}>
+            <div className="absolute rounded" style={{ width: 14, height: 14, background: '#89b4fa', top: 0, left: 0, mixBlendMode: 'screen', opacity: 0.95 }} />
+            <div className="absolute rounded" style={{ width: 14, height: 14, background: '#f9e2af', top: 5, left: 5, mixBlendMode: 'screen', opacity: 0.95 }} />
+            <div className="absolute rounded" style={{ width: 14, height: 14, background: '#a6e3a1', top: 10, left: 10, mixBlendMode: 'screen', opacity: 0.95 }} />
           </div>
           <span className="font-bold text-text tracking-tight">CryptoBlocks</span>
         </div>

@@ -187,10 +187,10 @@ export default function Toolbar({
       <div className="flex items-center gap-1 md:gap-2 shrink-0">
         {/* Logo — click 7 times rapidly to toggle hacker mode */}
         <div className="flex items-center gap-2 md:gap-3 cursor-pointer select-none" onClick={handleLogoClick}>
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-accent" />
-            <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-warn -ml-1.5" />
-            <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-success -ml-1.5" />
+          <div className="relative shrink-0" style={{ width: 24, height: 24 }}>
+            <div className="absolute rounded" style={{ width: 14, height: 14, background: '#89b4fa', top: 0, left: 0, mixBlendMode: 'screen', opacity: 0.95 }} />
+            <div className="absolute rounded" style={{ width: 14, height: 14, background: '#f9e2af', top: 5, left: 5, mixBlendMode: 'screen', opacity: 0.95 }} />
+            <div className="absolute rounded" style={{ width: 14, height: 14, background: '#a6e3a1', top: 10, left: 10, mixBlendMode: 'screen', opacity: 0.95 }} />
           </div>
           <h1 className="text-base md:text-lg font-bold text-text tracking-tight">
             <span className="hidden sm:inline">CryptoBlocks</span>
