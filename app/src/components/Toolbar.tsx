@@ -182,7 +182,7 @@ export default function Toolbar({
   )
 
   return (
-    <header className="relative z-50 flex items-center justify-between px-2 md:px-4 py-1.5 md:py-2 bg-mantle border-b border-surface-0 select-none">
+    <header className="relative flex items-center justify-between px-2 md:px-4 py-1.5 md:py-2 bg-mantle border-b border-surface-0 select-none" style={{ zIndex: 200000 }}>
       {/* Left group — Logo + Menu */}
       <div className="flex items-center gap-1 md:gap-2 shrink-0">
         {/* Logo — click 7 times rapidly to toggle hacker mode */}
