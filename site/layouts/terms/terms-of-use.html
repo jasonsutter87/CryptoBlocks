@@ -1,110 +1,317 @@
-{{ define "main"}}
+{{ define "main" }}
+<style>
+  .legal-wrap{display:grid;grid-template-columns:260px 1fr 220px;gap:60px;max-width:1180px;margin:0 auto;padding:56px 28px 96px;align-items:start}
+  @media (max-width:1000px){.legal-wrap{grid-template-columns:1fr;gap:32px}}
 
+  .legal-hero{grid-column:1/-1;padding-bottom:28px;border-bottom:1px solid var(--surface0);margin-bottom:8px}
+  .legal-hero .eyebrow{
+    display:inline-flex;gap:10px;align-items:center;
+    font-family:var(--mono);font-size:12px;color:var(--subtext);
+    background:var(--mantle);border:1px solid var(--surface0);
+    padding:5px 12px;border-radius:999px;margin-bottom:22px;
+  }
+  .legal-hero .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+  .legal-hero h1{font-size:clamp(36px,4.2vw,56px);line-height:1.02;letter-spacing:-.035em;margin:0 0 18px;font-weight:800}
+  .legal-hero .meta{
+    display:flex;gap:28px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:12px;color:var(--overlay1);
+  }
+  .legal-hero .meta b{color:var(--text);font-weight:600}
+  .legal-hero .meta a{color:var(--blue)}
 
-<section id="inner-page-hero-section">
-  <div class="site-container-1340">
-    <div class="row">
-      <div class="col-12">
-        <h4>Policies</h4>
-        <h1>Terms of Use</h1>
-      </div>
+  .toc{
+    position:sticky;top:84px;align-self:start;
+    background:var(--mantle);border:1px solid var(--surface0);
+    border-radius:12px;padding:18px 20px;
+  }
+  .toc h4{
+    margin:0 0 10px;font-family:var(--mono);font-size:11px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--overlay1);font-weight:600;
+  }
+  .toc ol{list-style:none;padding:0;margin:0;counter-reset:sec}
+  .toc ol li{counter-increment:sec;margin:2px 0}
+  .toc ol li a{
+    display:flex;gap:10px;padding:5px 0;font-size:13px;color:var(--subtext);
+    border-left:2px solid transparent;padding-left:10px;margin-left:-12px;transition:all .15s;
+  }
+  .toc ol li a:before{
+    content:counter(sec, decimal-leading-zero);
+    font-family:var(--mono);color:var(--overlay1);font-size:11px;width:22px;flex-shrink:0;
+  }
+  .toc ol li a:hover{color:var(--text);border-left-color:var(--blue)}
+
+  .legal-body{max-width:720px}
+  .legal-body h2{
+    font-size:22px;letter-spacing:-.02em;font-weight:700;
+    margin:44px 0 14px;scroll-margin-top:80px;display:flex;align-items:baseline;gap:14px;
+  }
+  .legal-body h2:first-child{margin-top:0}
+  .legal-body h2 .num{
+    font-family:var(--mono);font-size:11px;color:var(--blue);
+    letter-spacing:.18em;font-weight:600;
+  }
+  .legal-body h3{font-size:16px;margin:26px 0 8px;font-weight:600;color:var(--text)}
+  .legal-body p{color:var(--subtext);font-size:15px;line-height:1.72;margin:0 0 16px;max-width:640px;text-wrap:pretty}
+  .legal-body p b, .legal-body li b{color:var(--text);font-weight:600}
+  .legal-body ul{margin:0 0 16px;padding-left:22px;color:var(--subtext);font-size:14.5px;line-height:1.65}
+  .legal-body ul li{margin-bottom:6px}
+  .legal-body ul li::marker{color:var(--overlay1)}
+  .legal-body a{color:var(--blue);border-bottom:1px solid color-mix(in oklab, var(--blue) 40%, transparent)}
+  .legal-body code{font-family:var(--mono);font-size:13.5px;color:var(--peach);background:var(--mantle);border:1px solid var(--surface0);padding:1px 6px;border-radius:5px}
+
+  .plain{
+    margin:10px 0 24px;padding:14px 18px;border-radius:10px;
+    background:color-mix(in oklab, var(--green) 12%, var(--mantle));
+    border:1px solid color-mix(in oklab, var(--green) 30%, var(--surface0));
+    display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;
+  }
+  .plain .k{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--green);font-weight:700;margin-top:3px;
+  }
+  .plain p{margin:0;color:var(--text);font-size:14.5px;line-height:1.55}
+
+  .legal-meta-right{position:sticky;top:84px;align-self:start;font-family:var(--mono);font-size:12px;color:var(--overlay1)}
+  .legal-meta-right h5{
+    margin:0 0 10px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--overlay1);font-weight:600;
+  }
+  .legal-meta-right ul{list-style:none;padding:0;margin:0 0 20px;display:grid;gap:8px}
+  .legal-meta-right ul a{color:var(--subtext);font-size:13px;font-family:var(--sans)}
+  .legal-meta-right ul a:hover{color:var(--text)}
+  .legal-meta-right .hist{border-top:1px dashed var(--surface0);padding-top:14px;line-height:1.7;font-size:11.5px}
+
+  .legal-footer{
+    margin-top:40px;padding-top:22px;border-top:1px solid var(--surface0);
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    font-family:var(--mono);font-size:12px;color:var(--overlay1);
+  }
+</style>
+<main class="legal-wrap">
+  <header class="legal-hero">
+    <div class="eyebrow"><span class="dot"></span> legal · terms of use · v4.2</div>
+    <h1>Terms of Use</h1>
+    <div class="meta">
+      <span>Effective <b>April 21, 2026</b></span>
+      <span>Last updated <b>Apr 18, 2026</b></span>
+      <span>Replaces <a href="#">v3.9 (Jan 2026)</a></span>
+      <span>Plain-English version <a href="#">here</a></span>
     </div>
-  </div>
-</section>
+  </header>
 
+  <aside class="toc" aria-label="On this page">
+    <h4>On this page</h4>
+    <ol>
+      <li><a href="#s1">Who this agreement is with</a></li>
+      <li><a href="#s2">Who can use CryptoBlocks</a></li>
+      <li><a href="#s3">Your account</a></li>
+      <li><a href="#s4">Your content &amp; ours</a></li>
+      <li><a href="#s5">Shareplace rules</a></li>
+      <li><a href="#s6">Acceptable use</a></li>
+      <li><a href="#s7">Classrooms &amp; schools</a></li>
+      <li><a href="#s8">Paid plans (Pro)</a></li>
+      <li><a href="#s9">Privacy &amp; data</a></li>
+      <li><a href="#s10">Termination</a></li>
+      <li><a href="#s11">Disclaimers &amp; liability</a></li>
+      <li><a href="#s12">Changes to these terms</a></li>
+      <li><a href="#s13">Contact</a></li>
+    </ol>
+  </aside>
 
-<section id="policies-main-section">
-  <div class="site-container-1340">
-    <div class="row justify-content-center">
-      <div class="col-12 col-lg-9">
-        <div align="left">
-              <p><span class="SubHead">AGREEMENT BETWEEN USER AND {{ .Site.Params.CompanyName }} </span></p>
-  
-              <p>{{ .Site.Params.CompanyName }}  Web Site is comprised of various Web pages operated by {{ .Site.Params.CompanyName }} .</p>
-  
-              <p>{{ .Site.Params.CompanyName }}  Web Site is offered to you conditioned on your acceptance without modification of the terms, conditions, and notices contained herein. Your use of {{ .Site.Params.CompanyName }}  Web Site constitutes your agreement to all such terms, conditions, and notices.</p>
-  
-              <p><span class="SubHead">MODIFICATION OF THESE TERMS OF USE</span></p>
-  
-              <p>{{ .Site.Params.CompanyName }}  reserves the right to change the terms, conditions, and notices under which {{ .Site.Params.CompanyName }}  Web Site is offered, including but not limited to the charges associated with the use of {{ .Site.Params.CompanyName }}  Web Site.</p>
-  
-              <p><span class="SubHead">LINKS TO THIRD PARTY SITES</span></p>
-  
-              <p>{{ .Site.Params.CompanyName }}  Web Site may contain links to other Web Sites ("Linked Sites"). The Linked Sites are not under the control of {{ .Site.Params.CompanyName }}  and {{ .Site.Params.CompanyName }}  is not responsible for the contents of any Linked Site, including without limitation any link contained in a Linked Site, or any changes or updates to a Linked Site. {{ .Site.Params.CompanyName }}  is not responsible for webcasting or any other form of transmission received from any Linked Site. {{ .Site.Params.CompanyName }}  is providing these links to you only as a convenience, and the inclusion of any link does not imply endorsement by {{ .Site.Params.CompanyName }}  of the site or any association with its operators.</p>
-  
-              <p><span class="SubHead">NO UNLAWFUL OR PROHIBITED USE</span></p>
-  
-              <p>As a condition of your use of {{ .Site.Params.CompanyName }}  Web Site, you warrant to {{ .Site.Params.CompanyName }}  that you will not use {{ .Site.Params.CompanyName }}  Web Site for any purpose that is unlawful or prohibited by these terms, conditions, and notices. You may not use {{ .Site.Params.CompanyName }}  Web Site in any manner which could damage, disable, overburden, or impair {{ .Site.Params.CompanyName }}  Web Site or interfere with any other party's use and enjoyment of {{ .Site.Params.CompanyName }}  Web Site. You may not obtain or attempt to obtain any materials or information through any means not intentionally made available or provided for through {{ .Site.Params.CompanyName }}  Web Sites.</p>
-  
-              <p><span class="SubHead">USE OF COMMUNICATION SERVICES</span></p>
-  
-              <p>{{ .Site.Params.CompanyName }}  Web Site may contain bulletin board services, chat areas, news groups, forums, communities, personal web pages, calendars, and/or other message or communication facilities designed to enable you to communicate with the public at large or with a group (collectively, "Communication Services"), you agree to use the Communication Services only to post, send and receive messages and material that are proper and related to the particular Communication Service. By way of example, and not as a limitation, you agree that when using a Communication Service, you will not:</p>
-  
-              <ul>
-               <li>Defame, abuse, harass, stalk, threaten or otherwise violate the legal rights (such as rights of privacy and publicity) of others.</li>
-               <li>Publish, post, upload, distribute or disseminate any inappropriate, profane, defamatory, infringing, obscene, indecent or unlawful topic, name, material or information.</li>
-               <li>Upload files that contain software or other material protected by intellectual property laws (or by rights of privacy of publicity) unless you own or control the rights thereto or have received all necessary consents.</li>
-               <li>Upload files that contain viruses, corrupted files, or any other similar software or programs that may damage the operation of another's computer.</li>
-               <li>Advertise or offer to sell or buy any goods or services for any business purpose, unless such Communication Service specifically allows such messages.</li>
-               <li>Conduct or forward surveys, contests, pyramid schemes or chain letters.</li>
-               <li>Download any file posted by another user of a Communication Service that you know, or reasonably should know, cannot be legally distributed in such manner.</li>
-               <li>Falsify or delete any author attributions, legal or other proper notices or proprietary designations or labels of the origin or source of software or other material contained in a file that is uploaded.</li>
-               <li>Restrict or inhibit any other user from using and enjoying the Communication Services.</li>
-               <li>Violate any code of conduct or other guidelines which may be applicable for any particular Communication Service.</li>
-               <li>Harvest or otherwise collect information about others, including e-mail addresses, without their consent.</li>
-               <li>Violate any applicable laws or regulations.</li>
-              </ul>
-  
-              <p>{{ .Site.Params.CompanyName }}  has no obligation to monitor the Communication Services. However, {{ .Site.Params.CompanyName }}  reserves the right to review materials posted to a Communication Service and to remove any materials in its sole discretion. {{ .Site.Params.CompanyName }}  reserves the right to terminate your access to any or all of the Communication Services at any time without notice for any reason whatsoever.</p>
-  
-              <p>{{ .Site.Params.CompanyName }}  reserves the right at all times to disclose any information as necessary to satisfy any applicable law, regulation, legal process or governmental request, or to edit, refuse to post or to remove any information or materials, in whole or in part, in {{ .Site.Params.CompanyName }} 's sole discretion.</p>
-  
-              <p>Always use caution when giving out any personally identifying information about yourself or your children in any Communication Service. {{ .Site.Params.CompanyName }}  does not control or endorse the content, messages or information found in any Communication Service and, therefore, {{ .Site.Params.CompanyName }}  specifically disclaims any liability with regard to the Communication Services and any actions resulting from your participation in any Communication Service. Managers and hosts are not authorized {{ .Site.Params.CompanyName }}  spokespersons, and their views do not necessarily reflect those of {{ .Site.Params.CompanyName }} .</p>
-  
-              <p>Materials uploaded to a Communication Service may be subject to posted limitations on usage, reproduction and/or dissemination. You are responsible for adhering to such limitations if you download the materials.</p>
-  
-              <p><span class="SubHead">MATERIALS PROVIDED TO {{ .Site.Params.CompanyName }}  OR POSTED AT ANY {{ .Site.Params.CompanyName }}  WEB SITE</span></p>
-  
-              <p>{{ .Site.Params.CompanyName }}  does not claim ownership of the materials you provide to {{ .Site.Params.CompanyName }}  (including feedback and suggestions) or post, upload, input or submit to any {{ .Site.Params.CompanyName }}  Web Site or its associated services (collectively "Submissions"). However, by posting, uploading, inputting, providing or submitting your Submission you are granting {{ .Site.Params.CompanyName }} , its affiliated companies and necessary sublicensees permission to use your Submission in connection with the operation of their Internet businesses including, without limitation, the rights to: copy, distribute, transmit, publicly display, publicly perform, reproduce, edit, translate and reformat your Submission; and to publish your name in connection with your Submission.</p>
-  
-              <p>No compensation will be paid with respect to the use of your Submission, as provided herein. {{ .Site.Params.CompanyName }}  is under no obligation to post or use any Submission you may provide and may remove any Submission at any time in {{ .Site.Params.CompanyName }} 's sole discretion.</p>
-  
-              <p>By posting, uploading, inputting, providing or submitting your Submission you warrant and represent that you own or otherwise control all of the rights to your Submission as described in this section including, without limitation, all the rights necessary for you to provide, post, upload, input or submit the Submissions.</p>
-  
-              <p><span class="SubHead">LIABILITY DISCLAIMER</span></p>
-  
-              <p>THE INFORMATION, SOFTWARE, PRODUCTS, AND SERVICES INCLUDED IN OR AVAILABLE THROUGH {{ .Site.Params.CompanyName }}  WEB SITE MAY INCLUDE INACCURACIES OR TYPOGRAPHICAL ERRORS. CHANGES ARE PERIODICALLY ADDED TO THE INFORMATION HEREIN. {{ .Site.Params.CompanyName }}  AND/OR ITS SUPPLIERS MAY MAKE IMPROVEMENTS AND/OR CHANGES IN {{ .Site.Params.CompanyName }}  WEB SITE AT ANY TIME. ADVICE RECEIVED VIA {{ .Site.Params.CompanyName }}  WEB SITE SHOULD NOT BE RELIED UPON FOR PERSONAL, MEDICAL, LEGAL OR FINANCIAL DECISIONS AND YOU SHOULD CONSULT AN APPROPRIATE PROFESSIONAL FOR SPECIFIC ADVICE TAILORED TO YOUR SITUATION.</p>
-  
-              <p>{{ .Site.Params.CompanyName }}  AND/OR ITS SUPPLIERS MAKE NO REPRESENTATIONS ABOUT THE SUITABILITY, RELIABILITY, AVAILABILITY, TIMELINESS, AND ACCURACY OF THE INFORMATION, SOFTWARE, PRODUCTS, SERVICES AND RELATED GRAPHICS CONTAINED ON {{ .Site.Params.CompanyName }}  WEB SITE FOR ANY PURPOSE. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, ALL SUCH INFORMATION, SOFTWARE, PRODUCTS, SERVICES AND RELATED GRAPHICS ARE PROVIDED "AS IS" WITHOUT WARRANTY OR CONDITION OF ANY KIND. {{ .Site.Params.CompanyName }}  AND/OR ITS SUPPLIERS HEREBY DISCLAIM ALL WARRANTIES AND CONDITIONS WITH REGARD TO THIS INFORMATION, SOFTWARE, PRODUCTS, SERVICES AND RELATED GRAPHICS, INCLUDING ALL IMPLIED WARRANTIES OR CONDITIONS OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT.</p>
-  
-              <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL {{ .Site.Params.CompanyName }}  AND/OR ITS SUPPLIERS BE LIABLE FOR ANY DIRECT, INDIRECT, PUNITIVE, INCIDENTAL, SPECIAL, CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF USE, DATA OR PROFITS, ARISING OUT OF OR IN ANY WAY CONNECTED WITH THE USE OR PERFORMANCE OF {{ .Site.Params.CompanyName }}  WEB SITE, WITH THE DELAY OR INABILITY TO USE {{ .Site.Params.CompanyName }}  WEB SITE OR RELATED SERVICES, THE PROVISION OF OR FAILURE TO PROVIDE SERVICES, OR FOR ANY INFORMATION, SOFTWARE, PRODUCTS, SERVICES AND RELATED GRAPHICS OBTAINED THROUGH {{ .Site.Params.CompanyName }}  WEB SITE, OR OTHERWISE ARISING OUT OF THE USE OF {{ .Site.Params.CompanyName }}  WEB SITE, WHETHER BASED ON CONTRACT, TORT, NEGLIGENCE, STRICT LIABILITY OR OTHERWISE, EVEN IF {{ .Site.Params.CompanyName }}  OR ANY OF ITS SUPPLIERS HAS BEEN ADVISED OF THE POSSIBILITY OF DAMAGES. BECAUSE SOME STATES/JURISDICTIONS DO NOT ALLOW THE EXCLUSION OR LIMITATION OF LIABILITY FOR CONSEQUENTIAL OR INCIDENTAL DAMAGES, THE ABOVE LIMITATION MAY NOT APPLY TO YOU. IF YOU ARE DISSATISFIED WITH ANY PORTION OF {{ .Site.Params.CompanyName }}  WEB SITE, OR WITH ANY OF THESE TERMS OF USE, YOUR SOLE AND EXCLUSIVE REMEDY IS TO DISCONTINUE USING {{ .Site.Params.CompanyName }}  WEB SITE.</p>
-  
-              <p>SERVICE CONTACT : <a href="/support/contact-us/" class="btn-text">Contact Us</a></p>
-  
-              <p><span class="SubHead">TERMINATION/ACCESS RESTRICTION</span></p>
-  
-              <p>{{ .Site.Params.CompanyName }}  reserves the right, in its sole discretion, to terminate your access to {{ .Site.Params.CompanyName }}  Web Site and the related services or any portion thereof at any time, without notice. GENERAL To the maximum extent permitted by law, this agreement is governed by the laws of the State of Washington, U.S.A. and you hereby consent to the exclusive jurisdiction and venue of courts in San Mateo County, California, U.S.A. in all disputes arising out of or relating to the use of {{ .Site.Params.CompanyName }}  Web Site. Use of {{ .Site.Params.CompanyName }}  Web Site is unauthorized in any jurisdiction that does not give effect to all provisions of these terms and conditions, including without limitation this paragraph. You agree that no joint venture, partnership, employment, or agency relationship exists between you and {{ .Site.Params.CompanyName }}  as a result of this agreement or use of {{ .Site.Params.CompanyName }}  Web Site. {{ .Site.Params.CompanyName }} 's performance of this agreement is subject to existing laws and legal process, and nothing contained in this agreement is in derogation of {{ .Site.Params.CompanyName }} 's right to comply with governmental, court and law enforcement requests or requirements relating to your use of {{ .Site.Params.CompanyName }}  Web Site or information provided to or gathered by {{ .Site.Params.CompanyName }}  with respect to such use. If any part of this agreement is determined to be invalid or unenforceable pursuant to applicable law including, but not limited to, the warranty disclaimers and liability limitations set forth above, then the invalid or unenforceable provision will be deemed superseded by a valid, enforceable provision that most closely matches the intent of the original provision and the remainder of the agreement shall continue in effect. Unless otherwise specified herein, this agreement constitutes the entire agreement between the user and {{ .Site.Params.CompanyName }}  with respect to {{ .Site.Params.CompanyName }}  Web Site and it supersedes all prior or contemporaneous communications and proposals, whether electronic, oral or written, between the user and {{ .Site.Params.CompanyName }}  with respect to {{ .Site.Params.CompanyName }}  Web Site. A printed version of this agreement and of any notice given in electronic form shall be admissible in judicial or administrative proceedings based upon or relating to this agreement to the same extent an d subject to the same conditions as other business documents and records originally generated and maintained in printed form. It is the express wish to the parties that this agreement and all related documents be drawn up in English.</p>
-  
-              <p><span class="SubHead">COPYRIGHT AND TRADEMARK NOTICES:</span></p>
-  
-              <p>All contents of {{ .Site.Params.CompanyName }}  Web Site are: Copyright 2023 by {{ .Site.Params.CompanyName }} , Inc. and/or its suppliers. All rights reserved.</p>
-  
-              <p><span class="SubHead">TRADEMARKS</span></p>
-  
-              <p>The names of actual companies and products mentioned herein may be the trademarks of their respective owners.</p>
-  
-              <p>The example companies, organizations, products, people and events depicted herein are fictitious. No association with any real company, organization, product, person, or event is intended or should be inferred.</p>
-  
-              <p>Any rights not expressly granted herein are reserved.</p>
-  
-              <p><span class="SubHead">NOTICES AND PROCEDURE FOR MAKING CLAIMS OF COPYRIGHT INFRINGEMENT</span></p>
-  
-              <p>Pursuant to Title 17, United States Code, Section 512(c)(2), notifications of claimed copyright infringement under United States copyright law should be sent to Service Provider's Designated Agent. ALL INQUIRIES NOT RELEVANT TO THE FOLLOWING PROCEDURE WILL RECEIVE NO RESPONSE. See Notice and Procedure for Making Claims of Copyright Infringement.</p>
-              </div>
+  <article class="legal-body">
+    <p style="font-size:16px;color:var(--text)">
+      This is the agreement between you and CryptoBlocks, Inc. ("CryptoBlocks," "we," "us")
+      when you use our products. It is written to be readable. Every section opens with a
+      plain-English summary in green. Read those first if nothing else.
+    </p>
 
-      </div>
+    <h2 id="s1"><span class="num">/ 01</span> Who this agreement is with</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>You're agreeing with CryptoBlocks, Inc., a Delaware C-corp based in Oakland, California.</p></div>
+    <p>
+      "CryptoBlocks" refers to CryptoBlocks, Inc. and our affiliates. "The Service" refers to
+      our websites, the editor, Shareplace, classroom tools, mobile apps, and any related
+      features. By using the Service, you agree to these Terms and our <a href="#">Privacy Policy</a>.
+    </p>
+
+    <h2 id="s2"><span class="num">/ 02</span> Who can use CryptoBlocks</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>Anyone 13+ can sign up themselves. Under 13s need a parent or a verified classroom.</p></div>
+    <p>
+      We welcome users of all ages. If you are under 13 in the United States (or under the
+      equivalent local age of consent elsewhere), a parent, legal guardian, or a school must
+      create your account through our <b>Classroom</b> or <b>Family</b> flow, which includes
+      verifiable parental consent as required by COPPA.
+    </p>
+    <ul>
+      <li><b>13+</b> — sign up directly with an email or Google/GitHub.</li>
+      <li><b>Under 13, at home</b> — parent-created Family account with verified consent.</li>
+      <li><b>Under 13, at school</b> — teacher-created Classroom under school authorization (FERPA).</li>
+    </ul>
+
+    <h2 id="s3"><span class="num">/ 03</span> Your account</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>Keep your password safe. Don't share your account. One account per person.</p></div>
+    <p>
+      You're responsible for everything that happens on your account, so pick a strong password
+      and don't share it. Let us know promptly at <a href="#"><span class="__cf_email__" data-cfemail="ec9f898f999e859895ac8f9e959c98838e80838f879fc28f8381">[email&#160;protected]</span></a> if
+      you think someone else has accessed your account. Usernames must not impersonate another
+      person or organization.
+    </p>
+
+    <h2 id="s4"><span class="num">/ 04</span> Your content &amp; ours</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>You own what you make. You grant us a license to host and display it. We don't sell your work.</p></div>
+    <p>
+      <b>Your content belongs to you.</b> Projects, blocks, sprites, levels, text, and anything
+      else you upload or create remain yours. By publishing to Shareplace or sharing via a link,
+      you grant CryptoBlocks a worldwide, non-exclusive, royalty-free license to host, display,
+      reproduce, and distribute your content <em>solely</em> to operate and improve the Service.
+    </p>
+    <p>
+      If you mark a project <b>Public</b>, you also license other users to <b>fork and remix</b>
+      it under the same terms. Remixes must preserve attribution.
+    </p>
+    <p>
+      <b>Our content.</b> The platform itself — code, UI, block designs, the logo, documentation —
+      is owned by CryptoBlocks. You may use it to use the Service. You may not repackage it,
+      scrape it for training data, or pass it off as your own.
+    </p>
+
+    <h2 id="s5"><span class="num">/ 05</span> Shareplace rules</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>Don't post things that harm, harass, or break the law. We'll take them down if you do.</p></div>
+    <p>
+      Shareplace is our public marketplace. When you publish there, your project is visible,
+      forkable, and subject to moderation. You may not post content that:
+    </p>
+    <ul>
+      <li>Is illegal, or helps others break the law</li>
+      <li>Harasses, bullies, or targets a person or group</li>
+      <li>Contains sexual content, graphic violence, or content harmful to minors</li>
+      <li>Infringes someone else's copyright or trademark</li>
+      <li>Contains malware, spyware, phishing, or unauthorized data collection</li>
+      <li>Is spam, or attempts to manipulate likes, remixes, or leaderboard rankings</li>
+    </ul>
+    <p>
+      Moderation is a mix of automated and human review. Projects that violate these rules will
+      be removed; repeated violations may result in account suspension.
+    </p>
+
+    <h2 id="s6"><span class="num">/ 06</span> Acceptable use</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>Don't try to break CryptoBlocks, don't use it to break other things, and don't be a jerk.</p></div>
+    <p>You agree not to:</p>
+    <ul>
+      <li>Attempt to gain unauthorized access to any system, account, or data</li>
+      <li>Run denial-of-service attacks, spam, or automated abuse via the Service</li>
+      <li>Scrape the Service at a rate that exceeds our public API limits</li>
+      <li>Use the Service to train a machine-learning model on other users' content without consent</li>
+      <li>Reverse-engineer any part of the Service that we distribute in compiled form</li>
+    </ul>
+    <p>
+      The editor exposes a terminal and other low-level tools. They are real. They are intentional.
+      They run in a sandbox. Do not attempt to escape that sandbox. Report vulnerabilities to
+      <a href="#"><span class="__cf_email__" data-cfemail="fd8e989e888f948984bd9e8f848d89929f91929e968ed39e9290">[email&#160;protected]</span></a> — we run a bounty program.
+    </p>
+
+    <h2 id="s7"><span class="num">/ 07</span> Classrooms &amp; schools</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>Schools own their students' data. We act as a processor. FERPA &amp; COPPA compliant.</p></div>
+    <p>
+      When a teacher creates a Classroom, the school or district is the <b>data controller</b>
+      for student records, and CryptoBlocks acts as a <b>school official</b> under FERPA and a
+      <b>service provider</b> under applicable state laws. Teachers must have authority from
+      their institution to create accounts for students.
+    </p>
+    <p>
+      Student accounts created via Classroom have analytics and social features restricted by
+      default. Data-export, deletion, and retention are described in our
+      <a href="#">School Data Addendum</a>.
+    </p>
+
+    <h2 id="s8"><span class="num">/ 08</span> Paid plans (Pro)</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>Pro is $10/month. You can cancel any time. Free stays free forever.</p></div>
+    <p>
+      <b>Free</b> is free forever. All 320+ blocks, challenges, Shareplace, daily challenges,
+      collaboration, and hardware are included.
+    </p>
+    <p>
+      <b>Pro</b> is $10 USD per month, billed through Stripe. Pro unlocks the Sprite Editor,
+      Level Editor, project exports, and Classroom tools. You can cancel any time from
+      <a href="#">Account → Billing</a>; cancellation takes effect at the end of your current
+      billing period. Refunds are handled case-by-case within 30 days — contact
+      <a href="#"><span class="__cf_email__" data-cfemail="2e4c4742424740496e4d5c575e5a414c42414d455d004d4143">[email&#160;protected]</span></a>.
+    </p>
+    <p><b>Schools &amp; public-school teachers</b> get Pro features free. Contact us for a purchase order.</p>
+
+    <h2 id="s9"><span class="num">/ 09</span> Privacy &amp; data</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>We don't sell your data. AI models run in your browser. Full details in the Privacy Policy.</p></div>
+    <p>
+      Our <a href="#">Privacy Policy</a> describes what we collect, how we use it, and your
+      rights. In short: we collect what the Service needs to function, we don't sell data, and
+      on-device AI features (webcam, speech) run client-side — that input never reaches our
+      servers.
+    </p>
+
+    <h2 id="s10"><span class="num">/ 10</span> Termination</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>You can delete your account any time. We can suspend accounts that break the rules.</p></div>
+    <p>
+      You may close your account at any time from <a href="#">Account → Delete</a>. We will
+      delete or anonymize your personal data within 30 days, subject to legal retention
+      requirements. Public projects you've published remain unless you delete them first.
+    </p>
+    <p>
+      We may suspend or terminate accounts that repeatedly violate these Terms, with notice
+      where reasonable. In cases of immediate harm (e.g. child-safety violations, active attacks),
+      we may act first and notify after.
+    </p>
+
+    <h2 id="s11"><span class="num">/ 11</span> Disclaimers &amp; liability</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>The Service is provided as-is. We're not liable for damages beyond what we can control.</p></div>
+    <p>
+      The Service is provided on an "as is" and "as available" basis. We do not warrant that it
+      will be uninterrupted, error-free, or fit for a particular purpose. To the extent allowed
+      by law, CryptoBlocks' total liability to you for any claim arising from these Terms is
+      limited to the amount you paid us in the 12 months prior, or $100, whichever is greater.
+    </p>
+
+    <h2 id="s12"><span class="num">/ 12</span> Changes to these terms</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>We'll give you 30 days' notice before material changes.</p></div>
+    <p>
+      We may update these Terms. For material changes — anything that reduces your rights or
+      increases your obligations — we will email the address on file and post a banner in the
+      editor at least 30 days before the change takes effect. Continued use after the effective
+      date means you accept the revised Terms.
+    </p>
+
+    <h2 id="s13"><span class="num">/ 13</span> Contact</h2>
+    <div class="plain"><div class="k">tl;dr</div><p>Email <a href="#"><span class="__cf_email__" data-cfemail="caa6afadaba68aa9b8b3babea5a8a6a5a9a1b9e4a9a5a7">[email&#160;protected]</span></a>. We read it.</p></div>
+    <p>
+      Questions about these Terms, copyright notices (DMCA), or legal requests go to
+      <a href="#"><span class="__cf_email__" data-cfemail="ee828b898f82ae8d9c979e9a818c82818d859dc08d8183">[email&#160;protected]</span></a>. For security issues, use
+      <a href="#"><span class="__cf_email__" data-cfemail="d3a0b6b0a6a1baa7aa93b0a1aaa3a7bcb1bfbcb0b8a0fdb0bcbe">[email&#160;protected]</span></a>. For everything else, <a href="#"><span class="__cf_email__" data-cfemail="5139381132232821253e333d3e323a227f323e3c">[email&#160;protected]</span></a>.
+    </p>
+    <p style="color:var(--overlay1);font-size:13.5px;margin-top:24px">
+      CryptoBlocks, Inc. · 2150 Broadway, Oakland, CA 94612, USA
+    </p>
+
+    <div class="legal-footer">
+      <div>Document ID: TOU-2026-04-21 · <a style="color:var(--blue)" href="#">PDF</a> · <a style="color:var(--blue)" href="#">diff from v3.9</a></div>
+      <div>© 2026 CryptoBlocks, Inc.</div>
     </div>
-  </div>
-</section>
+  </article>
 
+  <aside class="legal-meta-right">
+    <h5>Related</h5>
+    <ul>
+      <li><a href="#">Privacy Policy</a></li>
+      <li><a href="#">Cookie Policy</a></li>
+      <li><a href="#">School Data Addendum</a></li>
+      <li><a href="#">DMCA / Copyright</a></li>
+      <li><a href="#">Security &amp; Bounty</a></li>
+      <li><a href="#">Acceptable Use Code</a></li>
+    </ul>
+    <h5 style="margin-top:24px">Version history</h5>
+    <div class="hist">
+      <div><b style="color:var(--text)">v4.2</b> · apr 21, 2026 — current</div>
+      <div>v3.9 · jan 08, 2026</div>
+      <div>v3.0 · may 14, 2025</div>
+      <div>v2.0 · oct 02, 2024</div>
+      <div>v1.0 · aug 30, 2023</div>
+    </div>
+  </aside>
+</main>
 {{ end }}
