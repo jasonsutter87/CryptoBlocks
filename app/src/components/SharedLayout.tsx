@@ -61,9 +61,6 @@ export default function SharedLayout({ children }: SharedLayoutProps) {
             <div className="w-4 h-4 rounded bg-success -ml-1.5" />
           </div>
           <span className="font-bold text-text tracking-tight">CryptoBlocks</span>
-          <span className="text-[10px] text-overlay bg-surface-0 px-1.5 py-0.5 rounded font-mono hidden sm:inline">
-            v0.5
-          </span>
         </div>
 
         {/* Nav links */}
