@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { loadSettings, saveSettings } from '../settings'
+import { loadSettings, saveSettings, BLOCK_TIERS } from '../settings'
+import type { BlockTier } from '../settings'
 import { t } from '../i18n'
 
 interface SettingsModalProps {
@@ -158,6 +159,27 @@ export default function SettingsModal({ onClose, onSettingsChanged }: SettingsMo
             >
               Español
             </button>
+          </div>
+        </div>
+
+        {/* Block tier */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-sm text-text font-medium">Block Level</p>
+            <p className="text-xs text-overlay mt-0.5">How many categories to show</p>
+          </div>
+          <div className="flex gap-2">
+            {([1, 2, 3] as BlockTier[]).map((tier) => (
+              <button
+                key={tier}
+                onClick={() => setSettings((s) => ({ ...s, blockTier: tier }))}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                  settings.blockTier === tier ? 'bg-accent text-base' : 'bg-surface-0 text-text hover:bg-surface-1'
+                }`}
+              >
+                {BLOCK_TIERS[tier].label}
+              </button>
+            ))}
           </div>
         </div>
 

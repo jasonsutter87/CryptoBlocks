@@ -12,6 +12,24 @@ function deriveGridColor(bg: string): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
+export type BlockTier = 1 | 2 | 3
+
+/** Which Brick Bin categories are visible at each tier. */
+export const BLOCK_TIERS: Record<BlockTier, { label: string; categories: string[] }> = {
+  1: {
+    label: 'Starter',
+    categories: ['Basics', 'Math', 'Text', 'Logic', 'Lists', 'Values'],
+  },
+  2: {
+    label: 'Intermediate',
+    categories: ['Basics', 'Math', 'Text', 'Logic', 'Lists', 'Data', 'Functions', 'Events', 'Pen', 'Sound', 'Art', 'Values'],
+  },
+  3: {
+    label: 'All Blocks',
+    categories: [], // empty = show everything
+  },
+}
+
 export interface UserSettings {
   autoSaveEnabled: boolean
   autoSaveIntervalMinutes: number
@@ -19,6 +37,7 @@ export interface UserSettings {
   locale: 'en' | 'es'
   workspaceBg: string
   showGrid: boolean
+  blockTier: BlockTier
 }
 
 const DEFAULTS: UserSettings = {
@@ -28,6 +47,7 @@ const DEFAULTS: UserSettings = {
   locale: 'en',
   workspaceBg: DEFAULT_WORKSPACE_BG,
   showGrid: true,
+  blockTier: 1,
 }
 
 /** Apply workspace background color and grid visibility. */

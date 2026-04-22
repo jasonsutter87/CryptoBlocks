@@ -566,6 +566,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
       if (workspaceRef.current) {
         const settings = loadSettings()
         applyWorkspaceTheme(workspaceRef.current, settings.workspaceBg, settings.showGrid)
+        workspaceRef.current.updateToolbox(getToolboxXml())
       }
     }
     window.addEventListener('cb:workspace-theme-changed', handleThemeChange)

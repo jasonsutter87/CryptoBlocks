@@ -5,6 +5,7 @@ import type { BlockDefinition, Language } from '../types/block'
 import { registry } from './registry'
 import { blockLabel, t } from '../i18n'
 import { isHackerModeActive } from '../easter-eggs/hacker-mode'
+import { loadSettings, BLOCK_TIERS } from '../settings'
 
 function typeToBlocklyField(type: string): string {
   switch (type) {
@@ -2256,12 +2257,19 @@ function htmlToolboxXml(): string {
 }
 
 export function getToolboxXml(): string {
+  const tier = loadSettings().blockTier
+  const tierConfig = BLOCK_TIERS[tier]
+  const allowedCategories = tierConfig.categories // empty = show all
+
   const categories = registry.getCategories()
   let xml = '<xml>'
 
   for (const cat of categories) {
     // Hide ??? category unless hacker mode is active
     if (cat === '???' && !isHackerModeActive()) continue
+
+    // Tier filter — skip categories not in the active tier (tier 3 = show all)
+    if (allowedCategories.length > 0 && !allowedCategories.includes(cat)) continue
 
     const blocks = registry.getByCategory(cat)
     const color = registry.getCategoryColor(cat)
@@ -2287,17 +2295,12 @@ export function getToolboxXml(): string {
     xml += '</category>'
   }
 
-  // Add Functions category
-  xml += functionsToolboxXml()
-
-  // Add Events category
-  xml += eventsToolboxXml()
-
-  // Add HTML category
-  xml += htmlToolboxXml()
-
-  // Add Libraries category
-  xml += librariesToolboxXml()
+  // Add special categories (tier-gated)
+  const showAll = allowedCategories.length === 0
+  if (showAll || allowedCategories.includes('Functions')) xml += functionsToolboxXml()
+  if (showAll || allowedCategories.includes('Events')) xml += eventsToolboxXml()
+  if (showAll) xml += htmlToolboxXml()
+  if (showAll) xml += librariesToolboxXml()
 
   // Add built-in Blockly blocks for values
   xml += '<sep></sep>'
