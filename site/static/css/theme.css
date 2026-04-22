@@ -124,6 +124,8 @@ nav.top ul a:hover{background:var(--surface0);color:var(--text)}
 .theme-toggle .moon{display:block}
 [data-theme="light"] .theme-toggle .sun{display:block}
 [data-theme="light"] .theme-toggle .moon{display:none}
+[data-theme="light"] .theme-toggle .sun{display:block}
+[data-theme="light"] .theme-toggle .moon{display:none}
 
 /* Buttons */
 .btn{

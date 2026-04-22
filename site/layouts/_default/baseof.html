@@ -8,7 +8,7 @@
     <div class="noise"></div>
 
     {{/* Skip link */}}
-    <a href="#main-content" class="sr-only focus:not-sr-only" style="position:absolute;top:8px;left:8px;z-index:999;background:var(--green);color:#11111b;padding:8px 16px;border-radius:8px;">
+    <a href="#main-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;" onfocus="this.style.cssText='position:absolute;top:8px;left:8px;z-index:999;background:var(--green);color:#11111b;padding:8px 16px;border-radius:8px;'" onblur="this.style.cssText='position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;'">
       Skip to main content
     </a>
 
