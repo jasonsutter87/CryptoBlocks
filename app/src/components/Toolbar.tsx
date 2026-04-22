@@ -183,20 +183,56 @@ export default function Toolbar({
 
   return (
     <header className="flex items-center justify-between px-2 md:px-4 py-1.5 md:py-2 bg-mantle border-b border-surface-0 select-none">
-      {/* Logo — click 7 times rapidly to toggle hacker mode */}
-      <div className="flex items-center gap-2 md:gap-3 shrink-0 cursor-pointer select-none" onClick={handleLogoClick}>
-        <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-accent" />
-          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-warn -ml-1.5" />
-          <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-success -ml-1.5" />
+      {/* Left group — Logo + Menu */}
+      <div className="flex items-center gap-1 md:gap-2 shrink-0">
+        {/* Logo — click 7 times rapidly to toggle hacker mode */}
+        <div className="flex items-center gap-2 md:gap-3 cursor-pointer select-none" onClick={handleLogoClick}>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-accent" />
+            <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-warn -ml-1.5" />
+            <div className="w-4 h-4 md:w-5 md:h-5 rounded bg-success -ml-1.5" />
+          </div>
+          <h1 className="text-base md:text-lg font-bold text-text tracking-tight">
+            <span className="hidden sm:inline">CryptoBlocks</span>
+            <span className="sm:hidden">CB</span>
+          </h1>
         </div>
-        <h1 className="text-base md:text-lg font-bold text-text tracking-tight">
-          <span className="hidden sm:inline">CryptoBlocks</span>
-          <span className="sm:hidden">CB</span>
-        </h1>
-        <span className="hidden md:inline text-[10px] text-overlay bg-surface-0 px-1.5 py-0.5 rounded font-mono">
-          v0.4
-        </span>
+
+        {/* Menu — right next to logo */}
+        {!inChallenge && (
+          <div className="relative hidden md:block">
+            <button
+              onClick={() => toggleMenu('menu')}
+              className={
+                ['challenges', 'blocksets', 'code-golf', 'code-lab'].includes(mode)
+                  ? `${btn} bg-warn text-base`
+                  : `${btn} text-text hover:bg-surface-0`
+              }
+              title="Friends, Shareplace, Stats, Learn"
+            >
+              <Icon name="bars" className="w-4 h-4" />
+              Menu
+              {chevron}
+            </button>
+
+            {openMenu === 'menu' && (
+              <MainMenu
+                mode={mode}
+                isPro={isPro}
+                dailyStreak={dailyStreak}
+                requirePro={requirePro}
+                close={() => setOpenMenu(null)}
+                onOpenCollab={onOpenCollab}
+                onOpenStats={onOpenStats}
+                onOpenExamples={onOpenExamples}
+                onOpenChallenges={onOpenChallenges}
+                onOpenBlocksets={onOpenBlocksets}
+                onOpenGolf={onOpenGolf}
+                onOpenLab={onOpenLab}
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Controls */}
@@ -282,43 +318,6 @@ export default function Toolbar({
                   ...(onOpenPhotoToSprite ? [{ kind: 'button' as const, emoji: '📸', label: 'Photo → Sprite', onClick: () => { onOpenPhotoToSprite(); setOpenMenu(null) } }] : []),
                   ...(onOpenLevelEditor ? [{ kind: 'button' as const, emoji: '🗺️', label: 'Level Editor', onClick: () => requirePro(() => { onOpenLevelEditor(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined }] : []),
                 ] satisfies MenuItem[]} />
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="hidden md:block w-px h-6 bg-surface-0" />
-
-            {/* Combined "Menu" dropdown — replaces Friends / Shareplace / Stats / Learn */}
-            <div className="relative hidden md:block">
-              <button
-                onClick={() => toggleMenu('menu')}
-                className={
-                  ['challenges', 'blocksets', 'code-golf', 'code-lab'].includes(mode)
-                    ? `${btn} bg-warn text-base`
-                    : `${btn} text-text hover:bg-surface-0`
-                }
-                title="Friends, Shareplace, Stats, Learn"
-              >
-                <Icon name="bars" className="w-4 h-4" />
-                Menu
-                {chevron}
-              </button>
-
-              {openMenu === 'menu' && (
-                <MainMenu
-                  mode={mode}
-                  isPro={isPro}
-                  dailyStreak={dailyStreak}
-                  requirePro={requirePro}
-                  close={() => setOpenMenu(null)}
-                  onOpenCollab={onOpenCollab}
-                  onOpenStats={onOpenStats}
-                  onOpenExamples={onOpenExamples}
-                  onOpenChallenges={onOpenChallenges}
-                  onOpenBlocksets={onOpenBlocksets}
-                  onOpenGolf={onOpenGolf}
-                  onOpenLab={onOpenLab}
-                />
               )}
             </div>
           </>
