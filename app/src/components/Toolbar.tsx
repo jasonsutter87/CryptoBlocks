@@ -127,6 +127,7 @@ export default function Toolbar({
     openCheckout(getToken)
   }
   const menuContainerRef = useRef<HTMLDivElement>(null)
+  const menuLeftRef = useRef<HTMLDivElement>(null)
 
   // Logo click counter — 7 rapid clicks toggles hacker mode
   const logoClickCount = useRef(0)
@@ -145,7 +146,10 @@ export default function Toolbar({
   useEffect(() => {
     if (!openMenu) return
     const handleClick = (e: MouseEvent) => {
-      if (menuContainerRef.current && !menuContainerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      const inRight = menuContainerRef.current?.contains(target)
+      const inLeft = menuLeftRef.current?.contains(target)
+      if (!inRight && !inLeft) {
         setOpenMenu(null)
       }
     }
@@ -200,7 +204,7 @@ export default function Toolbar({
 
         {/* Menu — right next to logo */}
         {!inChallenge && (
-          <div className="relative hidden md:block">
+          <div className="relative hidden md:block" ref={menuLeftRef}>
             <button
               onClick={() => toggleMenu('menu')}
               className={

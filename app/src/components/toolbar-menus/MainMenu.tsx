@@ -9,7 +9,7 @@ import { ProBadge } from '../../billing/UpgradeGate'
 import type { AppMode } from '../../types/appMode'
 
 const menuItem = 'flex items-center gap-2 w-full px-3 py-2.5 text-sm text-text hover:bg-surface-1 transition-colors text-left'
-const menuDropdown = 'absolute right-0 mt-1 w-56 bg-surface-0 border border-surface-1 rounded-lg shadow-xl z-50 py-1'
+const menuDropdown = 'absolute left-0 mt-1 w-56 bg-surface-0 border border-surface-1 rounded-lg shadow-xl z-50 py-1'
 const menuDivider = 'h-px bg-surface-1 my-1'
 
 export interface MainMenuProps {
