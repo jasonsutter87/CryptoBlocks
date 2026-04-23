@@ -239,8 +239,9 @@ export default function Toolbar({
         )}
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center gap-1 md:gap-2" ref={menuContainerRef}>
+      {/* Controls — justify-between pushes File/Share/Build left, Run/Auth right */}
+      <div className="flex-1 w-full flex items-center justify-between" ref={menuContainerRef}>
+        <div className="flex items-center gap-1 md:gap-2">
         {/* Hidden file inputs */}
         <input ref={fileInputRef} type="file" accept=".blocks" onChange={handleFileChange} className="hidden" />
         <input ref={importAsBlockInputRef} type="file" accept=".blocks" onChange={handleImportAsBlockChange} className="hidden" />
@@ -342,9 +343,9 @@ export default function Toolbar({
           </button>
         )}
 
-        {/* Spacer — push remaining items to the right */}
-        <div className="flex-1" />
+        </div>
 
+        <div className="flex items-center gap-1 md:gap-2">
         {/* Block counter */}
         {mode === 'sandbox' && (
           <div
