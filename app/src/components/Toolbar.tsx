@@ -461,6 +461,8 @@ export default function Toolbar({
           />
         </SignedIn>
 
+        </div>
+
         {/* === Mobile overflow menu === */}
         {!inChallenge && (
           <div className="relative md:hidden">
