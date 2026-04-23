@@ -1318,13 +1318,14 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
       const savedVar = `__savedIndex${_loopVarCounter}`
 
       if (language === 'javascript') {
-        if (!body) return `for (var ${loopVar} = 0; ${loopVar} < ${times}; ${loopVar}++) {}`
+        const safeLimit = `Math.min(${times}, 10000)`
+        if (!body) return `for (var ${loopVar} = 0; ${loopVar} < ${safeLimit}; ${loopVar}++) {}`
         const indexSetup = `var ${savedVar} = typeof __loopIndex !== 'undefined' ? __loopIndex : 0;\n  var __loopIndex = ${loopVar};`
         const indexRestore = `__loopIndex = ${savedVar};`
-        return `for (var ${loopVar} = 0; ${loopVar} < ${times}; ${loopVar}++) {\n${indent(indexSetup, language)}\n${indent(body, language)}\n${indent(indexRestore, language)}\n}`
+        return `for (var ${loopVar} = 0; ${loopVar} < ${safeLimit}; ${loopVar}++) {\n${indent(indexSetup, language)}\n${indent(body, language)}\n${indent(indexRestore, language)}\n}`
       } else {
-        if (!body) return `for __loopIndex in range(int(${times})):\n    pass`
-        return `for __loopIndex in range(int(${times})):\n${indent(body, language)}`
+        if (!body) return `for __loopIndex in range(min(int(${times}), 10000)):\n    pass`
+        return `for __loopIndex in range(min(int(${times}), 10000)):\n${indent(body, language)}`
       }
     }
 
@@ -1341,12 +1342,13 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
 
       if (language === 'javascript') {
         // Direction-aware: if step is negative, use >=; if positive, use <=
-        // At runtime, check sign of step to pick comparison
+        const countVar = `__c${_loopVarCounter}`
         const cond = `(${by}) > 0 ? ${loopVar} <= ${to} : ${loopVar} >= ${to}`
-        if (!body) return `for (var ${loopVar} = ${from}; ${cond}; ${loopVar} += ${by}) {}`
+        const guard = `if (++${countVar} > 10000) { console.error("Loop limit reached"); break; }`
+        if (!body) return `for (var ${loopVar} = ${from}, ${countVar} = 0; ${cond}; ${loopVar} += ${by}) { ${guard} }`
         const indexSetup = `var ${savedVar} = typeof __loopIndex !== 'undefined' ? __loopIndex : 0;\n  var __loopIndex = ${loopVar};`
         const indexRestore = `__loopIndex = ${savedVar};`
-        return `for (var ${loopVar} = ${from}; ${cond}; ${loopVar} += ${by}) {\n${indent(indexSetup, language)}\n${indent(body, language)}\n${indent(indexRestore, language)}\n}`
+        return `for (var ${loopVar} = ${from}, ${countVar} = 0; ${cond}; ${loopVar} += ${by}) {\n${indent(guard, language)}\n${indent(indexSetup, language)}\n${indent(body, language)}\n${indent(indexRestore, language)}\n}`
       } else {
         if (!body) return `for __loopIndex in range(int(${from}), int(${to}), int(${by})):\n    pass`
         return `for __loopIndex in range(int(${from}), int(${to}), int(${by})):\n${indent(body, language)}`
