@@ -51,7 +51,7 @@ function BadgeCard({ achievement, unlocked, unlockedAt, onReplay }: {
       {/* Unlock date */}
       {unlocked && unlockedAt && (
         <span className="text-[10px] text-overlay">
-          {new Date(unlockedAt).toLocaleDateString()}
+          {(() => { const d = new Date(Number(unlockedAt)); return isNaN(d.getTime()) ? '' : d.toLocaleDateString() })()}
         </span>
       )}
 
