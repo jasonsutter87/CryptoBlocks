@@ -723,6 +723,7 @@ async function startGame(mazeConfig) {
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   let state = createGameState(maze);
+  if (typeof window !== 'undefined') window.__pacman = { get state() { return state; } };
   let lastTime = performance.now();
   function onKey(e) {
     const result = handleInput(state, e.key);
