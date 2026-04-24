@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, lazy, Suspense } from 'react'
 import * as Blockly from 'blockly'
 import { registerCustomBlocks, getToolboxXml, generateBlockTreeCode, getBlockSourceMap } from '../blocks/blockly-register'
+import { registerDragFromBottom } from '../blocks/drag-from-bottom'
 import { showToast } from './Toast'
 import { registry } from '../blocks/registry'
 import { recordBlockCreated } from '../stats/tracker'
@@ -101,6 +102,9 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     // Apply saved workspace theme
     const savedSettings = loadSettings()
     applyWorkspaceTheme(workspace, savedSettings.workspaceBg, savedSettings.showGrid)
+
+    // Shift+click to drag a block with its chain-above as a group
+    const unregisterDragFromBottom = registerDragFromBottom(workspace)
 
     // Register "Show Line Number" context menu option
     if (!Blockly.ContextMenuRegistry.registry.getItem('showLineNumber')) {
@@ -535,6 +539,7 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
     return () => {
       if (svgEl) svgEl.removeEventListener('pointerdown', handleMultiSelect, true)
       document.removeEventListener('keydown', handleKeyboard)
+      unregisterDragFromBottom()
       collabBinding?.destroy()
       presenceBinding?.destroy()
       workspace.removeChangeListener(listener)
