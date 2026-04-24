@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Mario 1-1 — Standalone Reference</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: #201c29;
+      color: #e6e6e6;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      display: flex; flex-direction: column; align-items: center;
+      min-height: 100vh;
+    }
+    h1 { margin: 18px 0 6px; font-size: 16px; font-weight: 600; letter-spacing: .5px; }
+    canvas {
+      image-rendering: pixelated;
+      border: 2px solid #444;
+      border-radius: 6px;
+      background: #5c94fc;
+    }
+    .hud { margin-top: 10px; font-size: 12px; opacity: .7; }
+    .hud b { color: #ffd76a; }
+  </style>
+</head>
+<body>
+  <h1>Mario 1-1 — standalone reference</h1>
+  <canvas id="game" width="640" height="480"></canvas>
+  <div class="hud">
+    <b>←/A</b> <b>→/D</b> move &nbsp;·&nbsp; <b>SPACE/W/↑</b> jump (hold for higher) &nbsp;·&nbsp; <b>R</b> restart
+  </div>
+
+  <script>
+  // ─────────────────────────────────────────────────────────────────────────
+  // Mario 1-1 — single-file reference platformer.
+  //
+  // Designed to port 1:1 to CryptoBlocks:
+  //   • Level is a list of strings (easy to store as a 2D list block)
+  //   • All state lives on one `state` object
+  //   • Physics + collision are short pure functions
+  //   • Rendering is entirely from `state` (no DOM/React)
+  //
+  // Entities: mario + goombas. Tiles: ground, brick, ?-block, pipe, flag, pit.
+  // Mechanics: variable-height jump, AABB tile collision, stomp goombas,
+  // scrolling camera, death + restart, reach flag to win.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // ─── Constants ───────────────────────────────────────────────────────────
+  const TILE       = 32;
+  const VIEW_W     = 640;
+  const VIEW_H     = 480;
+  const GRAVITY    = 0.55;
+  const MOVE_ACCEL = 0.35;
+  const MAX_SPEED  = 4;
+  const FRICTION   = 0.82;
+  const JUMP_VEL   = -11;
+  const JUMP_HOLD  = -0.30;   // extra lift while holding jump
+  const MAX_FALL   = 12;
+  const GOOMBA_SPD = 1;
+
+  // ─── Level data ──────────────────────────────────────────────────────────
+  // Glyphs:  ' ' sky   G ground   B brick   Q ?-block   P pipe body
+  //          ^ pipe top   F flag pole   # flag base
+  const LEVEL = [
+    '                                                                                                                                                                ',
+    '                                                                                                                                                                ',
+    '                                                                                                                                                                ',
+    '                                                                                                                                                                ',
+    '                                                                                                                                                                ',
+    '              Q      BQBQB                                                                                                         F                           ',
+    '                                                                                                                                   F                           ',
+    '                                                                                                                                   F                           ',
+    '                                                                                                                                   F                           ',
+    '                                                                           BBBB                                                    F                           ',
+    '                                                                         BBBBBB                                                    F                           ',
+    '                      ^^                                               BBBBBBBB                                                    F                           ',
+    '                      PP           ^^                                BBBBBBBBBB                                                    F                           ',
+    '                      PP           PP                              BBBBBBBBBBBB                                                    #                           ',
+    'GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG       GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG      GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
+    'GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG       GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG      GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
+  ];
+  const LEVEL_COLS = LEVEL[0].length;
+  const LEVEL_ROWS = LEVEL.length;
+
+  // Tiles a character/enemy can't walk through.
+  function isSolid(glyph) {
+    return glyph === 'G' || glyph === 'B' || glyph === 'Q' || glyph === 'P' || glyph === '^';
+  }
+  // What a tile looks like at a world position.
+  function tileAt(x, y) {
+    const col = Math.floor(x / TILE);
+    const row = Math.floor(y / TILE);
+    if (row < 0 || row >= LEVEL_ROWS) return ' ';
+    if (col < 0) return 'G';                 // clamp left edge
+    if (col >= LEVEL_COLS) return ' ';        // past the right edge = empty
+    return LEVEL[row][col];
+  }
+
+  // ─── Game state ──────────────────────────────────────────────────────────
+  const SPAWN = { x: 2 * TILE, y: 13 * TILE };
+  const GOOMBA_SPAWNS = [
+    { x: 26 * TILE, y: 13 * TILE },
+    { x: 52 * TILE, y: 13 * TILE },
+    { x: 90 * TILE, y: 13 * TILE },
+    { x: 112 * TILE, y: 13 * TILE },
+  ];
+
+  const state = {
+    mario: makeMario(),
+    goombas: GOOMBA_SPAWNS.map(makeGoomba),
+    camera: { x: 0, y: 0 },
+    score: 0,
+    coins: 0,
+    won: false,
+    keys: { left: false, right: false, jump: false, jumpPressed: false },
+  };
+
+  function makeMario() {
+    return { x: SPAWN.x, y: SPAWN.y, vx: 0, vy: 0, w: 24, h: 28, onGround: false, alive: true, facing: 1 };
+  }
+  function makeGoomba(s) {
+    return { x: s.x, y: s.y, vx: -GOOMBA_SPD, vy: 0, w: 28, h: 28, alive: true };
+  }
+
+  // ─── Input ───────────────────────────────────────────────────────────────
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'ArrowLeft'  || e.code === 'KeyA') state.keys.left = true;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') state.keys.right = true;
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      if (!state.keys.jump) state.keys.jumpPressed = true;
+      state.keys.jump = true;
+    }
+    if (e.code === 'KeyR') restart();
+    if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code)) e.preventDefault();
+  });
+  window.addEventListener('keyup', (e) => {
+    if (e.code === 'ArrowLeft'  || e.code === 'KeyA') state.keys.left = false;
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') state.keys.right = false;
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') state.keys.jump = false;
+  });
+
+  // ─── Collision ───────────────────────────────────────────────────────────
+  // Resolve motion along one axis at a time — classic tile-based AABB.
+  function moveAndCollide(e, dx, dy) {
+    // X axis
+    e.x += dx;
+    if (dx !== 0) {
+      const corners = [
+        { x: e.x, y: e.y + 1 },
+        { x: e.x + e.w, y: e.y + 1 },
+        { x: e.x, y: e.y + e.h - 1 },
+        { x: e.x + e.w, y: e.y + e.h - 1 },
+      ];
+      for (const c of corners) {
+        if (!isSolid(tileAt(c.x, c.y))) continue;
+        if (dx > 0) e.x = Math.floor(c.x / TILE) * TILE - e.w;
+        else        e.x = Math.floor(c.x / TILE + 1) * TILE;
+        e.vx = 0;
+        e.hitWall = true;
+        break;
+      }
+    }
+
+    // Y axis
+    e.y += dy;
+    e.onGround = false;
+    if (dy !== 0) {
+      const corners = [
+        { x: e.x + 1, y: e.y },
+        { x: e.x + e.w - 1, y: e.y },
+        { x: e.x + 1, y: e.y + e.h },
+        { x: e.x + e.w - 1, y: e.y + e.h },
+      ];
+      for (const c of corners) {
+        if (!isSolid(tileAt(c.x, c.y))) continue;
+        if (dy > 0) { e.y = Math.floor(c.y / TILE) * TILE - e.h; e.onGround = true; }
+        else        { e.y = Math.floor(c.y / TILE + 1) * TILE; }
+        e.vy = 0;
+        break;
+      }
+    }
+  }
+
+  function overlaps(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  // ─── Update ──────────────────────────────────────────────────────────────
+  function update() {
+    const m = state.mario;
+    if (!m.alive) { state.keys.jumpPressed = false; return; }
+    if (state.won) { state.keys.jumpPressed = false; return; }
+
+    // Horizontal input
+    if (state.keys.left)  { m.vx -= MOVE_ACCEL; m.facing = -1; }
+    if (state.keys.right) { m.vx += MOVE_ACCEL; m.facing =  1; }
+    if (!state.keys.left && !state.keys.right) m.vx *= FRICTION;
+    if (Math.abs(m.vx) < 0.05) m.vx = 0;
+    m.vx = Math.max(-MAX_SPEED, Math.min(MAX_SPEED, m.vx));
+
+    // Jump: initial impulse on edge, hold-to-go-higher while rising
+    if (state.keys.jumpPressed && m.onGround) { m.vy = JUMP_VEL; }
+    else if (state.keys.jump && m.vy < 0)     { m.vy += JUMP_HOLD; }
+    state.keys.jumpPressed = false;
+
+    // Gravity
+    m.vy = Math.min(m.vy + GRAVITY, MAX_FALL);
+
+    // Move + collide
+    moveAndCollide(m, m.vx, 0);
+    moveAndCollide(m, 0, m.vy);
+
+    // Pit death
+    if (m.y > LEVEL_ROWS * TILE + 200) m.alive = false;
+
+    // Camera follows mario (right of center only — classic sidescroller feel)
+    const targetCamX = m.x - VIEW_W / 3;
+    state.camera.x = Math.max(state.camera.x, targetCamX);
+    state.camera.x = Math.max(0, Math.min(state.camera.x, LEVEL_COLS * TILE - VIEW_W));
+
+    // Goombas: walk, reverse at walls and at pit edges, fall with gravity
+    for (const g of state.goombas) {
+      if (!g.alive) continue;
+      g.vy = Math.min(g.vy + GRAVITY, MAX_FALL);
+
+      // Edge detection: if on ground and the tile ahead+down isn't solid, turn around
+      if (g.onGround) {
+        const lookX = g.x + (g.vx > 0 ? g.w + 2 : -2);
+        const lookY = g.y + g.h + 2;
+        if (!isSolid(tileAt(lookX, lookY))) g.vx *= -1;
+      }
+
+      g.hitWall = false;
+      moveAndCollide(g, g.vx, 0);
+      if (g.hitWall) g.vx *= -1;
+      moveAndCollide(g, 0, g.vy);
+
+      // Off the bottom of the level — despawn
+      if (g.y > LEVEL_ROWS * TILE + 200) g.alive = false;
+
+      // Mario collision
+      if (overlaps(m, g)) {
+        const stomping = m.vy > 0 && m.y + m.h - g.y < 16;
+        if (stomping) {
+          g.alive = false;
+          m.vy = JUMP_VEL * 0.55;
+          state.score += 100;
+        } else {
+          m.alive = false;
+        }
+      }
+    }
+
+    // Flag touch → win
+    const centerTile = tileAt(m.x + m.w / 2, m.y + m.h / 2);
+    if (centerTile === 'F' || centerTile === '#') state.won = true;
+  }
+
+  // ─── Render ──────────────────────────────────────────────────────────────
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  function drawTile(glyph, px, py) {
+    switch (glyph) {
+      case 'G': {
+        ctx.fillStyle = '#c07832'; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = '#e89c4c'; ctx.fillRect(px + 2, py + 2, TILE - 4, 6);
+        ctx.fillStyle = '#8a501d';
+        ctx.fillRect(px + 4,  py + 14, 5, 3);
+        ctx.fillRect(px + 20, py + 20, 5, 3);
+        break;
+      }
+      case 'B': {
+        ctx.fillStyle = '#d47a2c'; ctx.fillRect(px, py, TILE, TILE);
+        ctx.strokeStyle = '#7c3a00'; ctx.lineWidth = 2;
+        ctx.strokeRect(px + 1,          py + 1,          TILE/2 - 2, TILE/2 - 2);
+        ctx.strokeRect(px + TILE/2 + 1, py + 1,          TILE/2 - 2, TILE/2 - 2);
+        ctx.strokeRect(px + 1,          py + TILE/2 + 1, TILE/2 - 2, TILE/2 - 2);
+        ctx.strokeRect(px + TILE/2 + 1, py + TILE/2 + 1, TILE/2 - 2, TILE/2 - 2);
+        break;
+      }
+      case 'Q': {
+        ctx.fillStyle = '#f9a634'; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = '#fff';    ctx.font = 'bold 22px monospace';
+        ctx.textAlign = 'center';  ctx.fillText('?', px + TILE/2, py + 23);
+        ctx.textAlign = 'left';
+        break;
+      }
+      case 'P': case '^': {
+        ctx.fillStyle = '#2d882d'; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = '#4cbb4c'; ctx.fillRect(px + 3, py + 3, TILE - 6, TILE - 6);
+        if (glyph === '^') {
+          ctx.fillStyle = '#2d882d'; ctx.fillRect(px - 4, py, TILE + 8, 8);
+          ctx.fillStyle = '#4cbb4c'; ctx.fillRect(px - 2, py + 2, TILE + 4, 4);
+        }
+        break;
+      }
+      case 'F': {
+        ctx.fillStyle = '#888';  ctx.fillRect(px + 14, py, 4, TILE);
+        ctx.fillStyle = '#22cc66'; ctx.beginPath();
+        ctx.moveTo(px + 18, py + 4); ctx.lineTo(px + 30, py + 10); ctx.lineTo(px + 18, py + 16);
+        ctx.closePath(); ctx.fill();
+        break;
+      }
+      case '#': {
+        ctx.fillStyle = '#888'; ctx.fillRect(px + 14, py, 4, TILE);
+        ctx.fillStyle = '#333'; ctx.fillRect(px + 10, py + 20, 12, 12);
+        break;
+      }
+    }
+  }
+
+  function render() {
+    const camX = Math.floor(state.camera.x);
+    ctx.fillStyle = '#5c94fc';
+    ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+
+    // Clouds (parallax)
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    for (let i = 0; i < 5; i++) {
+      const cx = ((i * 260) - camX * 0.3) % (LEVEL_COLS * TILE);
+      const cy = 50 + (i % 2) * 40;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+      ctx.arc(cx + 20, cy + 4, 14, 0, Math.PI * 2);
+      ctx.arc(cx - 20, cy + 4, 14, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Tiles
+    const startCol = Math.max(0, Math.floor(camX / TILE));
+    const endCol   = Math.min(LEVEL_COLS, Math.ceil((camX + VIEW_W) / TILE) + 1);
+    for (let row = 0; row < LEVEL_ROWS; row++) {
+      for (let col = startCol; col < endCol; col++) {
+        const glyph = LEVEL[row][col];
+        if (glyph === ' ') continue;
+        drawTile(glyph, col * TILE - camX, row * TILE);
+      }
+    }
+
+    // Goombas
+    for (const g of state.goombas) {
+      if (!g.alive) continue;
+      const gx = g.x - camX;
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(gx + 2, g.y + 8, g.w - 4, g.h - 8);
+      // head
+      ctx.fillStyle = '#6d3410';
+      ctx.fillRect(gx, g.y, g.w, 10);
+      // feet
+      ctx.fillStyle = '#2a160a';
+      ctx.fillRect(gx + 2, g.y + g.h - 4, 8, 4);
+      ctx.fillRect(gx + g.w - 10, g.y + g.h - 4, 8, 4);
+      // eyes
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(gx + 6,  g.y + 4, 4, 4);
+      ctx.fillRect(gx + 18, g.y + 4, 4, 4);
+      ctx.fillStyle = '#000';
+      ctx.fillRect(gx + 7,  g.y + 5, 2, 2);
+      ctx.fillRect(gx + 19, g.y + 5, 2, 2);
+    }
+
+    // Mario
+    const m = state.mario;
+    const mx = m.x - camX;
+    if (m.alive) {
+      ctx.fillStyle = '#e52521';                // hat / shirt
+      ctx.fillRect(mx, m.y, m.w, 8);
+      ctx.fillRect(mx + 2, m.y + 8, m.w - 4, 10);
+      ctx.fillStyle = '#fac090';                // face
+      ctx.fillRect(mx + 4, m.y + 6, m.w - 8, 8);
+      ctx.fillStyle = '#1657c2';                // overalls
+      ctx.fillRect(mx + 2, m.y + 16, m.w - 4, m.h - 16);
+      ctx.fillStyle = '#532f1a';                // shoes
+      ctx.fillRect(mx, m.y + m.h - 4, m.w, 4);
+      ctx.fillStyle = '#000';                   // eye
+      const eyeX = m.facing > 0 ? mx + m.w - 8 : mx + 4;
+      ctx.fillRect(eyeX, m.y + 8, 2, 3);
+    } else {
+      // dead pose — grey box
+      ctx.fillStyle = '#555';
+      ctx.fillRect(mx, m.y, m.w, m.h);
+    }
+
+    // HUD
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 14px ui-monospace, monospace';
+    ctx.fillText('SCORE ' + String(state.score).padStart(6, '0'), 12, 22);
+    ctx.fillText('WORLD  1-1', VIEW_W - 120, 22);
+
+    // Overlays
+    if (!m.alive) {
+      ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      ctx.fillStyle = '#fff'; ctx.font = 'bold 36px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', VIEW_W/2, VIEW_H/2);
+      ctx.font = '14px monospace';
+      ctx.fillText('press R to restart', VIEW_W/2, VIEW_H/2 + 32);
+      ctx.textAlign = 'left';
+    } else if (state.won) {
+      ctx.fillStyle = 'rgba(0,0,0,0.65)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+      ctx.fillStyle = '#ffd76a'; ctx.font = 'bold 36px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('YOU WIN!', VIEW_W/2, VIEW_H/2);
+      ctx.font = '14px monospace'; ctx.fillStyle = '#fff';
+      ctx.fillText('press R to play again', VIEW_W/2, VIEW_H/2 + 32);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  // ─── Game loop / restart ─────────────────────────────────────────────────
+  function restart() {
+    Object.assign(state.mario, makeMario());
+    state.goombas = GOOMBA_SPAWNS.map(makeGoomba);
+    state.camera.x = 0;
+    state.score = 0;
+    state.won = false;
+  }
+
+  (function loop() {
+    update();
+    render();
+    requestAnimationFrame(loop);
+  })();
+  </script>
+</body>
+</html>
