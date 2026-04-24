@@ -11,7 +11,6 @@ import { useCollabDoc, useCollabAwareness } from '../collab/CollabPage'
 import { bindWorkspaceToYDoc } from '../collab/yjs-blockly-binding'
 import { bindPresence } from '../collab/presence'
 import Backpack from './Backpack'
-import ToolboxSearch from './ToolboxSearch'
 
 const ScssEditorModal = lazy(() => import('./ScssEditorModal'))
 
@@ -623,17 +622,9 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
   }, [])
 
   return (
-    <div className="w-full h-full flex flex-col">
-      <div
-        className="relative shrink-0 bg-mantle border-b border-surface-0"
-        style={{ height: 45 }}
-      >
-        <ToolboxSearch workspaceRef={workspaceRef} />
-      </div>
-      <div className="relative flex-1 min-h-0">
-        <div ref={containerRef} className="absolute inset-0" />
-        <Backpack workspaceRef={workspaceRef} />
-      </div>
+    <>
+      <div ref={containerRef} className="w-full h-full" />
+      <Backpack workspaceRef={workspaceRef} />
 
       {/* Block search overlay */}
       {showSearch && (
@@ -676,6 +667,6 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
           />
         </Suspense>
       )}
-    </div>
+    </>
   )
 }
