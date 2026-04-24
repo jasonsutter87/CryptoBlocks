@@ -238,18 +238,34 @@ function findSpawn(grid, halfCols, rows) {
   const cy = Math.floor(rows / 2);
   const prefY = Math.floor(rows * 0.72);
   const MIN_GHOST_DIST = 3;
+
+  // A "valid" spawn is on a passable tile AND has at least one passable
+  // neighbor — guarantees Pac-Man can actually move from spawn.
+  const passable = (x, y) =>
+    y >= 0 && y < rows && x >= 0 && x < cols &&
+    (grid[y][x] === DOT || grid[y][x] === PELLET);
+  const hasOpenNeighbor = (x, y) =>
+    passable(x + 1, y) || passable(x - 1, y) ||
+    passable(x, y + 1) || passable(x, y - 1);
+  const isOpenSpawn = (x, y) => passable(x, y) && hasOpenNeighbor(x, y);
+
+  // Preferred: rings expanding from (cx, prefY), keeping distance from ghost house
   for (let r = 0; r < rows; r++)
     for (let dy = -r; dy <= r; dy++)
       for (let dx = -r; dx <= r; dx++) {
         if (Math.abs(dy) !== r && Math.abs(dx) !== r) continue;
         const x = cx + dx, y = prefY + dy;
-        if (y < 0 || y >= rows || x < 0 || x >= cols) continue;
-        if (grid[y][x] !== DOT) continue;
         const ghostDist = Math.max(Math.abs(x - cx), Math.abs(y - cy));
         if (ghostDist < MIN_GHOST_DIST) continue;
-        return [x, y];
+        if (isOpenSpawn(x, y)) return [x, y];
       }
-  return [cx, prefY];
+
+  // Brute-force fallback: any passable tile with an open neighbor
+  for (let y = 0; y < rows; y++)
+    for (let x = 0; x < cols; x++)
+      if (isOpenSpawn(x, y)) return [x, y];
+
+  return [1, 1];
 }
 
 function buildMaze(halfCols, rows, passages) {
