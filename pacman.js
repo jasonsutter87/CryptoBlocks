@@ -25,6 +25,7 @@ const DOT    = 1;
 const PELLET = 2;
 const GHOST  = 3;
 const TUNNEL = 4;
+const EMPTY  = 5;   // eaten dot — passable, no sprite
 
 // ─── Engine constants ────────────────────────────────────────────────────
 const TILE_SIZE = 24;          // bumped from 20 → 24 so sprites have room
@@ -470,11 +471,11 @@ function updateGame(state, dt) {
   if (tileX >= 0 && tileX < cols && tileY >= 0 && tileY < rows) {
     const cell = grid[tileY][tileX];
     if (cell === DOT) {
-      grid[tileY][tileX] = 0;
+      grid[tileY][tileX] = EMPTY;
       state.score += DOT_SCORE;
       state.dotsEaten++;
     } else if (cell === PELLET) {
-      grid[tileY][tileX] = 0;
+      grid[tileY][tileX] = EMPTY;
       state.score += PELLET_SCORE;
       state.dotsEaten++;
       state.powerTimer = POWER_DURATION;
