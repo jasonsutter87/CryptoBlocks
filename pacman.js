@@ -189,6 +189,18 @@ function placeSpecials(grid, halfCols, rows) {
   for (let dy = -1; dy <= 1; dy++)
     for (let dx = -1; dx <= 1; dx++)
       grid[cy + dy][cx + dx] = GHOST;
+
+  // Carve a ring of dots immediately around the ghost house so pac can walk
+  // past it and released ghosts always have a clear tile to emerge into.
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      if (Math.abs(dy) <= 1 && Math.abs(dx) <= 1) continue;       // skip the house itself
+      if (Math.abs(dy) !== 2 && Math.abs(dx) !== 2) continue;     // only the ring
+      const y = cy + dy, x = cx + dx;
+      if (y < 0 || y >= rows || x < 0 || x >= cols) continue;
+      if (grid[y][x] === WALL) grid[y][x] = DOT;
+    }
+  }
 }
 
 function clearTunnelApproaches(grid, halfCols, rows) {
