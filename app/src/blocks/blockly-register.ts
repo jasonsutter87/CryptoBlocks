@@ -59,8 +59,11 @@ const LIBRARY_BLOCKS = new Set(['cb_import_library', 'cb_import_prank'])
 // --- Vision block types ---
 const VISION_BLOCKS = new Set(['cb_animation_loop'])
 
+// --- Logic block types (native, with mutators) ---
+const LOGIC_BLOCKS = new Set(['cb_switch_value'])
+
 function isNativeBlock(type: string): boolean {
-  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type) || ANNOTATION_BLOCKS.has(type) || LIBRARY_BLOCKS.has(type) || VISION_BLOCKS.has(type)
+  return CONTROL_FLOW_BLOCKS.has(type) || HTML_BLOCKS.has(type) || FUNCTION_BLOCKS.has(type) || EVENT_BLOCKS.has(type) || ANNOTATION_BLOCKS.has(type) || LIBRARY_BLOCKS.has(type) || VISION_BLOCKS.has(type) || LOGIC_BLOCKS.has(type)
 }
 
 /** Register control flow blocks (IF, IF-ELSE, REPEAT) as native Blockly blocks with statement inputs. */
@@ -959,6 +962,65 @@ function registerVisionBlocks() {
   }
 }
 
+const LOGIC_COLOR = '#059669'
+
+function registerLogicBlocks() {
+  Blockly.Blocks['cb_switch_value'] = {
+    init: function (this: Blockly.Block & { caseCount_: number; addCase_: () => void; removeCase_: () => void; rebuildTail_: () => void }) {
+      this.caseCount_ = 2
+      this.setColour(LOGIC_COLOR)
+      this.setInputsInline(false)
+      this.setOutput(true, null)
+      this.setTooltip('Match a value against cases and return the matching result. Click + / - to add or remove cases.')
+
+      this.appendValueInput('VALUE').appendField('switch')
+      for (let i = 1; i <= this.caseCount_; i++) {
+        this.appendValueInput(`CASE${i}`).appendField(`case ${i}`)
+        this.appendValueInput(`RESULT${i}`).appendField('→')
+      }
+      this.appendDummyInput('BUTTONS')
+        .appendField(new Blockly.FieldImage(SVG_ADD_16, 16, 16, '+', () => this.addCase_()))
+        .appendField(new Blockly.FieldImage(SVG_REM_16, 16, 16, '-', () => this.removeCase_()))
+      this.appendValueInput('DEFAULT').appendField('else →')
+
+      this.rebuildTail_ = function () {
+        if (this.getInput('BUTTONS')) this.removeInput('BUTTONS')
+        if (this.getInput('DEFAULT')) this.removeInput('DEFAULT')
+        this.appendDummyInput('BUTTONS')
+          .appendField(new Blockly.FieldImage(SVG_ADD_16, 16, 16, '+', () => this.addCase_()))
+          .appendField(new Blockly.FieldImage(SVG_REM_16, 16, 16, '-', () => this.removeCase_()))
+        this.appendValueInput('DEFAULT').appendField('else →')
+      }
+
+      this.addCase_ = function () {
+        this.caseCount_++
+        if (this.getInput('BUTTONS')) this.removeInput('BUTTONS')
+        if (this.getInput('DEFAULT')) this.removeInput('DEFAULT')
+        this.appendValueInput(`CASE${this.caseCount_}`).appendField(`case ${this.caseCount_}`)
+        this.appendValueInput(`RESULT${this.caseCount_}`).appendField('→')
+        this.rebuildTail_()
+      }
+
+      this.removeCase_ = function () {
+        if (this.caseCount_ <= 1) return
+        if (this.getInput(`RESULT${this.caseCount_}`)) this.removeInput(`RESULT${this.caseCount_}`)
+        if (this.getInput(`CASE${this.caseCount_}`)) this.removeInput(`CASE${this.caseCount_}`)
+        this.caseCount_--
+        this.rebuildTail_()
+      };
+
+      (this as unknown as Record<string, unknown>).saveExtraState = () => {
+        return { caseCount: this.caseCount_ }
+      };
+      (this as unknown as Record<string, unknown>).loadExtraState = (state: { caseCount?: number }) => {
+        const target = state?.caseCount ?? 2
+        while (this.caseCount_ < target) this.addCase_()
+        while (this.caseCount_ > target) this.removeCase_()
+      }
+    },
+  }
+}
+
 export function registerCustomBlocks() {
   // Register control flow blocks first
   registerControlFlowBlocks()
@@ -983,6 +1045,9 @@ export function registerCustomBlocks() {
 
   // Register vision blocks
   registerVisionBlocks()
+
+  // Register logic blocks with mutators (switch_value)
+  registerLogicBlocks()
 
   const allBlocks = registry.getAll()
 
@@ -1387,6 +1452,34 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
     default:
       return null
   }
+}
+
+/**
+ * Generate code for the switch_value expression block (hex/value, dynamic N cases).
+ * Emits a chained ternary so it can plug into any value input.
+ */
+function generateSwitchValueCode(block: Blockly.Block, language: Language): string {
+  const caseCount = (block as unknown as { caseCount_?: number }).caseCount_ ?? 2
+  const nullLit = language === 'javascript' ? 'null' : 'None'
+  const eq = language === 'javascript' ? '===' : '=='
+
+  const valueBlock = block.getInputTargetBlock('VALUE')
+  const value = valueBlock ? generateBlockCode(valueBlock, language) : nullLit
+  const defaultBlock = block.getInputTargetBlock('DEFAULT')
+  let expr = defaultBlock ? generateBlockCode(defaultBlock, language) : nullLit
+
+  for (let i = caseCount; i >= 1; i--) {
+    const caseBlock = block.getInputTargetBlock(`CASE${i}`)
+    const resultBlock = block.getInputTargetBlock(`RESULT${i}`)
+    const caseVal = caseBlock ? generateBlockCode(caseBlock, language) : nullLit
+    const resultVal = resultBlock ? generateBlockCode(resultBlock, language) : nullLit
+    if (language === 'javascript') {
+      expr = `(${value} ${eq} ${caseVal} ? ${resultVal} : ${expr})`
+    } else {
+      expr = `(${resultVal} if ${value} ${eq} ${caseVal} else ${expr})`
+    }
+  }
+  return expr
 }
 
 /**
@@ -1832,6 +1925,11 @@ function generateBlockCode(block: Blockly.Block, language: Language): string {
   const builtin = generateBuiltinCode(block, language)
   if (builtin !== null) return builtin
 
+  // Handle logic value blocks with mutators (switch_value)
+  if (block.type === 'cb_switch_value') {
+    return generateSwitchValueCode(block, language)
+  }
+
   // Handle control flow blocks (if, if-else, repeat)
   const controlFlow = generateControlFlowCode(block, language)
   if (controlFlow !== null) {
@@ -2098,6 +2196,7 @@ function controlFlowToolboxXml(cat: string): string {
     '<block type="cb_while"></block>' +
     '<block type="cb_break"></block>' +
     '<block type="cb_continue"></block>' +
+    '<block type="cb_switch_value"></block>' +
     '<sep gap="20"></sep>'
   )
 }
