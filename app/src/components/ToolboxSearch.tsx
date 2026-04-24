@@ -75,7 +75,10 @@ export default function ToolboxSearch({ workspaceRef }: ToolboxSearchProps) {
   }, [workspaceRef])
 
   return (
-    <div className="shrink-0 flex items-center gap-1 px-2 py-1.5 border-b border-surface-0 bg-mantle">
+    <div
+      className="absolute top-1 left-1 z-30 flex items-center gap-1"
+      style={{ width: 180, height: 26 }}
+    >
       <div
         className={`flex items-center gap-1 w-full rounded-lg border px-2 py-1 transition-colors ${
           focused

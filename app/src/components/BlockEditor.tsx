@@ -623,12 +623,10 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
   }, [])
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <>
+      <div ref={containerRef} className="w-full h-full" />
+      <Backpack workspaceRef={workspaceRef} />
       <ToolboxSearch workspaceRef={workspaceRef} />
-      <div className="relative flex-1 min-h-0">
-        <div ref={containerRef} className="absolute inset-0" />
-        <Backpack workspaceRef={workspaceRef} />
-      </div>
 
       {/* Block search overlay */}
       {showSearch && (
@@ -671,6 +669,6 @@ export default function BlockEditor({ onWorkspaceChange, onEditBlock, onDeleteBl
           />
         </Suspense>
       )}
-    </div>
+    </>
   )
 }
