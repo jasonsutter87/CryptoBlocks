@@ -5,7 +5,6 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import * as Blockly from 'blockly'
 import { registry } from '../blocks/registry'
 import { getToolboxXml } from '../blocks/blockly-register'
@@ -43,38 +42,7 @@ function buildSearchToolboxXml(query: string): string {
 export default function ToolboxSearch({ workspaceRef }: ToolboxSearchProps) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
-  const [host, setHost] = useState<HTMLElement | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // Find the Blockly toolbox DOM and create a host element at its top so the
-  // search sits inside the Brick Bin, laid out above the category list.
-  useEffect(() => {
-    let cancelled = false
-    function attach() {
-      if (cancelled) return
-      const ws = workspaceRef.current
-      const toolboxDiv = ws?.getParentSvg()?.parentElement?.querySelector('.blocklyToolboxDiv') as HTMLElement | null
-      if (!toolboxDiv) {
-        setTimeout(attach, 60)
-        return
-      }
-      // Already attached?
-      const existing = toolboxDiv.querySelector<HTMLElement>('[data-cb-toolbox-search]')
-      if (existing) { setHost(existing); return }
-      const slot = document.createElement('div')
-      slot.setAttribute('data-cb-toolbox-search', 'true')
-      slot.style.cssText = 'padding:6px 6px 4px 6px;'
-      toolboxDiv.insertBefore(slot, toolboxDiv.firstChild)
-      setHost(slot)
-    }
-    attach()
-    return () => {
-      cancelled = true
-      const ws = workspaceRef.current
-      const toolboxDiv = ws?.getParentSvg()?.parentElement?.querySelector('.blocklyToolboxDiv') as HTMLElement | null
-      toolboxDiv?.querySelector('[data-cb-toolbox-search]')?.remove()
-    }
-  }, [workspaceRef])
 
   const applySearch = useCallback((q: string) => {
     const ws = workspaceRef.current
@@ -106,34 +74,36 @@ export default function ToolboxSearch({ workspaceRef }: ToolboxSearchProps) {
     }
   }, [workspaceRef])
 
-  if (!host) return null
-
-  return createPortal(
+  return (
     <div
-      className={`flex items-center gap-1 w-full rounded-md border px-1.5 py-0.5 transition-colors ${
-        focused
-          ? 'border-accent/60 bg-surface-0'
-          : 'border-surface-1/60 bg-black/40'
-      }`}
+      className="absolute top-1 left-1 z-30 flex items-center"
+      style={{ width: 108, height: 22 }}
     >
-      <span className="text-[9px] text-overlay shrink-0">🔍</span>
-      <input
-        value={query}
-        onChange={handleChange}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholder="Search…"
-        className="bg-transparent text-text text-[10px] outline-none w-full placeholder-overlay/60 min-w-0"
-      />
-      {query && (
-        <button
-          onClick={handleClear}
-          className="text-[9px] text-overlay hover:text-text shrink-0"
-        >
-          ✕
-        </button>
-      )}
-    </div>,
-    host
+      <div
+        className={`flex items-center gap-1 w-full rounded-md border px-1.5 py-0.5 transition-colors ${
+          focused
+            ? 'border-accent/60 bg-surface-0'
+            : 'border-surface-1/60 bg-black/40'
+        }`}
+      >
+        <span className="text-[9px] text-overlay shrink-0">🔍</span>
+        <input
+          value={query}
+          onChange={handleChange}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder="Search…"
+          className="bg-transparent text-text text-[10px] outline-none w-full placeholder-overlay/60"
+        />
+        {query && (
+          <button
+            onClick={handleClear}
+            className="text-[9px] text-overlay hover:text-text shrink-0"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+    </div>
   )
 }
