@@ -61,9 +61,6 @@ interface ToolbarProps {
   onRunForEveryone?: () => void
   isCollabMode?: boolean
   onImportScratch?: () => void
-  showChat?: boolean
-  chatUnread?: number
-  onToggleChat?: () => void
 }
 
 const btn = 'flex items-center gap-1.5 px-2 py-1.5 md:px-3 text-sm font-medium rounded-lg transition-colors'
@@ -110,9 +107,6 @@ export default function Toolbar({
   onRunForEveryone,
   isCollabMode = false,
   onImportScratch,
-  showChat = false,
-  chatUnread = 0,
-  onToggleChat,
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const importAsBlockInputRef = useRef<HTMLInputElement>(null)
@@ -403,25 +397,6 @@ export default function Toolbar({
           >
             <Icon name="code-brackets" className="w-4 h-4" />
             <span className="hidden sm:inline">{showCode ? 'Hide Code' : 'Peek Code'}</span>
-          </button>
-        )}
-
-        {/* Room chat — only visible in a collab room */}
-        {isCollabMode && onToggleChat && (
-          <button
-            onClick={onToggleChat}
-            className={
-              `relative ${showChat ? `${btn} bg-accent text-base` : `${btn} text-text hover:bg-surface-0`}`
-            }
-            title={showChat ? 'Close chat' : 'Open room chat'}
-          >
-            <span className="text-base leading-none">💬</span>
-            <span className="hidden sm:inline">Chat</span>
-            {!showChat && chatUnread > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[16px] h-[16px] px-1 rounded-full bg-danger text-[10px] font-bold text-base flex items-center justify-center">
-                {chatUnread > 9 ? '9+' : chatUnread}
-              </span>
-            )}
           </button>
         )}
 

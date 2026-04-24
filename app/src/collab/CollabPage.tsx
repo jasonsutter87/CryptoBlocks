@@ -16,7 +16,7 @@ import type { CollabUser } from './types'
 import App from '../App'
 
 /** Build a CollabUser from Clerk auth state, falling back to a random temp user. */
-export function useTempOrClerkUser(): CollabUser {
+function useTempOrClerkUser(): CollabUser {
   const { user: clerkUser, isLoaded } = useUser()
 
   return useMemo(() => {
