@@ -58,32 +58,101 @@
   const MAX_FALL   = 12;
   const GOOMBA_SPD = 1;
 
-  // ─── Level data ──────────────────────────────────────────────────────────
-  // Glyphs:  ' ' sky   G ground   B brick   Q ?-block   P pipe body
-  //          ^ pipe top   F flag pole   # flag base
-  const LEVEL = [
-    '                                                                                                                                                                ',
-    '                                                                                                                                                                ',
-    '                                                                                                                                                                ',
-    '                                                                                                                                                                ',
-    '                                                                                                                                                                ',
-    '              Q      BQBQB                                                                                                         F                           ',
-    '                                                                                                                                   F                           ',
-    '                                                                                                                                   F                           ',
-    '                                                                                                                                   F                           ',
-    '                                                                           BBBB                                                    F                           ',
-    '                                                                         BBBBBB                                                    F                           ',
-    '                      ^^                                               BBBBBBBB                                                    F                           ',
-    '                      PP           ^^                                BBBBBBBBBB                                                    F                           ',
-    '                      PP           PP                              BBBBBBBBBBBB                                                    #                           ',
-    'GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG       GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG      GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
-    'GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG       GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG      GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
-  ];
-  const LEVEL_COLS = LEVEL[0].length;
-  const LEVEL_ROWS = LEVEL.length;
+  // ─── Level spec ──────────────────────────────────────────────────────────
+  // Declarative level: features described by position/size, not hand-typed
+  // strings. `compileLevel()` builds the mutable grid from this spec.
+  //
+  // Tile glyphs in the grid:
+  //   ' ' sky        G ground      B brick      Q ?-block      U used ?-block
+  //   P  pipe body   ^ pipe top    F flag pole  # flag base
+  const LEVEL_SPEC = {
+    width:       160,
+    height:      16,
+    groundRow:   14,
+    // Column ranges that have NO ground (pits). Inclusive.
+    pits:        [[45, 52], [85, 91]],
+    // { col, height } — 2 tiles wide, `height` tall, sits on the ground
+    pipes:       [
+      { col: 22, height: 2 },
+      { col: 35, height: 2 },
+    ],
+    // Floating goodies on the "high" row
+    questionBlocks: [
+      { col: 14, row: 5 },
+      { col: 22, row: 5 },
+      { col: 24, row: 5 },
+    ],
+    // Individual bricks dropped at (col, row)
+    bricks:      [
+      { col: 21, row: 5 },
+      { col: 23, row: 5 },
+      { col: 25, row: 5 },
+    ],
+    // Pyramid staircases — wide base of `width` at `row`, narrowing by
+    // `step` (and centering) for each row upward.
+    staircases:  [
+      { col: 67, row: 13, width: 12, step: 2 },
+    ],
+    flag:        { col: 135, topRow: 5, baseRow: 13 },
+    marioSpawn:  { col: 2, row: 13 },
+    goombas: [
+      { col: 26, row: 13 },
+      { col: 52, row: 13 },
+      { col: 90, row: 13 },
+      { col: 112, row: 13 },
+    ],
+  };
+
+  // Turn the declarative spec into a mutable 2D grid of glyph chars.
+  function compileLevel(spec) {
+    const g = Array.from({ length: spec.height }, () => new Array(spec.width).fill(' '));
+
+    // Ground — 2 rows thick, skipping pit ranges
+    const inPit = (x) => spec.pits.some(([a, b]) => x >= a && x <= b);
+    for (let x = 0; x < spec.width; x++) {
+      if (inPit(x)) continue;
+      g[spec.groundRow][x] = 'G';
+      if (spec.groundRow + 1 < spec.height) g[spec.groundRow + 1][x] = 'G';
+    }
+
+    // Pipes — 2 wide, `height` tall; top row is '^', rest is 'P'
+    for (const p of spec.pipes) {
+      const topRow = spec.groundRow - p.height;
+      for (let y = topRow; y < spec.groundRow; y++) {
+        const glyph = y === topRow ? '^' : 'P';
+        g[y][p.col] = glyph;
+        g[y][p.col + 1] = glyph;
+      }
+    }
+
+    // Bricks
+    for (const b of spec.bricks)          g[b.row][b.col] = 'B';
+    // Question blocks
+    for (const q of spec.questionBlocks)  g[q.row][q.col] = 'Q';
+
+    // Staircases — base at (col, row, width), each row up narrows and centers
+    for (const s of spec.staircases) {
+      let w = s.width, c = s.col, r = s.row;
+      while (w > 0 && r >= 0) {
+        for (let x = c; x < c + w; x++) g[r][x] = 'B';
+        w -= s.step;
+        c += Math.floor(s.step / 2);
+        r--;
+      }
+    }
+
+    // Flag — vertical pole, solid base block at the bottom
+    for (let y = spec.flag.topRow; y < spec.flag.baseRow; y++) g[y][spec.flag.col] = 'F';
+    g[spec.flag.baseRow][spec.flag.col] = '#';
+
+    return g;
+  }
+
+  const LEVEL_COLS = LEVEL_SPEC.width;
+  const LEVEL_ROWS = LEVEL_SPEC.height;
 
   // Mutable working grid — bricks break, ?-blocks get used. Rebuilt on restart.
-  let grid = LEVEL.map(row => row.split(''));
+  let grid = compileLevel(LEVEL_SPEC);
   // Short-lived bump animations for visual feedback when a block is hit
   let bumps = []; // { col, row, t }  (t counts down)
 
@@ -102,13 +171,8 @@
   }
 
   // ─── Game state ──────────────────────────────────────────────────────────
-  const SPAWN = { x: 2 * TILE, y: 13 * TILE };
-  const GOOMBA_SPAWNS = [
-    { x: 26 * TILE, y: 13 * TILE },
-    { x: 52 * TILE, y: 13 * TILE },
-    { x: 90 * TILE, y: 13 * TILE },
-    { x: 112 * TILE, y: 13 * TILE },
-  ];
+  const SPAWN = { x: LEVEL_SPEC.marioSpawn.col * TILE, y: LEVEL_SPEC.marioSpawn.row * TILE };
+  const GOOMBA_SPAWNS = LEVEL_SPEC.goombas.map(g => ({ x: g.col * TILE, y: g.row * TILE }));
 
   const state = {
     mario: makeMario(),
@@ -478,7 +542,7 @@
     state.score = 0;
     state.coins = 0;
     state.won = false;
-    grid = LEVEL.map(row => row.split(''));
+    grid = compileLevel(LEVEL_SPEC);
     bumps = [];
   }
 
