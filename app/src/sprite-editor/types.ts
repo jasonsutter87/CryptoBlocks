@@ -10,8 +10,12 @@ export interface SpriteFrame {
 export interface SpriteProject {
   /** Name of the sprite */
   name: string
-  /** Grid size (e.g. 16, 24, 32, 48) */
-  size: number
+  /** Grid width in pixels */
+  width: number
+  /** Grid height in pixels */
+  height: number
+  /** @deprecated use width/height — kept for loading pre-v2 projects */
+  size?: number
   /** All animation frames */
   frames: SpriteFrame[]
   /** Color palette used */

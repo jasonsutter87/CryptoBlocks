@@ -4,18 +4,30 @@
  */
 
 export const DEFAULT_PALETTE = [
-  // Row 1 — Basics
-  '#000000', '#ffffff', '#f38ba8', '#fab387',
-  '#f9e2af', '#a6e3a1', '#89b4fa', '#cba6f7',
-  // Row 2 — Skin/nature
-  '#eba0ac', '#f2cdcd', '#94e2d5', '#89dceb',
-  '#74c7ec', '#b4befe', '#cdd6f4', '#585b70',
-  // Row 3 — Pixel art classics
-  '#e64539', '#f78135', '#ffd964', '#7bc96f',
-  '#3a9efd', '#9b5de5', '#ff6b9d', '#c2855a',
-  // Row 4 — Dark/shadow
-  '#1e1e2e', '#313244', '#45475a', '#6c7086',
-  '#181825', '#11111b', '#332200', '#003322',
+  // Row 1 — Grayscale
+  '#000000', '#1e1e2e', '#313244', '#45475a',
+  '#6c7086', '#9399b2', '#cdd6f4', '#ffffff',
+  // Row 2 — Reds / pinks
+  '#7f0a1e', '#b91c1c', '#e64539', '#f38ba8',
+  '#ff6b9d', '#eba0ac', '#f2cdcd', '#fce7f3',
+  // Row 3 — Oranges / browns
+  '#4a2510', '#78350f', '#c2410c', '#f78135',
+  '#fab387', '#c2855a', '#a16207', '#ca8a04',
+  // Row 4 — Yellows
+  '#713f12', '#a16207', '#eab308', '#ffd964',
+  '#f9e2af', '#fef08a', '#fef9c3', '#fffbeb',
+  // Row 5 — Greens
+  '#14532d', '#166534', '#15803d', '#22c55e',
+  '#7bc96f', '#a6e3a1', '#94e2d5', '#d1fae5',
+  // Row 6 — Blues / teals
+  '#0c4a6e', '#0369a1', '#0ea5e9', '#3a9efd',
+  '#89b4fa', '#89dceb', '#74c7ec', '#b4befe',
+  // Row 7 — Purples
+  '#3b0764', '#6b21a8', '#9333ea', '#9b5de5',
+  '#cba6f7', '#d8b4fe', '#e9d5ff', '#f3e8ff',
+  // Row 8 — Mario classics (NES palette picks)
+  '#e53935', '#fbc02d', '#43a047', '#1976d2',
+  '#6d4c41', '#ffccbc', '#f5deb3', '#5d4037',
 ] as const
 
 export type RGBA = [number, number, number, number]
