@@ -30,7 +30,9 @@ import { useVersionControl } from './version-control/useVersionControl'
 import { initEasterEggs } from './easter-eggs'
 import { loadSettings } from './settings'
 // stats helpers are called inside each mode/pipeline hook; no direct import needed here
-import { useCollabDoc } from './collab/CollabPage'
+import { useCollabDoc, useTempOrClerkUser } from './collab/CollabPage'
+import { useChat } from './collab/chat'
+import ChatPanel from './components/ChatPanel'
 import { ensureSpeechGlobal } from './speech/speech'
 import { ensureVisionGlobal } from './vision/vision-global'
 import { ensureGamepadGlobal } from './hardware/gamepad'
@@ -73,6 +75,12 @@ export default function App() {
   // Collab state
   const collabDoc = useCollabDoc()
   const isCollabMode = !!collabDoc
+  const collabUser = useTempOrClerkUser()
+  const [showChat, setShowChat] = useState(false)
+  const roomKey = isCollabMode && typeof window !== 'undefined'
+    ? (window.location.pathname.match(/\/room\/([^/?]+)/)?.[1] ?? 'default')
+    : ''
+  const { unreadCount: chatUnread } = useChat(collabDoc, collabUser, roomKey, showChat)
 
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)
@@ -505,6 +513,9 @@ export default function App() {
         onOpenTutorial={() => modals.setTutorial(true)}
         onOpenCollab={() => modals.setCollabModal(true)}
         isCollabMode={isCollabMode}
+        showChat={showChat}
+        chatUnread={chatUnread}
+        onToggleChat={() => setShowChat(v => !v)}
         onImportScratch={() => modals.setScratchImport(true)}
         onSaveToDashboard={handleSaveToDashboard}
         onOpenSpriteEditor={() => modals.setSpriteEditor(true)}
@@ -638,6 +649,14 @@ export default function App() {
         currentAchievement={currentAchievement}
         showNextAchievement={showNextAchievement}
       />
+      {isCollabMode && showChat && (
+        <ChatPanel
+          user={collabUser}
+          roomKey={roomKey}
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
+        />
+      )}
     </div>
   )
 }
