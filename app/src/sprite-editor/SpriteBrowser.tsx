@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from 'react'
 import { showToast } from '../components/Toast'
+import { pushSprite } from './sync'
 
 interface SharedSprite {
   id: string
@@ -34,13 +35,12 @@ export default function SpriteBrowser({ onClose }: SpriteBrowserProps) {
   }, [])
 
   const addToLibrary = (sprite: SharedSprite) => {
-    const lib = JSON.parse(localStorage.getItem('cryptoblocks-sprites') || '{}')
-    lib[sprite.name] = {
+    pushSprite(sprite.name, {
       dataUrl: sprite.dataUrl,
       frames: sprite.frames,
-      size: sprite.size,
-    }
-    localStorage.setItem('cryptoblocks-sprites', JSON.stringify(lib))
+      width: sprite.size,
+      height: sprite.size,
+    })
     showToast(`"${sprite.name}" added to your sprites!`, 'success')
   }
 

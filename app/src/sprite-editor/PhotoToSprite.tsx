@@ -5,6 +5,7 @@
 
 import { useCallback, useRef, useState } from 'react'
 import { showToast } from '../components/Toast'
+import { pushSprite } from './sync'
 
 interface PhotoToSpriteProps {
   onClose: () => void
@@ -70,9 +71,7 @@ export default function PhotoToSprite({ onClose }: PhotoToSpriteProps) {
 
   const saveToLibrary = () => {
     if (!pixelUrl) return
-    const lib = JSON.parse(localStorage.getItem('cryptoblocks-sprites') || '{}')
-    lib[name] = { dataUrl: pixelUrl, frames: 1, size }
-    localStorage.setItem('cryptoblocks-sprites', JSON.stringify(lib))
+    pushSprite(name, { dataUrl: pixelUrl, frames: 1, width: size, height: size })
     showToast(`"${name}" saved to sprites!`, 'success')
   }
 

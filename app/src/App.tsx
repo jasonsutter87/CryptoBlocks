@@ -31,6 +31,8 @@ import { initEasterEggs } from './easter-eggs'
 import { loadSettings } from './settings'
 // stats helpers are called inside each mode/pipeline hook; no direct import needed here
 import { useCollabDoc } from './collab/CollabPage'
+import { useAuth } from './auth'
+import { fetchUserSprites, migrateLocalToServer } from './sprite-editor/sync'
 import { ensureSpeechGlobal } from './speech/speech'
 import { ensureVisionGlobal } from './vision/vision-global'
 import { ensureGamepadGlobal } from './hardware/gamepad'
@@ -73,6 +75,15 @@ export default function App() {
   // Collab state
   const collabDoc = useCollabDoc()
   const isCollabMode = !!collabDoc
+
+  // Sprite library sync: pull user's Turso-backed sprites into localStorage on
+  // sign-in so block runtime lookups (sync) hit local cache. First sign-in
+  // also pushes any pre-Turso localStorage sprites up.
+  const { isSignedIn, isLoaded: authLoaded } = useAuth()
+  useEffect(() => {
+    if (!authLoaded || !isSignedIn) return
+    void migrateLocalToServer().then(() => fetchUserSprites())
+  }, [authLoaded, isSignedIn])
 
   // Store sandbox workspace before entering challenge mode
   const savedSandboxState = useRef<Record<string, unknown> | null>(null)

@@ -48,6 +48,19 @@ async function ensureSpriteTable(): Promise<void> {
         created_at INTEGER NOT NULL,
         PRIMARY KEY (sprite_id, user_id)
       )`),
+      // Personal (private) sprite library — multi-device sync. Public community
+      // sprites still live in `sprites` above; these are user-scoped and keyed
+      // by (user_id, name) so a user has at most one sprite with a given name.
+      migrate('create-user-sprites', `CREATE TABLE IF NOT EXISTS user_sprites (
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        data_url TEXT NOT NULL,
+        frames INTEGER DEFAULT 1,
+        width INTEGER DEFAULT 16,
+        height INTEGER DEFAULT 16,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (user_id, name)
+      )`),
     ])
     spriteMigrated = true
   })()
@@ -96,6 +109,76 @@ async function handler(req: Request) {
         [id, name, user!.sub, (user!.name || 'Artist').slice(0, 50), dataUrl, frames, size, JSON.stringify(tags), now],
       )
       return json({ id, name, createdAt: now }, 201)
+    }
+
+    // ─── PERSONAL SPRITE LIBRARY (/me) ──────────────────────────────────
+    // GET /api/sprites/me — list signed-in user's sprites (newest first)
+    if (req.method === 'GET' && segments.length === 1 && segments[0] === 'me') {
+      const authErr = requireAuth(user, 'Sign in to access your sprites')
+      if (authErr) return authErr
+      const result = await tursoExecute(
+        `SELECT name, data_url, frames, width, height, updated_at
+         FROM user_sprites WHERE user_id = ? ORDER BY updated_at DESC`,
+        [user!.sub],
+      )
+      return json({
+        sprites: result.rows.map((s) => ({
+          name: s.name,
+          dataUrl: s.data_url,
+          frames: Number(s.frames),
+          width: Number(s.width),
+          height: Number(s.height),
+          updatedAt: Number(s.updated_at),
+        })),
+      })
+    }
+
+    // PUT /api/sprites/me/:name — upsert a personal sprite
+    if (req.method === 'PUT' && segments.length === 2 && segments[0] === 'me') {
+      const authErr = requireAuth(user, 'Sign in to save sprites')
+      if (authErr) return authErr
+
+      const nameResult = Name.safeParse(decodeURIComponent(segments[1]))
+      if (!nameResult.success) return json({ error: 'Invalid sprite name' }, 400)
+
+      const raw = await req.json().catch(() => null)
+      if (!raw || typeof raw !== 'object') return json({ error: 'Invalid input' }, 400)
+
+      const dataUrl = typeof raw.dataUrl === 'string' ? raw.dataUrl : ''
+      const frames = typeof raw.frames === 'number' ? Math.max(1, Math.min(raw.frames, 64)) : 1
+      const width  = typeof raw.width  === 'number' ? Math.max(8, Math.min(raw.width, 256))
+                   : typeof raw.size   === 'number' ? Math.max(8, Math.min(raw.size, 256)) : 16
+      const height = typeof raw.height === 'number' ? Math.max(8, Math.min(raw.height, 256))
+                   : typeof raw.size   === 'number' ? Math.max(8, Math.min(raw.size, 256)) : 16
+
+      if (!dataUrl.startsWith('data:image/')) return json({ error: 'Invalid image data' }, 400)
+      if (dataUrl.length > 500_000) return json({ error: 'Sprite too large (max 500KB)' }, 400)
+
+      const now = Date.now()
+      await tursoExecute(
+        `INSERT INTO user_sprites (user_id, name, data_url, frames, width, height, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(user_id, name) DO UPDATE SET
+           data_url = excluded.data_url,
+           frames = excluded.frames,
+           width = excluded.width,
+           height = excluded.height,
+           updated_at = excluded.updated_at`,
+        [user!.sub, nameResult.data, dataUrl, frames, width, height, now],
+      )
+      return json({ name: nameResult.data, updatedAt: now })
+    }
+
+    // DELETE /api/sprites/me/:name — delete a personal sprite
+    if (req.method === 'DELETE' && segments.length === 2 && segments[0] === 'me') {
+      const authErr = requireAuth(user)
+      if (authErr) return authErr
+      const name = decodeURIComponent(segments[1])
+      await tursoExecute(
+        'DELETE FROM user_sprites WHERE user_id = ? AND name = ?',
+        [user!.sub, name],
+      )
+      return json({ ok: true })
     }
 
     // POST /api/sprites/:id/like — like a sprite (one per user, PK enforced)

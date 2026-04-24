@@ -15,6 +15,7 @@ import { DEFAULT_PALETTE, hexToRgba, TRANSPARENT } from './palette'
 import type { SpriteFrame, SpriteProject, Tool } from './types'
 import type { RGBA } from './palette'
 import { getClerkToken } from '../auth'
+import { pushSprite } from './sync'
 
 interface SpriteEditorProps {
   onClose: () => void
@@ -282,6 +283,14 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
 
   function handleSave() {
     const dataUrl = exportSpriteSheet()
+    // Write-through: localStorage immediately, Turso in background.
+    // Game runtime reads localStorage synchronously, so this preserves perf.
+    pushSprite(project.name, {
+      dataUrl,
+      frames: project.frames.length,
+      width,
+      height,
+    })
     onSave(dataUrl, project.name, project.frames.length)
   }
 

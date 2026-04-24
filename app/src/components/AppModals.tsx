@@ -237,12 +237,7 @@ export default function AppModals(p: AppModalsProps) {
         <Suspense fallback={null}>
           <SpriteEditor
             onClose={() => p.modals.setSpriteEditor(false)}
-            onSave={(dataUrl, name, frames) => {
-              const sprites = JSON.parse(localStorage.getItem('cryptoblocks-sprites') || '{}')
-              sprites[name] = { dataUrl, frames, size: 16 }
-              localStorage.setItem('cryptoblocks-sprites', JSON.stringify(sprites))
-              p.modals.setSpriteEditor(false)
-            }}
+            onSave={() => p.modals.setSpriteEditor(false)}
           />
         </Suspense>
       )}
