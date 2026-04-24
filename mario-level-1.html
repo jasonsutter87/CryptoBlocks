@@ -312,16 +312,17 @@
       if (!g.alive) continue;
       g.vy = Math.min(g.vy + GRAVITY, MAX_FALL);
 
-      // Edge detection: if on ground and the tile ahead+down isn't solid, turn around
+      // Peek-then-flip: look one tile ahead and decide before we move.
+      // This avoids getting stuck when collision zeroes vx.
       if (g.onGround) {
-        const lookX = g.x + (g.vx > 0 ? g.w + 2 : -2);
-        const lookY = g.y + g.h + 2;
-        if (!isSolid(tileAt(lookX, lookY))) g.vx *= -1;
+        const ahead = g.vx > 0 ? g.x + g.w + 1 : g.x - 1;
+        const wallY = g.y + g.h / 2;       // mid-body → hits a wall
+        const pitY  = g.y + g.h + 2;       // just below feet → no ground = pit
+        if (isSolid(tileAt(ahead, wallY))) g.vx = -g.vx;
+        else if (!isSolid(tileAt(ahead, pitY))) g.vx = -g.vx;
       }
 
-      g.hitWall = false;
       moveAndCollide(g, g.vx, 0);
-      if (g.hitWall) g.vx *= -1;
       moveAndCollide(g, 0, g.vy);
 
       // Off the bottom of the level — despawn
