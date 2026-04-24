@@ -691,10 +691,7 @@ function drawOverlay(ctx, w, h, color, title, sub) {
 
 function handleInput(state, key) {
   if (key === 'p' || key === 'P') { state.paused = !state.paused; return; }
-  if (key === 'r' || key === 'R') {
-    if (state.gameOver || state.won) return 'restart';
-    return;
-  }
+  if (key === 'r' || key === 'R') return 'restart';
   if (state.paused || state.gameOver || state.won) return;
   switch (key) {
     case 'ArrowUp':    case 'w': case 'W': state.pac.nextDirX = 0;  state.pac.nextDirY = -1; break;
