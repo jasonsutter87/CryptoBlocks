@@ -76,29 +76,29 @@ export default function ToolboxSearch({ workspaceRef }: ToolboxSearchProps) {
 
   return (
     <div
-      className="absolute top-1 left-1 z-30 flex items-center gap-1"
-      style={{ width: 180, height: 26 }}
+      className="absolute top-1 left-1 z-30 flex items-center"
+      style={{ width: 108, height: 22 }}
     >
       <div
-        className={`flex items-center gap-1 w-full rounded-lg border px-2 py-1 transition-colors ${
+        className={`flex items-center gap-1 w-full rounded-md border px-1.5 py-0.5 transition-colors ${
           focused
             ? 'border-accent/60 bg-surface-0'
             : 'border-surface-1/60 bg-black/40'
         }`}
       >
-        <span className="text-[10px] text-overlay shrink-0">🔍</span>
+        <span className="text-[9px] text-overlay shrink-0">🔍</span>
         <input
           value={query}
           onChange={handleChange}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Search blocks..."
-          className="bg-transparent text-text text-xs outline-none w-full placeholder-overlay/60"
+          placeholder="Search…"
+          className="bg-transparent text-text text-[10px] outline-none w-full placeholder-overlay/60"
         />
         {query && (
           <button
             onClick={handleClear}
-            className="text-[10px] text-overlay hover:text-text shrink-0"
+            className="text-[9px] text-overlay hover:text-text shrink-0"
           >
             ✕
           </button>
