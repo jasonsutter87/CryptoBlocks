@@ -405,16 +405,19 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
             <div>
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[10px] uppercase text-[#585b70] tracking-wider">Palette</p>
-                <button
-                  onClick={() => {
-                    if (project.palette.includes(color)) return
-                    setProject({ ...project, palette: [...project.palette, color] })
-                  }}
-                  className="text-[10px] text-accent hover:text-text px-1.5 py-0.5 rounded"
-                  title="Add current color as a swatch"
-                >
-                  + Add
-                </button>
+                {(() => {
+                  const already = project.palette.includes(color)
+                  return (
+                    <button
+                      disabled={already}
+                      onClick={() => setProject({ ...project, palette: [...project.palette, color] })}
+                      className={`text-[10px] px-1.5 py-0.5 rounded ${already ? 'text-[#585b70] cursor-not-allowed' : 'text-accent hover:text-text'}`}
+                      title={already ? 'Already in palette' : 'Add current color as a swatch'}
+                    >
+                      {already ? '✓ In palette' : '+ Add'}
+                    </button>
+                  )
+                })()}
               </div>
               <div className="grid grid-cols-8 gap-1">
                 {project.palette.map((c, i) => {
@@ -442,30 +445,31 @@ export default function SpriteEditor({ onClose, onSave, initialProject }: Sprite
             {/* Trace underlay */}
             <div>
               <p className="text-[10px] uppercase text-[#585b70] mb-2 tracking-wider">Trace</p>
-              <input
-                ref={traceFileRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={e => {
-                  const file = e.target.files?.[0]
-                  if (!file) return
-                  const url = URL.createObjectURL(file)
-                  const img = new Image()
-                  img.onload = () => {
-                    setTraceImg(img)
-                    setTraceVisible(true)
-                  }
-                  img.src = url
-                }}
-              />
               {!traceImg ? (
-                <button
-                  onClick={() => traceFileRef.current?.click()}
-                  className="w-full text-xs py-1.5 rounded bg-surface-0 hover:bg-surface-1 text-overlay"
-                >
+                <label className="w-full text-xs py-1.5 rounded bg-surface-0 hover:bg-surface-1 text-overlay cursor-pointer block text-center">
                   Upload image
-                </button>
+                  <input
+                    ref={traceFileRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (!file) { e.target.value = ''; return }
+                      const reader = new FileReader()
+                      reader.onload = () => {
+                        const img = new Image()
+                        img.onload = () => {
+                          setTraceImg(img)
+                          setTraceVisible(true)
+                        }
+                        img.src = reader.result as string
+                      }
+                      reader.readAsDataURL(file)
+                      e.target.value = ''
+                    }}
+                  />
+                </label>
               ) : (
                 <div className="flex flex-col gap-2">
                   <div className="flex gap-1">
