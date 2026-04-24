@@ -515,14 +515,16 @@ function updateGame(state, dt) {
       if (Math.abs(g.x - cx) < 0.5 && Math.abs(g.y - cy) < 0.5) {
         g.mode = state.globalMode; g.x = cx; g.y = cy - 1;
       }
-    } else if (state.globalMode === SCATTER || g.mode === SCATTER) {
+    } else if (state.globalMode === SCATTER) {
       target = getScatterTarget(i, cols, rows);
     } else {
       const blinky = ghosts[0];
       target = ghostTargets(i, g.x, g.y, pac.x, pac.y, pac.dirX || 0, pac.dirY || -1, blinky.x, blinky.y, cols, rows);
     }
     const atTile = Math.abs(g.x - Math.round(g.x)) < 0.05 && Math.abs(g.y - Math.round(g.y)) < 0.05;
-    if (atTile) {
+    const tileKey = Math.round(g.x) + ',' + Math.round(g.y);
+    if (atTile && g._lastDirTile !== tileKey) {
+      g._lastDirTile = tileKey;
       g.x = Math.round(g.x); g.y = Math.round(g.y);
       const dir = chooseDirection(grid, g.x, g.y, target.x, target.y, g.dirX, g.dirY, cols, rows, g.mode === EATEN);
       g.dirX = dir.dx; g.dirY = dir.dy;
