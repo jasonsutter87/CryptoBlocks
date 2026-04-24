@@ -78,14 +78,13 @@ export default function MicrobitStatus() {
     }
   }
 
-  // Only show when connected or actively pairing — avoids confusing new users
-  if (!connected && !busy) return null
-
   const title = connected
     ? `Connected: ${deviceName ?? 'micro:bit'} — click to disconnect`
     : busy
       ? 'Connecting…'
       : 'Connect a micro:bit over Bluetooth'
+
+  const label = connected ? 'micro:bit' : busy ? 'Pairing…' : 'Connect micro:bit'
 
   return (
     <button
@@ -93,16 +92,18 @@ export default function MicrobitStatus() {
       onClick={handleClick}
       disabled={busy}
       title={title}
-      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors bg-surface-0 hover:bg-surface-1 text-text disabled:opacity-60"
+      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-colors disabled:opacity-60 ${
+        connected
+          ? 'bg-surface-0 hover:bg-surface-1 text-text'
+          : 'bg-transparent hover:bg-surface-0 text-overlay hover:text-text border border-surface-0'
+      }`}
     >
       <span
         className={`inline-block w-2 h-2 rounded-full ${
           connected ? 'bg-success animate-pulse' : busy ? 'bg-warn' : 'bg-overlay'
         }`}
       />
-      <span className="hidden xl:inline whitespace-nowrap">
-        {connected ? 'micro:bit' : busy ? 'Pairing…' : 'micro:bit'}
-      </span>
+      <span className="hidden xl:inline whitespace-nowrap">{label}</span>
       {error && <span className="sr-only">{error}</span>}
     </button>
   )
