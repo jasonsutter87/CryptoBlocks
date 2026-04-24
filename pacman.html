@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Pac-Man — Sprite Edition</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0;
+      background: #0a0a0f;
+      color: #ddd;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      display: flex; flex-direction: column; align-items: center;
+      min-height: 100vh;
+    }
+    h1 { margin: 18px 0 6px; font-size: 16px; letter-spacing: .5px; opacity: .85; }
+    .hud { font-size: 12px; opacity: .7; margin-top: 10px; }
+    .hud b { color: #ffd76a; }
+  </style>
+</head>
+<body>
+  <h1>Pac-Man — sprite edition</h1>
+  <div class="hud">
+    <b>← → ↑ ↓ / WASD</b> move &nbsp;·&nbsp; <b>P</b> pause &nbsp;·&nbsp; <b>R</b> restart
+  </div>
+  <script src="pacman.js"></script>
+  <script>
+    // Auto-launch with default maze.
+    startGame();
+  </script>
+</body>
+</html>
