@@ -32,7 +32,7 @@ function typeToBlocklyCheck(type: string): string | null {
 }
 
 // --- Control flow block types ---
-const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat', 'cb_count_from', 'cb_loop_index', 'cb_while', 'cb_break', 'cb_continue'])
+const CONTROL_FLOW_BLOCKS = new Set(['cb_if', 'cb_if_else', 'cb_repeat', 'cb_count_from', 'cb_loop_index', 'cb_while', 'cb_break', 'cb_continue', 'cb_return'])
 
 // --- HTML/CSS block types (native Blockly, not registry) ---
 const HTML_BLOCKS = new Set([
@@ -170,6 +170,17 @@ function registerControlFlowBlocks() {
       this.setPreviousStatement(true, null)
       this.setNextStatement(false, null)
       this.setTooltip(t('Skip to the next iteration of the loop'))
+    },
+  }
+
+  // RETURN (early exit from a function)
+  Blockly.Blocks['cb_return'] = {
+    init: function (this: Blockly.Block) {
+      this.setColour('#059669')
+      this.appendDummyInput().appendField(t('return'))
+      this.setPreviousStatement(true, null)
+      this.setNextStatement(false, null)
+      this.setTooltip(t('Exit the current function immediately (like early return)'))
     },
   }
 
@@ -1236,6 +1247,8 @@ export function generateCode(workspace: Blockly.Workspace, language: Language, t
   let usesHtml = false
   function collectBlocks(block: Blockly.Block) {
     if (HTML_BLOCKS.has(block.type)) usesHtml = true
+    // cb_return is native but calls the declarative return_value helper — force-include it
+    if (block.type === 'cb_return') usedBlocks.add('return_value')
     // Skip builtins and native blocks — they don't have registry defs
     if (!isBuiltinBlock(block.type) && !isNativeBlock(block.type)) {
       const name = block.type.replace('cb_', '')
@@ -1447,6 +1460,10 @@ function generateControlFlowCode(block: Blockly.Block, language: Language): stri
 
     case 'cb_continue': {
       return 'continue'
+    }
+
+    case 'cb_return': {
+      return language === 'javascript' ? 'returnValue(undefined)' : 'return_value(None)'
     }
 
     default:
@@ -2196,6 +2213,7 @@ function controlFlowToolboxXml(cat: string): string {
     '<block type="cb_while"></block>' +
     '<block type="cb_break"></block>' +
     '<block type="cb_continue"></block>' +
+    '<block type="cb_return"></block>' +
     '<block type="cb_switch_value"></block>' +
     '<sep gap="20"></sep>'
   )
