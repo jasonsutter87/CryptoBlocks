@@ -112,13 +112,15 @@ export function registerDragFromBottom(workspace: Blockly.WorkspaceSvg): () => v
     }
   }
 
-  function onMouseDown(e: MouseEvent) {
+  function onPointerDown(e: PointerEvent) {
     if (!e.shiftKey || e.button !== 0) return
     const clicked = findClickedBlock(e.target)
     if (!clicked) return
     const ancestors = collectAncestors(clicked)
     if (ancestors.length === 0) return
 
+    // Stop Blockly's gesture from arming — we're taking this drag over
+    e.stopImmediatePropagation()
     e.stopPropagation()
     e.preventDefault()
 
@@ -137,11 +139,11 @@ export function registerDragFromBottom(workspace: Blockly.WorkspaceSvg): () => v
       detachedBelow: null,
     }
 
-    window.addEventListener('mousemove', onWindowMouseMove, true)
-    window.addEventListener('mouseup', onWindowMouseUp, true)
+    window.addEventListener('pointermove', onWindowPointerMove, true)
+    window.addEventListener('pointerup', onWindowPointerUp, true)
   }
 
-  function onWindowMouseMove(e: MouseEvent) {
+  function onWindowPointerMove(e: PointerEvent) {
     if (!session) return
     const s = session
     const dx = e.clientX - s.initialMouse.x
@@ -153,11 +155,11 @@ export function registerDragFromBottom(workspace: Blockly.WorkspaceSvg): () => v
     applyMove(s, e.clientX, e.clientY)
   }
 
-  function onWindowMouseUp() {
+  function onWindowPointerUp() {
     const s = session
     session = null
-    window.removeEventListener('mousemove', onWindowMouseMove, true)
-    window.removeEventListener('mouseup', onWindowMouseUp, true)
+    window.removeEventListener('pointermove', onWindowPointerMove, true)
+    window.removeEventListener('pointerup', onWindowPointerUp, true)
     if (!s || !s.detached) return
 
     // Reconnect the chain: top-ancestor → ... → closest-parent → leader
@@ -172,11 +174,11 @@ export function registerDragFromBottom(workspace: Blockly.WorkspaceSvg): () => v
     // into a target connection using Blockly's normal drag-to-connect.
   }
 
-  svg.addEventListener('mousedown', onMouseDown as EventListener, true)
+  svg.addEventListener('pointerdown', onPointerDown as EventListener, true)
 
   return () => {
-    svg.removeEventListener('mousedown', onMouseDown as EventListener, true)
-    window.removeEventListener('mousemove', onWindowMouseMove, true)
-    window.removeEventListener('mouseup', onWindowMouseUp, true)
+    svg.removeEventListener('pointerdown', onPointerDown as EventListener, true)
+    window.removeEventListener('pointermove', onWindowPointerMove, true)
+    window.removeEventListener('pointerup', onWindowPointerUp, true)
   }
 }
