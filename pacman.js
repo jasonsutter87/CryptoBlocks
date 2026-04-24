@@ -636,11 +636,14 @@ function renderGame(ctx, state, canvasWidth, canvasHeight) {
   drawPac(ctx, pac,
     offsetX + pac.x * TILE_SIZE, offsetY + pac.y * TILE_SIZE, TILE_SIZE);
 
-  // Ghosts
+  // Ghosts — caged ghosts render dimmed inside the ghost house so it's
+  // visually obvious they're queued, not missing.
   for (const g of ghosts) {
-    if (!g.released && g.mode !== EATEN) continue;
+    const caged = !g.released && g.mode !== EATEN;
+    if (caged) ctx.globalAlpha = 0.45;
     drawGhost(ctx, g, state,
       offsetX + g.x * TILE_SIZE, offsetY + g.y * TILE_SIZE, TILE_SIZE);
+    ctx.globalAlpha = 1;
   }
 
   // HUD
