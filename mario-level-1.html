@@ -82,9 +82,14 @@
   const LEVEL_COLS = LEVEL[0].length;
   const LEVEL_ROWS = LEVEL.length;
 
+  // Mutable working grid — bricks break, ?-blocks get used. Rebuilt on restart.
+  let grid = LEVEL.map(row => row.split(''));
+  // Short-lived bump animations for visual feedback when a block is hit
+  let bumps = []; // { col, row, t }  (t counts down)
+
   // Tiles a character/enemy can't walk through.
   function isSolid(glyph) {
-    return glyph === 'G' || glyph === 'B' || glyph === 'Q' || glyph === 'P' || glyph === '^';
+    return glyph === 'G' || glyph === 'B' || glyph === 'Q' || glyph === 'U' || glyph === 'P' || glyph === '^';
   }
   // What a tile looks like at a world position.
   function tileAt(x, y) {
@@ -93,7 +98,7 @@
     if (row < 0 || row >= LEVEL_ROWS) return ' ';
     if (col < 0) return 'G';                 // clamp left edge
     if (col >= LEVEL_COLS) return ' ';        // past the right edge = empty
-    return LEVEL[row][col];
+    return grid[row][col];
   }
 
   // ─── Game state ──────────────────────────────────────────────────────────
@@ -164,6 +169,7 @@
     // Y axis
     e.y += dy;
     e.onGround = false;
+    const hitFromBelow = []; // tiles this entity head-bumped this step
     if (dy !== 0) {
       const corners = [
         { x: e.x + 1, y: e.y },
@@ -172,13 +178,18 @@
         { x: e.x + e.w - 1, y: e.y + e.h },
       ];
       for (const c of corners) {
-        if (!isSolid(tileAt(c.x, c.y))) continue;
+        const glyph = tileAt(c.x, c.y);
+        if (!isSolid(glyph)) continue;
         if (dy > 0) { e.y = Math.floor(c.y / TILE) * TILE - e.h; e.onGround = true; }
-        else        { e.y = Math.floor(c.y / TILE + 1) * TILE; }
+        else        {
+          e.y = Math.floor(c.y / TILE + 1) * TILE;
+          hitFromBelow.push({ glyph, col: Math.floor(c.x / TILE), row: Math.floor(c.y / TILE) });
+        }
         e.vy = 0;
         break;
       }
     }
+    return { hitFromBelow };
   }
 
   function overlaps(a, b) {
@@ -208,7 +219,21 @@
 
     // Move + collide
     moveAndCollide(m, m.vx, 0);
-    moveAndCollide(m, 0, m.vy);
+    const hit = moveAndCollide(m, 0, m.vy);
+
+    // Break or use any block Mario head-bumped this frame
+    for (const h of hit.hitFromBelow) {
+      if (h.glyph === 'B') {
+        grid[h.row][h.col] = ' ';
+        state.score += 50;
+        bumps.push({ col: h.col, row: h.row, t: 12, broke: true });
+      } else if (h.glyph === 'Q') {
+        grid[h.row][h.col] = 'U';
+        state.score += 200;
+        state.coins += 1;
+        bumps.push({ col: h.col, row: h.row, t: 12, broke: false });
+      }
+    }
 
     // Pit death
     if (m.y > LEVEL_ROWS * TILE + 200) m.alive = false;
@@ -254,6 +279,9 @@
     // Flag touch → win
     const centerTile = tileAt(m.x + m.w / 2, m.y + m.h / 2);
     if (centerTile === 'F' || centerTile === '#') state.won = true;
+
+    // Decay bump animations
+    bumps = bumps.filter(b => --b.t > 0);
   }
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -282,9 +310,17 @@
       }
       case 'Q': {
         ctx.fillStyle = '#f9a634'; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = '#d07818'; ctx.fillRect(px + 2, py + TILE - 6, TILE - 4, 4);
         ctx.fillStyle = '#fff';    ctx.font = 'bold 22px monospace';
         ctx.textAlign = 'center';  ctx.fillText('?', px + TILE/2, py + 23);
         ctx.textAlign = 'left';
+        break;
+      }
+      case 'U': {
+        ctx.fillStyle = '#8a5a1a'; ctx.fillRect(px, py, TILE, TILE);
+        ctx.fillStyle = '#5c3a0c'; ctx.fillRect(px + 2, py + TILE - 6, TILE - 4, 4);
+        ctx.strokeStyle = '#3a2208'; ctx.lineWidth = 1;
+        ctx.strokeRect(px + 2, py + 2, TILE - 4, TILE - 4);
         break;
       }
       case 'P': case '^': {
@@ -333,9 +369,33 @@
     const endCol   = Math.min(LEVEL_COLS, Math.ceil((camX + VIEW_W) / TILE) + 1);
     for (let row = 0; row < LEVEL_ROWS; row++) {
       for (let col = startCol; col < endCol; col++) {
-        const glyph = LEVEL[row][col];
+        const glyph = grid[row][col];
         if (glyph === ' ') continue;
         drawTile(glyph, col * TILE - camX, row * TILE);
+      }
+    }
+
+    // Bump animations — small upward pop on head-bumped block, or shards for breaks
+    for (const b of bumps) {
+      const px = b.col * TILE - camX;
+      const py = b.row * TILE;
+      const lift = Math.sin((1 - b.t / 12) * Math.PI) * -6;
+      if (b.broke) {
+        // shards flying up + out
+        const p = 1 - b.t / 12;
+        ctx.fillStyle = '#d47a2c';
+        const size = Math.max(4, 10 - Math.floor(p * 6));
+        ctx.fillRect(px + 4,            py + lift - p * 24, size, size);
+        ctx.fillRect(px + TILE - 12,    py + lift - p * 28, size, size);
+        ctx.fillRect(px + 6,            py + lift - p * 18 + 12, size, size);
+        ctx.fillRect(px + TILE - 14,    py + lift - p * 22 + 12, size, size);
+      } else {
+        // ?-block pop: render the used block lifted briefly
+        drawTile('U', px, py + lift);
+        // little coin popping up
+        const coinLift = Math.sin((1 - b.t / 12) * Math.PI) * -18;
+        ctx.fillStyle = '#ffd76a';
+        ctx.fillRect(px + TILE/2 - 3, py - 8 + coinLift, 6, 10);
       }
     }
 
@@ -387,7 +447,8 @@
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 14px ui-monospace, monospace';
     ctx.fillText('SCORE ' + String(state.score).padStart(6, '0'), 12, 22);
-    ctx.fillText('WORLD  1-1', VIEW_W - 120, 22);
+    ctx.fillStyle = '#ffd76a'; ctx.fillText('● ' + String(state.coins).padStart(2, '0'), VIEW_W / 2 - 30, 22);
+    ctx.fillStyle = '#fff';    ctx.fillText('WORLD  1-1', VIEW_W - 120, 22);
 
     // Overlays
     if (!m.alive) {
@@ -415,7 +476,10 @@
     state.goombas = GOOMBA_SPAWNS.map(makeGoomba);
     state.camera.x = 0;
     state.score = 0;
+    state.coins = 0;
     state.won = false;
+    grid = LEVEL.map(row => row.split(''));
+    bumps = [];
   }
 
   (function loop() {
