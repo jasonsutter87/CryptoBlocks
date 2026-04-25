@@ -400,6 +400,7 @@ function createGameState(maze) {
   }));
   return {
     grid: gameGrid, cols, rows,
+    spawnX, spawnY,
     pac: { x: spawnX, y: spawnY, dirX: 0, dirY: 0, nextDirX: 0, nextDirY: 0 },
     ghosts,
     score: 0, lives: 3, dotsEaten: 0, totalDots, level: 1,
@@ -543,7 +544,7 @@ function updateGame(state, dt) {
         state.lives--;
         if (state.lives <= 0) { state.gameOver = true; }
         else {
-          pac.x = Math.floor(cols / 2); pac.y = Math.floor(rows * 0.72);
+          pac.x = state.spawnX; pac.y = state.spawnY;
           pac.dirX = 0; pac.dirY = 0; pac.nextDirX = 0; pac.nextDirY = 0;
           const cx = Math.floor(cols / 2), cy = Math.floor(rows / 2);
           for (let gi = 0; gi < ghosts.length; gi++) {
