@@ -23,7 +23,7 @@
   <canvas id="game" width="800" height="600"></canvas>
   <div class="hud">
     <b>WASD</b> walk &nbsp;·&nbsp; <b>↑↓←→</b> drive &nbsp;·&nbsp;
-    <b>E</b> enter/exit car &nbsp;·&nbsp; <b>R</b> restart
+    <b>E</b> enter/exit car &nbsp;·&nbsp; <b>SPACE</b> shoot &nbsp;·&nbsp; <b>R</b> restart
   </div>
 
   <script>
@@ -51,6 +51,9 @@
   const CAR_TURN     = 0.05;  // rad/frame — scaled by speed
   const PED_SPEED    = 0.9;
   const COP_SPEED    = 2.6;
+  const BULLET_SPEED = 12;
+  const BULLET_LIFE  = 55;       // frames before bullet despawns
+  const SHOOT_COOLDOWN = 7;      // frames between shots
 
   // Tile glyphs
   // ' ' road    '.' sidewalk    'B' building    'G' grass    'W' water
@@ -153,6 +156,9 @@
       cars,
       peds,
       cops: [],
+      bullets: [],
+      muzzleFlash: 0,        // frames remaining for muzzle flash render
+      shootCooldown: 0,
       camera: { x: 0, y: 0 },
       wanted: 0,
       wantedDecay: 0,
@@ -160,6 +166,22 @@
       gameOver: false,
       keys: {},
     };
+  }
+
+  function fireBullet() {
+    const p = state.player;
+    // Origin: a few px in front of the player/car so it doesn't self-hit
+    const offset = p.inCar ? p.inCar.w / 2 + 4 : 8;
+    const ox = p.x + Math.cos(p.angle) * offset;
+    const oy = p.y + Math.sin(p.angle) * offset;
+    state.bullets.push({
+      x: ox, y: oy,
+      vx: Math.cos(p.angle) * BULLET_SPEED,
+      vy: Math.sin(p.angle) * BULLET_SPEED,
+      life: BULLET_LIFE,
+    });
+    state.muzzleFlash = 3;
+    state.shootCooldown = SHOOT_COOLDOWN;
   }
 
   function newCar(x, y, angle, color) {
@@ -257,6 +279,50 @@
       state.wanted--;
       state.wantedDecay = 0;
     }
+
+    // Shooting
+    state.shootCooldown = Math.max(0, state.shootCooldown - 1);
+    if (state.muzzleFlash > 0) state.muzzleFlash--;
+    if (KEYS.Space && state.shootCooldown === 0) fireBullet();
+
+    // Bullet physics + collision
+    for (const b of state.bullets) {
+      b.x += b.vx;
+      b.y += b.vy;
+      b.life--;
+      if (b.life <= 0) continue;
+      // tile collision — buildings + water stop bullets
+      const t = tileAtPx(state.grid, b.x, b.y);
+      if (t === 'B' || t === 'W') { b.life = 0; continue; }
+      // ped hit
+      for (const p of peds) {
+        if (!p.alive) continue;
+        if (Math.abs(p.x - b.x) < 8 && Math.abs(p.y - b.y) < 8) {
+          p.alive = false;
+          state.score += 100;
+          state.wanted = Math.min(5, state.wanted + 1);
+          state.wantedDecay = 0;
+          b.life = 0;
+          break;
+        }
+      }
+      if (b.life <= 0) continue;
+      // cop hit
+      for (const c of cops) {
+        if (!c.alive) continue;
+        if (Math.abs(c.x - b.x) < 8 && Math.abs(c.y - b.y) < 8) {
+          c.alive = false;
+          state.score += 200;
+          state.wanted = Math.min(5, state.wanted + 2);
+          state.wantedDecay = 0;
+          b.life = 0;
+          break;
+        }
+      }
+    }
+    // prune dead bullets + dead cops
+    state.bullets = state.bullets.filter(b => b.life > 0);
+    state.cops = state.cops.filter(c => c.alive);
 
     // ── Player movement ──
     if (player.inCar) {
@@ -509,6 +575,31 @@
 
     // Player (only if on foot — in car, drawCar already represents them)
     if (!state.player.inCar) drawPlayer(state.player, state.player.x - camX, state.player.y - camY);
+
+    // Bullets — short yellow streak in flight direction
+    for (const b of state.bullets) {
+      const tx = b.x - camX, ty = b.y - camY;
+      ctx.strokeStyle = '#ffd76a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tx - b.vx * 0.4, ty - b.vy * 0.4);
+      ctx.lineTo(tx, ty);
+      ctx.stroke();
+      ctx.fillStyle = '#fff8d4';
+      ctx.fillRect(tx - 1, ty - 1, 2, 2);
+    }
+
+    // Muzzle flash on the player
+    if (state.muzzleFlash > 0) {
+      const p = state.player;
+      const offset = p.inCar ? p.inCar.w / 2 + 2 : 8;
+      const fx = p.x + Math.cos(p.angle) * offset - camX;
+      const fy = p.y + Math.sin(p.angle) * offset - camY;
+      ctx.fillStyle = `rgba(255, 220, 100, ${state.muzzleFlash / 3})`;
+      ctx.beginPath();
+      ctx.arc(fx, fy, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     // ── HUD ──
     ctx.fillStyle = '#fff';
