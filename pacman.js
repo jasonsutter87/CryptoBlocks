@@ -726,12 +726,12 @@ function renderGame(ctx, state, canvasWidth, canvasHeight) {
   }
 
   // Overlays
-  if (state.gameOver) drawOverlay(ctx, canvasWidth, canvasHeight, '#f00', 'GAME OVER', `Final Score: ${score}`);
-  else if (state.won) drawOverlay(ctx, canvasWidth, canvasHeight, '#0f0', 'YOU WIN!', `Score: ${score}`);
-  else if (state.paused) drawOverlay(ctx, canvasWidth, canvasHeight, '#ff0', 'PAUSED', 'Press P to resume');
+  if (state.gameOver) drawOverlay(ctx, canvasWidth, canvasHeight, '#f00', 'GAME OVER', `Final Score: ${score}`, 'Press R to restart');
+  else if (state.won) drawOverlay(ctx, canvasWidth, canvasHeight, '#0f0', 'YOU WIN!', `Score: ${score}`, 'Press R to continue');
+  else if (state.paused) drawOverlay(ctx, canvasWidth, canvasHeight, '#ff0', 'PAUSED', 'Press P to resume', '');
 }
 
-function drawOverlay(ctx, w, h, color, title, sub) {
+function drawOverlay(ctx, w, h, color, title, sub, action) {
   ctx.fillStyle = 'rgba(0,0,0,0.7)';
   ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = color;
@@ -741,7 +741,7 @@ function drawOverlay(ctx, w, h, color, title, sub) {
   ctx.fillStyle = '#fff';
   ctx.font = '16px monospace';
   ctx.fillText(sub, w / 2, h / 2 + 25);
-  ctx.fillText('Press R to restart', w / 2, h / 2 + 50);
+  if (action) ctx.fillText(action, w / 2, h / 2 + 50);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
