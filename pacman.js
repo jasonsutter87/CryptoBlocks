@@ -27,6 +27,42 @@ const GHOST  = 3;
 const TUNNEL = 4;
 const EMPTY  = 5;   // eaten dot — passable, no sprite
 
+// ─── Audio (synthesized, no samples — IP-safe) ───────────────────────────
+let _audioCtx = null;
+function audioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+function tone(freq, dur, opts = {}) {
+  const ctx = audioCtx();
+  const t0 = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = opts.type || 'square';
+  osc.frequency.setValueAtTime(freq, t0);
+  if (opts.toFreq) osc.frequency.exponentialRampToValueAtTime(opts.toFreq, t0 + dur);
+  g.gain.setValueAtTime(opts.vol ?? 0.08, t0);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(t0); osc.stop(t0 + dur + 0.02);
+}
+
+function chord(notes, dur, opts) { for (const f of notes) tone(f, dur, opts); }
+
+function seq(notes, perNote = 0.08, opts) {
+  notes.forEach((f, i) => setTimeout(() => f && tone(f, perNote, opts), i * perNote * 1000));
+}
+
+const SFX = {
+  dot:        () => tone(740 + Math.random() * 60, 0.04, { type: 'square', vol: 0.05 }),
+  pellet:     () => seq([392, 523, 659, 784], 0.06, { type: 'triangle', vol: 0.09 }),
+  eatGhost:   () => tone(220, 0.4, { toFreq: 1320, type: 'sawtooth', vol: 0.12 }),
+  death:      () => seq([440, 392, 349, 293, 261, 220, 196, 174], 0.09, { type: 'square', vol: 0.1 }),
+  win:        () => seq([523, 659, 784, 1046, 0, 1046], 0.1, { type: 'square', vol: 0.1 }),
+  frightened: () => tone(1320, 0.18, { toFreq: 880, type: 'sawtooth', vol: 0.06 }),
+};
+
 // ─── Engine constants ────────────────────────────────────────────────────
 const TILE_SIZE = 24;          // bumped from 20 → 24 so sprites have room
 const PAC_SPEED = 0.08;
@@ -487,6 +523,7 @@ function updateGame(state, dt) {
       grid[tileY][tileX] = EMPTY;
       state.score += DOT_SCORE;
       state.dotsEaten++;
+      SFX.dot();
     } else if (cell === PELLET) {
       grid[tileY][tileX] = EMPTY;
       state.score += PELLET_SCORE;
@@ -496,10 +533,15 @@ function updateGame(state, dt) {
       for (const g of ghosts) {
         if (g.mode !== EATEN) { g.mode = FRIGHTENED; g.dirX = -g.dirX; g.dirY = -g.dirY; }
       }
+      SFX.pellet();
     }
   }
 
-  if (state.dotsEaten >= state.totalDots) { state.won = true; return; }
+  if (state.dotsEaten >= state.totalDots) {
+    state.won = true;
+    SFX.win();
+    return;
+  }
 
   for (let i = 0; i < ghosts.length; i++) {
     const g = ghosts[i];
@@ -540,8 +582,10 @@ function updateGame(state, dt) {
         g.mode = EATEN;
         state.ghostsEatenThisPower++;
         state.score += GHOST_EAT_SCORE * Math.pow(2, state.ghostsEatenThisPower - 1);
+        SFX.eatGhost();
       } else if (g.mode !== EATEN) {
         state.lives--;
+        SFX.death();
         if (state.lives <= 0) { state.gameOver = true; }
         else {
           pac.x = state.spawnX; pac.y = state.spawnY;
@@ -741,8 +785,15 @@ async function startGame(mazeConfig) {
   function onKey(e) {
     const result = handleInput(state, e.key);
     if (result === 'restart') {
-      const newMaze = buildMaze(Math.floor(maze.cols / 2), maze.rows, Math.min(3 + state.level, 6));
+      // Win → next level: carry score forward + bump level. Death/manual → fresh.
+      const advancing = state.won;
+      const nextLevel = advancing ? state.level + 1 : 1;
+      const carryScore = advancing ? state.score : 0;
+      const newMaze = buildMaze(Math.floor(maze.cols / 2), maze.rows, Math.min(3 + nextLevel, 6));
       state = createGameState(newMaze);
+      state.level = nextLevel;
+      state.score = carryScore;
+      if (typeof window !== 'undefined') window.__pacman = { get state() { return state; } };
     }
     if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(e.key)) e.preventDefault();
   }
