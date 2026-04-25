@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Sprite Generator — original pixel art for the platformer + pac-man demos</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0 16px 32px;
+      background: #14131a;
+      color: #e6e6e6;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    h1  { margin: 24px 0 4px; font-size: 18px; }
+    h2  { margin: 28px 0 8px; font-size: 14px; opacity: .8; border-bottom: 1px solid #333; padding-bottom: 6px; }
+    .note { font-size: 12px; opacity: .65; max-width: 720px; margin-bottom: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
+    .card {
+      background: #1d1c26;
+      border: 1px solid #2a2935;
+      border-radius: 10px;
+      padding: 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .preview {
+      image-rendering: pixelated;
+      width: 96px; height: 96px;
+      background:
+        repeating-conic-gradient(#252433 0 25%, #1a1923 0 50%) 0/16px 16px;
+      border-radius: 6px;
+    }
+    .name { font-size: 11px; opacity: .85; }
+    .filename { font-size: 10px; opacity: .5; font-family: monospace; }
+    button {
+      width: 100%;
+      background: #4c5cd8;
+      color: #fff;
+      border: 0;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button:hover { background: #5e6df0; }
+    .all-btn {
+      margin: 12px 0 6px;
+      padding: 10px 14px;
+      background: #ffd76a;
+      color: #14131a;
+      font-size: 13px;
+      max-width: 220px;
+    }
+    .all-btn:hover { background: #ffe488; }
+  </style>
+</head>
+<body>
+  <h1>Sprite Generator</h1>
+  <p class="note">
+    Original pixel art for the standalone Mario + Pac-Man reference games.
+    Each sprite is drawn procedurally on a canvas at 32×32. Download individual
+    PNGs or grab them all. Drop them next to <code>pacman.html</code> in
+    <code>sprites/</code>, or import into the CryptoBlocks Sprite Editor for
+    further tweaking.
+  </p>
+  <button class="all-btn" id="dl-all">⬇  Download all as PNGs</button>
+
+  <h2>Pac-Man (13 sprites — drop into sprites/)</h2>
+  <div class="grid" id="grid-pacman"></div>
+
+  <h2>Mario / Platformer (10 sprites)</h2>
+  <div class="grid" id="grid-mario"></div>
+
+  <script>
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+  const SIZE = 32;
+
+  function makeCanvas() {
+    const c = document.createElement('canvas');
+    c.width = SIZE; c.height = SIZE;
+    return c;
+  }
+
+  function downloadCanvas(canvas, filename) {
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  }
+
+  // px(ctx, color, x, y, w=1, h=1) — 1 unit = 1 pixel at 32×32
+  function px(ctx, color, x, y, w = 1, h = 1) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+  }
+
+  // Draws a small rounded "blob" body for ghosts/goombas
+  function blob(ctx, color, cx, cy, r) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, Math.PI, 0);
+    ctx.lineTo(cx + r, cy + r);
+    // wavy bottom
+    const wave = Math.max(2, Math.floor(r / 3));
+    for (let w = r; w >= -r; w -= wave * 2) {
+      ctx.lineTo(cx + w, cy + r - wave);
+      ctx.lineTo(cx + w - wave, cy + r);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // ─── Pac-Man sprite drawers ──────────────────────────────────────────────
+
+  function drawWall(ctx) {
+    px(ctx, '#1a1aff', 0, 0, SIZE, SIZE);
+    px(ctx, '#3535ff', 1, 1, SIZE - 2, 2);
+    px(ctx, '#3535ff', 1, 1, 2, SIZE - 2);
+    px(ctx, '#0a0aaa', 0, SIZE - 2, SIZE, 2);
+    px(ctx, '#0a0aaa', SIZE - 2, 0, 2, SIZE);
+  }
+
+  function drawDot(ctx) {
+    ctx.fillStyle = '#ffb8ae';
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, SIZE / 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawPellet(ctx) {
+    ctx.fillStyle = '#ffb8ae';
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, SIZE / 2, 7, 0, Math.PI * 2);
+    ctx.fill();
+    // shine
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(SIZE / 2 - 2, SIZE / 2 - 3, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawTunnel(ctx) {
+    px(ctx, '#1a1a22', 0, 0, SIZE, SIZE);
+    // subtle glow
+    px(ctx, '#3a3a5a', 4, 4, SIZE - 8, SIZE - 8);
+    px(ctx, '#1a1a22', 6, 6, SIZE - 12, SIZE - 12);
+  }
+
+  function drawGhostHouse(ctx) {
+    px(ctx, '#0a0a14', 0, 0, SIZE, SIZE);
+    px(ctx, '#1a1a2e', 4, 4, SIZE - 8, SIZE - 8);
+  }
+
+  function drawPac(ctx, mouthOpen) {
+    const cx = SIZE / 2, cy = SIZE / 2, r = SIZE / 2 - 1;
+    ctx.fillStyle = '#ffd400';
+    if (!mouthOpen) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0.18 * Math.PI, 1.82 * Math.PI);
+      ctx.lineTo(cx, cy);
+      ctx.fill();
+    }
+    // small darker outline on top to give him personality
+    ctx.fillStyle = '#dba900';
+    ctx.beginPath();
+    ctx.arc(cx, cy - r + 4, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawGhost(ctx, body, name) {
+    blob(ctx, body, SIZE / 2, SIZE / 2 + 1, SIZE / 2 - 2);
+    // eyes (white)
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(SIZE / 2 - 5, SIZE / 2 - 2, 4, 0, Math.PI * 2);
+    ctx.arc(SIZE / 2 + 5, SIZE / 2 - 2, 4, 0, Math.PI * 2);
+    ctx.fill();
+    // pupils (blue, looking forward) — engine overlays its own anyway
+    ctx.fillStyle = '#1a1aff';
+    ctx.beginPath();
+    ctx.arc(SIZE / 2 - 5, SIZE / 2 - 2, 2, 0, Math.PI * 2);
+    ctx.arc(SIZE / 2 + 5, SIZE / 2 - 2, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawFrightened(ctx, white) {
+    const body = white ? '#fff' : '#2121ff';
+    blob(ctx, body, SIZE / 2, SIZE / 2 + 1, SIZE / 2 - 2);
+    // scared eyes (no whites — crosses)
+    const eye = white ? '#ff4040' : '#ffd76a';
+    ctx.fillStyle = eye;
+    px(ctx, eye, SIZE / 2 - 6, SIZE / 2 - 4, 3, 3);
+    px(ctx, eye, SIZE / 2 + 4, SIZE / 2 - 4, 3, 3);
+    // frown
+    ctx.strokeStyle = eye;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(SIZE / 2 - 6, SIZE / 2 + 4);
+    ctx.lineTo(SIZE / 2 - 3, SIZE / 2 + 2);
+    ctx.lineTo(SIZE / 2,     SIZE / 2 + 4);
+    ctx.lineTo(SIZE / 2 + 3, SIZE / 2 + 2);
+    ctx.lineTo(SIZE / 2 + 6, SIZE / 2 + 4);
+    ctx.stroke();
+  }
+
+  // ─── Mario sprite drawers ────────────────────────────────────────────────
+
+  function drawGround(ctx) {
+    // dirt body
+    px(ctx, '#c07832', 0, 0, SIZE, SIZE);
+    // grass top
+    px(ctx, '#4cbb4c', 0, 0, SIZE, 6);
+    px(ctx, '#7aff7a', 0, 0, SIZE, 2);
+    // dirt speckles
+    px(ctx, '#8a501d', 4,  14, 3, 2);
+    px(ctx, '#8a501d', 18, 9,  3, 2);
+    px(ctx, '#8a501d', 24, 22, 3, 2);
+    px(ctx, '#8a501d', 8,  24, 3, 2);
+    // bottom shadow
+    px(ctx, '#7c4a1c', 0, SIZE - 3, SIZE, 3);
+  }
+
+  function drawBrick(ctx) {
+    px(ctx, '#d47a2c', 0, 0, SIZE, SIZE);
+    // dark mortar lines (4-quadrant brick pattern)
+    px(ctx, '#5c2e08', 0, SIZE / 2 - 1, SIZE, 2);
+    px(ctx, '#5c2e08', SIZE / 2 - 1, 0, 2, SIZE / 2 - 1);
+    px(ctx, '#5c2e08', SIZE / 4 - 1, SIZE / 2, 2, SIZE / 2);
+    px(ctx, '#5c2e08', (SIZE / 4) * 3 - 1, SIZE / 2, 2, SIZE / 2);
+    // highlights
+    px(ctx, '#f0a060', 1, 1, SIZE - 2, 1);
+    px(ctx, '#f0a060', 1, 1, 1, SIZE / 2 - 2);
+  }
+
+  function drawQuestion(ctx) {
+    px(ctx, '#f9a634', 0, 0, SIZE, SIZE);
+    // border + bevel
+    px(ctx, '#7c4a08', 0, 0, SIZE, 2);
+    px(ctx, '#7c4a08', 0, SIZE - 2, SIZE, 2);
+    px(ctx, '#7c4a08', 0, 0, 2, SIZE);
+    px(ctx, '#7c4a08', SIZE - 2, 0, 2, SIZE);
+    // question mark
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 22px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('?', SIZE / 2, SIZE / 2 + 1);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+
+  function drawUsed(ctx) {
+    px(ctx, '#7a4f10', 0, 0, SIZE, SIZE);
+    px(ctx, '#3a2208', 0, 0, SIZE, 2);
+    px(ctx, '#3a2208', 0, SIZE - 2, SIZE, 2);
+    px(ctx, '#3a2208', 0, 0, 2, SIZE);
+    px(ctx, '#3a2208', SIZE - 2, 0, 2, SIZE);
+    // dim X to show it's been used
+    px(ctx, '#5c3a0c', 6, SIZE / 2 - 1, SIZE - 12, 2);
+  }
+
+  function drawPipeTop(ctx) {
+    px(ctx, '#2d882d', 0, 0, SIZE, SIZE);
+    px(ctx, '#4cbb4c', 2, 2, SIZE - 4, SIZE - 4);
+    // top rim — wider than body
+    px(ctx, '#2d882d', 0, 0, SIZE, 8);
+    px(ctx, '#4cbb4c', 2, 2, SIZE - 4, 4);
+    // shine
+    px(ctx, '#7aff7a', 4, 3, 3, 3);
+  }
+
+  function drawPipeBody(ctx) {
+    px(ctx, '#2d882d', 0, 0, SIZE, SIZE);
+    // inner highlight
+    px(ctx, '#4cbb4c', 4, 0, 4, SIZE);
+    px(ctx, '#4cbb4c', SIZE - 8, 0, 4, SIZE);
+    // dark seams
+    px(ctx, '#1a5a1a', 2, 0, 2, SIZE);
+    px(ctx, '#1a5a1a', SIZE - 4, 0, 2, SIZE);
+  }
+
+  function drawFlagPole(ctx) {
+    // pole
+    px(ctx, '#888', SIZE / 2 - 2, 0, 4, SIZE);
+    px(ctx, '#bbb', SIZE / 2 - 2, 0, 1, SIZE);
+    // green flag (only on this top-tile sprite — body sprite is just pole)
+    ctx.fillStyle = '#22cc66';
+    ctx.beginPath();
+    ctx.moveTo(SIZE / 2 + 2, 4);
+    ctx.lineTo(SIZE - 2,    10);
+    ctx.lineTo(SIZE / 2 + 2, 16);
+    ctx.closePath();
+    ctx.fill();
+    // pole-top ball
+    ctx.fillStyle = '#ffd76a';
+    ctx.beginPath();
+    ctx.arc(SIZE / 2, 2, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawMario(ctx) {
+    // hat
+    px(ctx, '#e52521', 8, 4, 16, 6);
+    px(ctx, '#b81d1d', 8, 9, 16, 1);
+    // hair
+    px(ctx, '#3a1a08', 8, 10, 4, 2);
+    px(ctx, '#3a1a08', 20, 10, 4, 2);
+    // face
+    px(ctx, '#fac090', 10, 10, 12, 8);
+    // eyes
+    px(ctx, '#fff', 13, 12, 2, 3);
+    px(ctx, '#fff', 17, 12, 2, 3);
+    px(ctx, '#000', 14, 13, 1, 2);
+    px(ctx, '#000', 18, 13, 1, 2);
+    // mustache
+    px(ctx, '#3a1a08', 11, 16, 10, 2);
+    // mouth
+    px(ctx, '#7c3a08', 14, 18, 4, 1);
+    // shirt (red)
+    px(ctx, '#e52521', 8, 19, 16, 4);
+    // overalls (blue)
+    px(ctx, '#1657c2', 10, 22, 12, 6);
+    // overall straps
+    px(ctx, '#1657c2', 11, 18, 3, 5);
+    px(ctx, '#1657c2', 18, 18, 3, 5);
+    // overall buttons
+    px(ctx, '#ffd76a', 12, 22, 1, 1);
+    px(ctx, '#ffd76a', 19, 22, 1, 1);
+    // arms
+    px(ctx, '#fac090', 6, 19, 2, 4);
+    px(ctx, '#fac090', 24, 19, 2, 4);
+    // shoes
+    px(ctx, '#532f1a', 8,  28, 7, 3);
+    px(ctx, '#532f1a', 17, 28, 7, 3);
+    px(ctx, '#3a1a08', 8,  30, 7, 1);
+    px(ctx, '#3a1a08', 17, 30, 7, 1);
+  }
+
+  function drawGoomba(ctx) {
+    // dark cap
+    px(ctx, '#5c2c0c', 6, 4, 20, 4);
+    px(ctx, '#7a3c0c', 6, 8, 20, 2);
+    // body
+    px(ctx, '#a86530', 4, 10, 24, 14);
+    px(ctx, '#7a3c0c', 4, 22, 24, 2);
+    // eyes
+    px(ctx, '#fff', 8,  12, 6, 6);
+    px(ctx, '#fff', 18, 12, 6, 6);
+    px(ctx, '#000', 10, 14, 3, 4);
+    px(ctx, '#000', 20, 14, 3, 4);
+    // angry brow
+    px(ctx, '#3a1a08', 8,  11, 6, 1);
+    px(ctx, '#3a1a08', 18, 11, 6, 1);
+    // feet
+    px(ctx, '#2a160a', 4,  26, 8, 6);
+    px(ctx, '#2a160a', 20, 26, 8, 6);
+    px(ctx, '#000',    4,  30, 8, 2);
+    px(ctx, '#000',    20, 30, 8, 2);
+  }
+
+  // ─── Sprite registry ─────────────────────────────────────────────────────
+  const PACMAN_SPRITES = [
+    { name: 'wall',             draw: drawWall },
+    { name: 'dot',              draw: drawDot },
+    { name: 'pellet',           draw: drawPellet },
+    { name: 'tunnel',           draw: drawTunnel },
+    { name: 'ghost-house',      draw: drawGhostHouse },
+    { name: 'pac-open',         draw: (ctx) => drawPac(ctx, true) },
+    { name: 'pac-closed',       draw: (ctx) => drawPac(ctx, false) },
+    { name: 'blinky',           draw: (ctx) => drawGhost(ctx, '#FF2020', 'blinky') },
+    { name: 'pinky',            draw: (ctx) => drawGhost(ctx, '#FFB8FF', 'pinky') },
+    { name: 'inky',             draw: (ctx) => drawGhost(ctx, '#00FFFF', 'inky') },
+    { name: 'clyde',            draw: (ctx) => drawGhost(ctx, '#FFB852', 'clyde') },
+    { name: 'frightened',       draw: (ctx) => drawFrightened(ctx, false) },
+    { name: 'frightened-flash', draw: (ctx) => drawFrightened(ctx, true) },
+  ];
+
+  const MARIO_SPRITES = [
+    { name: 'ground',     draw: drawGround },
+    { name: 'brick',      draw: drawBrick },
+    { name: 'q-block',    draw: drawQuestion },
+    { name: 'used-block', draw: drawUsed },
+    { name: 'pipe-top',   draw: drawPipeTop },
+    { name: 'pipe-body',  draw: drawPipeBody },
+    { name: 'flag',       draw: drawFlagPole },
+    { name: 'plumber',    draw: drawMario },
+    { name: 'mushroom',   draw: drawGoomba },
+  ];
+
+  // ─── UI ──────────────────────────────────────────────────────────────────
+
+  function makeCard(spec, gridEl) {
+    const c = makeCanvas();
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    spec.draw(ctx);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const preview = document.createElement('canvas');
+    preview.className = 'preview';
+    preview.width = SIZE; preview.height = SIZE;
+    const pctx = preview.getContext('2d');
+    pctx.imageSmoothingEnabled = false;
+    pctx.drawImage(c, 0, 0);
+
+    const filename = spec.name + '.png';
+    const name = document.createElement('div');
+    name.className = 'name';
+    name.textContent = spec.name;
+    const fn = document.createElement('div');
+    fn.className = 'filename';
+    fn.textContent = filename;
+
+    const btn = document.createElement('button');
+    btn.textContent = '⬇ download';
+    btn.addEventListener('click', () => downloadCanvas(c, filename));
+
+    card.appendChild(preview);
+    card.appendChild(name);
+    card.appendChild(fn);
+    card.appendChild(btn);
+    gridEl.appendChild(card);
+
+    spec._canvas = c;
+    spec._filename = filename;
+  }
+
+  PACMAN_SPRITES.forEach((s) => makeCard(s, document.getElementById('grid-pacman')));
+  MARIO_SPRITES.forEach((s)  => makeCard(s, document.getElementById('grid-mario')));
+
+  document.getElementById('dl-all').addEventListener('click', () => {
+    const all = [...PACMAN_SPRITES, ...MARIO_SPRITES];
+    let i = 0;
+    const stagger = () => {
+      if (i >= all.length) return;
+      downloadCanvas(all[i]._canvas, all[i]._filename);
+      i++;
+      setTimeout(stagger, 80);   // some browsers throttle simultaneous downloads
+    };
+    stagger();
+  });
+  </script>
+</body>
+</html>
