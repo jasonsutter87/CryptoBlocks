@@ -48,8 +48,6 @@ function tone(freq, dur, opts = {}) {
   osc.start(t0); osc.stop(t0 + dur + 0.02);
 }
 
-function chord(notes, dur, opts) { for (const f of notes) tone(f, dur, opts); }
-
 function seq(notes, perNote = 0.08, opts) {
   notes.forEach((f, i) => setTimeout(() => f && tone(f, perNote, opts), i * perNote * 1000));
 }
