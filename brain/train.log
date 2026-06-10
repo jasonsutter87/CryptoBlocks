@@ -1,0 +1,13 @@
+device=mps  params=4.24M  vocab=69  corpus=3.15MB  tokens=2.99M  turn-aligned starts=22948
+step     0 | train 4.205 | val 4.204 | lr 2.4e-06 | 19s
+step   250 | train 1.724 | val 1.724 | lr 3.0e-04 | 231s
+step   500 | train 0.387 | val 0.392 | lr 2.8e-04 | 433s
+step   750 | train 0.130 | val 0.130 | lr 2.6e-04 | 634s
+step  1000 | train 0.086 | val 0.087 | lr 2.2e-04 | 832s
+step  1250 | train 0.074 | val 0.075 | lr 1.8e-04 | 1031s
+step  1500 | train 0.070 | val 0.071 | lr 1.3e-04 | 1246s
+step  1750 | train 0.068 | val 0.068 | lr 9.1e-05 | 1462s
+step  2000 | train 0.067 | val 0.068 | lr 5.8e-05 | 1673s
+step  2250 | train 0.067 | val 0.067 | lr 3.7e-05 | 1879s
+step  2500 | train 0.067 | val 0.067 | lr 3.0e-05 | 2089s
+done. best val loss 0.067. checkpoint in ckpt/model.pt
