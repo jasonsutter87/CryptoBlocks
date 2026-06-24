@@ -21,14 +21,16 @@
 # Funnel. status=200 = a proxy/rewrite, so the URL stays getcryptoblocks.com/chat
 # while the bytes come from the brain. The exact-path rule serves the page;
 # the wildcard strips /chat so the brain's /meta /ask /corpus endpoints resolve.
+# NOTE: temporarily served from jasons-macbook-pro (laptop) while jason-server
+# SSH access is being restored. Revert origin to jason-server once migrated.
 [[redirects]]
   from = "/chat"
-  to = "https://jason-server.taildf1d89.ts.net:8443/chat"
+  to = "https://jasons-macbook-pro.taildf1d89.ts.net:8443/chat"
   status = 200
   force = true
 
 [[redirects]]
   from = "/chat/*"
-  to = "https://jason-server.taildf1d89.ts.net:8443/:splat"
+  to = "https://jasons-macbook-pro.taildf1d89.ts.net:8443/:splat"
   status = 200
   force = true
