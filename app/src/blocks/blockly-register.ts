@@ -1628,7 +1628,17 @@ function generateEventCode(block: Blockly.Block, language: Language): string | n
       const isAsync = body.includes('await ')
       const fnKeyword = isAsync ? 'async function' : 'function'
       const bodyIndented = body ? `\n${indent(body, language)}\n` : ''
-      return `document.addEventListener('keydown', ${fnKeyword}(e) {\n  if (e.key === ${JSON.stringify(key)}) {${bodyIndented}  }\n});`
+      // Real keydown events don't fire in the hidden sandbox iframe; the parent
+      // forwards key STATE via the capability bridge. Register an edge-triggered
+      // handler under the normalized DOM code name so the bridge invokes it once
+      // per press. (See __keyHandlers / __normKey in the sandbox shim.)
+      return [
+        `window.__keyHandlers = window.__keyHandlers || {};`,
+        `(function() {`,
+        `  var __cbKey = (typeof window.__normKey === 'function' ? window.__normKey(${JSON.stringify(key)}) : ${JSON.stringify(key)});`,
+        `  (window.__keyHandlers[__cbKey] = window.__keyHandlers[__cbKey] || []).push(${fnKeyword}() {${bodyIndented}  });`,
+        `})();`,
+      ].join('\n')
     }
 
     case 'cb_game_loop': {
@@ -1636,21 +1646,27 @@ function generateEventCode(block: Blockly.Block, language: Language): string | n
         return `# Game loop is only available in JavaScript mode`
       }
       const body = generateStatementCode(block, 'DO', language)
-      const indented = body ? indent(body, language) : ''
-      // Cancels any previous loop first so clicking Run twice doesn't pile
-      // them up. __cbGameLoopId is shared parent-window state.
+      const indented = body ? indent(body, language) : '      // (empty loop body)'
+      // The sandbox iframe is display:none, so requestAnimationFrame never
+      // fires. Drive the loop with setTimeout (~30fps) and stream the canvas to
+      // the parent each frame (the parent's OutputPanel only renders frames it
+      // receives via postMessage). Honor the __cbStopLoop kill flag that the
+      // runner's cleanup sets so Stop / Run-twice don't leak loops.
       return [
         `(function() {`,
-        `  if (window.__cbGameLoopId) { cancelAnimationFrame(window.__cbGameLoopId); window.__cbGameLoopId = 0; }`,
-        `  var __cbLoopActive = true;`,
+        `  window.__cbStopLoop = false;`,
         `  var __cbLoop = async function() {`,
-        `    if (!__cbLoopActive) return;`,
+        `    if (window.__cbStopLoop) return;`,
         `    try {`,
-        indented || '      // (empty loop body)',
-        `    } catch (e) { console.error('game loop error:', e && e.message ? e.message : e); __cbLoopActive = false; return; }`,
-        `    if (__cbLoopActive) { window.__cbGameLoopId = requestAnimationFrame(__cbLoop); }`,
+        indented,
+        `    } catch (e) { console.error('game loop error:', e && e.message ? e.message : e); return; }`,
+        `    var __cv = document.getElementById('cb-canvas');`,
+        `    if (__cv && __cv.width > 0 && __cv.style.display !== 'none') {`,
+        `      try { parent.postMessage({ __cryptoblocks: true, type: 'canvas', data: __cv.toDataURL('image/png') }, '*'); } catch(e) {}`,
+        `    }`,
+        `    setTimeout(__cbLoop, 33);`,
         `  };`,
-        `  window.__cbGameLoopId = requestAnimationFrame(__cbLoop);`,
+        `  setTimeout(__cbLoop, 0);`,
         `})();`,
       ].join('\n')
     }

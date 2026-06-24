@@ -1073,19 +1073,30 @@ export const gamesBlocks: BlockDefinition[] = [
       if(piece&&!over)for(var y=0;y<piece.length;y++)for(var x=0;x<piece[y].length;x++)if(piece[y][x]){var dy=py+y;if(dy>=0){ctx.fillStyle=pc;ctx.fillRect((px+x)*SZ+1,dy*SZ+1,SZ-2,SZ-2);ctx.fillStyle='rgba(255,255,255,0.15)';ctx.fillRect((px+x)*SZ+1,dy*SZ+1,SZ-2,3)}}
       ctx.fillStyle='#cdd6f4';ctx.font='bold 14px sans-serif';ctx.textAlign='left';ctx.fillText('Score: '+score,5,18);ctx.textAlign='right';ctx.fillText('Lvl '+level,c.width-5,18);ctx.textAlign='left';
       if(over){ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,c.height/2-40,c.width,80);ctx.fillStyle='#f38ba8';ctx.font='bold 28px sans-serif';ctx.textAlign='center';ctx.fillText('GAME OVER',c.width/2,c.height/2);ctx.fillStyle='#6c7086';ctx.font='14px sans-serif';ctx.fillText('Score: '+score+' | Lines: '+lines,c.width/2,c.height/2+25);ctx.textAlign='left'}}
-    document.addEventListener('keydown',function(e){if(over)return;
-      if(e.key==='ArrowLeft'){if(fits(piece,px-1,py))px--;e.preventDefault()}
-      else if(e.key==='ArrowRight'){if(fits(piece,px+1,py))px++;e.preventDefault()}
-      else if(e.key==='ArrowUp'){var r=rot(piece);if(fits(r,px,py))piece=r;else if(fits(r,px-1,py)){piece=r;px--}else if(fits(r,px+1,py)){piece=r;px++};e.preventDefault()}
-      else if(e.key==='ArrowDown'){if(fits(piece,px,py+1)){py++;score+=1}e.preventDefault()}
-      else if(e.key===' '){while(fits(piece,px,py+1)){py++;score+=2}lock();e.preventDefault()}});
+    // Real keydown events don't reach the hidden sandbox iframe; the parent
+    // forwards key STATE via window.__keys (indexed by DOM code names). Poll it
+    // each tick with edge-detection so one press = one action.
+    var keyPrev={};
+    function handleKeys(){if(over)return;var K=window.__keys||{};
+      function pressed(code){var p=!!K[code];var was=!!keyPrev[code];keyPrev[code]=p;return p&&!was}
+      if(pressed('ArrowLeft')){if(fits(piece,px-1,py))px--}
+      if(pressed('ArrowRight')){if(fits(piece,px+1,py))px++}
+      if(pressed('ArrowUp')){var r=rot(piece);if(fits(r,px,py))piece=r;else if(fits(r,px-1,py)){piece=r;px--}else if(fits(r,px+1,py)){piece=r;px++}}
+      if(pressed('ArrowDown')){if(fits(piece,px,py+1)){py++;score+=1}}
+      if(pressed('Space')){while(fits(piece,px,py+1)){py++;score+=2}lock()}}
     if(window.__tetrisMusicStop)window.__tetrisMusicStop();
     var mel=[[659,400],[494,200],[523,200],[587,400],[523,200],[494,200],[440,400],[440,200],[523,200],[659,400],[587,200],[523,200],[494,400],[494,200],[523,200],[587,400],[659,400],[523,400],[440,400],[440,400],[0,400],[587,400],[698,200],[880,400],[784,200],[698,200],[659,400],[523,200],[659,400],[587,200],[523,200],[494,400],[494,200],[523,200],[587,400],[659,400],[523,400],[440,400],[440,400],[0,400]];
     var mi=0,musicAlive=true;window.__tetrisMusicStop=function(){musicAlive=false};function playN(){if(over||!musicAlive)return;try{var a=window.__audio||new(window.AudioContext||window.webkitAudioContext)();window.__audio=a;var n=mel[mi%mel.length];mi++;if(n[0]>0){var o=a.createOscillator();var g=a.createGain();o.type='square';o.frequency.value=n[0];g.gain.setValueAtTime(0.06,a.currentTime);g.gain.exponentialRampToValueAtTime(0.01,a.currentTime+n[1]/1000*0.9);o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+n[1]/1000)}setTimeout(playN,n[1])}catch(e){setTimeout(playN,500)}}
     setTimeout(playN,300);
     spawn();
-    function tick(t){if(!t)t=0;if(over){draw();return}if(t-ld>di){if(fits(piece,px,py+1))py++;else lock();ld=t}draw();window.__cbGameLoopId=requestAnimationFrame(tick)}
-    window.__cbGameLoopId=requestAnimationFrame(tick);
+    // requestAnimationFrame doesn't fire in the hidden iframe — drive with
+    // setTimeout and stream each frame to the parent so it actually renders.
+    function tick(){if(window.__cbStopLoop)return;var t=Date.now();
+      if(!over){handleKeys();if(t-ld>di){if(fits(piece,px,py+1))py++;else lock();ld=t}}
+      draw();
+      try{parent.postMessage({__cryptoblocks:true,type:'canvas',data:c.toDataURL('image/png')},'*')}catch(e){}
+      setTimeout(tick,33)}
+    window.__cbStopLoop=false;ld=Date.now();setTimeout(tick,0);
     console.log('🧱 Tetris! ← → move, ↑ rotate, ↓ soft drop, Space hard drop');
   })();
 }`,

@@ -293,11 +293,36 @@ const SANDBOX_CSP = [
 const CAPABILITY_BRIDGE = `
 var __bridgeCache = { gamepad: {}, keys: {}, microbit: {}, vision: {} };
 
+// "When key pressed" handlers, fired on the RISING EDGE of a key. Real keydown
+// events never fire inside this hidden, null-origin iframe — the parent forwards
+// key STATE only — so cb_when_key_pressed registers callbacks here keyed by DOM
+// KeyboardEvent.code names (what getKeyboardSnapshot reports). __normKey maps the
+// block's e.key-style value (' ', 'a') to the matching code ('Space', 'KeyA').
+window.__keyHandlers = {};
+window.__normKey = function(k) {
+  if (k === ' ' || k === 'Spacebar') return 'Space';
+  if (k && k.length === 1 && k >= 'a' && k <= 'z') return 'Key' + k.toUpperCase();
+  if (k && k.length === 1 && k >= 'A' && k <= 'Z') return 'Key' + k;
+  if (k && k.length === 1 && k >= '0' && k <= '9') return 'Digit' + k;
+  return k; // Arrow*, Enter, Escape, etc. already match their code names
+};
+
 window.addEventListener('message', function(e) {
   var m = e.data;
   if (!m || m.__cryptoblocks !== true || m.type !== 'input') return;
   if (m.gamepad)  __bridgeCache.gamepad  = m.gamepad;
-  if (m.keys)     __bridgeCache.keys     = m.keys;
+  if (m.keys) {
+    var __prev = __bridgeCache.keys || {};
+    __bridgeCache.keys = m.keys;
+    for (var __k in m.keys) {
+      if (m.keys[__k] && !__prev[__k] && window.__keyHandlers[__k]) {
+        var __hs = window.__keyHandlers[__k];
+        for (var __i = 0; __i < __hs.length; __i++) {
+          try { __hs[__i](); } catch (__e) { console.error(__e && __e.message ? __e.message : __e); }
+        }
+      }
+    }
+  }
   if (m.microbit) __bridgeCache.microbit = m.microbit;
   if (m.vision)   __bridgeCache.vision   = m.vision;
 });
@@ -485,6 +510,10 @@ function userCodeRunner(encodedBase64: string): string {
   return `
 (async function() {
   try {
+    // Announce liveness immediately so the parent's probe knows the sandbox
+    // booted. Without this, a program that does no output before a long await
+    // (e.g. a wait/sleep loop) is mistaken for a dead sandbox at the 2s probe.
+    parent.postMessage({ __cryptoblocks: true, type: 'ready' }, '*');
     if (!document.body) {
       await new Promise(function(r) {
         if (document.readyState === 'loading') {
@@ -635,13 +664,22 @@ function tryIframeExecution(
         startInputPump()
       }
 
-      if (msg.type === 'trace') {
+      if (msg.type === 'ready') {
+        // Liveness signal only — the probe-clearing above already handled it.
+      } else if (msg.type === 'trace') {
         onTrace?.(String(msg.data))
       } else if (msg.type === 'log') {
         collector.push(String(msg.data))
       } else if (msg.type === 'canvas') {
         canvasDataUrl = String(msg.data)
         onCanvasUpdate?.(canvasDataUrl)
+        // Keep-alive: an actively-rendering loop (game/animation) is not a hung
+        // program. Push back the execution timeout so interactive demos keep
+        // running; code that stops producing frames will still time out.
+        if (mainTimer) {
+          clearTimeout(mainTimer)
+          mainTimer = setTimeout(() => { finish('Execution timed out (30 seconds)', null) }, EXECUTION_TIMEOUT)
+        }
       } else if (msg.type === 'html') {
         htmlOutput = String(msg.data)
       } else if (msg.type === 'cmd') {
