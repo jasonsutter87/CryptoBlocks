@@ -1,0 +1,315 @@
+{{/* ============================================================
+     CryptoBlocks Assistant — floating chat widget
+     Powered by the self-hosted "brain" micro-model at /chat/ask.
+     Self-contained: uses shared theme.css design tokens (var(--*))
+     so it matches brand + flips light/dark automatically.
+     Endpoint: POST /chat/ask {"q": "..."} -> {"a": "..."}
+     ============================================================ */}}
+<style>
+  #cb-chat, #cb-chat *{box-sizing:border-box}
+  #cb-chat{
+    --cb-radius:16px;
+    position:fixed;right:22px;bottom:22px;z-index:9998;
+    font-family:var(--sans);
+  }
+
+  /* ---------- Launcher bubble ---------- */
+  #cb-launch{
+    width:58px;height:58px;border-radius:50%;
+    display:grid;place-items:center;position:relative;
+    background:var(--green);color:#0f2017;
+    box-shadow:0 0 0 1px color-mix(in oklab, var(--green) 55%, transparent),
+               0 16px 34px -12px color-mix(in oklab, var(--green) 65%, transparent);
+    transition:transform .12s ease, box-shadow .2s ease;
+  }
+  [data-theme="light"] #cb-launch{color:#ffffff}
+  #cb-launch:hover{transform:translateY(-2px) scale(1.03)}
+  #cb-launch:active{transform:translateY(0) scale(.98)}
+  #cb-launch svg{width:26px;height:26px;display:block;pointer-events:none;transition:opacity .18s, transform .18s}
+  #cb-launch .cb-ico-close{position:absolute;opacity:0;transform:rotate(-45deg) scale(.6)}
+  #cb-chat[data-open="true"] #cb-launch .cb-ico-chat{opacity:0;transform:rotate(45deg) scale(.6)}
+  #cb-chat[data-open="true"] #cb-launch .cb-ico-close{opacity:1;transform:rotate(0) scale(1)}
+  /* unread ping dot */
+  #cb-launch .cb-ping{
+    position:absolute;top:-2px;right:-2px;width:15px;height:15px;border-radius:50%;
+    background:var(--red);border:2.5px solid var(--base);
+    transform:scale(0);transition:transform .2s cubic-bezier(.2,1.4,.4,1);
+  }
+  #cb-chat[data-unread="true"]:not([data-open="true"]) #cb-launch .cb-ping{transform:scale(1)}
+
+  /* ---------- Panel ---------- */
+  #cb-panel{
+    position:absolute;right:0;bottom:74px;width:374px;max-width:calc(100vw - 32px);
+    height:min(560px, calc(100vh - 120px));
+    display:flex;flex-direction:column;overflow:hidden;
+    background:var(--base);border:1px solid var(--surface0);
+    border-radius:var(--cb-radius);box-shadow:var(--shadow-strong);
+    transform-origin:bottom right;
+    opacity:0;transform:translateY(12px) scale(.96);pointer-events:none;
+    transition:opacity .18s ease, transform .2s cubic-bezier(.2,.9,.3,1.1);
+  }
+  #cb-chat[data-open="true"] #cb-panel{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+
+  /* header */
+  #cb-panel .cb-head{
+    display:flex;align-items:center;gap:11px;padding:14px 14px 13px;
+    border-bottom:1px solid var(--surface0);background:var(--mantle);
+  }
+  .cb-mark{width:34px;height:34px;position:relative;flex:0 0 auto}
+  .cb-mark i{position:absolute;width:15px;height:15px;border-radius:5px;mix-blend-mode:screen;opacity:.95}
+  [data-theme="light"] .cb-mark i{mix-blend-mode:multiply;opacity:.9}
+  .cb-mark i.b{background:#89b4fa;top:2px;left:0}
+  .cb-mark i.y{background:#f9e2af;top:8px;left:8px}
+  .cb-mark i.g{background:#a6e3a1;top:14px;left:16px}
+  .cb-head .cb-title{font-weight:700;font-size:14.5px;letter-spacing:-.01em;line-height:1.15}
+  .cb-head .cb-sub{font-size:11.5px;color:var(--overlay1);font-family:var(--mono);margin-top:2px;display:flex;align-items:center;gap:6px}
+  .cb-head .cb-sub i{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+  .cb-head .cb-x{margin-left:auto;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;color:var(--subtext)}
+  .cb-head .cb-x:hover{background:var(--surface0);color:var(--text)}
+  .cb-head .cb-x svg{width:16px;height:16px}
+
+  /* messages */
+  #cb-log{flex:1;overflow-y:auto;padding:16px 14px 6px;display:flex;flex-direction:column;gap:11px;scroll-behavior:smooth}
+  #cb-log::-webkit-scrollbar{width:8px}
+  #cb-log::-webkit-scrollbar-thumb{background:var(--surface1);border-radius:8px}
+  .cb-msg{max-width:84%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;animation:cb-pop .18s ease}
+  .cb-msg.bot{align-self:flex-start;background:var(--surface0);color:var(--text);border-bottom-left-radius:5px}
+  .cb-msg.user{align-self:flex-end;background:var(--green);color:#0f2017;border-bottom-right-radius:5px}
+  [data-theme="light"] .cb-msg.user{color:#08301f}
+  .cb-msg.err{background:color-mix(in oklab, var(--red) 20%, var(--base));color:var(--text);border:1px solid var(--red)}
+  @keyframes cb-pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* typing indicator */
+  .cb-typing{align-self:flex-start;background:var(--surface0);border-bottom-left-radius:5px;padding:13px 14px;border-radius:14px;display:flex;gap:5px}
+  .cb-typing span{width:7px;height:7px;border-radius:50%;background:var(--overlay1);animation:cb-blink 1.2s infinite ease-in-out}
+  .cb-typing span:nth-child(2){animation-delay:.2s}
+  .cb-typing span:nth-child(3){animation-delay:.4s}
+  @keyframes cb-blink{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+
+  /* quick-reply chips */
+  #cb-chips{display:flex;flex-wrap:wrap;gap:7px;padding:2px 14px 12px}
+  #cb-chips button{
+    font-family:var(--mono);font-size:12px;color:var(--blue);
+    padding:7px 11px;border-radius:999px;border:1px solid var(--surface1);background:transparent;
+    transition:background .14s, border-color .14s;
+  }
+  #cb-chips button:hover{background:var(--surface0);border-color:var(--surface2)}
+
+  /* input */
+  #cb-panel .cb-input{display:flex;align-items:flex-end;gap:8px;padding:11px 12px;border-top:1px solid var(--surface0);background:var(--mantle)}
+  #cb-text{
+    flex:1;resize:none;max-height:110px;min-height:22px;
+    background:transparent;border:0;outline:0;color:var(--text);
+    font-family:var(--sans);font-size:14px;line-height:1.45;padding:6px 2px;
+  }
+  #cb-text::placeholder{color:var(--overlay0)}
+  #cb-send{
+    width:36px;height:36px;flex:0 0 auto;border-radius:9px;display:grid;place-items:center;
+    background:var(--green);color:#0f2017;transition:opacity .15s, transform .1s;
+  }
+  [data-theme="light"] #cb-send{color:#fff}
+  #cb-send:hover{transform:translateY(-1px)}
+  #cb-send:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  #cb-send svg{width:17px;height:17px}
+
+  .cb-foot{text-align:center;font-family:var(--mono);font-size:10px;color:var(--overlay0);padding:0 14px 10px;line-height:1.4}
+
+  @media (max-width:560px){
+    #cb-chat{right:16px;bottom:16px}
+    #cb-panel{width:calc(100vw - 24px);height:min(78vh, calc(100vh - 96px));bottom:70px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    #cb-panel,#cb-launch,#cb-launch svg,.cb-msg,#cb-launch .cb-ping{transition:none;animation:none}
+  }
+</style>
+
+<div id="cb-chat" data-open="false" data-unread="false" aria-live="polite">
+  <div id="cb-panel" role="dialog" aria-modal="false" aria-label="CryptoBlocks Assistant chat">
+    <div class="cb-head">
+      <div class="cb-mark" aria-hidden="true"><i class="b"></i><i class="y"></i><i class="g"></i></div>
+      <div>
+        <div class="cb-title">CryptoBlocks Assistant</div>
+        <div class="cb-sub"><i></i>Ask about blocks &amp; coding</div>
+      </div>
+      <button class="cb-x" id="cb-close" aria-label="Close chat" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+
+    <div id="cb-log"></div>
+    <div id="cb-chips"></div>
+
+    <div class="cb-input">
+      <textarea id="cb-text" rows="1" placeholder="Ask me anything about CryptoBlocks…" aria-label="Type your message"></textarea>
+      <button id="cb-send" aria-label="Send message" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-3-6-7-2z"/></svg>
+      </button>
+    </div>
+    <div class="cb-foot">Powered by the CryptoBlocks brain — a tiny model that only knows CryptoBlocks. It can be wrong.</div>
+  </div>
+
+  <button id="cb-launch" aria-label="Open chat assistant" aria-expanded="false">
+    <span class="cb-ping" aria-hidden="true"></span>
+    <svg class="cb-ico-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9 9 0 0 1-4-1L3 20l1.3-4.5a8.38 8.38 0 0 1-1-4A8.5 8.5 0 0 1 12 3a8.38 8.38 0 0 1 9 8.5z"/></svg>
+    <svg class="cb-ico-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+</div>
+
+<script>
+(function(){
+  var ENDPOINT = "/chat/ask";
+  var GREETING = "Hey! 👋 I'm the CryptoBlocks assistant. Ask me anything about blocks, coding, or the platform.";
+  var SUGGESTIONS = ["What is CryptoBlocks?", "How do blocks work?", "Is it free?"];
+  var STORE = "cb_chat_v1";
+
+  var root   = document.getElementById("cb-chat");
+  var panel  = document.getElementById("cb-panel");
+  var log    = document.getElementById("cb-log");
+  var chips  = document.getElementById("cb-chips");
+  var text   = document.getElementById("cb-text");
+  var send   = document.getElementById("cb-send");
+  var launch = document.getElementById("cb-launch");
+  var closeB = document.getElementById("cb-close");
+  var busy = false;
+
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+
+  function save(){
+    try{
+      var msgs = [].map.call(log.querySelectorAll(".cb-msg"), function(m){
+        return {who: m.classList.contains("user") ? "user" : (m.classList.contains("err") ? "err" : "bot"), t: m.textContent};
+      });
+      sessionStorage.setItem(STORE, JSON.stringify(msgs));
+    }catch(e){}
+  }
+
+  function addMsg(who, txt, animateType){
+    var el = document.createElement("div");
+    el.className = "cb-msg " + who;
+    log.appendChild(el);
+    if(animateType && !reduce){
+      typeInto(el, txt);
+    }else{
+      el.textContent = txt;
+      scroll();
+    }
+    return el;
+  }
+
+  function typeInto(el, txt){
+    var i = 0, step = Math.max(1, Math.round(txt.length / 90));
+    (function tick(){
+      i += step;
+      el.textContent = txt.slice(0, i);
+      scroll();
+      if(i < txt.length){ setTimeout(tick, 14); }
+      else { el.textContent = txt; save(); }
+    })();
+  }
+
+  function scroll(){ log.scrollTop = log.scrollHeight; }
+
+  function showTyping(){
+    var t = document.createElement("div");
+    t.className = "cb-typing"; t.id = "cb-typing";
+    t.innerHTML = "<span></span><span></span><span></span>";
+    log.appendChild(t); scroll();
+  }
+  function hideTyping(){ var t = document.getElementById("cb-typing"); if(t) t.remove(); }
+
+  function renderChips(){
+    chips.innerHTML = "";
+    if(log.querySelector(".cb-msg.user")) return; // hide once user has asked something
+    SUGGESTIONS.forEach(function(q){
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = q;
+      b.addEventListener("click", function(){ ask(q); });
+      chips.appendChild(b);
+    });
+  }
+
+  function setBusy(v){
+    busy = v;
+    send.disabled = v || !text.value.trim();
+    text.disabled = v;
+  }
+
+  function ask(q){
+    q = (q || "").trim();
+    if(!q || busy) return;
+    addMsg("user", q);
+    text.value = ""; autosize(); save();
+    renderChips();
+    setBusy(true);
+    showTyping();
+
+    fetch(ENDPOINT, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({q: q})
+    })
+    .then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    })
+    .then(function(d){
+      hideTyping();
+      var a = (d && (d.a || d.answer)) || "Hmm, I didn't get an answer for that.";
+      addMsg("bot", String(a).trim(), true);
+    })
+    .catch(function(){
+      hideTyping();
+      addMsg("err", "I couldn't reach the CryptoBlocks brain just now. Please try again in a moment.");
+    })
+    .finally(function(){
+      setBusy(false);
+      if(root.getAttribute("data-open") === "true") text.focus();
+    });
+  }
+
+  function open(){
+    root.setAttribute("data-open", "true");
+    root.setAttribute("data-unread", "false");
+    launch.setAttribute("aria-expanded", "true");
+    setTimeout(function(){ text.focus(); }, 60);
+    scroll();
+  }
+  function close(){
+    root.setAttribute("data-open", "false");
+    launch.setAttribute("aria-expanded", "false");
+    launch.focus();
+  }
+  function toggle(){ root.getAttribute("data-open") === "true" ? close() : open(); }
+
+  function autosize(){
+    text.style.height = "auto";
+    text.style.height = Math.min(text.scrollHeight, 110) + "px";
+    send.disabled = busy || !text.value.trim();
+  }
+
+  // ---- events ----
+  launch.addEventListener("click", toggle);
+  closeB.addEventListener("click", close);
+  send.addEventListener("click", function(){ ask(text.value); });
+  text.addEventListener("input", autosize);
+  text.addEventListener("keydown", function(e){
+    if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); ask(text.value); }
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && root.getAttribute("data-open") === "true") close();
+  });
+
+  // ---- restore / seed ----
+  var restored = false;
+  try{
+    var saved = JSON.parse(sessionStorage.getItem(STORE) || "null");
+    if(saved && saved.length){
+      saved.forEach(function(m){ addMsg(m.who, m.t); });
+      restored = true;
+    }
+  }catch(e){}
+  if(!restored){ addMsg("bot", GREETING); }
+  renderChips();
+  scroll();
+})();
+</script>
