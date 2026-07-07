@@ -29,6 +29,10 @@ import torch
 
 from chat import answer, load, pick_device
 
+# Directory holding the browser-exported model (model.json + model.bin),
+# served as static assets so /chat can run inference client-side.
+WEB_MODEL_DIR = os.environ.get("BRAIN_WEB_MODEL", "web_model")
+
 PAGE = """<!doctype html>
 <html><head><meta charset="utf-8"><title>CryptoBlocks Brain</title>
 <style>
@@ -234,10 +238,30 @@ def make_handler(brain: Brain, user: str, password: str, base_path: str,
             self.end_headers()
             self.wfile.write(data)
 
+        def _serve_web_model(self, fname, ctype):
+            try:
+                with open(os.path.join(WEB_MODEL_DIR, fname), "rb") as f:
+                    data = f.read()
+            except FileNotFoundError:
+                return self._send(404, "{}")
+            self.send_response(200)
+            self.send_header("content-type", ctype)
+            self.send_header("content-length", str(len(data)))
+            self.send_header("cache-control", "public, max-age=86400")
+            self.send_header("access-control-allow-origin", "*")
+            self.end_headers()
+            self.wfile.write(data)
+
         def do_GET(self):
             if not self._authed():
                 return self._challenge()
-            if self.path.rstrip("/").endswith("/corpus") \
+            # Browser-inference assets (checked first: "/chat/model.json"
+            # would otherwise match the /chat page route below).
+            if self.path.endswith("/model.json") or self.path == "/model.json":
+                self._serve_web_model("model.json", "application/json")
+            elif self.path.endswith("/model.bin") or self.path == "/model.bin":
+                self._serve_web_model("model.bin", "application/octet-stream")
+            elif self.path.rstrip("/").endswith("/corpus") \
                     or self.path == "/corpus":
                 self._send(200, corpus_html(), "text/html; charset=utf-8")
             elif self.path == "/" or self.path.startswith("/index") \

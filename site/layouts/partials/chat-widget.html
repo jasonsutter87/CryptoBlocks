@@ -145,7 +145,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 16-3-6-7-2z"/></svg>
       </button>
     </div>
-    <div class="cb-foot">Powered by the CryptoBlocks brain — a tiny model that only knows CryptoBlocks. It can be wrong.</div>
+    <div class="cb-foot">Runs entirely in your browser — a tiny model that only knows CryptoBlocks. Nothing you type leaves your device. It can be wrong.</div>
   </div>
 
   <button id="cb-launch" aria-label="Open chat assistant" aria-expanded="false">
@@ -157,7 +157,9 @@
 
 <script>
 (function(){
-  var ENDPOINT = "/chat/ask";
+  var WORKER_URL = "/js/cb-brain-worker.js";
+  var worker = null, modelReady = false, modelFailed = false, pending = null;
+  var reqId = 0, curId = 0, curBubble = null;
   var GREETING = "Hey! 👋 I'm the CryptoBlocks assistant. Ask me anything about blocks, coding, or the platform.";
   var SUGGESTIONS = ["What is CryptoBlocks?", "How do blocks work?", "Is it free?"];
   var STORE = "cb_chat_v1";
@@ -234,43 +236,83 @@
     text.disabled = v;
   }
 
+  // The brain runs in your browser via a Web Worker (engine from Netlify,
+  // weights from the CryptoBlocks server). No question ever leaves your device.
+  function ensureWorker(){
+    if(worker || modelFailed) return;
+    if(typeof Worker === "undefined"){ modelFailed = true; return; }
+    try{ worker = new Worker(WORKER_URL); }
+    catch(e){ modelFailed = true; return; }
+    worker.onmessage = onWorkerMsg;
+    worker.onerror = function(){ onWorkerMsg({data:{type:"error", error:"worker"}}); };
+    worker.postMessage({type:"load"});
+  }
+
+  function removeLoading(){ var d = document.getElementById("cb-loading"); if(d) d.remove(); }
+
+  function onWorkerMsg(e){
+    var m = e.data || {};
+    if(m.type === "ready"){
+      modelReady = true; removeLoading();
+      if(pending){ var q = pending; pending = null; runAsk(q); }
+      return;
+    }
+    if(m.type === "error"){
+      if(m.id && m.id !== curId) return;
+      hideTyping(); removeLoading();
+      addMsg("err", "The brain couldn't load just now. Please try again in a moment.");
+      pending = null; curBubble = null; setBusy(false);
+      return;
+    }
+    if(m.id !== curId) return;
+    if(m.type === "token"){
+      hideTyping();
+      if(!curBubble) curBubble = addMsg("bot", "");
+      curBubble.textContent = m.text; scroll();
+    } else if(m.type === "done"){
+      hideTyping();
+      if(!curBubble) curBubble = addMsg("bot", "");
+      curBubble.textContent = m.text || "Hmm, I didn't get an answer for that.";
+      curBubble = null; setBusy(false); save(); scroll();
+      if(root.getAttribute("data-open") === "true") text.focus();
+    }
+  }
+
+  function showLoading(){
+    if(document.getElementById("cb-loading")) return;
+    var d = document.createElement("div");
+    d.className = "cb-msg bot"; d.id = "cb-loading";
+    d.textContent = "Waking up the brain for the first time… (a one-time download, then it runs entirely on your device)";
+    log.appendChild(d); scroll();
+  }
+
+  function runAsk(q){
+    setBusy(true);
+    curId = ++reqId; curBubble = null;
+    showTyping();
+    worker.postMessage({type:"ask", id: curId, q: q});
+  }
+
   function ask(q){
     q = (q || "").trim();
     if(!q || busy) return;
     addMsg("user", q);
     text.value = ""; autosize(); save();
     renderChips();
-    setBusy(true);
-    showTyping();
-
-    fetch(ENDPOINT, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({q: q})
-    })
-    .then(function(r){
-      if(!r.ok) throw new Error("HTTP " + r.status);
-      return r.json();
-    })
-    .then(function(d){
-      hideTyping();
-      var a = (d && (d.a || d.answer)) || "Hmm, I didn't get an answer for that.";
-      addMsg("bot", String(a).trim(), true);
-    })
-    .catch(function(){
-      hideTyping();
-      addMsg("err", "I couldn't reach the CryptoBlocks brain just now. Please try again in a moment.");
-    })
-    .finally(function(){
-      setBusy(false);
-      if(root.getAttribute("data-open") === "true") text.focus();
-    });
+    ensureWorker();
+    if(modelFailed){
+      addMsg("err", "In-browser chat isn't supported in this browser.");
+      return;
+    }
+    if(!modelReady){ pending = q; setBusy(true); showLoading(); return; }
+    runAsk(q);
   }
 
   function open(){
     root.setAttribute("data-open", "true");
     root.setAttribute("data-unread", "false");
     launch.setAttribute("aria-expanded", "true");
+    ensureWorker(); // start fetching + warming the model so it's ready when they type
     setTimeout(function(){ text.focus(); }, 60);
     scroll();
   }

@@ -55,14 +55,20 @@ def feature_turns(rng: random.Random) -> list[str]:
     out: list[str] = []
     q_templates = [
         "what is {t}",
+        "whats {t}",
+        "what's {t}",
         "tell me about {t}",
         "does cryptoblocks have {t}",
+        "do you have {t}",
         "how does {t} work in cryptoblocks",
+        "how does {t} work",
         "can you explain {t}",
         "what can you tell me about {t}",
         "is there {t} in cryptoblocks",
+        "is there {t}",
         "i want to know about {t}",
         "what about {t}",
+        "how do i use {t}",
         "{t}?",
     ]
     for topic, desc in F.FEATURES:
@@ -93,7 +99,10 @@ def company_turns(rng: random.Random) -> list[str]:
           "trying to do", "why does cryptoblocks exist", "what is the goal "
           "of cryptoblocks"], c["mission"]),
         (["who founded cryptoblocks", "who made cryptoblocks", "who is the "
-          "founder", "who created cryptoblocks", "who built cryptoblocks"],
+          "founder", "who created cryptoblocks", "who built cryptoblocks",
+          "who made this", "who made it", "who built this", "who created this",
+          "who is behind cryptoblocks", "who is behind this", "who runs "
+          "cryptoblocks", "who owns cryptoblocks"],
          c["founder"]),
         (["how do i contact support", "what is the support email", "how do "
           "i get help", "how can i reach you", "contact"],
@@ -121,8 +130,13 @@ def pricing_turns(rng: random.Random) -> list[str]:
                   f"plan", f"what does the {plan} plan include",
                   f"{plan} plan"]:
             out.append(_turn(q, _cap(rng.choice(LEAD) + desc)))
-    for q in ["how much does cryptoblocks cost", "is cryptoblocks free",
-              "what are the plans", "what is the pricing", "do i have to pay"]:
+    for q in ["how much does cryptoblocks cost", "how much does it cost",
+              "how much is it", "how much is cryptoblocks", "whats the cost",
+              "what is the cost", "is cryptoblocks free", "is it free",
+              "is it really free", "is there a free version", "is it paid",
+              "is cryptoblocks paid", "does it cost anything", "do i have to pay",
+              "do i need to pay", "do you have to pay", "what are the plans",
+              "what is the pricing", "what does it cost", "how do i pay"]:
         ans = ("CryptoBlocks has three plans. " + F.PRICING[0][1] + " " +
                F.PRICING[1][1] + " " + F.PRICING[2][1])
         out.append(_turn(q, ans))
@@ -226,9 +240,120 @@ def offtopic_turns(rng: random.Random) -> list[str]:
     return [_turn(q, DEFLECT) for q in OFFTOPIC_Q]
 
 
+def _fixed(questions: list[str], ans: str) -> list[str]:
+    """Many question phrasings -> one fixed answer."""
+    return [_turn(q, ans) for q in questions]
+
+
+def language_turns(rng: random.Random) -> list[str]:
+    return _fixed([
+        "what languages can i use", "what languages does it support",
+        "what programming languages", "what programming languages does it use",
+        "what languages does cryptoblocks use", "is it javascript or python",
+        "does it teach python", "does it support python", "can i write python",
+        "can i use python", "does it teach javascript", "can i write javascript",
+        "can i use javascript", "does it use real code", "is it real code",
+        "what code does it output", "what language do the blocks make",
+    ], F.DUAL_LANGUAGE)
+
+
+def blocks_count_turns(rng: random.Random) -> list[str]:
+    return _fixed([
+        "how many blocks are there", "how many blocks", "how many blocks does "
+        "cryptoblocks have", "how many blocks does it have", "number of blocks",
+        "how many total blocks", "what is the block count",
+    ], F.BLOCKS_COUNT)
+
+
+def age_turns(rng: random.Random) -> list[str]:
+    return _fixed([
+        "what age is it for", "what ages is it for", "what age is cryptoblocks "
+        "for", "how old do you have to be", "how old do i have to be",
+        "is it for kids", "is it for adults", "is it for teens", "is it for "
+        "beginners", "is it good for beginners", "what grade level", "who is "
+        "cryptoblocks for", "who is it for", "can my kid use this", "can my "
+        "child use it", "is it for young kids", "is it too hard for kids",
+    ], F.AGES)
+
+
+def platform_turns(rng: random.Random) -> list[str]:
+    out = _fixed([
+        "does it work in a browser", "what browsers work", "does it work on "
+        "chromebook", "does it work on a chromebook", "does it run on "
+        "chromebooks", "do i need to install anything", "do i have to install "
+        "anything", "what do i need to run it", "what devices work", "what "
+        "devices does it work on", "does it work on windows", "does it work on "
+        "mac", "does it work on linux",
+    ], F.BROWSER_SUPPORT)
+    out += _fixed([
+        "can i use it offline", "does it work offline", "is there an offline "
+        "mode", "does it need internet", "is there a desktop app", "is there a "
+        "desktop version", "can i install it", "can i download it",
+    ], F.OFFLINE)
+    out += _fixed([
+        "do you have a mobile app", "is there a mobile app", "is there an app",
+        "do you have an app", "does it have an app", "does it work on my phone",
+        "can i use it on my phone", "can i use it on a tablet", "does it work "
+        "on mobile", "is there an ios app", "is there an android app",
+        "is there an iphone app",
+    ], F.MOBILE)
+    return out
+
+
+def privacy_turns(rng: random.Random) -> list[str]:
+    return _fixed([
+        "is my data safe", "is my data secure", "is it safe", "is it safe for "
+        "kids", "is it secure", "do you sell my data", "do you sell user data",
+        "do you show ads", "are there ads", "is it private", "what about "
+        "privacy", "how do you handle data", "how do you handle my data",
+        "what do you do with my data", "is it child safe", "is it coppa "
+        "compliant",
+    ], F.PRIVACY)
+
+
+def saving_turns(rng: random.Random) -> list[str]:
+    return _fixed([
+        "how do i save my work", "how do i save", "does it save my work",
+        "can i save my project", "can i save my work", "is there autosave",
+        "does it autosave", "will i lose my work", "can i undo", "can i go "
+        "back", "is there version control", "can i roll back", "can i see my "
+        "history",
+    ], F.SAVING)
+
+
+def roadmap_turns(rng: random.Random) -> list[str]:
+    return _fixed([
+        "whats new", "what is new", "what's new", "what is coming next",
+        "what is coming", "what is on the roadmap", "what is the roadmap",
+        "what are you working on", "what is next for cryptoblocks", "what is "
+        "next", "future features", "what features are coming",
+    ], F.WHATS_NEW)
+
+
+def teacher_turns(rng: random.Random) -> list[str]:
+    return _fixed([
+        "can teachers use it", "is there anything for teachers", "is it good "
+        "for classrooms", "can i use this in my classroom", "can i use it in "
+        "class", "is there a teacher mode", "do you support schools", "is it "
+        "for schools", "can schools use it", "is there a classroom version",
+        "what do you have for teachers",
+    ], F.TEACHERS)
+
+
+def sharing_turns(rng: random.Random) -> list[str]:
+    return _fixed([
+        "can i share my project", "how do i share", "how do i share my "
+        "project", "can i publish my project", "how do i publish", "can other "
+        "people see my project", "can i share my work", "can others use my "
+        "blocks", "how do i put my project online",
+    ], F.SHARING)
+
+
 GENERATORS = [
     feature_turns, company_turns, pricing_turns, pitch_turns, origin_turns,
     category_turns, tech_turns, compare_turns, identity_turns, offtopic_turns,
+    language_turns, blocks_count_turns, age_turns, platform_turns,
+    privacy_turns, saving_turns, roadmap_turns, teacher_turns, sharing_turns,
 ]
 
 

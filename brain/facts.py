@@ -212,6 +212,73 @@ MONETIZATION_LINE = (
     "curriculum, builder tools, and institutional features are premium."
 )
 
+# ── Extra answerable facts (added to close coverage gaps the brain kept
+#    fumbling: age, devices, offline, privacy, saving, mobile, roadmap). ──
+
+AGES = (
+    "CryptoBlocks is designed for ages 10 to 18, from curious beginners "
+    "snapping their first blocks to teens ready to write real code. It is "
+    "beginner friendly, and there is nothing to outgrow because the blocks "
+    "turn into real JavaScript and Python."
+)
+
+DUAL_LANGUAGE = (
+    "You can code in JavaScript and Python. Every block outputs real "
+    "JavaScript and real Python, so you are always writing real code, not a "
+    "toy language you have to leave behind."
+)
+
+BLOCKS_COUNT = "CryptoBlocks has 320 blocks across 24 categories."
+
+BROWSER_SUPPORT = (
+    "CryptoBlocks runs in any modern web browser with nothing to install, "
+    "including on Chromebooks, Windows, Mac, and Linux. Everything, including "
+    "running your code, happens right in the browser."
+)
+
+OFFLINE = (
+    "Yes. CryptoBlocks has a Tauri desktop app that works fully offline on "
+    "Windows, Mac, and Linux. The web version needs a connection, but the "
+    "desktop app does not."
+)
+
+MOBILE = (
+    "CryptoBlocks does not have a separate native mobile app. It runs in any "
+    "mobile browser, and you can export your own projects as installable PWA "
+    "apps that add to a phone or tablet home screen."
+)
+
+PRIVACY = (
+    "Your data is safe. CryptoBlocks never sells user data and never shows "
+    "ads to kids. Sign-in is handled securely through Clerk, and the code you "
+    "write runs sandboxed in your own browser."
+)
+
+SAVING = (
+    "Your work saves automatically. You can also save named checkpoints, view "
+    "history, roll back to any point, and scrub a Time Travel timeline that "
+    "can fork from any moment in your project."
+)
+
+WHATS_NEW = (
+    "CryptoBlocks is actively building bi-directional editing, where code and "
+    "blocks sync both ways, plus classroom licenses for schools, more CTF "
+    "treasure-hunt challenges, and public leaderboard profiles with badge "
+    "showcase pages."
+)
+
+TEACHERS = (
+    "Yes. Teachers can create classrooms, share join codes, and view student "
+    "projects through the teacher dashboard, and the classroom plan adds "
+    "school onboarding and bulk pricing."
+)
+
+SHARING = (
+    "Yes. You can publish your project to the Shareplace marketplace, where "
+    "other people can download, like, and remix it, and a remix tree shows "
+    "who remixed whose project."
+)
+
 # The brain's name and voice — so it can answer "who are you".
 IDENTITY = (
     "I am the CryptoBlocks assistant. I only know about CryptoBlocks, the "
