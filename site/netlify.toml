@@ -17,20 +17,20 @@
   status = 301
 
 # /chat — the CryptoBlocks "brain": a from-scratch micro-model that only
-# knows CryptoBlocks, served (password-gated) from the homelab via Tailscale
-# Funnel. status=200 = a proxy/rewrite, so the URL stays getcryptoblocks.com/chat
+# knows CryptoBlocks, served (public) from jason-server via Tailscale Funnel.
+# status=200 = a proxy/rewrite, so the URL stays getcryptoblocks.com/chat
 # while the bytes come from the brain. The exact-path rule serves the page;
 # the wildcard strips /chat so the brain's /meta /ask /corpus endpoints resolve.
-# NOTE: temporarily served from jasons-macbook-pro (laptop) while jason-server
-# SSH access is being restored. Revert origin to jason-server once migrated.
+# Origin: jason-server Funnel :8443 -> serve.py on 127.0.0.1:8011 (systemd
+# unit cryptoblocks-brain.service). The laptop fallback is retired.
 [[redirects]]
   from = "/chat"
-  to = "https://jasons-macbook-pro.taildf1d89.ts.net:8443/chat"
+  to = "https://jason-server.taildf1d89.ts.net:8443/chat"
   status = 200
   force = true
 
 [[redirects]]
   from = "/chat/*"
-  to = "https://jasons-macbook-pro.taildf1d89.ts.net:8443/:splat"
+  to = "https://jason-server.taildf1d89.ts.net:8443/:splat"
   status = 200
   force = true
