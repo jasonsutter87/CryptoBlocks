@@ -12,6 +12,7 @@ export function useModalState() {
   const [myBlocksLibrary, setMyBlocksLibrary] = useState(false)
   const [examples, setExamples] = useState(false)
   const [codeToBlocks, setCodeToBlocks] = useState(false)
+  const [vibeApp, setVibeApp] = useState(false)
   const [publish, setPublish] = useState(false)
   const [stats, setStats] = useState(false)
   const [settings, setSettings] = useState(false)
@@ -30,6 +31,7 @@ export function useModalState() {
     setMyBlocksLibrary(false)
     setExamples(false)
     setCodeToBlocks(false)
+    setVibeApp(false)
     setPublish(false)
   }, [])
 
@@ -38,6 +40,7 @@ export function useModalState() {
     myBlocksLibrary, setMyBlocksLibrary,
     examples, setExamples,
     codeToBlocks, setCodeToBlocks,
+    vibeApp, setVibeApp,
     publish, setPublish,
     stats, setStats,
     settings, setSettings,

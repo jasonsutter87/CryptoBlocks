@@ -29,6 +29,7 @@ interface ToolbarProps {
   onCreateBlock: () => void
   onOpenMyBlocksLibrary: () => void
   onCodeToBlocks: () => void
+  onVibeApp: () => void
   onExport: () => void
   onImport: (file: File) => void
   onImportAsBlock: (file: File) => void
@@ -76,6 +77,7 @@ export default function Toolbar({
   onCreateBlock,
   onOpenMyBlocksLibrary,
   onCodeToBlocks,
+  onVibeApp,
   onExport,
   onImport,
   onImportAsBlock,
@@ -320,6 +322,7 @@ export default function Toolbar({
                 <DropdownMenu items={[
                   { kind: 'button', icon: 'plus', iconCls: 'w-4 h-4 text-warn', label: 'Create Block', onClick: () => requirePro(() => { onCreateBlock(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
                   { kind: 'button', icon: 'pages', iconCls: 'w-4 h-4 text-warn', label: 'My Blocks Library', onClick: () => { onOpenMyBlocksLibrary(); setOpenMenu(null) } },
+                  { kind: 'button', emoji: '✨', label: 'My First Vibe App', onClick: () => { onVibeApp(); setOpenMenu(null) } },
                   { kind: 'button', icon: 'pages', iconCls: 'w-4 h-4 text-purple', label: 'Code to Blocks', onClick: () => requirePro(() => { onCodeToBlocks(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
                   ...(onOpenSpriteEditor ? [{ kind: 'button' as const, emoji: '🎨', label: 'Sprite Editor', onClick: () => requirePro(() => { onOpenSpriteEditor(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined }] : []),
                   ...(onOpenSpriteBrowser ? [{ kind: 'button' as const, emoji: '🖼️', label: 'Browse Sprites', onClick: () => { onOpenSpriteBrowser(); setOpenMenu(null) } }] : []),
@@ -486,6 +489,7 @@ export default function Toolbar({
                 onExport={onExport}
                 onCreateBlock={onCreateBlock}
                 onCodeToBlocks={onCodeToBlocks}
+                onVibeApp={onVibeApp}
                 onOpenExamples={onOpenExamples}
                 onOpenBlocksets={onOpenBlocksets}
                 onOpenGolf={onOpenGolf}
