@@ -24,6 +24,7 @@ import { getNextBlockset } from '../blocksets'
 import { getNextProblem } from '../code-golf'
 import { getNextExercise } from '../code-lab'
 import CreateBlockModal from './CreateBlockModal'
+import MyBlocksLibrary from './MyBlocksLibrary'
 import ChallengeComplete from './ChallengeComplete'
 import BlocksetComplete from './BlocksetComplete'
 import GolfComplete from './GolfComplete'
@@ -80,6 +81,12 @@ export interface AppModalsProps {
   // Action handlers
   editingBlock: BlockDefinition | null
   handleCreateBlock: (block: BlockDefinition) => void
+  // My Blocks Library
+  globalBlocks: BlockDefinition[]
+  workspaceBlocks: BlockDefinition[]
+  handleEditBlock: (block: BlockDefinition) => void
+  handleDeleteBlock: (block: BlockDefinition) => void
+  handleMoveBlockScope: (block: BlockDefinition, target: 'global' | 'workspace') => void
   handleSelectExample: (example: Example) => void
   handleCodeToBlocks: (result: ConversionResult) => void
   handleNextChallenge: () => void
@@ -117,6 +124,19 @@ export default function AppModals(p: AppModalsProps) {
           onBuild={p.handleCreateBlock}
           onClose={p.closeCreateModal}
           editBlock={p.editingBlock}
+        />
+      )}
+      {p.modals.myBlocksLibrary && (
+        <MyBlocksLibrary
+          globalBlocks={p.globalBlocks}
+          workspaceBlocks={p.workspaceBlocks}
+          onEdit={(b) => {
+            p.modals.setMyBlocksLibrary(false)
+            p.handleEditBlock(b)
+          }}
+          onDelete={p.handleDeleteBlock}
+          onMoveScope={p.handleMoveBlockScope}
+          onClose={() => p.modals.setMyBlocksLibrary(false)}
         />
       )}
       {p.modals.examples && (
