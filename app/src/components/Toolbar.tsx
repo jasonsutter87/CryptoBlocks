@@ -27,6 +27,7 @@ interface ToolbarProps {
   showCode: boolean
   onToggleCode: () => void
   onCreateBlock: () => void
+  onOpenMyBlocksLibrary: () => void
   onCodeToBlocks: () => void
   onExport: () => void
   onImport: (file: File) => void
@@ -73,6 +74,7 @@ export default function Toolbar({
   showCode,
   onToggleCode,
   onCreateBlock,
+  onOpenMyBlocksLibrary,
   onCodeToBlocks,
   onExport,
   onImport,
@@ -317,6 +319,7 @@ export default function Toolbar({
               {openMenu === 'build' && (
                 <DropdownMenu items={[
                   { kind: 'button', icon: 'plus', iconCls: 'w-4 h-4 text-warn', label: 'Create Block', onClick: () => requirePro(() => { onCreateBlock(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
+                  { kind: 'button', icon: 'pages', iconCls: 'w-4 h-4 text-warn', label: 'My Blocks Library', onClick: () => { onOpenMyBlocksLibrary(); setOpenMenu(null) } },
                   { kind: 'button', icon: 'pages', iconCls: 'w-4 h-4 text-purple', label: 'Code to Blocks', onClick: () => requirePro(() => { onCodeToBlocks(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined },
                   ...(onOpenSpriteEditor ? [{ kind: 'button' as const, emoji: '🎨', label: 'Sprite Editor', onClick: () => requirePro(() => { onOpenSpriteEditor(); setOpenMenu(null) }), badge: !isPro ? <ProBadge /> : undefined }] : []),
                   ...(onOpenSpriteBrowser ? [{ kind: 'button' as const, emoji: '🖼️', label: 'Browse Sprites', onClick: () => { onOpenSpriteBrowser(); setOpenMenu(null) } }] : []),

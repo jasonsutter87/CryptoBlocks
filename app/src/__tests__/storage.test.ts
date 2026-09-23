@@ -203,7 +203,9 @@ describe('storage', () => {
       })
       const file = new File([data], 'valid.blocks', { type: 'application/json' })
       const result = await importBlocksFile(file)
-      expect(result.customBlocks).toHaveLength(1)
+      // Pre-scope blocks (no scope field) default to global on import.
+      expect(result.globalBlocks).toHaveLength(1)
+      expect(result.workspaceBlocks).toHaveLength(0)
       expect(result.workspaceState).toBeDefined()
     })
 
@@ -216,7 +218,22 @@ describe('storage', () => {
       })
       const file = new File([data], 'mixed.blocks', { type: 'application/json' })
       const result = await importBlocksFile(file)
-      expect(result.customBlocks).toHaveLength(1)
+      expect(result.globalBlocks).toHaveLength(1)
+      expect(result.workspaceBlocks).toHaveLength(0)
+    })
+
+    it('routes blocks to pools by scope field', async () => {
+      const g = { ...validBlock(), name: 'global_one', scope: 'global' as const }
+      const w = { ...validBlock(), name: 'workspace_one', scope: 'workspace' as const }
+      const data = JSON.stringify({
+        version: 1,
+        customBlocks: [g, w],
+        workspace: { blocks: {} },
+      })
+      const file = new File([data], 'scoped.blocks', { type: 'application/json' })
+      const result = await importBlocksFile(file)
+      expect(result.globalBlocks.map((b) => b.name)).toEqual(['global_one'])
+      expect(result.workspaceBlocks.map((b) => b.name)).toEqual(['workspace_one'])
     })
   })
 })

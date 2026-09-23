@@ -42,6 +42,7 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
   const [jsCode, setJsCode] = useState(editBlock?.implementations.javascript ?? JS_TEMPLATE)
   const [pyCode, setPyCode] = useState(editBlock?.implementations.python ?? PY_TEMPLATE)
   const [shape, setShape] = useState<'value' | 'statement'>(editBlock?.shape ?? 'statement')
+  const [scope, setScope] = useState<'global' | 'workspace'>(editBlock?.scope ?? 'global')
   const [error, setError] = useState('')
   const jsFileRef = useRef<HTMLInputElement>(null)
   const pyFileRef = useRef<HTMLInputElement>(null)
@@ -209,6 +210,7 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
       tests: [],
       color,
       shape,
+      scope,
     }
 
     onBuild(block)
@@ -303,6 +305,33 @@ export default function CreateBlockModal({ onBuild, onClose, editBlock }: Create
                   <svg className="w-5 h-4" viewBox="0 0 28 20" fill="currentColor">
                     <ellipse cx="14" cy="10" rx="14" ry="10"/>
                   </svg>
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-subtext mb-1">Scope</label>
+              <div className="flex rounded-lg overflow-hidden border border-surface-0">
+                <button
+                  onClick={() => setScope('global')}
+                  className={`px-3 py-2 text-xs font-medium transition-colors ${
+                    scope === 'global'
+                      ? 'bg-warn text-base'
+                      : 'bg-mantle text-overlay hover:text-text'
+                  }`}
+                  title="Global — block lives in your My Blocks library across every project"
+                >
+                  Global
+                </button>
+                <button
+                  onClick={() => setScope('workspace')}
+                  className={`px-3 py-2 text-xs font-medium transition-colors border-l border-surface-0 ${
+                    scope === 'workspace'
+                      ? 'bg-accent text-base'
+                      : 'bg-mantle text-overlay hover:text-text'
+                  }`}
+                  title="This project only — block travels with the .blocks file, never enters your global library"
+                >
+                  This project
                 </button>
               </div>
             </div>

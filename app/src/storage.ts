@@ -2,6 +2,7 @@ import * as Blockly from 'blockly'
 import type { BlockDefinition } from './types/block'
 
 const CUSTOM_BLOCKS_KEY = 'cryptoblocks_custom_blocks'
+const WORKSPACE_BLOCKS_KEY = 'cryptoblocks_workspace_blocks'
 const WORKSPACE_KEY = 'cryptoblocks_workspace'
 const FILE_VERSION = 1
 
@@ -74,6 +75,7 @@ function validateBlockDefinition(block: unknown): block is BlockDefinition {
 
   // Optional fields
   if (b.shape !== undefined && b.shape !== 'value' && b.shape !== 'statement') return false
+  if (b.scope !== undefined && b.scope !== 'global' && b.scope !== 'workspace') return false
 
   return true
 }
@@ -88,8 +90,20 @@ function sanitizeBlocks(raw: unknown): BlockDefinition[] {
 
 // --- localStorage ---
 
+/**
+ * Save the user's GLOBAL custom-block library (My Blocks across all projects).
+ * Pre-scope blocks are treated as global; that's still the default.
+ */
 export function saveCustomBlocksToLocal(blocks: BlockDefinition[]) {
   localStorage.setItem(CUSTOM_BLOCKS_KEY, JSON.stringify(blocks))
+}
+
+/**
+ * Save the WORKSPACE-scoped custom blocks for the current project.
+ * Lives separately so workspace blocks don't pollute the global library.
+ */
+export function saveWorkspaceBlocksToLocal(blocks: BlockDefinition[]) {
+  localStorage.setItem(WORKSPACE_BLOCKS_KEY, JSON.stringify(blocks))
 }
 
 export function saveWorkspaceToLocal(workspace: Blockly.WorkspaceSvg) {
@@ -99,9 +113,11 @@ export function saveWorkspaceToLocal(workspace: Blockly.WorkspaceSvg) {
 
 export function loadFromLocalStorage(): {
   customBlocks: BlockDefinition[]
+  workspaceBlocks: BlockDefinition[]
   workspaceState: Record<string, unknown> | null
 } {
   let customBlocks: BlockDefinition[] = []
+  let workspaceBlocks: BlockDefinition[] = []
   let workspaceState: Record<string, unknown> | null = null
 
   try {
@@ -109,7 +125,18 @@ export function loadFromLocalStorage(): {
     if (blocksJson) {
       const parsed = JSON.parse(blocksJson)
       // Schema validation (CB-R2-009)
-      customBlocks = sanitizeBlocks(parsed)
+      // Force scope='global' for any legacy blocks missing the field.
+      customBlocks = sanitizeBlocks(parsed).map((b) => ({ ...b, scope: 'global' as const }))
+    }
+  } catch {
+    // corrupted data, ignore
+  }
+
+  try {
+    const wsBlocksJson = localStorage.getItem(WORKSPACE_BLOCKS_KEY)
+    if (wsBlocksJson) {
+      const parsed = JSON.parse(wsBlocksJson)
+      workspaceBlocks = sanitizeBlocks(parsed).map((b) => ({ ...b, scope: 'workspace' as const }))
     }
   } catch {
     // corrupted data, ignore
@@ -128,18 +155,28 @@ export function loadFromLocalStorage(): {
     // corrupted data, ignore
   }
 
-  return { customBlocks, workspaceState }
+  return { customBlocks, workspaceBlocks, workspaceState }
 }
 
 // --- .blocks file export/import ---
 
+/**
+ * Export both pools merged into a single `customBlocks` array; each entry
+ * carries its own `scope` so import can route them back to the right pool.
+ * Pre-scope files (no scope field) are treated as global on import.
+ */
 export function exportBlocksFile(
-  customBlocks: BlockDefinition[],
+  globalBlocks: BlockDefinition[],
+  workspaceBlocks: BlockDefinition[],
   workspace: Blockly.WorkspaceSvg
 ) {
+  const merged: BlockDefinition[] = [
+    ...globalBlocks.map((b) => ({ ...b, scope: 'global' as const })),
+    ...workspaceBlocks.map((b) => ({ ...b, scope: 'workspace' as const })),
+  ]
   const data: BlocksFile = {
     version: FILE_VERSION,
-    customBlocks,
+    customBlocks: merged,
     workspace: Blockly.serialization.workspaces.save(workspace),
   }
 
@@ -186,7 +223,11 @@ export function loadGitHubUsername(): string | null {
 
 export function importBlocksFile(
   file: File
-): Promise<{ customBlocks: BlockDefinition[]; workspaceState: Record<string, unknown> }> {
+): Promise<{
+  globalBlocks: BlockDefinition[]
+  workspaceBlocks: BlockDefinition[]
+  workspaceState: Record<string, unknown>
+}> {
   return new Promise((resolve, reject) => {
     // Reject files over 5MB
     if (file.size > 5 * 1024 * 1024) {
@@ -207,11 +248,19 @@ export function importBlocksFile(
           return
         }
 
-        // Validate and sanitize imported blocks (CB-R2-003)
+        // Validate and sanitize imported blocks (CB-R2-003), then split by scope.
+        // Pre-scope files (no scope field) are treated as global.
         const validBlocks = sanitizeBlocks(data.customBlocks)
+        const globalBlocks = validBlocks
+          .filter((b) => (b.scope ?? 'global') === 'global')
+          .map((b) => ({ ...b, scope: 'global' as const }))
+        const workspaceBlocks = validBlocks
+          .filter((b) => b.scope === 'workspace')
+          .map((b) => ({ ...b, scope: 'workspace' as const }))
 
         resolve({
-          customBlocks: validBlocks,
+          globalBlocks,
+          workspaceBlocks,
           workspaceState: data.workspace,
         })
       } catch {

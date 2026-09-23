@@ -9,7 +9,7 @@ import * as Blockly from 'blockly'
 import type { Language, BlockDefinition } from '../types/block'
 import { registry } from '../blocks/registry'
 import { registerSingleBlock, generateCode, getToolboxXml } from '../blocks/blockly-register'
-import { exportBlocksFile, importBlocksFile, saveCustomBlocksToLocal, saveWorkspaceToLocal } from '../storage'
+import { exportBlocksFile, importBlocksFile, saveCustomBlocksToLocal, saveWorkspaceBlocksToLocal, saveWorkspaceToLocal } from '../storage'
 import { generateStandaloneHtml, generateEmbedSnippet, downloadHtml, copyToClipboard } from '../export-html'
 import { saveToDashboard, updateProject } from '../shareplace/api'
 import { countBlocks } from '../challenges/validator'
@@ -21,7 +21,11 @@ interface Deps {
   workspaceRef: React.RefObject<Blockly.WorkspaceSvg | null>
   language: Language
   code: string
+  /** Combined view of both pools. Used for export and consumers that need
+   *  the full set. The pools are split internally for write-back. */
   customBlocks: BlockDefinition[]
+  globalBlocks: BlockDefinition[]
+  workspaceBlocks: BlockDefinition[]
   setCustomBlocks: (blocks: BlockDefinition[]) => void
   setEditingBlock: (b: BlockDefinition) => void
   openCreateModal: () => void
@@ -51,9 +55,9 @@ export function useFileOps(deps: Deps) {
 
   const handleExport = useCallback(() => {
     if (deps.workspaceRef.current) {
-      exportBlocksFile(deps.customBlocks, deps.workspaceRef.current)
+      exportBlocksFile(deps.globalBlocks, deps.workspaceBlocks, deps.workspaceRef.current)
     }
-  }, [deps.customBlocks, deps.workspaceRef])
+  }, [deps.globalBlocks, deps.workspaceBlocks, deps.workspaceRef])
 
   const handleSaveToDashboard = useCallback(async () => {
     if (!deps.workspaceRef.current) return
@@ -113,12 +117,26 @@ export function useFileOps(deps: Deps) {
   const handleImport = useCallback(async (file: File) => {
     try {
       const data = await importBlocksFile(file)
-      for (const block of data.customBlocks) {
+
+      // Register every imported block with the runtime registry.
+      for (const block of [...data.globalBlocks, ...data.workspaceBlocks]) {
         registry.register(block)
         registerSingleBlock(block)
       }
-      deps.setCustomBlocks(data.customBlocks)
-      saveCustomBlocksToLocal(data.customBlocks)
+
+      // Workspace-scoped blocks REPLACE the workspace pool (we're loading a
+      // new project). Global-scoped blocks MERGE into the user's existing
+      // library so importing a project doesn't wipe their My Blocks.
+      const mergedGlobal = (() => {
+        const byName = new Map<string, BlockDefinition>()
+        for (const b of deps.globalBlocks) byName.set(b.name, b)
+        for (const b of data.globalBlocks) byName.set(b.name, b)
+        return Array.from(byName.values())
+      })()
+      saveCustomBlocksToLocal(mergedGlobal)
+      saveWorkspaceBlocksToLocal(data.workspaceBlocks)
+      deps.setCustomBlocks([...mergedGlobal, ...data.workspaceBlocks])
+
       if (deps.workspaceRef.current) {
         deps.workspaceRef.current.updateToolbox(getToolboxXml())
         Blockly.serialization.workspaces.load(data.workspaceState, deps.workspaceRef.current)
@@ -135,7 +153,7 @@ export function useFileOps(deps: Deps) {
   const handleImportAsBlock = useCallback(async (file: File) => {
     try {
       const data = await importBlocksFile(file)
-      for (const block of data.customBlocks) {
+      for (const block of [...data.globalBlocks, ...data.workspaceBlocks]) {
         registry.register(block)
         registerSingleBlock(block)
       }

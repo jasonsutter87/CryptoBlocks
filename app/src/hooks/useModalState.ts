@@ -9,6 +9,7 @@ import { useState, useCallback } from 'react'
 
 export function useModalState() {
   const [createBlock, setCreateBlock] = useState(false)
+  const [myBlocksLibrary, setMyBlocksLibrary] = useState(false)
   const [examples, setExamples] = useState(false)
   const [codeToBlocks, setCodeToBlocks] = useState(false)
   const [publish, setPublish] = useState(false)
@@ -26,6 +27,7 @@ export function useModalState() {
 
   const closeAll = useCallback(() => {
     setCreateBlock(false)
+    setMyBlocksLibrary(false)
     setExamples(false)
     setCodeToBlocks(false)
     setPublish(false)
@@ -33,6 +35,7 @@ export function useModalState() {
 
   return {
     createBlock, setCreateBlock,
+    myBlocksLibrary, setMyBlocksLibrary,
     examples, setExamples,
     codeToBlocks, setCodeToBlocks,
     publish, setPublish,

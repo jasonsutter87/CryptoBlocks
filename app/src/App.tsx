@@ -160,10 +160,12 @@ export default function App() {
     processAchievements,
   })
   const {
-    customBlocks, setCustomBlocks, editingBlock, setEditingBlock,
+    customBlocks, globalBlocks, workspaceBlocks,
+    setCustomBlocks, editingBlock, setEditingBlock,
     handleCreate: handleCreateBlock,
     handleEdit: handleEditBlock,
     handleDelete: handleDeleteBlock,
+    handleMoveScope: handleMoveBlockScope,
     handleSaveAsBlock,
     handleCodeToBlocks,
     closeEditor: closeModal,
@@ -190,13 +192,14 @@ export default function App() {
     const settings = loadSettings()
     document.documentElement.setAttribute('data-theme', settings.theme || 'dark')
 
-    const { customBlocks: saved, workspaceState } = loadFromLocalStorage()
-    if (saved.length > 0) {
-      for (const block of saved) {
+    const { customBlocks: savedGlobal, workspaceBlocks: savedWorkspace, workspaceState } = loadFromLocalStorage()
+    const allSaved = [...savedGlobal, ...savedWorkspace]
+    if (allSaved.length > 0) {
+      for (const block of allSaved) {
         registry.register(block)
         registerSingleBlock(block)
       }
-      setCustomBlocks(saved)
+      setCustomBlocks(allSaved)
     }
     // Check for example loaded via /example/:id route
     const pendingExample = sessionStorage.getItem('cb-load-example')
@@ -413,7 +416,9 @@ export default function App() {
   }, [exec])
 
   const fileOps = useFileOps({
-    workspaceRef, language, code, customBlocks, setCustomBlocks,
+    workspaceRef, language, code,
+    customBlocks, globalBlocks, workspaceBlocks,
+    setCustomBlocks,
     setEditingBlock,
     openCreateModal: () => modals.setCreateBlock(true),
     currentProject, setCurrentProject,
@@ -486,6 +491,7 @@ export default function App() {
         showCode={showCode}
         onToggleCode={() => setShowCode((prev) => { if (prev) setShowOutput(false); return !prev })}
         onCreateBlock={() => modals.setCreateBlock(true)}
+        onOpenMyBlocksLibrary={() => modals.setMyBlocksLibrary(true)}
         onCodeToBlocks={() => modals.setCodeToBlocks(true)}
         onExport={handleExport}
         onImport={handleImport}
@@ -628,6 +634,11 @@ export default function App() {
         golfIsNewBest={golf.golfIsNewBest}
         editingBlock={editingBlock}
         handleCreateBlock={handleCreateBlock}
+        globalBlocks={globalBlocks}
+        workspaceBlocks={workspaceBlocks}
+        handleEditBlock={handleEditBlock}
+        handleDeleteBlock={handleDeleteBlock}
+        handleMoveBlockScope={handleMoveBlockScope}
         handleSelectExample={handleSelectExample}
         handleCodeToBlocks={handleCodeToBlocks}
         handleNextChallenge={challenge.handleNext}

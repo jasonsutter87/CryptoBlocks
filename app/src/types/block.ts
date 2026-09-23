@@ -33,6 +33,10 @@ export interface BlockDefinition {
   icon?: string
   shape?: 'value' | 'statement'
   hidden?: boolean // keep registered for backwards compat but hide from Brick Bin
+  // 'global' = lives in the user's My Blocks library across all projects.
+  // 'workspace' = lives only with the current project (.blocks file).
+  // Absent = treated as 'global' for back-compat with pre-scope blocks.
+  scope?: 'global' | 'workspace'
 }
 
 export type BlockCategory =
