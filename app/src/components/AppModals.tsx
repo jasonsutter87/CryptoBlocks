@@ -31,6 +31,7 @@ import GolfComplete from './GolfComplete'
 import LabComplete from './LabComplete'
 import ExamplesBrowser from './ExamplesBrowser'
 import CodeToBlocksModal from './CodeToBlocksModal'
+import VibeAppModal from './VibeAppModal'
 import GitHubPublishModal from './GitHubPublishModal'
 import StatsPanel from './StatsPanel'
 import CheckpointModal from './CheckpointModal'
@@ -149,6 +150,15 @@ export default function AppModals(p: AppModalsProps) {
         <CodeToBlocksModal
           onConvert={p.handleCodeToBlocks}
           onClose={() => p.modals.setCodeToBlocks(false)}
+        />
+      )}
+      {p.modals.vibeApp && (
+        <VibeAppModal
+          onLoad={(r) => {
+            p.handleCodeToBlocks({ workspace: r.workspace, newBlocks: [], warnings: r.warnings })
+            p.modals.setVibeApp(false)
+          }}
+          onClose={() => p.modals.setVibeApp(false)}
         />
       )}
       {p.modals.publish && (

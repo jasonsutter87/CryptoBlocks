@@ -16,6 +16,7 @@ export interface MobileMenuProps {
   onExport: () => void
   onCreateBlock: () => void
   onCodeToBlocks: () => void
+  onVibeApp: () => void
   onOpenExamples: () => void
   onOpenBlocksets: () => void
   onOpenGolf: () => void
@@ -44,6 +45,7 @@ export default function MobileMenu(p: MobileMenuProps) {
     { kind: 'button', icon: 'cube', iconCls: 'w-4 h-4 text-accent', label: 'Import as Block', onClick: act(() => p.importAsBlockInputRef.current?.click()) },
     { kind: 'divider' },
     { kind: 'button', icon: 'plus', iconCls: 'w-4 h-4 text-warn', label: 'Create Block', onClick: act(p.onCreateBlock) },
+    { kind: 'button', emoji: '✨', label: 'My First Vibe App', onClick: act(p.onVibeApp) },
     { kind: 'button', icon: 'pages', iconCls: 'w-4 h-4 text-purple', label: 'Code to Blocks', onClick: act(p.onCodeToBlocks) },
     { kind: 'button', icon: 'book', iconCls: 'w-4 h-4 text-success', label: 'Examples', onClick: act(p.onOpenExamples) },
     { kind: 'button', icon: 'book', iconCls: 'w-4 h-4 text-accent', label: 'Blocksets', onClick: act(p.onOpenBlocksets) },

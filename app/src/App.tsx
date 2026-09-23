@@ -493,6 +493,7 @@ export default function App() {
         onCreateBlock={() => modals.setCreateBlock(true)}
         onOpenMyBlocksLibrary={() => modals.setMyBlocksLibrary(true)}
         onCodeToBlocks={() => modals.setCodeToBlocks(true)}
+        onVibeApp={() => modals.setVibeApp(true)}
         onExport={handleExport}
         onImport={handleImport}
         onImportAsBlock={handleImportAsBlock}
