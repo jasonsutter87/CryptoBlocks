@@ -1,5 +1,5 @@
 /**
- * "My First Vibe App" composer — plain words in, a brick tree out.
+ * "VibeBlocks" composer — plain words in, a brick tree out.
  *
  * The real composer is werbos's `auto_compose` (model-free: it maps the
  * request onto verified bricks and runs it before answering). Everything
