@@ -6,7 +6,7 @@ import {
   type BrickTreeConversion,
 } from '../converters/brick-tree-to-workspace'
 
-interface VibeAppModalProps {
+interface VibeBlocksModalProps {
   onLoad: (result: BrickTreeConversion) => void
   onClose: () => void
 }
@@ -23,7 +23,7 @@ type Status =
   | { kind: 'built'; conversion: BrickTreeConversion; output?: string; bricks: string[] }
   | { kind: 'abstain'; reason: string }
 
-export default function VibeAppModal({ onLoad, onClose }: VibeAppModalProps) {
+export default function VibeBlocksModal({ onLoad, onClose }: VibeBlocksModalProps) {
   const [prompt, setPrompt] = useState('')
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
   const [composer] = useState(getComposer)
@@ -75,7 +75,7 @@ export default function VibeAppModal({ onLoad, onClose }: VibeAppModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-surface-0">
           <div>
-            <h2 className="text-xl font-bold text-text">My First Vibe App</h2>
+            <h2 className="text-xl font-bold text-text">VibeBlocks</h2>
             <p className="text-sm text-overlay mt-0.5">Say what you want. Get the blocks that do it.</p>
           </div>
           <button
