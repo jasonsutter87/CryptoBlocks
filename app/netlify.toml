@@ -21,6 +21,12 @@
     X-XSS-Protection = "0"
 
 # Route API endpoints to Netlify Functions (must come before SPA catch-all)
+# Sign-in with Gatekeep (netlify/functions/auth.mts)
+[[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/auth/:splat"
+  status = 200
+
 [[redirects]]
   from = "/api/projects"
   to = "/.netlify/functions/projects"

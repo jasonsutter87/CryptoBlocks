@@ -1,22 +1,13 @@
 import { lazy, Suspense, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { ClerkProvider } from './auth'
+import { AuthProvider } from './auth'
 import App from './App'
 import './index.css'
 
-const CLERK_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string
-
-// Wrapper that skips ClerkProvider when the key isn't set (local dev without .env.local)
+// Sign-in is Gatekeep (see src/auth); there is no third-party SDK to configure.
 function AuthWrapper({ children }: { children: React.ReactNode }) {
-  if (!CLERK_KEY) {
-    return <>{children}</>
-  }
-  return (
-    <ClerkProvider publishableKey={CLERK_KEY} afterSignOutUrl="/">
-      {children}
-    </ClerkProvider>
-  )
+  return <AuthProvider>{children}</AuthProvider>
 }
 
 const SharedLayout = lazy(() => import('./components/SharedLayout'))
