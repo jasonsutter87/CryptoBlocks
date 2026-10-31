@@ -28,6 +28,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Visit counts by Zero Trust Analytics (no cookies, nothing stored on the device).
+         Loaded only on the hosted web app, never in desktop builds or local dev. -->
+    <script>
+      if (['app.getcryptoblocks.com'].includes(location.hostname)) {
+        const s = document.createElement('script')
+        s.defer = true
+        s.src = 'https://ztas.io/js/analytics.js'
+        s.dataset.siteId = 'site_23b95216c758b8ff'
+        s.dataset.spa = 'true'
+        document.head.appendChild(s)
+      }
+    </script>
   </head>
   <body class="h-full bg-[#1e1e2e] text-white">
     <div id="root" class="h-full"></div>

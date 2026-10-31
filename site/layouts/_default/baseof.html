@@ -2,6 +2,8 @@
 <html lang="{{ .Site.LanguageCode | default "en-us" }}">
   <head>
     {{ partial "head.html" . }}
+    {{- /* Visit counts by Zero Trust Analytics: no cookies, nothing stored on the device. */}}
+    {{ if hugo.IsProduction }}<script defer src="https://ztas.io/js/analytics.js" data-site-id="site_b1946677ae22008f"></script>{{ end }}
   </head>
   <body>
     <div class="dots"></div>
