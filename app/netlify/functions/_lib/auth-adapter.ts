@@ -6,8 +6,8 @@
  * internals directly. If Clerk disappears, is replaced, or we need a
  * test double, this is the ONE file that changes.
  *
- * The default adapter uses Clerk JWKS + Backend API. Swap by setting
- * `AUTH_ADAPTER=mock` in test environments.
+ * The default adapter verifies CryptoBlocks session tokens issued after a
+ * Gatekeep sign-in (./session.ts). Swap with setAuthAdapter in tests.
  */
 
 import { verifyFromRequest, isAdmin } from './auth.js'
@@ -25,12 +25,12 @@ export interface AuthAdapter {
   isAdmin(user: AuthUser | null): boolean
 }
 
-const clerkAdapter: AuthAdapter = {
+const sessionAdapter: AuthAdapter = {
   verifyRequest: (req) => verifyFromRequest(req) as Promise<AuthUser | null>,
   isAdmin: (user) => isAdmin(user as ClerkUser | null),
 }
 
-let adapter: AuthAdapter = clerkAdapter
+let adapter: AuthAdapter = sessionAdapter
 
 export function getAuthAdapter(): AuthAdapter {
   return adapter
