@@ -2,7 +2,10 @@
   publish = "public"
   command = "npm run build"
 
-[context.production.environment]
+# Every context (production, deploy previews, branch deploys) needs Hugo; when
+# this sat under [context.production.environment] previews failed with
+# "hugo: not found".
+[build.environment]
   HUGO_VERSION = "0.147.4"
   NODE_VERSION = "20"
 
