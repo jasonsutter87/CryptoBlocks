@@ -35,7 +35,7 @@
     "codemirror": "^6.0.2",
     "jszip": "^3.10.1",
     "monaco-editor": "^0.55.1",
-    "nanoid": "^5.1.7",
+    "nanoid": "^5.1.16",
     "partykit": "^0.0.115",
     "pyodide": "^0.29.3",
     "qrcode": "^1.5.4",
@@ -48,7 +48,7 @@
     "vite-plugin-monaco-editor": "^1.1.0",
     "y-partykit": "^0.0.33",
     "yjs": "^13.6.30",
-    "zod": "^4.3.6"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
@@ -72,5 +72,13 @@
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "dompurify@^3": "^3.4.17",
+    "immutable@^5": "^5.1.8",
+    "picomatch@^4": "^4.0.4",
+    "react-router@^7": "^7.18.2",
+    "source-map-js@^1": "^1.2.2",
+    "ws@^8": "^8.21.0"
   }
 }
