@@ -205,9 +205,10 @@ export async function syncTeacherSeatsQuietly(teacherId: string, log: (where: st
 
 // ---- the app's instance
 let current: { billing: Billing; store: KV } | null = null
+let migrated = false
 
 /** For tests: use a billing built around a fake Stripe. */
-export function setBilling(b: { billing: Billing; store: KV } | null) { current = b }
+export function setBilling(b: { billing: Billing; store: KV } | null) { current = b; migrated = false }
 
 export async function getBilling(): Promise<Billing | null> {
   const ctx = await getBillingContext()
@@ -228,6 +229,6 @@ export async function getBillingContext(): Promise<{ billing: Billing; store: KV
       }),
     }
   }
-  await migrateSubscriptions(current.store)
+  if (!migrated) { await migrateSubscriptions(current.store); migrated = true }
   return current
 }
