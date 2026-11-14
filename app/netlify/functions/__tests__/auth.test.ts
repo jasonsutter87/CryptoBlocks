@@ -13,6 +13,7 @@ process.env.CB_SESSION_SECRET = 'test-session-secret-0123456789abcdefghijklmnop'
 
 // identity_links in memory: email -> Clerk-era id
 const links = new Map<string, string>()
+let tursoImpl: (sql: string, args?: unknown[]) => Promise<{ rows: unknown[] }> = async () => ({ rows: [] })
 vi.mock('../_lib/turso.js', () => ({
   isTursoConfigured: () => true,
   tursoExecute: vi.fn(async (sql: string, args: unknown[] = []) => {
@@ -20,13 +21,21 @@ vi.mock('../_lib/turso.js', () => ({
       const id = links.get(String(args[0]))
       return { rows: id ? [{ legacy_sub: id }] : [] }
     }
-    return { rows: [] }
+    return tursoImpl(sql, args)
   }),
 }))
 
 const { default: handler } = await import('../auth.mts')
 const { verifyFromRequest } = await import('../_lib/auth.js')
 const { createSessionToken, verifySessionToken, SESSION_TTL_S } = await import('../_lib/session.js')
+
+// revoked_sessions in memory
+const revoked = new Set<string>()
+tursoImpl = async (sql: string, args: unknown[] = []) => {
+  if (sql.startsWith('INSERT OR IGNORE INTO revoked_sessions')) { revoked.add(String(args[0])); return { rows: [] } }
+  if (sql.startsWith('SELECT 1 FROM revoked_sessions')) return { rows: revoked.has(String(args[0])) ? [{ 1: 1 }] : [] }
+  return { rows: [] }
+}
 
 // ---------------------------------------------------------------- fake Gatekeep
 
@@ -67,7 +76,7 @@ beforeAll(async () => {
   process.env.GATEKEEP_ISSUER = issuer
 })
 afterAll(() => { server.close() })
-beforeEach(() => { links.clear(); nextClaims = {} })
+beforeEach(() => { links.clear(); revoked.clear(); nextClaims = {} })
 
 // ---------------------------------------------------------------- helpers
 
@@ -86,8 +95,11 @@ async function finish(login: { params: URLSearchParams; cookie: string }, o: { c
   return get(`/api/auth/callback?code=abc&state=${o.state ?? login.params.get('state')}`, o.cookie ?? login.cookie)
 }
 
-const handedOver = (res: Response) => new URLSearchParams(new URL(res.headers.get('location')!).hash.slice(1))
-const api = (token: string) => new Request(`${SITE}/api/projects`, { headers: { Authorization: `Bearer ${token}` } })
+/** The session cookie value the callback set, as the browser would send it back. */
+const sessionCookieOf = (res: Response) => res.headers.getSetCookie().find((c) => c.startsWith('cb_session='))!.split(';')[0]
+const api = (cookie: string, init: RequestInit & { headers?: Record<string, string> } = {}) =>
+  new Request(`${SITE}/api/projects`, { ...init, headers: { cookie, ...init.headers } })
+const bearer = (token: string, method = 'GET') => new Request(`${SITE}/api/projects`, { method, headers: { Authorization: `Bearer ${token}` } })
 
 // ---------------------------------------------------------------- tests
 
@@ -109,18 +121,17 @@ describe('/api/auth/callback', () => {
     const loc = new URL(res.headers.get('location')!)
     expect(loc.pathname).toBe('/dashboard')
     expect(loc.search).toBe('')
-    const token = handedOver(res).get('cb_session')!
-    const user = await verifyFromRequest(api(token))
+    const user = await verifyFromRequest(api(sessionCookieOf(res)))
     expect(user).toEqual({ sub: 'gk_sub_1', email: 'new@example.com', name: 'New Person', avatar: undefined })
   })
 
   it('keeps a Clerk-era account: a linked verified email gets the old Clerk id', async () => {
     links.set('jason@example.com', 'user_2clerkJason')
     const res = await finish(await start(), { claims: { email: 'jason@example.com' } })
-    const user = await verifyFromRequest(api(handedOver(res).get('cb_session')!))
-    expect(user?.sub).toBe('user_2clerkJason')
-    const profile = JSON.parse(Buffer.from(handedOver(res).get('user')!, 'base64url').toString())
-    expect(profile.id).toBe('user_2clerkJason')
+    const cookie = sessionCookieOf(res)
+    expect((await verifyFromRequest(api(cookie)))?.sub).toBe('user_2clerkJason')
+    const me = await (await get('/api/auth/me', cookie)).json()
+    expect(me.user.id).toBe('user_2clerkJason')
   })
 
   it('refuses an unverified email (it could otherwise claim a linked account)', async () => {
@@ -144,7 +155,7 @@ describe('/api/auth/callback', () => {
   })
 
   it('only returns to paths on this site', async () => {
-    for (const next of ['//evil.example/', 'https://evil.example/']) {
+    for (const next of ['//evil.example/', 'https://evil.example/', '/\\evil.example', '/%2f%2fevil.example', 'javascript:alert(1)']) {
       const loc = new URL((await finish(await start(next), { claims: { email: 'a@example.com' } })).headers.get('location')!)
       expect(loc.origin).toBe(SITE)
       expect(loc.pathname).toBe('/')
@@ -161,6 +172,83 @@ describe('session tokens', () => {
     expect(verifySessionToken(`${h}.${forgedBody}.${s}`)).toBeNull()
     expect(verifySessionToken(good, Date.now() + (SESSION_TTL_S + 1) * 1000)).toBeNull()
     expect(await verifyFromRequest(new Request(SITE))).toBeNull()
-    expect(await verifyFromRequest(api('not.a.token'))).toBeNull()
+    expect(await verifyFromRequest(bearer('not.a.token'))).toBeNull()
+  })
+})
+
+describe('the session cookie', () => {
+  it('is HttpOnly, Secure, SameSite=Lax, Path=/ with the session lifetime, and no token reaches the URL', async () => {
+    const res = await finish(await start('/dashboard'), { claims: { email: 'a@example.com' } })
+    const set = res.headers.getSetCookie().find((c) => c.startsWith('cb_session='))!
+    expect(set).toMatch(/; Path=\/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800$/)
+    expect(SESSION_TTL_S).toBe(604800)
+    const loc = res.headers.get('location')!
+    expect(loc).toBe(`${SITE}/dashboard`)
+    const token = set.split(';')[0].slice('cb_session='.length)
+    expect(loc).not.toContain(token)
+    expect(loc).not.toContain('#')
+  })
+
+  it('GET /api/auth/me returns only the profile, from the cookie', async () => {
+    const res = await finish(await start(), { claims: { email: 'a@example.com', name: 'Ann', picture: 'https://img.example/a.png' } })
+    const r = await get('/api/auth/me', sessionCookieOf(res))
+    expect(r.status).toBe(200)
+    const body = await r.json()
+    expect(body).toEqual({ user: { id: 'gk_sub_1', email: 'a@example.com', name: 'Ann', avatar: 'https://img.example/a.png' } })
+    expect(JSON.stringify(body)).not.toMatch(/eyJ/)
+    expect((await get('/api/auth/me')).status).toBe(401)
+  })
+
+  it('authenticates API calls, and the legacy Bearer still works for now', async () => {
+    const res = await finish(await start(), { claims: { email: 'a@example.com' } })
+    expect((await verifyFromRequest(api(sessionCookieOf(res))))?.sub).toBe('gk_sub_1')
+    const legacy = createSessionToken({ sub: 'u1', email: 'old@example.com' })
+    expect((await verifyFromRequest(bearer(legacy)))?.sub).toBe('u1')
+    expect((await verifyFromRequest(bearer(legacy, 'POST')))?.sub).toBe('u1') // Bearer is not CSRF-able, so no Origin needed
+  })
+
+  it('refuses cookie-authenticated state changes from another origin', async () => {
+    const cookie = sessionCookieOf(await finish(await start(), { claims: { email: 'a@example.com' } }))
+    const post = (headers: Record<string, string>) => verifyFromRequest(api(cookie, { method: 'POST', headers }))
+    expect(await post({ Origin: 'https://evil.example' })).toBeNull()
+    expect(await post({ 'Sec-Fetch-Site': 'cross-site' })).toBeNull()
+    expect(await post({})).toBeNull() // no Origin, no Sec-Fetch-Site
+    expect((await post({ Origin: SITE }))?.sub).toBe('gk_sub_1')
+    expect((await post({ 'Sec-Fetch-Site': 'same-origin' }))?.sub).toBe('gk_sub_1')
+    // Reads need no Origin.
+    expect((await verifyFromRequest(api(cookie)))?.sub).toBe('gk_sub_1')
+  })
+})
+
+describe('sign-out', () => {
+  const logout = (cookie: string, headers: Record<string, string> = { Origin: SITE }) =>
+    handler(new Request(`${SITE}/api/auth/logout`, { method: 'POST', headers: { cookie, ...headers } }))
+
+  it('revokes the session: the old cookie is rejected afterwards, and the cookie is cleared', async () => {
+    const cookie = sessionCookieOf(await finish(await start(), { claims: { email: 'a@example.com' } }))
+    expect((await verifyFromRequest(api(cookie)))?.sub).toBe('gk_sub_1')
+    const res = await logout(cookie)
+    expect(res.status).toBe(200)
+    expect(res.headers.getSetCookie().find((c) => c.startsWith('cb_session='))).toMatch(/^cb_session=;.*Max-Age=0/)
+    const body = await res.json()
+    expect(body.revoked).toBe(true)
+    expect(body.logoutUrl).toBe(`${issuer}/logout?post_logout_redirect_uri=${encodeURIComponent(`${SITE}/`)}`)
+    expect(await verifyFromRequest(api(cookie))).toBeNull()
+    expect((await get('/api/auth/me', cookie)).status).toBe(401)
+  })
+
+  it('does not end another session of the same user', async () => {
+    const a = sessionCookieOf(await finish(await start(), { claims: { email: 'a@example.com' } }))
+    const b = sessionCookieOf(await finish(await start(), { claims: { email: 'a@example.com' } }))
+    await logout(a)
+    expect(await verifyFromRequest(api(a))).toBeNull()
+    expect((await verifyFromRequest(api(b)))?.sub).toBe('gk_sub_1')
+  })
+
+  it('refuses a cross-origin sign-out and a GET', async () => {
+    const cookie = sessionCookieOf(await finish(await start(), { claims: { email: 'a@example.com' } }))
+    expect((await logout(cookie, { Origin: 'https://evil.example' })).status).toBe(403)
+    expect((await verifyFromRequest(api(cookie)))?.sub).toBe('gk_sub_1')
+    expect((await get('/api/auth/logout', cookie)).status).toBe(405)
   })
 })
