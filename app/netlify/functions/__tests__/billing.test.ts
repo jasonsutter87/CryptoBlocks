@@ -35,7 +35,7 @@ vi.mock('../_lib/auth.js', async (orig) => ({
 
 const { default: stripeHandler } = await import('../stripe.mts')
 const { default: classroomsHandler } = await import('../classrooms.mts')
-const { buildBilling, setBilling, tursoStore, migrateSubscriptions, teacherSeatCount, TEACHER_SEAT_LIMIT } = await import('../_lib/billing.js')
+const { buildBilling, setBilling, tursoStore, migrateSubscriptions, teacherSeatCount } = await import('../_lib/billing.js')
 
 // ---- fake Stripe adapter
 const nowSec = () => Math.floor(Date.now() / 1000)
@@ -166,28 +166,17 @@ describe('checkout', () => {
   })
 })
 
-describe('teacher seats follow students', () => {
-  it('a student joining calls setQuantity and the seat count follows', async () => {
+describe('per-student billing is off: the seat item stays at 0', () => {
+  it('students joining never touch the subscription; teachers keep paying only the base', async () => {
     await subscribeTeacher()
     await classroom('teacher_1')
-    expect(await subRow('teacher_1')).toMatchObject({ status: 'active', plan: 'teacher', stripe_customer_id: 'cus_1', stripe_subscription_id: 'sub_1' })
-    expect(stripe.of('updateSubscription')).toHaveLength(0)
-
     expect((await join('student_1', 'ABCDEF')).status).toBe(200)
-    expect(stripe.of('updateSubscription')).toHaveLength(1)
-    expect(stripe.of('updateSubscription')[0][2]).toMatchObject({ items: [{ id: 'si_seat', quantity: 1 }] })
-    expect(stripe.subs.sub_1.items.data[1].quantity).toBe(1)
-
-    await join('student_2', 'ABCDEF')
-    expect(stripe.subs.sub_1.items.data[1].quantity).toBe(2)
-    // joining again is not a new seat
-    await join('student_2', 'ABCDEF')
-    expect(stripe.of('updateSubscription')).toHaveLength(2)
-
-    const billing = current.billing
-    const detail = await billing.status('teacher_1', { detail: true })
-    expect(detail.seats).toBe(2)
-    expect(detail.items.map((i: { role: string; quantity: number }) => [i.role, i.quantity])).toEqual([['base', 1], ['seat', 2]])
+    expect((await join('student_2', 'ABCDEF')).status).toBe(200)
+    expect(stripe.of('updateSubscription')).toHaveLength(0)
+    expect(stripe.subs.sub_1.items.data[1].quantity).toBe(0)
+    const detail = await current.billing.status('teacher_1', { detail: true })
+    expect(detail.seats).toBe(0)
+    expect(detail.items.map((i: { role: string; quantity: number }) => [i.role, i.quantity])).toEqual([['base', 1], ['seat', 0]])
   })
 
   it('a teacher with no subscription costs nothing and changes nothing in Stripe', async () => {
@@ -196,29 +185,22 @@ describe('teacher seats follow students', () => {
     expect(stripe.calls).toHaveLength(0)
   })
 
-  it('the 30 cap holds: billing never goes past 30 seats and the 31st student gets no Pro', async () => {
+  it('the 30 cap holds in the Pro grant: the 31st student of a classroom gets no Pro, seat stays 0', async () => {
     await subscribeTeacher()
     await classroom('teacher_1')
     await addStudents('class_1', 1, 34)
     expect((await join('student_35', 'ABCDEF')).status).toBe(200)
-
-    expect(stripe.subs.sub_1.items.data[1].quantity).toBe(TEACHER_SEAT_LIMIT)
+    expect(stripe.of('updateSubscription')).toHaveLength(0)
     expect(await teacherSeatCount('teacher_1')).toBe(30)
-    // the seat item never went above the cap, in any call
-    for (const c of stripe.of('updateSubscription')) {
-      for (const it of (c[2] as { items: Array<{ quantity: number }> }).items) expect(it.quantity).toBeLessThanOrEqual(30)
-    }
     expect((await status('student_30')).isPro).toBe(true)
     expect(await status('student_31')).toEqual({ isPro: false, plan: 'free' })
     expect(await status('student_35')).toEqual({ isPro: false, plan: 'free' })
   })
 
-  it("the seat item itself is capped at 30 by billing, whatever the caller asks for", async () => {
+  it('the seat line item stays in the plan with max 30 (available if per-student billing is switched on)', async () => {
     await subscribeTeacher()
     const r = await current.billing.setQuantity('teacher_1', 'seat', 45)
     expect(r.status.seats).toBe(30)
-    expect(stripe.subs.sub_1.items.data[1].quantity).toBe(30)
-    expect((await current.billing.setQuantity('teacher_1', 'seat', 99)).changed).toBe(false)
   })
 
   it('the cap is per classroom in the Pro grant: a second classroom has its own 30', async () => {
@@ -228,19 +210,6 @@ describe('teacher seats follow students', () => {
     await addStudents('class_2', 100, 101)
     expect(await teacherSeatCount('teacher_1')).toBe(2)
     expect((await status('student_100')).plan).toBe('student-via-teacher')
-  })
-
-  it('students who joined before the teacher subscribed are counted when the checkout is confirmed', async () => {
-    await classroom('teacher_1')
-    await addStudents('class_1', 1, 4)
-    const sessionId = await subscribeTeacher()
-    // webhook handled it, and seats followed
-    expect(stripe.subs.sub_1.items.data[1].quantity).toBe(4)
-    // and confirming the same session later changes nothing more
-    const before = stripe.of('updateSubscription').length
-    const res = await stripeHandler(api('confirm', 'teacher_1', { method: 'POST', body: { sessionId } }))
-    expect(res.status).toBe(200)
-    expect(stripe.of('updateSubscription')).toHaveLength(before)
   })
 })
 

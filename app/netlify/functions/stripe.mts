@@ -15,7 +15,7 @@ import {
   requireAuth,
 } from './_lib/index.js'
 import { BillingError } from '../../vendor/launchkit/billing.js'
-import { getBillingContext, backfillIds, syncTeacherSeatsQuietly, TEACHER_SEAT_LIMIT } from './_lib/billing.js'
+import { getBillingContext, backfillIds, TEACHER_SEAT_LIMIT } from './_lib/billing.js'
 import { z } from 'zod'
 
 const CheckoutInput = z.object({
@@ -93,8 +93,6 @@ async function handler(req: Request) {
       const { status, applied } = await ctx.billing.confirm(user!.sub, parsed.data.sessionId)
       if (applied) {
         await backfillIds(user!.sub, ctx.store).catch((e) => logError('stripe:backfill', e))
-        // Students may have joined before the teacher subscribed.
-        await syncTeacherSeatsQuietly(user!.sub, logError)
       }
       return json({ applied, plan: status.plan, status: status.status })
     }
@@ -166,7 +164,6 @@ async function handler(req: Request) {
       const result = await ctx.billing.handleWebhook(body, sig)
       if (result.handled && result.orgId) {
         await backfillIds(result.orgId, ctx.store).catch((e) => logError('stripe:backfill', e))
-        await syncTeacherSeatsQuietly(result.orgId, logError)
       }
       return json({ received: true })
     }

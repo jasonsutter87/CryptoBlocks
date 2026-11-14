@@ -4,8 +4,7 @@
  * - The user id is the billing org (CryptoBlocks has no orgs).
  * - Plans match by Stripe *product id*, so subscribers created from the old inline `price_data`
  *   (auto-generated prices) keep matching.
- * - Teacher = a base line item + a per-student seat line item ($3.50, starts at 0). When students join or leave,
- *   `syncTeacherSeats` sets the seat quantity with `setQuantity`.
+ * - Teacher = a base line item + a per-student seat line item ($3.50, stays at 0: per-student billing is off).
  * - `entitlements.onChange` mirrors plan/status into the `subscriptions` table, which `/api/stripe/status`
  *   and the admin dashboard still read.
  * - Who gets Pro through a teacher stays the SQL ranking in stripe.mts; billing only supplies the subscription.
@@ -182,6 +181,10 @@ export async function teacherSeatCount(teacherId: string): Promise<number> {
 }
 
 /**
+ * NOT CALLED, on purpose. Per-student billing is available but off: the seat item stays at quantity 0, so
+ * teachers pay only the $25 base, as before this refactor. To turn it on (a deliberate pricing change), call this
+ * when students join/leave and after a teacher's checkout is confirmed.
+ *
  * Make the Stripe seat item match the teacher's students. A no-op for anyone who is not on a live teacher plan.
  * Returns the seat count it set, or null when there was nothing to do.
  */
@@ -191,16 +194,6 @@ export async function syncTeacherSeats(billing: Billing, teacherId: string): Pro
   const n = await teacherSeatCount(teacherId)
   await billing.setQuantity(teacherId, 'seat', n)
   return n
-}
-
-/** Same, for callers that must never fail because billing did (joining a class, deleting an account). */
-export async function syncTeacherSeatsQuietly(teacherId: string, log: (where: string, err: unknown) => void) {
-  try {
-    const billing = await getBilling()
-    if (billing) await syncTeacherSeats(billing, teacherId)
-  } catch (err) {
-    log('billing:seat-sync', err)
-  }
 }
 
 // ---- the app's instance

@@ -14,7 +14,6 @@ import {
   isAdmin,
 } from './_lib/index.js'
 import { FreeOverrideInput, Email } from '../../src/schema/index.js'
-import { syncTeacherSeatsQuietly } from './_lib/billing.js'
 
 async function handler(req: Request) {
   if (req.method === 'OPTIONS') return cors()
@@ -268,12 +267,6 @@ async function handler(req: Request) {
         "UPDATE projects SET author_name = '[deleted]', author_id = 'deleted' WHERE author_id = ?",
         [userId],
       )
-      // Teachers whose seat count changes when this user's classroom memberships go
-      const teachers = await tursoExecute(
-        `SELECT DISTINCT c.teacher_id FROM class_members cm JOIN classrooms c ON cm.classroom_id = c.id
-         WHERE cm.user_id = ? AND cm.role = 'student'`,
-        [userId],
-      ).catch(() => ({ rows: [] as Array<Record<string, unknown>> }))
       // Delete their achievements, likes, notifications, classroom memberships
       await Promise.all([
         tursoExecute('DELETE FROM user_achievements WHERE user_id = ?', [userId]).catch(() => {}),
@@ -285,8 +278,6 @@ async function handler(req: Request) {
         tursoExecute('DELETE FROM project_reports WHERE reporter_id = ?', [userId]).catch(() => {}),
         tursoExecute('DELETE FROM user_bans WHERE user_id = ?', [userId]).catch(() => {}),
       ])
-
-      for (const t of teachers.rows) await syncTeacherSeatsQuietly(String(t.teacher_id), logError)
 
       return json({ ok: true })
     }

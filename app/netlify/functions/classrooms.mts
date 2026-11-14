@@ -14,7 +14,6 @@ import {
   requireAuth, requireClassroomMember, requireClassroomTeacher,
 } from './_lib/index.js'
 import type { TursoRow } from './_lib/index.js'
-import { syncTeacherSeatsQuietly } from './_lib/billing.js'
 import {
   CreateClassroomInput, CreateAssignmentInput, SubmitAssignmentInput,
   FeedbackInput, CreateDiscussionInput, CreateReplyInput, SendChatInput,
@@ -108,7 +107,7 @@ async function handler(req: Request) {
       }
 
       const classroom = await tursoExecute(
-        'SELECT id, name, teacher_id FROM classrooms WHERE join_code = ?',
+        'SELECT id, name FROM classrooms WHERE join_code = ?',
         [code],
       )
       if (classroom.rows.length === 0) {
@@ -140,8 +139,6 @@ async function handler(req: Request) {
           'INSERT INTO class_members (classroom_id, user_id, user_name, user_avatar, role, joined_at) VALUES (?, ?, ?, ?, ?, ?)',
           [classroomId, user.sub, String(user.name || 'Student').slice(0, 50), user.avatar || '', 'student', Date.now()],
         )
-        // A new student is a new seat on the teacher's plan (a no-op unless the teacher is subscribed).
-        await syncTeacherSeatsQuietly(String(classroom.rows[0].teacher_id), logError)
       }
 
       return json({ classroomId, classroomName })
