@@ -15,7 +15,7 @@ import {
   requireAuth,
 } from './_lib/index.js'
 import { BillingError } from '../../vendor/launchkit/billing.js'
-import { getBillingContext, backfillIds, TEACHER_SEAT_LIMIT } from './_lib/billing.js'
+import { getBillingContext, TEACHER_SEAT_LIMIT } from './_lib/billing.js'
 import { z } from 'zod'
 
 const CheckoutInput = z.object({
@@ -91,9 +91,6 @@ async function handler(req: Request) {
       const ctx = await getBillingContext()
       if (!ctx) return json({ error: 'Stripe not configured' }, 500)
       const { status, applied } = await ctx.billing.confirm(user!.sub, parsed.data.sessionId)
-      if (applied) {
-        await backfillIds(user!.sub, ctx.store).catch((e) => logError('stripe:backfill', e))
-      }
       return json({ applied, plan: status.plan, status: status.status })
     }
 
@@ -161,10 +158,7 @@ async function handler(req: Request) {
       if (!ctx) return json({ error: 'Stripe not configured' }, 500)
       // Raw body: the signature covers the exact bytes.
       const body = await req.text()
-      const result = await ctx.billing.handleWebhook(body, sig)
-      if (result.handled && result.orgId) {
-        await backfillIds(result.orgId, ctx.store).catch((e) => logError('stripe:backfill', e))
-      }
+      await ctx.billing.handleWebhook(body, sig)
       return json({ received: true })
     }
 

@@ -12,6 +12,7 @@ import { signWebhook } from '../../../vendor/launchkit/billing.js'
 
 process.env.STRIPE_SECRET_KEY = 'sk_test_fake'
 process.env.STRIPE_WEBHOOK_SECRET = `whsec_${'a'.repeat(32)}`
+process.env.BILLING_BINDING_SECRET = `bind_${'b'.repeat(32)}`
 const SECRET = process.env.STRIPE_WEBHOOK_SECRET
 const ORIGIN = 'https://cryptoblocks.test'
 
@@ -143,6 +144,7 @@ describe('checkout', () => {
     expect(params.mode).toBe('subscription')
     expect(params.client_reference_id).toBe('teacher_1')
     expect(params.customer_email).toBe('teacher_1@test.dev')
+    expect(params.subscription_data.metadata.orgSig).toMatch(/^[0-9a-f]{64}$/) // signed: billing trusts its own checkout
     expect(params.line_items).toEqual([
       { price_data: { currency: 'usd', unit_amount: 2500, product: PROD.teacher, recurring: { interval: 'month' } }, quantity: 1 },
       { price_data: { currency: 'usd', unit_amount: 350, product: PROD.student, recurring: { interval: 'month' } }, quantity: 0 },
@@ -197,10 +199,13 @@ describe('per-student billing is off: the seat item stays at 0', () => {
     expect(await status('student_35')).toEqual({ isPro: false, plan: 'free' })
   })
 
-  it('the seat line item stays in the plan with max 30 (available if per-student billing is switched on)', async () => {
+  it('the seat cap is 30 per classroom, like the Pro grant (available if per-student billing is switched on)', async () => {
+    await classroom('teacher_1', 'class_1', 'ABCDEF')
     await subscribeTeacher()
-    const r = await current.billing.setQuantity('teacher_1', 'seat', 45)
-    expect(r.status.seats).toBe(30)
+    expect((await current.billing.setQuantity('teacher_1', 'seat', 45)).status.seats).toBe(30)
+    await classroom('teacher_1', 'class_2', 'GHJKLM')
+    expect((await current.billing.setQuantity('teacher_1', 'seat', 45)).status.seats).toBe(45)
+    expect((await current.billing.setQuantity('teacher_1', 'seat', 99)).status.seats).toBe(60)
   })
 
   it('the cap is per classroom in the Pro grant: a second classroom has its own 30', async () => {
@@ -325,19 +330,19 @@ describe('existing subscribers (migration)', () => {
   async function oldSubscriber(user: string, plan: 'pro' | 'teacher', cus: string, sub: string, st = 'active') {
     await db.execute({ sql: 'INSERT INTO subscriptions VALUES (?, ?, ?, ?, ?, ?)', args: [user, cus, sub, st, plan, 1] })
   }
-  const fresh = () => { const kv = store(); current = { store: kv, billing: buildBilling({ store: kv, stripe, webhookSecret: SECRET }) }; setBilling(current); return kv }
+  const fresh = () => { const kv = store(); current = { store: kv, billing: buildBilling({ store: kv, stripe, webhookSecret: SECRET, bindingSecret: process.env.BILLING_BINDING_SECRET }) }; setBilling(current); return kv }
 
   it('moves subscriptions rows into the billing store once, and again does nothing', async () => {
     await oldSubscriber('old_teacher', 'teacher', 'cus_old', 'sub_old')
     await oldSubscriber('old_pro', 'pro', 'cus_oldp', 'sub_oldp', 'canceled')
     await db.execute({ sql: "INSERT INTO subscriptions VALUES ('no_stripe', NULL, NULL, 'active', 'pro', 1)" })
     const kv = fresh()
-    expect(await migrateSubscriptions(kv)).toBe(2)
+    expect(await migrateSubscriptions(current.billing, kv)).toBe(2)
     expect(await kv.get('orgs/old_teacher')).toMatchObject({ customerId: 'cus_old', subscriptionId: 'sub_old', plan: 'teacher', status: 'active', stamp: 0 })
     expect(await kv.get('orgs/old_pro')).toMatchObject({ plan: 'pro', status: 'canceled' })
     expect(await kv.get('customers/cus_old')).toBe('old_teacher')
     expect(await kv.get('orgs/no_stripe')).toBeNull()
-    expect(await migrateSubscriptions(kv)).toBe(0)
+    expect(await migrateSubscriptions(current.billing, kv)).toBe(0)
   })
 
   it('a teacher on auto-generated inline prices still matches by productId, and the next renewal webhook applies', async () => {
@@ -410,6 +415,6 @@ async function reset() {
   stripe = fakeStripe()
   evt = 0
   const kv = store()
-  current = { store: kv, billing: buildBilling({ store: kv, stripe, webhookSecret: SECRET }) }
+  current = { store: kv, billing: buildBilling({ store: kv, stripe, webhookSecret: SECRET, bindingSecret: process.env.BILLING_BINDING_SECRET }) }
   setBilling(current)
 }

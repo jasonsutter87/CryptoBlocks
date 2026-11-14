@@ -7,6 +7,8 @@
  * - Teacher = a base line item + a per-student seat line item ($3.50, stays at 0: per-student billing is off).
  * - `entitlements.onChange` mirrors plan/status into the `subscriptions` table, which `/api/stripe/status`
  *   and the admin dashboard still read.
+ * - Env: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, and BILLING_BINDING_SECRET (>= 32 random chars; billing signs the org
+ *   into the checkouts it creates and trusts that signature, so a link edited to point at someone else's org is held).
  * - Who gets Pro through a teacher stays the SQL ranking in stripe.mts; billing only supplies the subscription.
  */
 
@@ -55,6 +57,12 @@ export function tursoStore(): KV {
   }
 }
 
+/** How many classrooms this teacher owns (the Pro grant gives TEACHER_SEAT_LIMIT students per classroom). */
+export async function classroomsOf(teacherId: string): Promise<number> {
+  const r = await tursoExecute('SELECT COUNT(*) AS n FROM classrooms WHERE teacher_id = ?', [teacherId])
+  return Number(r.rows[0]?.n ?? 0)
+}
+
 // ---- plans (env var names unchanged)
 export function productIds() {
   return {
@@ -75,31 +83,27 @@ export function planConfig() {
       productId: p.teacher,
       lineItems: [
         { role: 'base', inlinePrice: { currency: 'usd', unitAmount: 2500, interval: 'month', productId: p.teacher } },
-        // Starts at 0; setQuantity raises it as students join. Capped at the per-classroom limit.
-        { role: 'seat', inlinePrice: { currency: 'usd', unitAmount: 350, interval: 'month', productId: p.student }, quantity: 0, max: TEACHER_SEAT_LIMIT },
+        // Starts at 0 and nothing raises it (per-student billing is off). If it is ever turned on, the cap is the
+        // same as the Pro grant: TEACHER_SEAT_LIMIT per classroom the teacher owns.
+        { role: 'seat', inlinePrice: { currency: 'usd', unitAmount: 350, interval: 'month', productId: p.student }, quantity: 0, max: async (orgId: string) => TEACHER_SEAT_LIMIT * (await classroomsOf(orgId)) },
       ],
     },
   }
 }
 
 // ---- mirror into the `subscriptions` table
-async function mirrorSubscription(orgId: string, after: { plan: string | null; status: string }, store: KV) {
-  const rec = await store.get(`orgs/${keyPart(orgId)}`)
+// onChange runs after billing has stored the record and hands over the stripe ids, so the row is complete in one write.
+async function mirrorSubscription(
+  orgId: string,
+  c: { plan: string | null; status: string; customerRef?: string | null; subscriptionRef?: string | null },
+) {
   await tursoExecute(
     `INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, status, plan, created_at)
      VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT (user_id) DO UPDATE SET status = excluded.status, plan = excluded.plan`,
-    [orgId, rec?.customerId ?? '', rec?.subscriptionId ?? '', after.status, after.plan ?? 'pro', Date.now()],
-  )
-}
-
-/** Copy the stripe ids onto the row once billing has recorded them (best effort: nothing reads them any more). */
-export async function backfillIds(orgId: string, store: KV) {
-  const rec = await store.get(`orgs/${keyPart(orgId)}`)
-  if (!rec?.customerId || !rec?.subscriptionId) return
-  await tursoExecute(
-    'UPDATE subscriptions SET stripe_customer_id = ?, stripe_subscription_id = ? WHERE user_id = ?',
-    [rec.customerId, rec.subscriptionId, orgId],
+     ON CONFLICT (user_id) DO UPDATE SET status = excluded.status, plan = excluded.plan,
+       stripe_customer_id = CASE WHEN excluded.stripe_customer_id <> '' THEN excluded.stripe_customer_id ELSE subscriptions.stripe_customer_id END,
+       stripe_subscription_id = CASE WHEN excluded.stripe_subscription_id <> '' THEN excluded.stripe_subscription_id ELSE subscriptions.stripe_subscription_id END`,
+    [orgId, c.customerRef ?? '', c.subscriptionRef ?? '', c.status, c.plan ?? 'pro', Date.now()],
   )
 }
 
@@ -107,19 +111,24 @@ export interface BuildOptions {
   store: KV
   stripe: unknown
   webhookSecret?: string | null
+  /** Signs the org into checkouts billing creates (>= 32 chars); env BILLING_BINDING_SECRET. */
+  bindingSecret?: string | null
   now?: () => number
 }
 
-export function buildBilling({ store, stripe, webhookSecret, now }: BuildOptions) {
+export function buildBilling({ store, stripe, webhookSecret, bindingSecret, now }: BuildOptions) {
   return createBilling({
     store,
     stripe,
     plans: planConfig(),
     webhookSecret: webhookSecret ?? undefined,
+    ...(bindingSecret ? { bindingSecret } : {}),
     ...(now ? { now } : {}),
     entitlements: {
-      onChange: async ({ orgId, after }: { orgId: string; after: { plan: string | null; status: string } }) => {
-        await mirrorSubscription(orgId, after, store)
+      onChange: async ({ orgId, plan, status, customerRef, subscriptionRef }: {
+        orgId: string; plan: string | null; status: string; customerRef: string | null; subscriptionRef: string | null
+      }) => {
+        await mirrorSubscription(orgId, { plan, status, customerRef, subscriptionRef })
       },
     },
   })
@@ -134,11 +143,11 @@ const STATUS_MAP: Record<string, string> = {
 }
 
 /**
- * Seed billing's store from the old `subscriptions` rows: org record (customer, subscription, plan, status) and
- * the customer -> user mapping. Stamp 0, so the next real event (renewal webhook) always applies. Idempotent:
- * an org billing already has is left alone, and a done-flag skips the scan afterwards.
+ * Seed billing from the old `subscriptions` rows with `billing.adopt` (org record, customer mapping, stamp 0, so the
+ * next real event always applies). Idempotent: an org billing already has is left alone, and a done-flag skips the
+ * scan afterwards.
  */
-export async function migrateSubscriptions(store: KV): Promise<number> {
+export async function migrateSubscriptions(billing: Billing, store: KV): Promise<number> {
   if (await store.get('meta/migrated-subscriptions')) return 0
   const rows = await tursoExecute(
     'SELECT user_id, stripe_customer_id, stripe_subscription_id, status, plan FROM subscriptions',
@@ -149,16 +158,13 @@ export async function migrateSubscriptions(store: KV): Promise<number> {
     const sub = r.stripe_subscription_id ? String(r.stripe_subscription_id) : null
     const cus = r.stripe_customer_id ? String(r.stripe_customer_id) : null
     if (!sub || !cus) continue
-    if (!(await store.get(`orgs/${keyPart(userId)}`))) {
-      const plan = r.plan === 'teacher' ? 'teacher' : 'pro'
-      await store.set(`orgs/${keyPart(userId)}`, {
-        orgId: userId, customerId: cus, subscriptionId: sub, subCreated: null, plan,
-        status: STATUS_MAP[String(r.status)] ?? 'canceled', seats: plan === 'teacher' ? 0 : null,
-        currentPeriodEnd: null, cancelAtPeriodEnd: false, pastDueSince: null, stamp: 0,
-      })
-      n++
-    }
-    if (!(await store.get(`customers/${keyPart(cus)}`))) await store.set(`customers/${keyPart(cus)}`, userId)
+    if (await store.get(`orgs/${keyPart(userId)}`)) continue
+    await billing.adopt(userId, {
+      customerRef: cus, subscriptionRef: sub,
+      planId: r.plan === 'teacher' ? 'teacher' : 'pro',
+      status: STATUS_MAP[String(r.status)] ?? 'canceled',
+    })
+    n++
   }
   await store.set('meta/migrated-subscriptions', { at: Date.now(), count: n })
   return n
@@ -219,9 +225,10 @@ export async function getBillingContext(): Promise<{ billing: Billing; store: KV
         store,
         stripe: createStripeRest({ secretKey, apiVersion: '2025-03-31.basil' }),
         webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+        bindingSecret: process.env.BILLING_BINDING_SECRET,
       }),
     }
   }
-  if (!migrated) { await migrateSubscriptions(current.store); migrated = true }
+  if (!migrated) { await migrateSubscriptions(current.billing, current.store); migrated = true }
   return current
 }
