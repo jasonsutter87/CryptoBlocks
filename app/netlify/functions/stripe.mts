@@ -4,66 +4,37 @@
  * POST /api/stripe/checkout   → create a Checkout Session (auth required)
  * POST /api/stripe/portal     → create a Customer Portal session (manage sub)
  * GET  /api/stripe/status     → check if current user has an active subscription
- * POST /api/stripe/webhook    → Stripe webhook for subscription events (signed)
+ * POST /api/stripe/confirm    → return-from-checkout sync ({ sessionId }), so Pro shows before the webhook lands
+ * POST /api/stripe/webhook    → Stripe webhook for subscription events (signed, raw body)
+ *
+ * Stripe itself is launchkit/billing (vendor/launchkit); see _lib/billing.ts.
  */
 
-import Stripe from 'stripe'
 import {
   json, cors, logError, withRequest, parsePath, verifyFromRequest, tursoExecute,
   requireAuth,
 } from './_lib/index.js'
+import { BillingError } from '../../vendor/launchkit/billing.js'
+import { getBillingContext, TEACHER_SEAT_LIMIT } from './_lib/billing.js'
 import { z } from 'zod'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-03-31.basil' as Stripe.LatestApiVersion,
-})
 
 const CheckoutInput = z.object({
   plan: z.enum(['pro', 'teacher']).default('pro'),
 }).strict()
 
-// Centralized price config — single source for product IDs and amounts
-const PRICES = {
-  pro: {
-    product: process.env.STRIPE_PRODUCT_ID || 'prod_UK2SC9xh2YTlMQ',
-    unitAmount: 1000,
-  },
-  teacher: {
-    product: process.env.STRIPE_TEACHER_PRODUCT_ID || 'prod_UKGdxapGBhJGfR',
-    unitAmount: 2500,
-  },
-  student: {
-    product: process.env.STRIPE_STUDENT_PRODUCT_ID || 'prod_UKGeLR2xlgPsqj',
-    unitAmount: 350,
-  },
-} as const
+const ConfirmInput = z.object({ sessionId: z.string().regex(/^cs_[A-Za-z0-9_]+$/) }).strict()
 
-function buildLineItems(plan: 'pro' | 'teacher') {
-  if (plan === 'teacher') {
-    return [
-      {
-        price_data: {
-          currency: 'usd', product: PRICES.teacher.product,
-          recurring: { interval: 'month' }, unit_amount: PRICES.teacher.unitAmount,
-        },
-        quantity: 1,
-      },
-      {
-        price_data: {
-          currency: 'usd', product: PRICES.student.product,
-          recurring: { interval: 'month' }, unit_amount: PRICES.student.unitAmount,
-        },
-        quantity: 0, // starts at 0, incremented as students join
-      },
-    ]
+/** A BillingError carries the status the app should answer with; anything else is ours to log. */
+function billingErrorResponse(err: unknown): Response | null {
+  if (!(err instanceof BillingError)) return null
+  if (err.code === 'bad-signature' || err.code === 'stale-timestamp' || err.code === 'no-raw-body' || err.code === 'bad-payload') {
+    return json({ error: 'Invalid signature' }, 400)
   }
-  return [{
-    price_data: {
-      currency: 'usd', product: PRICES.pro.product,
-      recurring: { interval: 'month' }, unit_amount: PRICES.pro.unitAmount,
-    },
-    quantity: 1,
-  }]
+  if (err.code === 'already-subscribed') return json({ error: 'You already have a subscription. Use Manage billing to change it.' }, 409)
+  if (err.code === 'no-customer') return json({ error: 'No subscription found' }, 404)
+  if (err.code === 'wrong-org') return json({ error: 'Not found' }, 404)
+  logError('stripe', err)
+  return json({ error: err.status && err.status < 500 ? 'Invalid request' : 'Internal server error' }, err.status ?? 500)
 }
 
 async function handler(req: Request) {
@@ -87,33 +58,17 @@ async function handler(req: Request) {
       if (!parsed.success) return json({ error: 'Invalid input' }, 400)
       const { plan } = parsed.data
 
-      // Find or create Stripe customer (idempotent on user.sub)
-      let customerId: string
-      const existing = await tursoExecute(
-        'SELECT stripe_customer_id FROM subscriptions WHERE user_id = ?',
-        [user!.sub],
-      )
-      if (existing.rows.length > 0 && existing.rows[0].stripe_customer_id) {
-        customerId = String(existing.rows[0].stripe_customer_id)
-      } else {
-        const customer = await stripe.customers.create({
-          metadata: { clerk_user_id: user!.sub },
-          email: user!.email || undefined,
-          name: user!.name || undefined,
-        })
-        customerId = customer.id
-      }
-
-      const session = await stripe.checkout.sessions.create({
-        customer: customerId,
-        mode: 'subscription',
-        line_items: buildLineItems(plan),
-        success_url: `${url.origin}/?upgraded=1`,
-        cancel_url: `${url.origin}/?cancelled=1`,
-        metadata: { clerk_user_id: user!.sub, plan },
+      const ctx = await getBillingContext()
+      if (!ctx) return json({ error: 'Stripe not configured' }, 500)
+      const checkoutUrl = await ctx.billing.checkout(user!.sub, {
+        planId: plan,
+        customerEmail: user!.email || undefined,
+        // {CHECKOUT_SESSION_ID} is filled in by Stripe; the return page sends it to /api/stripe/confirm.
+        successUrl: `${url.origin}/?upgraded=1&session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${url.origin}/?cancelled=1`,
       })
 
-      return json({ url: session.url })
+      return json({ url: checkoutUrl })
     }
 
     // POST /api/stripe/portal — Customer Portal for managing subscription
@@ -121,19 +76,22 @@ async function handler(req: Request) {
       const authErr = requireAuth(user)
       if (authErr) return authErr
 
-      const sub = await tursoExecute(
-        'SELECT stripe_customer_id FROM subscriptions WHERE user_id = ?',
-        [user!.sub],
-      )
-      if (sub.rows.length === 0 || !sub.rows[0].stripe_customer_id) {
-        return json({ error: 'No subscription found' }, 404)
-      }
+      const ctx = await getBillingContext()
+      if (!ctx) return json({ error: 'Stripe not configured' }, 500)
+      return json({ url: await ctx.billing.portal(user!.sub, { returnUrl: `${url.origin}/profile` }) })
+    }
 
-      const session = await stripe.billingPortal.sessions.create({
-        customer: String(sub.rows[0].stripe_customer_id),
-        return_url: `${url.origin}/profile`,
-      })
-      return json({ url: session.url })
+    // POST /api/stripe/confirm — the return page asks Stripe about its own checkout session
+    if (req.method === 'POST' && segments[0] === 'confirm') {
+      const authErr = requireAuth(user)
+      if (authErr) return authErr
+      const parsed = ConfirmInput.safeParse(await req.json().catch(() => null))
+      if (!parsed.success) return json({ error: 'Invalid input' }, 400)
+
+      const ctx = await getBillingContext()
+      if (!ctx) return json({ error: 'Stripe not configured' }, 500)
+      const { status, applied } = await ctx.billing.confirm(user!.sub, parsed.data.sessionId)
+      return json({ applied, plan: status.plan, status: status.status })
     }
 
     // GET /api/stripe/status — check subscription + plan type
@@ -168,7 +126,6 @@ async function handler(req: Request) {
       // the teacher pays for more seats. Without this cap, a teacher could
       // enroll 10,000 kids on a $25 plan and give them all Pro — direct
       // revenue leak (prevents unlimited free Pro seats on a $25 teacher plan).
-      const TEACHER_SEAT_LIMIT = 30
       const teacherGrant = await tursoExecute(
         `WITH ranked_members AS (
            SELECT cm.user_id,
@@ -197,107 +154,20 @@ async function handler(req: Request) {
         return json({ error: 'Webhook signature verification required' }, 400)
       }
 
+      const ctx = await getBillingContext()
+      if (!ctx) return json({ error: 'Stripe not configured' }, 500)
+      // Raw body: the signature covers the exact bytes.
       const body = await req.text()
-      let event: Stripe.Event
-      try {
-        event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET)
-      } catch (err) {
-        logError('stripe:webhook-sig', err)
-        return json({ error: 'Invalid signature' }, 400)
-      }
-
-      await handleStripeEvent(event)
+      await ctx.billing.handleWebhook(body, sig)
       return json({ received: true })
     }
 
     return json({ error: 'Not found' }, 404)
   } catch (err) {
+    const res = billingErrorResponse(err)
+    if (res) return res
     logError('stripe', err)
     return json({ error: 'Internal server error' }, 500)
-  }
-}
-
-/**
- * Map a Stripe subscription's authoritative product IDs to our internal plan
- * string. This replaces the webhook's previous trust in client-controllable
- * `metadata.plan` — only trust fields signed by Stripe. Stripe signs the subscription object
- * but NOT arbitrary metadata keys.
- */
-function resolvePlanFromSubscription(sub: Stripe.Subscription): 'pro' | 'teacher' | null {
-  const productIds = sub.items.data
-    .map((item) => item.price?.product)
-    .filter((p): p is string => typeof p === 'string')
-  if (productIds.includes(PRICES.teacher.product)) return 'teacher'
-  if (productIds.includes(PRICES.pro.product)) return 'pro'
-  return null
-}
-
-/**
- * Resolve Clerk user id from a Stripe customer, via our own mapping first
- * (subscriptions.stripe_customer_id) and falling back to the customer's
- * server-set metadata. Never trust session.metadata here — session metadata is client-influenceable.
- */
-async function resolveClerkUserId(customerId: string): Promise<string | null> {
-  const known = await tursoExecute(
-    'SELECT user_id FROM subscriptions WHERE stripe_customer_id = ? LIMIT 1',
-    [customerId],
-  )
-  if (known.rows.length > 0) return String(known.rows[0].user_id)
-  // First-time checkout: read metadata we set in `stripe.customers.create`.
-  const cust = await stripe.customers.retrieve(customerId)
-  if (cust.deleted) return null
-  const id = (cust as Stripe.Customer).metadata?.clerk_user_id
-  return typeof id === 'string' && id.length > 0 ? id : null
-}
-
-/** Process a verified Stripe event. Errors are caught by the outer try/catch. */
-async function handleStripeEvent(event: Stripe.Event): Promise<void> {
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session
-    if (!session.customer || !session.subscription) return
-
-    const customerId = String(session.customer)
-    const subscriptionId = String(session.subscription)
-
-    // Pull the signed subscription — the only trustworthy source for plan.
-    const sub = await stripe.subscriptions.retrieve(subscriptionId)
-    const plan = resolvePlanFromSubscription(sub)
-    if (!plan) {
-      logError('stripe', new Error(`Unknown subscription products for ${subscriptionId}`))
-      return
-    }
-
-    const clerkUserId = await resolveClerkUserId(customerId)
-    if (!clerkUserId) {
-      logError('stripe', new Error(`No Clerk user for customer ${customerId}`))
-      return
-    }
-
-    await tursoExecute(
-      `INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, status, plan, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT (user_id) DO UPDATE SET
-         stripe_customer_id = excluded.stripe_customer_id,
-         stripe_subscription_id = excluded.stripe_subscription_id,
-         status = 'active',
-         plan = excluded.plan`,
-      [clerkUserId, customerId, subscriptionId, String(sub.status), plan, Date.now()],
-    )
-    return
-  }
-
-  if (event.type === 'customer.subscription.deleted' || event.type === 'customer.subscription.updated') {
-    const sub = event.data.object as Stripe.Subscription
-    // Preserve actual status — past_due/incomplete/trialing/unpaid users
-    // are NOT cancelled (Stripe is retrying their card).
-    //
-    // Scope by BOTH subscription_id and customer_id — prevents a row whose
-    // stripe_subscription_id was tampered with from cancelling a different
-    // user (prevents a mismatched subscription row from cancelling a different user).
-    await tursoExecute(
-      'UPDATE subscriptions SET status = ? WHERE stripe_subscription_id = ? AND stripe_customer_id = ?',
-      [String(sub.status), sub.id, String(sub.customer)],
-    )
   }
 }
 

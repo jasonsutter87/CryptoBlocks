@@ -53,7 +53,27 @@ export function useIsPro(): { isPro: boolean; loading: boolean; isAdmin: boolean
     setLoading(false)
   }
 
-  useEffect(() => { check() }, [isSignedIn, isAdmin]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    // Back from Stripe Checkout: ask the server to sync that session, so Pro shows before the webhook lands.
+    const confirmThenCheck = async () => {
+      const sessionId = new URLSearchParams(window.location.search).get('session_id')
+      if (sessionId && isSignedIn && !isAdmin) {
+        try {
+          const token = await getToken()
+          await fetch('/api/stripe/confirm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ sessionId }),
+          })
+          const clean = new URL(window.location.href)
+          clean.searchParams.delete('session_id')
+          window.history.replaceState(null, '', clean.pathname + clean.search + clean.hash)
+        } catch { /* the status check below still runs */ }
+      }
+      await check()
+    }
+    confirmThenCheck()
+  }, [isSignedIn, isAdmin]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return { isPro: isPro || isAdmin, loading, isAdmin, plan, refresh: check }
 }
