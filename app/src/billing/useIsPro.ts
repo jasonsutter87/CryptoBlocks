@@ -68,7 +68,7 @@ export function useIsPro(): { isPro: boolean; loading: boolean; isAdmin: boolean
           const clean = new URL(window.location.href)
           clean.searchParams.delete('session_id')
           window.history.replaceState(null, '', clean.pathname + clean.search + clean.hash)
-        } catch {}
+        } catch { /* the status check below still runs */ }
       }
       await check()
     }

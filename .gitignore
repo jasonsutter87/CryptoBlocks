@@ -14,3 +14,6 @@ admin_testing/
 # Hugo
 site/public/
 site/resources/
+
+# Local Netlify folder
+.netlify
