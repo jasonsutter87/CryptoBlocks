@@ -38,7 +38,7 @@ export function validateExtra(extra, allow, path = '') {
   for (const [k, v] of Object.entries(extra)) {
     const p = path ? `${path}.${k}` : k;
     if (!path && BLOCKED_EXTRA.has(k)) throw new BillingError(`extra.${k} cannot be overridden.`, 'invalid');
-    if ((k === 'metadata' || k === 'custom') && isPlain(v) && ('orgId' in v || 'planRef' in v)) throw new BillingError(`extra.${p}.orgId is set by billing and cannot be overridden.`, 'invalid');
+    if ((k === 'metadata' || k === 'custom') && isPlain(v) && ('orgId' in v || 'planRef' in v || 'orgSig' in v)) throw new BillingError(`extra.${p}.orgId is set by billing and cannot be overridden.`, 'invalid');
     const rule = allow?.[k];
     if (rule === true) continue;
     if (isPlain(rule) && isPlain(v)) { validateExtra(v, rule, p); continue; }
@@ -166,8 +166,12 @@ export function createStripeRest({ secretKey, webhookOnly = false, fetch: fetchI
     updateSubscription: (id, params, { idempotencyKey } = {}) => request('POST', `/v1/subscriptions/${encodeURIComponent(id)}`, params, idempotencyKey),
     createMeterEvent: (params, { idempotencyKey } = {}) => request('POST', '/v1/billing/meter_events', params, idempotencyKey),
   };
-  // The same object is also the Stripe provider (pass it as `stripe:` or `provider:`)
-  return Object.assign(adapter, stripeProvider(adapter));
+  // The returned object is also the Stripe provider (pass it as `stripe:` or `provider:`). The provider's
+  // updateSubscription({ subscriptionRef, ops, proration }) would collide with the REST call of the same name, so the
+  // provider wraps a private copy and the REST call is exposed as updateSubscriptionRaw(id, params).
+  const { updateSubscription: rawUpdate, ...rest } = adapter;
+  const provider = stripeProvider({ ...rest, updateSubscription: rawUpdate });
+  return { ...rest, updateSubscriptionRaw: rawUpdate, ...provider };
 }
 
 // ---- provider interface ---------------------------------------------------------------------------------
@@ -210,10 +214,10 @@ function stripeSnapshot(sub) {
     };
   });
   return {
-    id: sub.id, status: mapStatus(sub.status), planRef: items[0]?.ref ?? null, quantity: items[0]?.quantity ?? 1,
+    id: sub.id, status: sub.pause_collection && ['active', 'trialing'].includes(sub.status) ? 'past_due' : mapStatus(sub.status), planRef: items[0]?.ref ?? null, quantity: items[0]?.quantity ?? 1,
     periodStart: items[0]?.periodStart ?? null, periodEnd: items[0]?.periodEnd ?? null,
     cancelAtPeriodEnd: !!sub.cancel_at_period_end, customerRef: idOf(sub.customer), created: sub.created ?? null,
-    orgId: sub.metadata?.orgId ?? null, items, endsAt: sub.ended_at ?? sub.canceled_at ?? sub.cancel_at ?? null, trialEnd: sub.trial_end ?? null, portalUrl: null, raw: sub,
+    orgId: sub.metadata?.orgId ?? null, bindingSig: sub.metadata?.orgSig ?? null, items, endsAt: sub.ended_at ?? sub.canceled_at ?? sub.cancel_at ?? null, trialEnd: sub.trial_end ?? null, portalUrl: null, raw: sub,
   };
 }
 
@@ -269,9 +273,9 @@ export function stripeProvider(stripe) {
       } catch {
         throw new BillingError('Webhook body is not JSON.', 'bad-payload');
       }
-      if (!event || typeof event.id !== 'string' || typeof event.type !== 'string' || !event.data?.object) throw new BillingError('Webhook body is not a Stripe event.', 'bad-payload');
+      if (!event || (event.id != null && typeof event.id !== 'string') || typeof event.type !== 'string' || !event.data?.object) throw new BillingError('Webhook body is not a Stripe event.', 'bad-payload');
       const obj = event.data.object;
-      const base = { id: event.id, rawType: event.type, at: Number(event.created) || nowSec(), customerRef: idOf(obj.customer), type: null };
+      const base = { id: event.id ?? null, rawType: event.type, at: Number(event.created) || nowSec(), customerRef: idOf(obj.customer), type: null, raw: event };
       switch (event.type) {
         case 'checkout.session.completed':
         case 'checkout.session.async_payment_succeeded': {
@@ -292,7 +296,7 @@ export function stripeProvider(stripe) {
           return base;
       }
     },
-    async createCheckout({ orgId, kind, planId, itemId, plan, lineItems, quantity, successUrl, cancelUrl, customerEmail, customerRef, idempotencyKey, extra, trialDays }) {
+    async createCheckout({ orgId, kind, planId, itemId, plan, lineItems, quantity, successUrl, cancelUrl, customerEmail, customerRef, idempotencyKey, extra, trialDays, bindingSig }) {
       const oneTime = kind === 'payment';
       const inline = plan.inlinePrice;
       const lines = lineItems ? lineItems.map((l) => stripeLine(l, oneTime, plan.ref)) : [stripeLine({ ref: plan.ref, inlinePrice: inline, quantity }, oneTime)];
@@ -300,7 +304,7 @@ export function stripeProvider(stripe) {
         mode: oneTime ? 'payment' : 'subscription',
         line_items: lines,
         client_reference_id: orgId,
-        ...(oneTime ? { metadata: { orgId, itemId } } : { subscription_data: { metadata: { orgId, ...(inline && !lineItems ? { planRef: plan.ref } : {}) } } }),
+        ...(oneTime ? { metadata: { orgId, itemId } } : { subscription_data: { metadata: { orgId, ...(bindingSig ? { orgSig: bindingSig } : {}), ...(inline && !lineItems ? { planRef: plan.ref } : {}) } } }),
         success_url: successUrl,
         cancel_url: cancelUrl,
         ...(customerRef ? { customer: customerRef } : customerEmail ? { customer_email: customerEmail } : {}),
@@ -364,7 +368,7 @@ export function mapLemonStatus(a, nowSec) {
   }
 }
 
-function lemonSnapshot(data, nowSec, orgId = null) {
+function lemonSnapshot(data, nowSec, orgId = null, bindingSig = null) {
   const a = data.attributes ?? {};
   const { status, cancelAtPeriodEnd } = mapLemonStatus(a, nowSec);
   const quantity = a.first_subscription_item?.quantity ?? 1;
@@ -373,7 +377,7 @@ function lemonSnapshot(data, nowSec, orgId = null) {
   const itemId = a.first_subscription_item?.id;
   return {
     id: String(data.id), status, planRef: ref, quantity, periodStart: null, periodEnd, cancelAtPeriodEnd,
-    customerRef: a.customer_id == null ? null : String(a.customer_id), created: toSec(a.created_at), orgId,
+    customerRef: a.customer_id == null ? null : String(a.customer_id), created: toSec(a.created_at), orgId, bindingSig,
     items: [{ id: itemId == null ? null : String(itemId), ref, productRef: a.product_id == null ? null : String(a.product_id), lookupKey: null, metered: false, quantity, periodStart: null, periodEnd }],
     endsAt: toSec(a.ends_at), trialEnd: status === 'trialing' ? toSec(a.trial_ends_at) : null, portalUrl: a.urls?.customer_portal ?? null, email: a.user_email ?? null, raw: data,
   };
@@ -450,9 +454,10 @@ export function createLemonSqueezy({ apiKey, storeId, webhookSecret = null, webh
       const a = data.attributes;
       const updated = a.updated_at;
       const id = updated ? `${name}:${data.type}:${data.id}:${updated}` : `sha256:${await sha256(dec.decode(rawBytes(rawBody)))}`;
-      const base = { id, rawType: name, at: toSec(updated) ?? nowSec(), customerRef: a.customer_id == null ? null : String(a.customer_id), type: null };
+      const base = { id, rawType: name, at: toSec(updated) ?? nowSec(), customerRef: a.customer_id == null ? null : String(a.customer_id), type: null, raw: event };
       if (storeId && a.store_id != null && String(a.store_id) !== storeId) return base; // another store on the same account
       const orgId = event.meta?.custom_data?.orgId ?? null;
+      const orgSig = event.meta?.custom_data?.orgSig ?? null;
       switch (name) {
         case 'subscription_created':
         case 'subscription_updated':
@@ -460,9 +465,9 @@ export function createLemonSqueezy({ apiKey, storeId, webhookSecret = null, webh
         case 'subscription_resumed':
         case 'subscription_paused':
         case 'subscription_unpaused':
-          return { ...base, type: 'subscription.updated', email: a.user_email ?? null, subscription: lemonSnapshot(data, nowSec(), orgId) };
+          return { ...base, type: 'subscription.updated', email: a.user_email ?? null, subscription: lemonSnapshot(data, nowSec(), orgId, orgSig) };
         case 'subscription_expired':
-          return { ...base, type: 'subscription.deleted', subscription: lemonSnapshot(data, nowSec(), orgId) };
+          return { ...base, type: 'subscription.deleted', subscription: lemonSnapshot(data, nowSec(), orgId, orgSig) };
         case 'subscription_payment_failed':
         case 'subscription_payment_success':
         case 'subscription_payment_recovered':
@@ -474,11 +479,11 @@ export function createLemonSqueezy({ apiKey, storeId, webhookSecret = null, webh
       }
     },
 
-    async createCheckout({ orgId, plan, lineItems, quantity, successUrl, customerEmail, nowMs, extra }) {
+    async createCheckout({ orgId, plan, lineItems, quantity, successUrl, customerEmail, nowMs, extra, bindingSig }) {
       if (lineItems) throw unsupported('Multi-line-item plans');
       const variant = String(plan.ref);
       const attributes = deepMerge(extra ?? {}, {
-        checkout_data: { ...(customerEmail ? { email: customerEmail } : {}), custom: { orgId }, variant_quantities: [{ variant_id: Number(variant), quantity }] },
+        checkout_data: { ...(customerEmail ? { email: customerEmail } : {}), custom: { orgId, ...(bindingSig ? { orgSig: bindingSig } : {}) }, variant_quantities: [{ variant_id: Number(variant), quantity }] },
         product_options: { redirect_url: successUrl, enabled_variants: [Number(variant)] },
         ...(testMode ? { test_mode: true } : {}),
       });
@@ -579,11 +584,15 @@ const publicItems = (items) => (items ?? []).map((i) => ({ role: i.role, quantit
 
 export function createBilling({
   store, stripe, provider: given, seats = null, plans = {}, items = {}, onPeriod = null, onPurchase = null, entitlements = null, orgExists = null, parseReference = null,
-  onUnclaimed = null, meters = {}, usage: usageOpts = {}, webhookSecret = null, toleranceSec = 300, graceMs = 3 * DAY, now = () => Date.now(),
+  onUnclaimed = null, onEvent = null, canBind = null, onConflict = null, bindingSecret = null, meters = {}, usage: usageOpts = {}, webhookSecret = null, toleranceSec = 300, graceMs = 3 * DAY, now = () => Date.now(),
 }) {
   if (!store || !(given || stripe)) throw new BillingError('createBilling needs store and a provider (or stripe).', 'invalid');
   const provider = given ?? stripeProvider(stripe);
   if (webhookSecret) requireSecret(webhookSecret, 'billing webhookSecret');
+  if (bindingSecret) requireSecret(bindingSecret, 'billing bindingSecret');
+  /** The server's proof that billing itself bound this org into a checkout: hex HMAC-SHA256(bindingSecret, prefix + orgId). */
+  const bindSig = async (orgId) => (bindingSecret ? toHex(await crypto.subtle.sign('HMAC', await crypto.subtle.importKey('raw', enc.encode(bindingSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']), enc.encode(`launchkit-billing-bind:${orgId}`))) : null);
+  const signedFor = async (orgId, sub) => !!(bindingSecret && typeof sub?.bindingSig === 'string' && safeEqual(sub.bindingSig, await bindSig(orgId)));
   const secret = webhookSecret ?? provider.webhookSecret ?? null;
   const errCode = provider.errorCode ?? 'provider-error';
   const webhookOnly = !!provider.webhookOnly;
@@ -670,6 +679,8 @@ export function createBilling({
   const sessionKey = (id) => `sessions/${keyPart(id)}`;
   const pendingKey = (orgId) => `pending/${keyPart(orgId)}`;
   const heldKey = (id) => `held/${keyPart(id)}`;
+  const subKey = (id) => `subscriptions/${keyPart(id)}`;
+  const conflictKey = (id) => `conflicts/${keyPart(id)}`;
   const usageKey = (id) => `usage/${keyPart(id)}`;
   const getRec = (orgId) => store.get(orgKey(orgId));
   const isLive = (rec) => !!rec && LIVE.includes(rec.status);
@@ -692,28 +703,83 @@ export function createBilling({
     return !rec ? { ...base, ...DETAIL() } : { ...base, endsAt: rec.endsAt ?? null, trialEndsAt: rec.trialEndsAt ?? null, portalUrl: rec.portalUrl ?? null, items: publicItems(rec.items) };
   }
   const entitlementKey = (st) => JSON.stringify([st.plan, st.status, st.seats, st.cancelAtPeriodEnd, st.items]);
-  /** Tell the app's own source of truth, before the new state is recorded so a failing hook is retried. */
-  async function mirror(orgId, rec, next) {
+  /** Store the new org record (remembering what the app's entitlements were last told), then seats. The hook is fired by
+   *  fireChange AFTER this, so it may call billing methods and sees stored state. */
+  async function commit(orgId, rec, next, seatsPatch) {
+    if (entitlements?.onChange) next.mirrored = rec?.mirrored ?? statusOf(rec, true);
+    await store.set(orgKey(orgId), next);
+    if (seats && seatsPatch) await seats.updateOrg(orgId, seatsPatch);
+  }
+  /** Tell the app's own source of truth, after the new state is recorded. A hook that throws leaves `mirrored` behind,
+   *  so the redelivered event fires it again. */
+  async function fireChange(orgId, next) {
     if (!entitlements?.onChange) return;
-    const before = statusOf(rec, true);
+    const before = next.mirrored ?? statusOf(null, true);
     const after = statusOf(next, true);
-    if (entitlementKey(before) !== entitlementKey(after)) await entitlements.onChange({ orgId, before, after });
+    if (entitlementKey(before) === entitlementKey(after)) return;
+    await entitlements.onChange({ orgId, before, after, customerRef: next.customerId ?? null, subscriptionRef: next.subscriptionId ?? null, plan: next.plan, status: next.status, items: after.items });
+    const cur = await getRec(orgId); // the hook may have changed things (setQuantity): only acknowledge if nobody else did
+    if (cur?.mirrored && entitlementKey(cur.mirrored) === entitlementKey(before)) await store.set(orgKey(orgId), { ...cur, mirrored: after });
   }
 
-  function seatCount(planId, item) {
+  /** A cap on seats may be a number or (orgId) => number. */
+  async function capOf(v, orgId) {
+    if (typeof v !== 'function') return v;
+    const n = Number(await v(orgId));
+    if (!Number.isFinite(n) || n < 0) throw new BillingError('A seat cap function must return a number, 0 or more.', 'invalid');
+    return n;
+  }
+  async function seatCount(planId, item, orgId) {
     const p = plans[planId];
     if (!p.perSeat && p.seats == null) return null; // a plan with no seats leaves seats alone
     if (!p.perSeat) return Math.max(1, p.seats);
     const q = Math.max(1, Number(item?.quantity ?? 1) | 0);
-    return Math.min(p.maxSeats ?? Infinity, Math.max(p.minSeats ?? 1, q));
+    return Math.min((await capOf(p.maxSeats, orgId)) ?? Infinity, Math.max(p.minSeats ?? 1, q));
   }
 
-  /** Org for a subscription: stored customer mapping first, then the orgId we put in its metadata. */
+  /** Org for a subscription and how we know it: the stored customer mapping or subscription index (already ours), then the
+   *  reference an order carried (`hint`), then the orgId in the subscription's metadata. Those last two come from a URL or
+   *  metadata somebody may have written, so they are checked by bindCheck. */
   async function resolveOrg(sub, hint) {
     const customerId = sub.customerRef;
-    const candidates = [customerId && (await store.get(customerKey(customerId))), hint, sub.orgId].filter(Boolean);
-    for (const orgId of candidates) if (await knows(orgId)) return orgId;
+    const candidates = [
+      [customerId && (await store.get(customerKey(customerId))), 'customer'],
+      [sub.id && (await store.get(subKey(sub.id))), 'customer'],
+      [hint, 'hint'],
+      [sub.orgId, 'metadata'],
+    ];
+    for (const [orgId, via] of candidates) if (orgId && (await knows(orgId))) return { orgId, via };
+    return { orgId: null, via: null };
+  }
+
+  /** The org whose record names this subscription (a deleted event with no customer or metadata). */
+  async function orgOfSubscription(subId) {
+    const known = await store.get(subKey(subId));
+    if (known) return known;
+    for (const k of await store.list('orgs/')) {
+      const rec = await store.get(k);
+      if (rec?.subscriptionId === subId) return rec.orgId;
+    }
     return null;
+  }
+
+  /** May this customer be bound to this org? null = yes, otherwise the conflict result (and the hook has been told).
+   *  `via` 'customer' means the customer or subscription is already ours. server-checkout (our signature, or the
+   *  caller says billing made the checkout) always binds; reference and metadata sources go through canBind, and
+   *  by default may not re-point an org that is live on another customer. */
+  async function bindCheck({ orgId, rec, customerRef, subscriptionRef, planId = null, status = null, via, sub, trusted = false, event = null }) {
+    if (!customerRef || via === 'customer') return null;
+    if (rec?.customerId === customerRef || (await store.get(customerKey(customerRef))) === orgId) return null;
+    const source = trusted || (await signedFor(orgId, sub)) ? 'server-checkout' : via === 'hint' ? 'reference' : 'metadata';
+    if (source === 'server-checkout') return null;
+    const live = isLive(rec) && !!rec.customerId && rec.customerId !== customerRef;
+    const ok = canBind ? !!(await canBind({ orgId, customerRef, subscriptionRef, event, source })) : !live;
+    if (ok) return null;
+    const existing = rec ? { customerRef: rec.customerId ?? null, subscriptionRef: rec.subscriptionId ?? null, plan: rec.plan, status: rec.status } : null;
+    const incoming = { customerRef, subscriptionRef: subscriptionRef ?? null, plan: planId, status };
+    if (event?.id) await store.set(conflictKey(event.id), { id: event.id, orgId, existing, incoming, source, at: now() });
+    if (onConflict) await onConflict({ orgId, existing, incoming, event });
+    return { handled: false, ignored: 'conflict', orgId };
   }
 
   /** Once per paid period, however it was noticed: webhook, sync or a late event. A period is keyed by its start,
@@ -739,10 +805,23 @@ export function createBilling({
     await replayHeld((h) => h.customerRef === customerId, orgId);
   }
 
+  /** A deleted event with no items: cancel what the org has under that subscription, never anything else. */
+  async function applyEnded(sub, stamp, orgId) {
+    const rec = orgId && (await getRec(orgId));
+    if (!rec || rec.subscriptionId !== sub.id) return { handled: false, ignored: orgId ? 'other-subscription' : 'unknown-org' };
+    if (stamp < rec.stamp) return { handled: false, ignored: 'stale' };
+    const next = { ...rec, status: 'canceled', cancelAtPeriodEnd: false, endsAt: (sub.endsAt ?? stamp) * 1000, trialEndsAt: null, pastDueSince: null, ended: true, stamp };
+    await commit(orgId, rec, next, { status: 'canceled' });
+    await fireChange(orgId, next);
+    return { handled: true, orgId };
+  }
+
   /** Apply a subscription's state to the org. `stamp` (unix seconds) says how fresh that state is. */
-  async function applySubscription(sub, stamp, { hint = null, ended = false } = {}) {
+  async function applySubscription(sub, stamp, { hint = null, ended = false, event = null, trusted = false } = {}) {
     const cls = await classify(sub.items);
-    const orgId = await resolveOrg(sub, hint);
+    const found = await resolveOrg(sub, hint);
+    let orgId = found.orgId;
+    if (!cls && ended) return applyEnded(sub, stamp, orgId ?? (await orgOfSubscription(sub.id)));
     if (!orgId) return { handled: false, ignored: 'unknown-org', hold: !!cls };
     if (!cls) return { handled: false, ignored: 'unknown-plan' };
     const { planId, planItem: item } = cls;
@@ -755,6 +834,12 @@ export function createBilling({
     } else if (rec && stamp < rec.stamp) {
       await grantPeriod(orgId, planId, sub, item, status); // an old paid period is still owed, once
       return { handled: false, ignored: 'stale' };
+    } else if (rec?.ended && !ended) {
+      return { handled: false, ignored: 'deleted-subscription' }; // a deleted subscription stays deleted
+    }
+    if (status !== 'canceled') {
+      const conflict = await bindCheck({ orgId, rec, customerRef: sub.customerRef, subscriptionRef: sub.id, planId, status, via: found.via, sub, trusted, event });
+      if (conflict) return conflict;
     }
 
     const customerId = sub.customerRef;
@@ -763,6 +848,7 @@ export function createBilling({
     const seatItem = cls.items.find((i) => i.role === 'seat');
     const cancelAtPeriodEnd = !!sub.cancelAtPeriodEnd && status !== 'canceled';
     const endsSec = status === 'canceled' ? (sub.endsAt ?? stamp) : cancelAtPeriodEnd ? (sub.endsAt ?? periodEndSec) : null;
+    const seatsNow = seatItem ? seatItem.quantity : await seatCount(planId, item, orgId);
     const next = {
       orgId,
       customerId,
@@ -770,7 +856,7 @@ export function createBilling({
       subCreated: sub.created ?? null,
       plan: planId,
       status,
-      seats: seatItem ? seatItem.quantity : seatCount(planId, item),
+      seats: seatsNow,
       currentPeriodEnd: periodEndSec ? periodEndSec * 1000 : null,
       cancelAtPeriodEnd,
       endsAt: endsSec ? endsSec * 1000 : null,
@@ -779,18 +865,17 @@ export function createBilling({
       items: cls.items.map((i) => ({ id: i.id ?? null, role: i.role, quantity: i.quantity, ref: i.ref })),
       pastDueSince: status === 'past_due' ? (sameSub && rec.status === 'past_due' ? rec.pastDueSince : stamp * 1000) : null,
       stamp,
+      ...(ended || (sameSub && rec.ended) ? { ended: true } : {}),
     };
-    await mirror(orgId, rec, next);
-    await store.set(orgKey(orgId), next);
+    await commit(orgId, rec, next, seats ? {
+      ...(seatItem || next.seats == null ? {} : { seats: next.seats }),
+      plan: planId,
+      status: status === 'none' ? 'incomplete' : status,
+      billing: { customerId, subscriptionId: sub.id },
+    } : null);
+    await store.set(subKey(sub.id), orgId);
     await linkCustomer(customerId, orgId);
-    if (seats) {
-      await seats.updateOrg(orgId, {
-        ...(seatItem || next.seats == null ? {} : { seats: next.seats }),
-        plan: planId,
-        status: status === 'none' ? 'incomplete' : status,
-        billing: { customerId, subscriptionId: sub.id },
-      });
-    }
+    await fireChange(orgId, next);
     const granted = await grantPeriod(orgId, planId, sub, item, status);
     return { handled: true, orgId, ...(granted ? { periodGranted: true } : {}) };
   }
@@ -806,9 +891,8 @@ export function createBilling({
     if (!failed && rec.status !== 'past_due') return { handled: true, orgId };
     const status = failed ? 'past_due' : 'active';
     const next = { ...rec, status, pastDueSince: failed ? (rec.status === 'past_due' ? rec.pastDueSince : stamp * 1000) : null, stamp };
-    await mirror(orgId, rec, next);
-    await store.set(orgKey(orgId), next);
-    if (seats) await seats.updateOrg(orgId, { status });
+    await commit(orgId, rec, next, { status });
+    await fireChange(orgId, next);
     return { handled: true, orgId };
   }
 
@@ -816,7 +900,7 @@ export function createBilling({
   const fullSubscription = (s) => (s.status === undefined ? provider.fetchSubscription(s.id, ctx()) : s);
 
   /** A finished checkout or a paid order, from a webhook, sync or confirm. Subscriptions are read back. */
-  async function applyOrder(order, stamp, { alsoKey = null, org = null } = {}) {
+  async function applyOrder(order, stamp, { alsoKey = null, org = null, trusted = false, event = null } = {}) {
     if (!order || !order.paid) return { handled: false, ignored: 'unpaid' };
     const orgId = refToOrg(order.orgId) ?? org; // sync/confirm know the org when the provider's reads don't say
     const mark = async (v) => {
@@ -833,11 +917,13 @@ export function createBilling({
       if (webhookOnly) {
         // Nothing to read back: this event only says which org the customer is. The subscription events apply the plan.
         if (!(await knows(orgId))) return { handled: false, ignored: 'unknown-org', hold: true };
+        const conflict = await bindCheck({ orgId, rec: await getRec(orgId), customerRef: order.customerRef, subscriptionRef: order.subscriptionRef, via: 'hint', sub: null, trusted, event });
+        if (conflict) return conflict;
         await linkCustomer(order.customerRef, orgId);
         await mark({ orgId, at: now() });
         return { handled: true, orgId, linked: true };
       }
-      const r = await applySubscription(await provider.fetchSubscription(order.subscriptionRef, ctx()), stamp, { hint: orgId });
+      const r = await applySubscription(await provider.fetchSubscription(order.subscriptionRef, ctx()), stamp, { hint: orgId, trusted, event });
       if (r.orgId) await mark({ orgId: r.orgId, at: now() });
       return r;
     }
@@ -851,9 +937,11 @@ export function createBilling({
     const licenseKey = order.licenseKey ?? (provider.licenseKeyFor ? await provider.licenseKeyFor(order) : null);
     if (onPurchase) await onPurchase({ key: `session:${order.id}`, orgId, itemId, item, session: order.raw ?? order, order, licenseKey, provider: provider.name });
     await mark({ orgId, itemId, at: now() });
-    if (customerId) {
+    const prior = customerId ? await getRec(orgId) : null;
+    // A buyer is only linked to the org when that binding would be allowed (a user-controlled reference must not claim an org)
+    if (customerId && !(await bindCheck({ orgId, rec: prior, customerRef: customerId, subscriptionRef: null, via: 'hint', sub: null, trusted, event }))) {
       if (!(await store.get(customerKey(customerId)))) await store.set(customerKey(customerId), orgId);
-      const rec = await getRec(orgId);
+      const rec = prior;
       if (!rec) await store.set(orgKey(orgId), { orgId, customerId, subscriptionId: null, plan: null, status: 'none', seats: 0, currentPeriodEnd: null, cancelAtPeriodEnd: false, pastDueSince: null, stamp: 0 });
     }
     return { handled: true, orgId, purchased: itemId };
@@ -864,20 +952,27 @@ export function createBilling({
     return rec.status === 'past_due' && now() >= (rec.pastDueSince ?? 0) + graceMs;
   }
 
+  /** An event or order with no id is deduped by a hash of its body, never under one shared key. */
+  async function normalizeEvent(ev, text, fallbackId = null) {
+    if (ev.id == null || ev.id === '') ev = { ...ev, id: fallbackId ?? `sha256:${await sha256(text)}` };
+    if (ev.order && (ev.order.id == null || ev.order.id === '')) ev = { ...ev, order: { ...ev.order, id: `order:${ev.id}` } };
+    return ev;
+  }
+
   // ---- one event, from the webhook or replayed out of the hold ----
-  async function processEvent(ev, rawText, { org = null } = {}) {
+  async function processEvent(ev, rawText, { org = null, trusted = false } = {}) {
     const stamp = ev.fresh ? Math.max(ev.at, nowSec()) : ev.at;
     let result = { handled: false };
     switch (ev.type) {
       case 'checkout.completed':
       case 'order.paid':
-        result = await applyOrder(ev.order, stamp, { org });
+        result = await applyOrder(ev.order, stamp, { org, trusted, event: ev });
         break;
       case 'subscription.updated':
-        result = await applySubscription(await fullSubscription(ev.subscription), stamp, { hint: org });
+        result = await applySubscription(await fullSubscription(ev.subscription), stamp, { hint: org, trusted, event: ev });
         break;
       case 'subscription.deleted':
-        result = await applySubscription(await fullSubscription(ev.subscription), stamp, { hint: org, ended: true });
+        result = await applySubscription(await fullSubscription(ev.subscription), stamp, { hint: org, ended: true, trusted, event: ev });
         break;
       case 'payment.failed':
       case 'payment.succeeded': {
@@ -885,10 +980,15 @@ export function createBilling({
         if (!ev.subscription?.id) break;
         result = webhookOnly
           ? await applyPaymentSignal(ev, stamp, { hint: org })
-          : await applySubscription(await provider.fetchSubscription(ev.subscription.id, ctx()), stamp, { hint: org });
+          : await applySubscription(await provider.fetchSubscription(ev.subscription.id, ctx()), stamp, { hint: org, trusted, event: ev });
         break;
       }
       default:
+        // Nothing here acts on it: hand it to the app, once per event id
+        if (onEvent) {
+          await onEvent({ event: { id: ev.id, rawType: ev.rawType, at: ev.at, customerRef: ev.customerRef ?? null, raw: ev.raw ?? null } });
+          await store.set(eventKey(ev.id), { type: ev.rawType, at: now() });
+        }
         return { ok: true, type: ev.rawType, handled: false };
     }
     const { hold, ...out } = result;
@@ -909,7 +1009,7 @@ export function createBilling({
   }
 
   /** Replay held events that match, oldest first, into an org; each is removed once applied. */
-  async function replayHeld(pred, orgId) {
+  async function replayHeld(pred, orgId, { trusted = false } = {}) {
     const entries = [];
     for (const k of await store.list('held/')) {
       const h = await store.get(k);
@@ -918,8 +1018,8 @@ export function createBilling({
     entries.sort((x, y) => (x[1].at - y[1].at) || (x[1].held - y[1].held));
     const done = [];
     for (const [k, h] of entries) {
-      const ev = await provider.parseWebhook(h.raw, ctx());
-      await processEvent(ev, null, { org: orgId });
+      const ev = await normalizeEvent(await provider.parseWebhook(h.raw, ctx()), h.raw, h.id);
+      await processEvent(ev, null, { org: orgId, trusted });
       await store.set(eventKey(h.id), { type: ev.rawType, at: now() });
       await store.del(k);
       done.push(h.id);
@@ -942,7 +1042,7 @@ export function createBilling({
   }
   async function converge(orgId, rec) {
     const fresh = await provider.fetchSubscription(rec.subscriptionId, ctx());
-    await applySubscription(fresh, nowSec(), { hint: orgId });
+    await applySubscription(fresh, nowSec(), { hint: orgId, trusted: true });
     return statusOf(await getRec(orgId), true);
   }
   const clampQty = (n, lo, hi) => Math.min(hi ?? Infinity, Math.max(lo ?? 0, n));
@@ -994,7 +1094,7 @@ export function createBilling({
       const def = oneTime ? null : defById.get(planId);
       const quantity = oneTime
         ? Math.max(1, Math.floor(Number(qty) || 1))
-        : plan.perSeat ? Math.min(plan.maxSeats ?? Infinity, Math.max(plan.minSeats ?? 1, Math.floor(Number(wanted) || plan.minSeats || 1))) : 1;
+        : plan.perSeat ? Math.min((await capOf(plan.maxSeats, orgId)) ?? Infinity, Math.max(plan.minSeats ?? 1, Math.floor(Number(wanted) || plan.minSeats || 1))) : 1;
       let lineItems;
       if (def?.lines.length) {
         lineItems = [];
@@ -1003,7 +1103,7 @@ export function createBilling({
           const ref = await refFor(l.spec);
           if (!ref && !l.spec.inlinePrice) throw new BillingError(`Plan "${planId}" has a ${l.role} line item with nothing to sell (ref, lookupKey or inlinePrice).`, 'invalid');
           const q = metered ? undefined
-            : l.role === 'seat' ? clampQty(wanted == null ? (l.spec.quantity ?? 0) : Math.max(0, Math.floor(Number(wanted) || 0)), l.spec.min ?? 0, l.spec.max ?? plan.maxSeats)
+            : l.role === 'seat' ? clampQty(wanted == null ? (l.spec.quantity ?? 0) : Math.max(0, Math.floor(Number(wanted) || 0)), l.spec.min ?? 0, await capOf(l.spec.max ?? plan.maxSeats, orgId))
             : (l.spec.quantity ?? 1);
           lineItems.push({ role: l.role, ref, inlinePrice: l.spec.inlinePrice, quantity: q, metered });
         }
@@ -1016,7 +1116,7 @@ export function createBilling({
       const kind = oneTime ? 'payment' : 'subscription';
       const session = await provider.createCheckout({
         orgId, kind, planId, itemId, plan: { ...plan, ref: sellRef ?? refOf(plan), kind }, ...(lineItems ? { lineItems } : {}), quantity, successUrl, cancelUrl, customerEmail,
-        customerRef: rec?.customerId ?? null, idempotencyKey, nowMs: now(), ...(extra ? { extra } : {}), ...(trialDays ? { trialDays } : {}),
+        customerRef: rec?.customerId ?? null, idempotencyKey, nowMs: now(), bindingSig: await bindSig(orgId), ...(extra ? { extra } : {}), ...(trialDays ? { trialDays } : {}),
       });
       if (!session?.url) throw new BillingError('The billing provider returned no checkout URL.', errCode, 502);
       const entry = session.pending ?? session.id;
@@ -1036,10 +1136,11 @@ export function createBilling({
     async handleWebhook(rawBody, signature) {
       if (!secret) throw new BillingError('webhookSecret is not configured.', 'no-webhook-secret', 500);
       await provider.verifyWebhook(rawBody, signature, { secret, toleranceSec, nowSec: nowSec() });
-      const ev = await provider.parseWebhook(rawBody, ctx());
-      if (!ev.type) return { ok: true, type: ev.rawType, handled: false };
+      const text = dec.decode(rawBytes(rawBody));
+      const ev = await normalizeEvent(await provider.parseWebhook(rawBody, ctx()), text);
+      if (!ev.type && !onEvent) return { ok: true, type: ev.rawType, handled: false };
       if (await store.get(eventKey(ev.id))) return { ok: true, type: ev.rawType, handled: false, duplicate: true };
-      return processEvent(ev, dec.decode(rawBytes(rawBody)));
+      return processEvent(ev, text);
     },
 
     /** Change the plan on the live subscription in place (no checkout): swap base/metered prices, keep seat quantity. */
@@ -1060,7 +1161,7 @@ export function createBilling({
         const metered = !!spec.metered || line.role === 'usage';
         const qty = metered ? undefined
           : line.role === 'seat' ? (old ? old.quantity : (spec.quantity ?? 0))
-          : def.plan.perSeat && line.role === 'base' ? clampQty(old?.quantity ?? def.plan.minSeats ?? 1, def.plan.minSeats ?? 1, def.plan.maxSeats)
+          : def.plan.perSeat && line.role === 'base' ? clampQty(old?.quantity ?? def.plan.minSeats ?? 1, def.plan.minSeats ?? 1, await capOf(def.plan.maxSeats, orgId))
           : (spec.quantity ?? 1);
         const ref = await refFor(spec);
         if (old) {
@@ -1088,7 +1189,7 @@ export function createBilling({
       const line = cls.def.lines.find((l) => l.role === role);
       const plan = cls.def.plan;
       const lo = role === 'seat' ? (line?.spec.min ?? 0) : (plan.perSeat ? (plan.minSeats ?? 1) : 1);
-      const hi = line?.spec.max ?? plan.maxSeats;
+      const hi = await capOf(line?.spec.max ?? plan.maxSeats, orgId);
       const target = clampQty(n, lo, hi);
       if (target !== item.quantity) await writeSubscription(orgId, rec, [{ id: item.id, quantity: target }], proration, `qty:${role}:${target}`);
       return { changed: target !== item.quantity, status: await converge(orgId, rec) };
@@ -1138,6 +1239,32 @@ export function createBilling({
       },
     },
 
+    /** Seed an org's billing state from a migration (stamp 0, so the next real event applies). The stored record shapes are
+     *  internal: this is the way in. Replays are safe (it overwrites the same org's own seed). */
+    async adopt(orgId, { customerRef = null, subscriptionRef = null, planId, status, periodEnd = null } = {}) {
+      if (!(await knows(orgId))) throw new BillingError('No such organization.', 'no-org', 404);
+      if (!plans[planId]) throw new BillingError(`No such plan: ${planId}`, 'plan-not-found');
+      if (![...LIVE, 'canceled', 'none'].includes(status)) throw new BillingError(`status must be one of ${[...LIVE, 'canceled', 'none'].join(', ')}.`, 'invalid');
+      const endMs = periodEnd == null ? null : periodEnd instanceof Date ? periodEnd.getTime() : Number(periodEnd);
+      if (endMs !== null && !Number.isFinite(endMs)) throw new BillingError('periodEnd must be a Date or epoch milliseconds.', 'invalid');
+      for (const [what, v] of [['customerRef', customerRef], ['subscriptionRef', subscriptionRef]]) if (v != null && (typeof v !== 'string' || !v)) throw new BillingError(`${what} must be a string.`, 'invalid');
+      if (customerRef) {
+        const linked = await store.get(customerKey(customerRef));
+        if (linked && linked !== orgId) throw new BillingError('That customer is already linked to another organization.', 'conflict', 409);
+      }
+      const rec = await getRec(orgId);
+      const next = {
+        orgId, customerId: customerRef, subscriptionId: subscriptionRef, subCreated: null, plan: planId, status, seats: await seatCount(planId, { quantity: 1 }, orgId),
+        currentPeriodEnd: endMs, cancelAtPeriodEnd: false, endsAt: null, trialEndsAt: null, portalUrl: null, items: [],
+        pastDueSince: status === 'past_due' ? now() : null, stamp: 0,
+      };
+      await commit(orgId, rec ?? null, next, { plan: planId, status: status === 'none' ? 'incomplete' : status, billing: { customerId: customerRef, subscriptionId: subscriptionRef } });
+      if (entitlements?.onChange) await store.set(orgKey(orgId), { ...next, mirrored: statusOf(next, true) }); // the app already has this state
+      if (subscriptionRef) await store.set(subKey(subscriptionRef), orgId);
+      if (customerRef) await store.set(customerKey(customerRef), orgId);
+      return statusOf(next, true);
+    },
+
     /** Link an org to what was bought before it existed: replay events held for that email, exactly once. */
     async claim(orgId, { email } = {}) {
       if (typeof email !== 'string' || !email.includes('@')) throw new BillingError('claim needs the buyer email.', 'invalid');
@@ -1149,7 +1276,7 @@ export function createBilling({
         if (h?.email === e && h.customerRef) customers.add(h.customerRef);
       }
       for (const c of customers) if (!(await store.get(customerKey(c)))) await store.set(customerKey(c), orgId);
-      const events = await replayHeld((h) => h.email === e || (h.customerRef && customers.has(h.customerRef)), orgId);
+      const events = await replayHeld((h) => h.email === e || (h.customerRef && customers.has(h.customerRef)), orgId, { trusted: true }); // the app vouched for this org
       return { claimed: events.length, events };
     },
 
@@ -1164,7 +1291,7 @@ export function createBilling({
       for (const entry of pending) {
         if (await store.get(sessionKey(entry.id))) continue;
         const order = await provider.fetchCheckout(entry, ctx());
-        const r = await applyOrder(order, stamp, { alsoKey: entry.id, org: orgId });
+        const r = await applyOrder(order, stamp, { alsoKey: entry.id, org: orgId, trusted: true }); // a checkout billing created
         if (r.handled) applied.push({ session: entry.id, ...r });
         const stale = entry.at != null && now() - entry.at > 7 * DAY;
         if (!r.handled && !r.duplicate && !order?.expired && !stale) open.push(entry); // still waiting for payment
@@ -1172,7 +1299,7 @@ export function createBilling({
       if (open.length !== pending.length) await store.set(pendingKey(orgId), packPending(open));
       const fresh = (await getRec(orgId)) ?? rec;
       if (fresh?.subscriptionId) {
-        const r = await applySubscription(await provider.fetchSubscription(fresh.subscriptionId, ctx()), stamp, { hint: orgId });
+        const r = await applySubscription(await provider.fetchSubscription(fresh.subscriptionId, ctx()), stamp, { hint: orgId, trusted: true });
         if (r.handled || r.periodGranted) applied.push({ subscription: fresh.subscriptionId, ...r });
       }
       return { status: await api.status(orgId), applied };
@@ -1212,7 +1339,7 @@ export function createBilling({
       }
       const ours = order.orgId != null ? refToOrg(order.orgId) === orgId : pending.some((e) => e.id === sessionId);
       if (!ours) throw new BillingError('That checkout belongs to another organization.', 'wrong-org', 403);
-      const r = await applyOrder(order, nowSec(), { alsoKey: sessionId, org: orgId });
+      const r = await applyOrder(order, nowSec(), { alsoKey: sessionId, org: orgId, trusted: pending.some((e) => e.id === sessionId) });
       return { status: await api.status(orgId), applied: r.handled || !!r.duplicate };
     },
 
