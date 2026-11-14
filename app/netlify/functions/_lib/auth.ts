@@ -1,12 +1,13 @@
 /**
  * Who is calling: the CryptoBlocks session token from a Gatekeep sign-in.
  *
- * The app sends it as `Authorization: Bearer`, as it did Clerk's session token.
- * Sessions are issued by ../auth.mts after a passkey sign-in at Gatekeep; see
+ * It arrives in the HttpOnly `cb_session` cookie. Sessions are issued by ../auth.mts after a passkey sign-in at Gatekeep; see
  * ./session.ts. The interface keeps its Clerk-era name so the functions and
  * guards that import it don't change.
  */
-import { verifySessionToken } from './session.js'
+import { verifySessionToken, readSessionCookie } from './session.js'
+import type { SessionClaims } from './session.js'
+import { isRevoked } from './revocation.js'
 
 export interface ClerkUser {
   /** Account id: the Clerk-era user id for accounts that carried over, else the Gatekeep sub. */
@@ -24,8 +25,45 @@ export async function verifyClerkToken(token: string): Promise<ClerkUser | null>
   return { sub: claims.sub, name: claims.name, email: claims.email, avatar: claims.avatar }
 }
 
-/** Convenience: extract bearer + verify in one call */
+/**
+ * CSRF defence for cookie-authenticated requests (a cookie rides along on any request
+ * the browser makes, so state changes need proof the page itself sent them).
+ * Rule: POST/PUT/PATCH/DELETE must carry `Origin` equal to this site's origin, or
+ * `Sec-Fetch-Site: same-origin`. Both are set by the browser and can't be forged by
+ * a page. A state-changing request with neither header is refused. On top of
+ * SameSite=Lax on the cookie itself.
+ */
+export function isSameOriginRequest(req: Request): boolean {
+  const origin = req.headers.get('Origin')
+  if (origin) return origin === new URL(req.url).origin
+  return req.headers.get('Sec-Fetch-Site') === 'same-origin'
+}
+
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS'])
+
+/** The verified claims behind the session cookie, if any (no CSRF or revocation check). */
+export function cookieClaims(req: Request): SessionClaims | null {
+  const raw = readSessionCookie(req)
+  return raw ? verifySessionToken(raw) : null
+}
+
+/**
+ * Who is calling: the `cb_session` HttpOnly cookie, else (temporarily) a Bearer token.
+ *
+ * @deprecate Bearer sessions, remove after 2026-12-31. Before the cookie change the app
+ * kept the session token in localStorage and sent it as `Authorization: Bearer`; tabs
+ * opened before the deploy still do. Delete the Bearer branch below (and
+ * `extractBearer` use here) once those tokens have expired (7 days after release;
+ * the date leaves a buffer). Run the code-janitor to find it.
+ */
 export async function verifyFromRequest(req: Request): Promise<ClerkUser | null> {
+  const claims = cookieClaims(req)
+  if (claims) {
+    if (!SAFE_METHODS.has(req.method.toUpperCase()) && !isSameOriginRequest(req)) return null
+    if (await isRevoked(claims.sid)) return null
+    return { sub: claims.sub, name: claims.name, email: claims.email, avatar: claims.avatar }
+  }
+  // @deprecate remove after 2026-12-31: legacy Bearer sessions (see above). Not revocable (no sid).
   const header = req.headers.get('Authorization') ?? ''
   if (!header.startsWith('Bearer ')) return null
   return verifyClerkToken(header.slice(7).trim())
